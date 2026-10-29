@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { ensureBrowser } from './webgl-session.mjs';
+import { runtimeSnapshot, waitForMovement } from './browser-sync.mjs';
 
 const output = resolve(process.env.HOW_EVIDENCE_DIR ?? '.cache/evidence-lifecycle');
 const url = process.env.HOW_QA_URL ?? 'http://127.0.0.1:5173/?qa=1';
@@ -71,10 +72,13 @@ try {
     await invalid.reload(); await invalid.waitForFunction(() => window.__VISUAL_READY__);
     const metadata = await invalid.evaluate(() => window.__HOW__.metrics());
     assert(String(metadata.saveStatus).includes('保留'));
-    await invalid.keyboard.down('d'); await invalid.waitForTimeout(200); await invalid.keyboard.up('d');
+    const before = await runtimeSnapshot(invalid);
+    try { await invalid.keyboard.down('d'); await waitForMovement(invalid, before); }
+    finally { await invalid.keyboard.up('d'); }
+    const after = await runtimeSnapshot(invalid);
     await invalid.getByTestId('pause').click();
     assert.equal(await invalid.evaluate(key => localStorage.getItem(key), SAVE_KEY), original);
-    return { originalPreserved: true, status: metadata.saveStatus };
+    return { originalPreserved: true, status: metadata.saveStatus, movement: { before, after } };
   });
   }
 

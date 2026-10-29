@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { resolve, join } from 'node:path';
 import { doctor, ensureBrowser } from './webgl-session.mjs';
+import { runtimeSnapshot, waitForMovement, waitForSteps, waitForTool } from './browser-sync.mjs';
 
 const targetUrl = process.env.HOW_QA_URL ?? 'http://127.0.0.1:5173/?qa=1';
 const output = resolve(process.env.HOW_EVIDENCE_DIR ?? '.cache/evidence');
@@ -43,7 +44,7 @@ async function ready(page) {
   assert(bounds && bounds.width > 200 && bounds.height > 200, 'Game canvas must occupy a meaningful area');
 }
 const state = page => page.evaluate(() => window.__HOW__.state());
-async function select(page, tool) { await page.locator(`[data-tool="${tool}"]`).click(); }
+async function select(page, tool) { await page.locator(`[data-tool="${tool}"]`).click(); await waitForTool(page, tool); }
 async function target(page, point) { await page.evaluate(point => window.__HOW__.target(point), point); }
 async function command(page, cmd) { return page.evaluate(cmd => window.__HOW__.command(cmd), cmd); }
 async function moveNear(page, point, radius = 1.7) {
@@ -126,15 +127,19 @@ try {
 
   if (!process.argv.includes('--capture-only')) {
     await check('keyboard movement and five real tool shortcuts', async () => {
-      const before = (await state(page)).player;
-      await page.keyboard.down('ArrowRight'); await page.waitForTimeout(300); await page.keyboard.up('ArrowRight');
-      const after = (await state(page)).player;
-      assert(Math.hypot(after.x - before.x, after.z - before.z) > 0.1);
+      const before = await runtimeSnapshot(page);
+      try {
+        await page.keyboard.down('ArrowRight');
+        await waitForMovement(page, before);
+      } finally { await page.keyboard.up('ArrowRight'); }
+      const after = await runtimeSnapshot(page);
+      assert(Math.hypot(after.player.x - before.player.x, after.player.z - before.player.z) > 0.1);
       for (const [i, tool] of ['axe', 'hoe', 'water', 'plant', 'build'].entries()) {
         await page.keyboard.press(String(i + 1));
-        assert.equal(await page.locator(`[data-tool="${tool}"]`).getAttribute('aria-pressed'), 'true');
+        await waitForTool(page, tool);
       }
       await select(page, 'axe');
+      return { before, after };
     });
     await check('HUD clicks do not trigger actions behind it', async () => {
       await moveNear(page, { x: -3, z: 1 }); await target(page, { x: -3, z: 1 });
@@ -186,11 +191,18 @@ try {
     });
     await check('pause and resume freeze game time and preserve input state', async () => {
       await page.getByTestId('pause').click(); await page.getByRole('dialog').waitFor();
-      const before = await state(page);
-      await page.keyboard.down('w'); await page.waitForTimeout(300); await page.keyboard.up('w');
-      assert.equal((await state(page)).time, before.time); assert.deepEqual((await state(page)).player, before.player);
+      const before = await runtimeSnapshot(page); assert.equal(before.running, false);
+      // This delay observes an intentionally stopped loop; it is not used as
+      // evidence that input or a resume has been processed.
+      try { await page.keyboard.down('w'); await page.waitForTimeout(300); }
+      finally { await page.keyboard.up('w'); }
+      const paused = await runtimeSnapshot(page);
+      assert.equal(paused.running, false); assert.equal(paused.steps, before.steps);
+      assert.equal(paused.time, before.time); assert.deepEqual(paused.player, before.player);
       await page.keyboard.press('Escape'); await page.getByRole('dialog').waitFor({ state: 'hidden' });
-      await page.waitForTimeout(150); assert((await state(page)).time > before.time);
+      const resumed = await waitForSteps(page, before);
+      assert.deepEqual(resumed.player, before.player, 'Input pressed while paused must not stick after resume');
+      return { before, paused, resumed };
     });
     await check('save and reload preserve the completed loop', async () => {
       const before = await state(page);
@@ -206,10 +218,19 @@ try {
         window.__qaRestoreContext = () => extension.restoreContext(); extension.loseContext(); return true;
       });
       assert(supported, 'WEBGL_lose_context unavailable');
-      await page.waitForTimeout(100); const before = await state(page);
-      await page.waitForTimeout(250); assert.equal((await state(page)).time, before.time);
-      await page.evaluate(() => window.__qaRestoreContext()); await ready(page);
-      await page.waitForTimeout(200); assert((await state(page)).time > before.time);
+      await page.waitForFunction(() => document.querySelector('canvas').getContext('webgl2').isContextLost()
+        && !window.__HOW__.metrics().running, undefined, { timeout: 15000, polling: 50 });
+      const before = await runtimeSnapshot(page);
+      // Deliberately observe the stopped state before restoring the context.
+      await page.waitForTimeout(250);
+      const lost = await runtimeSnapshot(page);
+      assert.equal(lost.running, false); assert.equal(lost.steps, before.steps); assert.equal(lost.time, before.time);
+      await page.evaluate(() => window.__qaRestoreContext());
+      await page.waitForFunction(() => !document.querySelector('canvas').getContext('webgl2').isContextLost()
+        && window.__HOW__.metrics().running, undefined, { timeout: 15000, polling: 50 });
+      await ready(page);
+      const restored = await waitForSteps(page, before);
+      return { before, lost, restored };
     });
     report.finalMetrics = await page.evaluate(() => window.__HOW__.metrics());
   }
@@ -228,20 +249,29 @@ try {
       assert(result.tools.every(t => t.width >= 44 && t.height >= 44));
       await shot(phone, name);
       if (!process.argv.includes('--capture-only')) {
-        const before = (await state(phone)).player;
+        const before = await runtimeSnapshot(phone);
         const box = await phone.getByTestId('joystick').boundingBox(); assert(box);
         const cdp = await context.newCDPSession(phone);
-        const x = box.x + box.width / 2, y = box.y + box.height / 2;
-        await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] });
-        await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + 30, y, id: 1 }] });
-        await phone.waitForTimeout(250);
-        await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-        const after = (await state(phone)).player; assert(Math.hypot(after.x - before.x, after.z - before.z) > 0.1);
-        await phone.waitForTimeout(150); assert.deepEqual((await state(phone)).player, after, 'Joystick release must stop movement');
-        await phone.locator('[data-tool="plant"]').tap(); await phone.getByTestId('plant-carrot').tap();
-        await shot(phone, `${name}-plant`);
-        await phone.getByTestId('pause').tap(); await phone.getByTestId('resume').tap();
-        await cdp.detach();
+        try {
+          const x = box.x + box.width / 2, y = box.y + box.height / 2;
+          try {
+            await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] });
+            await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + 30, y, id: 1 }] });
+            await waitForMovement(phone, before);
+          } finally { await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); }
+          const after = await runtimeSnapshot(phone);
+          assert(Math.hypot(after.player.x - before.player.x, after.player.z - before.player.z) > 0.1);
+          const released = await waitForSteps(phone, after);
+          assert.deepEqual(released.player, after.player, 'Joystick release must stop movement across actual simulation steps');
+          await phone.locator('[data-tool="plant"]').tap(); await waitForTool(phone, 'plant'); await phone.getByTestId('plant-carrot').tap();
+          await shot(phone, `${name}-plant`);
+          await phone.getByTestId('pause').tap(); await phone.getByRole('dialog').waitFor();
+          const paused = await runtimeSnapshot(phone); assert.equal(paused.running, false);
+          await phone.getByTestId('resume').tap(); await phone.getByRole('dialog').waitFor({ state: 'hidden' });
+          const resumed = await waitForSteps(phone, paused);
+          assert.deepEqual(resumed.player, paused.player);
+          result.input = { before, after, released, paused, resumed };
+        } finally { await cdp.detach(); }
       }
       return result;
     });
