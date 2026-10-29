@@ -1,0 +1,43 @@
+{
+  "url": "http://127.0.0.1:5173/?qa=1",
+  "cases": [
+    {
+      "name": "mobile-landscape-build submenu fits its viewport",
+      "result": "pass"
+    }
+  ],
+  "screenshots": [
+    {
+      "name": "mobile-landscape-build",
+      "path": "../screenshots/mobile-landscape-build.png",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "state": {
+        "time": 0.46000000000000013,
+        "seed": 20261029
+      },
+      "metrics": {
+        "drawCalls": 681,
+        "triangles": 77010,
+        "geometries": 10,
+        "textures": 5,
+        "resources": {
+          "geometries": 7,
+          "materials": 55
+        },
+        "interactions": 37,
+        "visualUpdates": 0,
+        "frames": 21,
+        "destroyed": false,
+        "renderer": "WebKit WebGL",
+        "running": false,
+        "steps": 23,
+        "saveStatus": "进度自动保存在这台设备上"
+      }
+    }
+  ],
+  "errors": [],
+  "ok": true
+}

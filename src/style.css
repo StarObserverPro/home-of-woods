@@ -1,0 +1,10 @@
+:root { color-scheme: light; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #dce8c8; }
+* { box-sizing: border-box; }
+html, body, #game, #hud { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+body { position: fixed; inset: 0; overscroll-behavior: none; }
+#game, #hud { position: absolute; inset: 0; }
+#hud { pointer-events: none; }
+.game-canvas { display: block; width: 100%; height: 100%; outline: none; touch-action: none; }
+.startup-error { position: absolute; inset: 0; display: flex; justify-content: center; align-items: center; flex-direction: column; padding: 30px; text-align: center; color: #324d39; }
+.startup-error p { max-width: 32em; line-height: 1.8; }
+.startup-error button { font: inherit; border: 0; border-radius: 18px; padding: 16px 30px; background: #f7efd9; color: #324d39; cursor: pointer; }

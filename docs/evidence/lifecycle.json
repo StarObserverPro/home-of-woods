@@ -1,0 +1,171 @@
+{
+  "url": "http://127.0.0.1:5173/?qa=1",
+  "cases": [
+    {
+      "name": "warmed preview and same-state reload resources converge",
+      "result": "pass",
+      "detail": {
+        "before": {
+          "drawCalls": 648,
+          "triangles": 67748,
+          "geometries": 8,
+          "textures": 5,
+          "resources": {
+            "geometries": 8,
+            "materials": 58
+          },
+          "interactions": 37,
+          "visualUpdates": 0,
+          "frames": 9,
+          "destroyed": false,
+          "renderer": "WebKit WebGL",
+          "running": false,
+          "steps": 9,
+          "saveStatus": "进度自动保存在这台设备上"
+        },
+        "after": {
+          "drawCalls": 648,
+          "triangles": 67748,
+          "geometries": 8,
+          "textures": 5,
+          "resources": {
+            "geometries": 8,
+            "materials": 58
+          },
+          "interactions": 37,
+          "visualUpdates": 0,
+          "frames": 15,
+          "destroyed": false,
+          "renderer": "WebKit WebGL",
+          "running": false,
+          "steps": 9,
+          "saveStatus": "进度自动保存在这台设备上"
+        },
+        "cyclesAfterWarmup": 6
+      }
+    },
+    {
+      "name": "destroy is idempotent and removes the canvas, UI and runtime",
+      "result": "pass",
+      "detail": {
+        "before": {
+          "drawCalls": 648,
+          "triangles": 67748,
+          "geometries": 0,
+          "textures": 1,
+          "resources": {
+            "geometries": 0,
+            "materials": 0
+          },
+          "interactions": 0,
+          "visualUpdates": 0,
+          "frames": 16,
+          "destroyed": true,
+          "renderer": null,
+          "running": false,
+          "steps": 9,
+          "saveStatus": "进度已保存在这台设备上"
+        },
+        "after": {
+          "drawCalls": 648,
+          "triangles": 67748,
+          "geometries": 0,
+          "textures": 1,
+          "resources": {
+            "geometries": 0,
+            "materials": 0
+          },
+          "interactions": 0,
+          "visualUpdates": 0,
+          "frames": 16,
+          "destroyed": true,
+          "renderer": null,
+          "running": false,
+          "steps": 9,
+          "saveStatus": "进度已保存在这台设备上"
+        }
+      }
+    },
+    {
+      "name": "invalid local save is preserved after reload and gameplay",
+      "result": "pass",
+      "detail": {
+        "originalPreserved": true,
+        "status": "存档版本暂不支持，已保留原始数据。本次进度暂不覆盖旧存档"
+      }
+    },
+    {
+      "name": "mobile-build submenu fits its viewport",
+      "result": "pass"
+    },
+    {
+      "name": "mobile-landscape-build submenu fits its viewport",
+      "result": "pass"
+    }
+  ],
+  "screenshots": [
+    {
+      "name": "mobile-build",
+      "path": "../screenshots/mobile-build.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "state": {
+        "time": 0.4000000000000001,
+        "seed": 20261029
+      },
+      "metrics": {
+        "drawCalls": 499,
+        "triangles": 55668,
+        "geometries": 9,
+        "textures": 5,
+        "resources": {
+          "geometries": 7,
+          "materials": 55
+        },
+        "interactions": 37,
+        "visualUpdates": 0,
+        "frames": 18,
+        "destroyed": false,
+        "renderer": "WebKit WebGL",
+        "running": false,
+        "steps": 20,
+        "saveStatus": "进度自动保存在这台设备上"
+      }
+    },
+    {
+      "name": "mobile-landscape-build",
+      "path": "lifecycle-mobile-landscape-build.png",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "state": {
+        "time": 0.4000000000000001,
+        "seed": 20261029
+      },
+      "metrics": {
+        "drawCalls": 681,
+        "triangles": 77010,
+        "geometries": 10,
+        "textures": 5,
+        "resources": {
+          "geometries": 7,
+          "materials": 55
+        },
+        "interactions": 37,
+        "visualUpdates": 0,
+        "frames": 17,
+        "destroyed": false,
+        "renderer": "WebKit WebGL",
+        "running": false,
+        "steps": 20,
+        "saveStatus": "进度自动保存在这台设备上"
+      },
+      "note": "Recorded before the final landscape context-panel relocation; final layout is in landscape-build.json."
+    }
+  ],
+  "errors": [],
+  "ok": true
+}

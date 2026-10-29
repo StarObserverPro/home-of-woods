@@ -1,0 +1,28 @@
+{
+  "url": "http://127.0.0.1:4173/",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "errors": [],
+  "failedRequests": [],
+  "ok": true,
+  "startup": {
+    "debugHooks": "undefined",
+    "readinessHook": "undefined",
+    "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "contextLost": false,
+    "width": 1280
+  },
+  "worldMovement": {
+    "changedPixels": 102935,
+    "checkedPixels": 204800,
+    "fraction": 0.5026123046875,
+    "region": {
+      "x": 320,
+      "y": 200,
+      "width": 640,
+      "height": 320
+    }
+  }
+}

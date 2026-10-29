@@ -1,0 +1,44 @@
+{
+  "source": "desktop-home.state.json from the passed end-to-end journey",
+  "setup": "Collision-aware movement to the front-left of the earned cabin while presentation is frozen; inventory, progress and buildings unchanged.",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "dpr": 1,
+  "seed": 20261029,
+  "time": 12.319999999999826,
+  "statePath": "home-overview.state.json",
+  "camera": {
+    "target": {
+      "x": 3,
+      "y": 0.3,
+      "z": -1.6
+    },
+    "offset": {
+      "x": 18,
+      "y": 24,
+      "z": 24
+    },
+    "zoom": 1
+  },
+  "metrics": {
+    "drawCalls": 674,
+    "triangles": 82380,
+    "geometries": 9,
+    "textures": 5,
+    "resources": {
+      "geometries": 7,
+      "materials": 54
+    },
+    "interactions": 36,
+    "visualUpdates": 0,
+    "frames": 19,
+    "destroyed": false,
+    "renderer": "WebKit WebGL",
+    "running": false,
+    "steps": 12,
+    "saveStatus": "进度自动保存在这台设备上"
+  },
+  "errors": []
+}

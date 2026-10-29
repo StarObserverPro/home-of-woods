@@ -1,0 +1,338 @@
+{
+  "schemaVersion": 1,
+  "seed": 20261029,
+  "time": 12.039999999999832,
+  "revision": 722,
+  "player": {
+    "x": 2.9179085574613475,
+    "z": -3.5779087834816714,
+    "facing": 2.949503202048728
+  },
+  "inventory": {
+    "wood": 12,
+    "seeds": 9,
+    "saplings": 5,
+    "carrots": 3
+  },
+  "trees": [
+    {
+      "id": "tree-start-4",
+      "x": -6,
+      "z": 3,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 2
+    },
+    {
+      "id": "tree-start-5",
+      "x": -4,
+      "z": 6,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 1
+    },
+    {
+      "id": "tree-start-6",
+      "x": 1,
+      "z": 8,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 2
+    },
+    {
+      "id": "tree-start-7",
+      "x": -11,
+      "z": -7,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 1
+    },
+    {
+      "id": "tree-start-8",
+      "x": -8,
+      "z": -8,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 2
+    },
+    {
+      "id": "tree-start-9",
+      "x": -5,
+      "z": -9,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 1
+    },
+    {
+      "id": "tree-start-10",
+      "x": -2,
+      "z": -10,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 2
+    },
+    {
+      "id": "tree-start-11",
+      "x": 2,
+      "z": -10,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 0
+    },
+    {
+      "id": "tree-start-12",
+      "x": 6,
+      "z": -9,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 2
+    },
+    {
+      "id": "tree-start-13",
+      "x": 10,
+      "z": -8,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 0
+    },
+    {
+      "id": "tree-start-14",
+      "x": -13,
+      "z": -4,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 0
+    },
+    {
+      "id": "tree-start-15",
+      "x": -10,
+      "z": -3,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 0
+    },
+    {
+      "id": "tree-start-16",
+      "x": -7,
+      "z": -5,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 1
+    },
+    {
+      "id": "tree-start-17",
+      "x": -4,
+      "z": -6,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 1
+    },
+    {
+      "id": "tree-start-18",
+      "x": 1,
+      "z": -7,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 1
+    },
+    {
+      "id": "tree-start-19",
+      "x": 9,
+      "z": -4,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 1
+    },
+    {
+      "id": "tree-start-20",
+      "x": 12,
+      "z": -3,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 0
+    },
+    {
+      "id": "tree-start-21",
+      "x": -13,
+      "z": 1,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 1
+    },
+    {
+      "id": "tree-start-22",
+      "x": 11,
+      "z": 1,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 1
+    },
+    {
+      "id": "tree-start-23",
+      "x": 13,
+      "z": 4,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 0
+    },
+    {
+      "id": "tree-start-24",
+      "x": 9,
+      "z": 6,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 1
+    },
+    {
+      "id": "tree-start-25",
+      "x": 12,
+      "z": 8,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 2
+    },
+    {
+      "id": "tree-start-26",
+      "x": -12,
+      "z": 8,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 2
+    },
+    {
+      "id": "tree-start-27",
+      "x": -9,
+      "z": 9,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 2
+    },
+    {
+      "id": "tree-start-28",
+      "x": -6,
+      "z": 10,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 2
+    },
+    {
+      "id": "tree-start-29",
+      "x": -2,
+      "z": 10,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 2
+    },
+    {
+      "id": "tree-start-30",
+      "x": 3,
+      "z": 10,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 0
+    },
+    {
+      "id": "tree-start-31",
+      "x": 6,
+      "z": 9,
+      "age": 90,
+      "stage": "mature",
+      "hp": 3,
+      "variant": 2
+    },
+    {
+      "id": "tree-1",
+      "x": -1,
+      "z": -4,
+      "stage": "sapling",
+      "age": 3.2000000000000024,
+      "hp": 3,
+      "variant": 0
+    }
+  ],
+  "plots": [
+    {
+      "id": "plot-start-1",
+      "x": 3,
+      "z": 3,
+      "crop": "carrot",
+      "watered": true,
+      "growth": 1.5000000000000009
+    },
+    {
+      "id": "plot-start-2",
+      "x": 4,
+      "z": 3,
+      "crop": "carrot",
+      "watered": true,
+      "growth": 24.039999999999743
+    },
+    {
+      "id": "plot-start-3",
+      "x": 5,
+      "z": 3,
+      "crop": "carrot",
+      "watered": false,
+      "growth": 0
+    },
+    {
+      "id": "plot-start-4",
+      "x": 3,
+      "z": 4,
+      "crop": null,
+      "watered": false,
+      "growth": 0
+    },
+    {
+      "id": "plot-start-5",
+      "x": 4,
+      "z": 4,
+      "crop": null,
+      "watered": false,
+      "growth": 0
+    },
+    {
+      "id": "plot-start-6",
+      "x": 5,
+      "z": 4,
+      "crop": null,
+      "watered": false,
+      "growth": 0
+    }
+  ],
+  "buildings": [],
+  "progress": {
+    "chopped": 3,
+    "planted": 1,
+    "harvested": 1,
+    "built": 0
+  },
+  "nextId": 2
+}
