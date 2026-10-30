@@ -1,0 +1,11 @@
+{
+  "file": "evidence/characters/forestry.webm",
+  "bytes": 1406309,
+  "sha256": "873b6f12f7b94b78013adf829bf9670de141ae655698965a889cdf121f94e613",
+  "width": 1280,
+  "height": 720,
+  "blocks": 202,
+  "timestampSpanSeconds": 19.811,
+  "container": "WebM",
+  "decoder": "Browser video metadata decoded 1280x720 without a media error; frame-by-frame exported decode not run"
+}

@@ -1,0 +1,13 @@
+{
+  "date": "2026-10-30",
+  "method": "Manually transcribed from read-only #stats DOM inspection after three UI-triggered unload/reenter cycles; not a fabricated test fixture",
+  "viewport": {"width":1440,"height":900},
+  "stockAfterThreeCycles":32,
+  "canvasCountAfterThreeCycles":1,
+  "cycles": [
+    {"frames":210,"resources":{"disposed":true,"extras":0,"geometries":0,"materials":0},"gpu":{"geometries":0,"textures":1},"destroyed":true,"contextLost":true,"loop":{"destroyed":true,"executing":false,"paused":true,"running":false,"scheduled":false}},
+    {"frames":411,"resources":{"disposed":true,"extras":0,"geometries":0,"materials":0},"gpu":{"geometries":0,"textures":1},"destroyed":true,"contextLost":true,"loop":{"destroyed":true,"executing":false,"paused":true,"running":false,"scheduled":false}},
+    {"frames":631,"resources":{"disposed":true,"extras":0,"geometries":0,"materials":0},"gpu":{"geometries":0,"textures":1},"destroyed":true,"contextLost":true,"loop":{"destroyed":true,"executing":false,"paused":true,"running":false,"scheduled":false}}
+  ],
+  "note":"Renderer memory accounting retained one texture after dispose/forced context loss in all three cycles; owner allocations and geometry count returned to zero, and the retained counter did not grow. Do not report GPU texture counter zero."
+}

@@ -1,0 +1,9 @@
+{
+  "url": "http://127.0.0.1:4203/?inspect=1",
+  "scripts": [
+    "http://127.0.0.1:4203/assets/index-Bub_QitQ.js"
+  ],
+  "consoleErrors": [],
+  "warehouseText": "林间所得，慢慢积攒\n仓库\n\n1 类物品 · 合计 3 份\n\n×\n全部\n木料\n林产\n待识别\n枝杈\n普通\n3份\n蘑菇\n普通\n0份\n原木\n普通\n0份\n枝杈\n普通 · 库存 3 份\n\n从树下拾起的小型枝料，和建筑原木分别保管。\n\n轻修缮\n小木作\n来源\n\n对应树木的树下落枝\n\n加工方向\n整理枝料\n后续开放\n\n可制成小木料 · 工作台\n\n配比与耗时待定。\n采集所得直接入库。按 B 或 Esc 收起，继续巡林。",
+  "expectedOrdinaryBranches": 3
+}

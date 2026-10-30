@@ -1,0 +1,73 @@
+{
+  "runtimeFingerprint": "6584b29ca3de1674fb4e91bf6e62e7f54a1096965fe8f7f7b59da70690cc644f",
+  "files": [
+    {
+      "file": "index.html",
+      "bytes": 542,
+      "sha256": "b9ce6c859a80f1431e347671b42144c77727cbae4a291ddee5c16e70b8156a8c"
+    },
+    {
+      "file": "assets/index-C167UvB0.js",
+      "bytes": 1127396,
+      "sha256": "92462eb32051b3d93a08e3b4021cf5302c780be733c604ffd18a9425e010b094"
+    },
+    {
+      "file": "assets/index-xdpj4h1i.css",
+      "bytes": 16743,
+      "sha256": "e8df59634d7b4a3c0d242a4015b2d7d37ee121481563b6cba8745dc341b1625e"
+    },
+    {
+      "file": "assets/gathering/branches.glb",
+      "bytes": 9536,
+      "sha256": "a7d7b19bddad0a0dd8d4a9001d721da1f738267e90ddc27457fad0da62706692"
+    },
+    {
+      "file": "assets/gathering/mushrooms.glb",
+      "bytes": 15272,
+      "sha256": "6d0d3b01f7a33a5b7dcf8ab52829ce04fa0ad3cdb6ee172f5865c540053422c0"
+    },
+    {
+      "file": "assets/licenses/Kenney-Nature-Kit-CC0.txt",
+      "bytes": 611,
+      "sha256": "cb96b75e3560ac78d7a53ce6f083f4cdb5c53faea6141b62d63458dcfe1e4b9d"
+    },
+    {
+      "file": "assets/m0/broadleaf.glb",
+      "bytes": 56516,
+      "sha256": "e38f4f9f4c508fbb7ac2c9e713723c2d92561c13b2976823809934c311fb74f3"
+    },
+    {
+      "file": "assets/m0/cabin.glb",
+      "bytes": 360284,
+      "sha256": "d052c9c644c0a897d596e529f9d91a6e576d50be6d40443468f7c322ec702471"
+    },
+    {
+      "file": "assets/m0/pine.glb",
+      "bytes": 86536,
+      "sha256": "7ee8448870b8b0d5fdc570ad489b2721f1c64d31f3328123b51f59056cfc9008"
+    },
+    {
+      "file": "assets/m0/ranger.glb",
+      "bytes": 122776,
+      "sha256": "337909639f918add22a930f0ed2c8b0cf2f5000bdedc09579a9966c3b3ff9e97"
+    },
+    {
+      "file": "assets/m0/tent.glb",
+      "bytes": 78128,
+      "sha256": "d5979b1dce150d6fae86d3af9476ecc53f6ac6a68dddb90a428dde4359e02ebc"
+    },
+    {
+      "file": "assets/manifest.json",
+      "bytes": 15081,
+      "sha256": "d9fc048da2148fd4de08f4a88d2f306b744eb6b6ad304fcc993eb5d2b1e5686a"
+    },
+    {
+      "file": "third-party-notices.txt",
+      "bytes": 4657,
+      "sha256": "620f40a84371570c2ea1fa34cfce71434dfbc31cd36d078c7b51b34adb4babb4"
+    }
+  ],
+  "note": "Exact frozen source retained separately while authorized character integration modifies shared workspace. This build contains warehouse/tree resources with the original ranger.",
+  "sourceArchive": "verified-source.zip",
+  "buildArchive": "verified-build.zip"
+}

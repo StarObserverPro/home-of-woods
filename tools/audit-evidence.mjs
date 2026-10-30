@@ -1,20 +1,24 @@
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
 const root='evidence/r4/';
 const read=name=>JSON.parse(fs.readFileSync(root+name,'utf8'));
 const captureFreeze=read('source-freeze.json');
 const freeze=JSON.parse(fs.readFileSync('evidence/integration/source-freeze.json','utf8'));
 const bridge=JSON.parse(fs.readFileSync('evidence/integration/capture-bridge.json','utf8'));
 const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
+// The R4/integration receipts belong to their immutable commit. New feature evidence is separate.
+const historicalRevision='4ed0c0f4d047540fb50095ef11bf4cc4fc042529';
+const historicalSource=file=>execFileSync('git',['show',`${historicalRevision}:${file}`],{maxBuffer:4*1024*1024});
 assert.equal(sha(JSON.stringify(freeze.files)),freeze.runtimeFingerprint);
 assert.equal(bridge.captureRuntimeFingerprint,captureFreeze.runtimeFingerprint);
 assert.equal(bridge.integratedRuntimeFingerprint,freeze.runtimeFingerprint);
-for(const f of freeze.files)assert.equal(sha(fs.readFileSync(f.file)),f.sha256,`frozen runtime changed: ${f.file}`);
+for(const f of freeze.files)assert.equal(sha(historicalSource(f.file)),f.sha256,`historical runtime changed: ${f.file}`);
 for(const before of captureFreeze.files){
  const change=bridge.changes.find(c=>c.file===before.file);
- if(change){assert.equal(change.beforeSha256,before.sha256);assert.equal(sha(fs.readFileSync(before.file)),change.afterSha256);}
- else assert.equal(sha(fs.readFileSync(before.file)),before.sha256,`undocumented capture difference: ${before.file}`);
+ if(change){assert.equal(change.beforeSha256,before.sha256);assert.equal(sha(historicalSource(before.file)),change.afterSha256);}
+ else assert.equal(sha(historicalSource(before.file)),before.sha256,`undocumented historical capture difference: ${before.file}`);
 }
 const receipt=read('REVIEW_MANIFEST.json');
 for(const f of receipt.files.filter(f=>f.file.startsWith(root)))assert.equal(sha(fs.readFileSync(f.file)),f.sha256,`historical evidence changed: ${f.file}`);
@@ -86,4 +90,4 @@ assert.equal(currentPhone.layout.width,390);assert.equal(currentPhone.layout.hei
 assert.ok(Math.hypot(currentPhone.after.current.player.x-currentPhone.before.current.player.x,currentPhone.after.current.player.z-currentPhone.before.current.player.z)>.2);
 assert.notEqual(currentPhone.before.current.yaw,currentPhone.after.current.yaw);assert.equal(currentPhone.after.current.routeNodes,0);
 for(const b of currentPhone.layout.buttons)assert.ok(b.rect.width>=43.99&&b.rect.height>=43.99,`small integrated product target: ${b.name}`);
-console.log(JSON.stringify({currentRuntimeFingerprint:freeze.runtimeFingerprint,captureRuntimeFingerprint:captureFreeze.runtimeFingerprint,captureDifferences:bridge.changes.length,captureCycles:5,currentCycles:5,videos:videos.map(v=>({file:v.file,frames:v.decodedFrames,seconds:v.decodedSeconds})),result:'passed',mode:'read-only'}));
+console.log(JSON.stringify({historicalRevision,integrationRuntimeFingerprint:freeze.runtimeFingerprint,captureRuntimeFingerprint:captureFreeze.runtimeFingerprint,captureDifferences:bridge.changes.length,captureCycles:5,integrationCycles:5,videos:videos.map(v=>({file:v.file,frames:v.decodedFrames,seconds:v.decodedSeconds})),result:'passed',mode:'read-only historical; current gathering checked separately'}));

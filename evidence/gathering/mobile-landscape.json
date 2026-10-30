@@ -1,0 +1,259 @@
+{
+  "current": {
+    "current": {
+      "resources": {
+        "geometries": 35,
+        "materials": 9,
+        "extras": 178,
+        "disposed": false
+      },
+      "drawCalls": 303,
+      "triangles": 361392,
+      "gpu": {
+        "geometries": 56,
+        "textures": 8
+      },
+      "zoom": 0.8967999999999999,
+      "yaw": 0.21999999999999997,
+      "elevation": 0.24,
+      "canvas": {
+        "width": 844,
+        "height": 390
+      },
+      "treeCount": 580,
+      "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "managedTrees": 151,
+      "gatheringHits": 4,
+      "environment": {
+        "meshes": 7,
+        "geometryTriangles": 10260,
+        "geometries": 7,
+        "materials": 2,
+        "environmentMap": true,
+        "pmremSize": 128,
+        "visualTime": 15.849099999999956,
+        "disposed": false
+      },
+      "river": {
+        "materials": 1,
+        "additionalGeometry": 0,
+        "additionalTextures": 0,
+        "visualTime": 15.849099999999956,
+        "disposed": false
+      },
+      "destroyed": false,
+      "contextLost": false,
+      "loop": {
+        "paused": false,
+        "destroyed": false,
+        "scheduled": false,
+        "executing": true,
+        "running": true,
+        "frames": 234
+      },
+      "samples": 234,
+      "frameMsP50": 1015.6999999999971,
+      "frameMsP95": 1015.9000000000087,
+      "seed": 104729,
+      "routeNodes": 0,
+      "player": {
+        "x": -29.81433578312883,
+        "z": 4.6074090178312215,
+        "facing": 0.5291405339119468,
+        "moving": false,
+        "y": 21.5
+      },
+      "gameTime": 15.8333333333337,
+      "forestry": {
+        "wood": 0,
+        "points": {
+          "year": 1,
+          "available": 24,
+          "used": 0,
+          "reserved": 0
+        },
+        "active": null,
+        "selectedTree": null
+      },
+      "gathering": {
+        "inventory": [
+          {
+            "itemId": "branch",
+            "name": "枝杈",
+            "icon": "枝",
+            "quantity": 3
+          },
+          {
+            "itemId": "mushroom",
+            "name": "蘑菇",
+            "icon": "菇",
+            "quantity": 2
+          }
+        ],
+        "action": {
+          "actionId": "gather-2",
+          "actorId": "player",
+          "sourceId": "gather.home.mushrooms",
+          "motionTag": "gather.pluck",
+          "targetAnchor": {
+            "x": -29,
+            "y": 21.5,
+            "z": 6
+          },
+          "phase": "completed",
+          "progress": 1
+        },
+        "selectedTarget": {
+          "id": "gather.home.mushrooms",
+          "title": "蘑菇簇",
+          "tag": "林间物产",
+          "detail": "草叶间长着一小簇蘑菇，走近后可以采下。",
+          "status": "已经采空",
+          "distance": 1.6132118308832992,
+          "reward": "2 份蘑菇",
+          "reason": "暂时没有可采的物产，继续去林间走走吧。",
+          "actions": [
+            {
+              "id": "gather",
+              "label": "采集",
+              "enabled": false
+            }
+          ]
+        }
+      },
+      "gatheringSources": {
+        "gather.home.branches": {
+          "remaining": 0,
+          "version": 1,
+          "lastPeriod": null,
+          "depletedAt": 7.599999999999978
+        },
+        "gather.home.mushrooms": {
+          "remaining": 0,
+          "version": 1,
+          "lastPeriod": null,
+          "depletedAt": 13.616666666666923
+        },
+        "gather.trail.branches": {
+          "remaining": 1,
+          "version": 0,
+          "lastPeriod": null,
+          "depletedAt": null
+        },
+        "gather.trail.mushrooms": {
+          "remaining": 1,
+          "version": 0,
+          "lastPeriod": null,
+          "depletedAt": null
+        }
+      }
+    },
+    "audit": []
+  },
+  "layout": {
+    "buttons": [
+      {
+        "name": "暂停",
+        "rect": {
+          "height": 46,
+          "width": 46,
+          "x": 782,
+          "y": 12
+        }
+      },
+      {
+        "name": "镜头左转",
+        "rect": {
+          "height": 44,
+          "width": 44,
+          "x": 607,
+          "y": 334.3999938964844
+        }
+      },
+      {
+        "name": "镜头右转",
+        "rect": {
+          "height": 44,
+          "width": 44,
+          "x": 651,
+          "y": 334.3999938964844
+        }
+      },
+      {
+        "name": "缩小",
+        "rect": {
+          "height": 44,
+          "width": 44,
+          "x": 695,
+          "y": 334.3999938964844
+        }
+      },
+      {
+        "name": "放大",
+        "rect": {
+          "height": 44,
+          "width": 44,
+          "x": 739,
+          "y": 334.3999938964844
+        }
+      },
+      {
+        "name": "复位镜头",
+        "rect": {
+          "height": 44,
+          "width": 44,
+          "x": 783,
+          "y": 334.3999938964844
+        }
+      },
+      {
+        "name": "漫步",
+        "rect": {
+          "height": 44,
+          "width": 48,
+          "x": 440,
+          "y": 334.3999938964844
+        }
+      },
+      {
+        "name": "路线",
+        "rect": {
+          "height": 44,
+          "width": 48,
+          "x": 491,
+          "y": 334.3999938964844
+        }
+      },
+      {
+        "name": "操作",
+        "rect": {
+          "height": 44,
+          "width": 48,
+          "x": 542,
+          "y": 334.3999938964844
+        }
+      },
+      {
+        "name": "关闭目标详情",
+        "rect": {
+          "height": 44,
+          "width": 44,
+          "x": 758.7999877929688,
+          "y": 78
+        }
+      },
+      {
+        "name": "采集",
+        "rect": {
+          "height": 46,
+          "width": 98,
+          "x": 559.7999877929688,
+          "y": 275.95001220703125
+        }
+      }
+    ],
+    "height": 390,
+    "scrollWidth": 844,
+    "width": 844
+  }
+}

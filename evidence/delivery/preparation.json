@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-30",
+  "scope": "Approved batch delivery; documentation synchronization after R5 visual review; runtime unchanged",
+  "reviewedFingerprint": "17315366dbd79622c11729e9d72f3c382e74ad5d4a995debd257ebb8c62687ad",
+  "deliveryFingerprint": "09c9786cd4cdf3f026960e00206a2ebfdad38fef1758c282bd5673f60f174377",
+  "reviewedFreezeSha256": "7e2ac902b797d31b12ca9d0b8807acde5d9f8e26f3421d1f24dace4509b975b5",
+  "reviewedArchiveSha256": "75d4fe7db615f9dec4814a1f5c9b4a3df2d4a0fb38000eaad9dc89f7b5b1b7b8",
+  "checkLogSha256": "7ea7444c835f7b8e09cb13b1a366cf1000a73845c298fb62ab5fd5789e9cd1a2",
+  "sandboxLogSha256": "45d1d17d2a9504c5bb990eca501f7c4d6bee2858f7178e291af58452690b2aac",
+  "changes": [
+    {
+      "file": "README.md",
+      "beforeSha256": "3cd1a5387e66b801e11b0f705151f4763ffdba2d3eafb32f8560c838a2add3fc",
+      "afterSha256": "cd5f702083a6bcb682976947cd3dc04a842355730344475345cf11cf60794ce3"
+    },
+    {
+      "file": "docs/GAME_DESIGN.md",
+      "beforeSha256": "a45b649183610b0d87726d86beaaf38905736029abbda012fd47a73225284960",
+      "afterSha256": "6cc9aca2a7f7d63e0eda5da86d80e32928ab93035d554b1c4e2fb68e33181273"
+    },
+    {
+      "file": "docs/MILESTONES.md",
+      "beforeSha256": "4740fcf85246e3a0e8eb1f6fc38a019ede1e509e044d26a7d882e6968141d265",
+      "afterSha256": "d4a598ed2d0cf4b82f52f5eb105b7839ada94638bdc0e5efda0dfc53796fc336"
+    },
+    {
+      "file": "docs/scopes/scene-r5-integration.md",
+      "beforeSha256": "54bf78d0091ec6dd56ada153f93ecdf8f6f989f9481875cd6769d6e88654ae63",
+      "afterSha256": "48217f4bbea29180af49042f411ff843b17288c973df4f4d3d589adf74b42596"
+    },
+    {
+      "file": "evidence/scene-r5/README.md",
+      "beforeSha256": "7389ec91fa7f0239cb368e75fc85834fb0ed48f5f93076fccb227b77f37cf1b8",
+      "afterSha256": "1c46f437ab103a0ec8c9225a530fa7744a4fec95b62f4d49409ab3f4b1898cb0"
+    }
+  ]
+}

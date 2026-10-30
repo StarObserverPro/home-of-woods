@@ -1,0 +1,146 @@
+TAP version 13
+# (node:17044) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: registry rejects duplicate identities, bad references/strategies/numbers/anchors and unreachable sources
+ok 1 - registry rejects duplicate identities, bad references/strategies/numbers/anchors and unreachable sources
+  ---
+  duration_ms: 67.7193
+  ...
+# Subtest: both kinds use the same reachable route, action, inventory candidate and atomic commit
+ok 2 - both kinds use the same reachable route, action, inventory candidate and atomic commit
+  ---
+  duration_ms: 11875.5718
+  ...
+# Subtest: candidate creation does not mutate balances, stale inventory/source/action and replay are rejected
+ok 3 - candidate creation does not mutate balances, stale inventory/source/action and replay are rejected
+  ---
+  duration_ms: 30.321
+  ...
+# Subtest: movement, target change, cancellation, changed source and obstacles before completion do not award inventory
+ok 4 - movement, target change, cancellation, changed source and obstacles before completion do not award inventory
+  ---
+  duration_ms: 89.1549
+  ...
+# Subtest: one player action owner prevents simultaneous chopping/gathering
+ok 5 - one player action owner prevents simultaneous chopping/gathering
+  ---
+  duration_ms: 20.7702
+  ...
+# Subtest: action receiver can observe approaching, performing/progress, completed and cancelled without writing rewards
+ok 6 - action receiver can observe approaching, performing/progress, completed and cancelled without writing rewards
+  ---
+  duration_ms: 49.0045
+  ...
+# Subtest: unconfigured recovery, serialization and representation rebuild never replenish sources
+ok 7 - unconfigured recovery, serialization and representation rebuild never replenish sources
+  ---
+  duration_ms: 27.2561
+  ...
+# Subtest: period refill is monotonic, idempotent, capacity capped and independent from depletion wait
+ok 8 - period refill is monotonic, idempotent, capacity capped and independent from depletion wait
+  ---
+  duration_ms: 16.9585
+  ...
+# Subtest: depletion waits from the final unit, each point has an independent deadline, due restoration is once
+ok 9 - depletion waits from the final unit, each point has an independent deadline, due restoration is once
+  ---
+  duration_ms: 30.8221
+  ...
+# (node:27068) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: new items inherit their type uses without enumerating item IDs or changing a world save
+ok 10 - new items inherit their type uses without enumerating item IDs or changing a world save
+  ---
+  duration_ms: 377.3599
+  ...
+# Subtest: category, type, form, material and common-use references reject mismatches and structural-wood leakage
+ok 11 - category, type, form, material and common-use references reject mismatches and structural-wood leakage
+  ---
+  duration_ms: 3.13
+  ...
+# Subtest: warehouse category navigation comes from the registry, not a fixed UI enum
+ok 12 - warehouse category navigation comes from the registry, not a fixed UI enum
+  ---
+  duration_ms: 45.2036
+  ...
+# (node:22612) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: whole world roundtrip preserves paths, time, grades, quota and source identities
+ok 13 - whole world roundtrip preserves paths, time, grades, quota and source identities
+  ---
+  duration_ms: 169.9857
+  ...
+# Subtest: world serialization captures before asynchronous hashing, never mixes two resource states
+ok 14 - world serialization captures before asynchronous hashing, never mixes two resource states
+  ---
+  duration_ms: 49.5221
+  ...
+# Subtest: a pending collection resumes its frozen result and settles once through repeated reloads
+ok 15 - a pending collection resumes its frozen result and settles once through repeated reloads
+  ---
+  duration_ms: 150.7988
+  ...
+# Subtest: approaching actions and routes resume without replenishing their resource pool
+ok 16 - approaching actions and routes resume without replenishing their resource pool
+  ---
+  duration_ms: 733.4808
+  ...
+# Subtest: reserved chopping, committed falling, stump and new generation restore without another wood award
+ok 17 - reserved chopping, committed falling, stump and new generation restore without another wood award
+  ---
+  duration_ms: 108.1589
+  ...
+# Subtest: invalid structures, checksums and cross-slice contradictions protect the exact raw data
+ok 18 - invalid structures, checksums and cross-slice contradictions protect the exact raw data
+  ---
+  duration_ms: 226.0804
+  ...
+# Subtest: committed and uncommitted action markers cannot be interchanged to replay rewards
+ok 19 - committed and uncommitted action markers cannot be interchanged to replay rewards
+  ---
+  duration_ms: 108.9555
+  ...
+# Subtest: safe inventory migration stays writable in the whole-world envelope
+ok 20 - safe inventory migration stays writable in the whole-world envelope
+  ---
+  duration_ms: 80.143
+  ...
+# Subtest: legacy in-memory session upgrades inventory and frozen actions in one root commit
+ok 21 - legacy in-memory session upgrades inventory and frozen actions in one root commit
+  ---
+  duration_ms: 49.1189
+  ...
+# Subtest: automatic and manual saving preserve corrupt primary or backup until explicit valid-copy recovery
+ok 22 - automatic and manual saving preserve corrupt primary or backup until explicit valid-copy recovery
+  ---
+  duration_ms: 132.6452
+  ...
+# Subtest: two writers compare both records atomically; the loser cannot overwrite the winner or its backup
+ok 23 - two writers compare both records atomically; the loser cannot overwrite the winner or its backup
+  ---
+  duration_ms: 113.3528
+  ...
+# Subtest: storage failure preserves both records and read failure never becomes a writable new game
+ok 24 - storage failure preserves both records and read failure never becomes a writable new game
+  ---
+  duration_ms: 115.3346
+  ...
+# Subtest: invalid live state cannot overwrite a valid checkpoint and backups are immutable snapshots
+ok 25 - invalid live state cannot overwrite a valid checkpoint and backups are immutable snapshots
+  ---
+  duration_ms: 55.9178
+  ...
+# Subtest: sparse arrays and non-finite runtime values cannot serialize into a corrupt new checkpoint
+ok 26 - sparse arrays and non-finite runtime values cannot serialize into a corrupt new checkpoint
+  ---
+  duration_ms: 83.5801
+  ...
+1..26
+# tests 26
+# suites 0
+# pass 26
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13776.471

@@ -1,0 +1,82 @@
+{
+  "gameMenu": {
+    "buttons": [
+      {
+        "height": 44,
+        "name": "保存世界",
+        "width": 73.5999984741211
+      },
+      {
+        "height": 44,
+        "name": "重新读取",
+        "width": 73.5999984741211
+      },
+      {
+        "height": 44,
+        "name": "导出主档",
+        "width": 73.5999984741211
+      },
+      {
+        "height": 44,
+        "name": "导出备份",
+        "width": 73.5999984741211
+      },
+      {
+        "height": 44,
+        "name": "用有效副本恢复",
+        "width": 109.5999984741211
+      },
+      {
+        "height": 48,
+        "name": "回到山谷",
+        "width": 239.1999969482422
+      },
+      {
+        "height": 44,
+        "name": "复位镜头并继续",
+        "width": 77
+      }
+    ],
+    "dialog": {
+      "clientWidth": 299,
+      "height": 503.2000122070313,
+      "scrollWidth": 299,
+      "width": 316
+    },
+    "height": 535,
+    "scrollWidth": 356,
+    "width": 356
+  },
+  "protectionControls": {
+    "controls": [
+      {
+        "height": 44,
+        "name": "保存世界",
+        "width": 73.5999984741211
+      },
+      {
+        "height": 44,
+        "name": "重新读取",
+        "width": 73.5999984741211
+      },
+      {
+        "height": 44,
+        "name": "导出主档",
+        "width": 73.5999984741211
+      },
+      {
+        "height": 44,
+        "name": "导出备份",
+        "width": 73.5999984741211
+      },
+      {
+        "height": 44,
+        "name": "用有效副本恢复",
+        "width": 109.5999984741211
+      }
+    ],
+    "height": 720,
+    "scrollWidth": 1280,
+    "width": 1280
+  }
+}

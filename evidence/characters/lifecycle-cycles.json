@@ -1,0 +1,2374 @@
+{
+  "cycles": [
+    {
+      "current": {
+        "resources": {
+          "geometries": 36,
+          "materials": 10,
+          "extras": 165,
+          "disposed": false
+        },
+        "drawCalls": 248,
+        "triangles": 382048,
+        "gpu": {
+          "geometries": 35,
+          "textures": 12
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1280,
+          "height": 720
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "gatheringHits": 10,
+        "characters": {
+          "model": "KayKit R3",
+          "mode": "idle",
+          "inspection": null,
+          "stopFound": null,
+          "stopFraction": null,
+          "contactClearance": null,
+          "grip": null,
+          "planMs": 0,
+          "disposed": false
+        },
+        "gatheringPresentation": {
+          "sources": 10,
+          "patches": 38,
+          "batches": 4,
+          "hits": 10
+        },
+        "environment": {
+          "meshes": 7,
+          "geometryTriangles": 10260,
+          "geometries": 7,
+          "materials": 2,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 64.96169999999992,
+          "disposed": false
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 64.96169999999992,
+          "disposed": false
+        },
+        "destroyed": false,
+        "contextLost": false,
+        "loop": {
+          "paused": false,
+          "destroyed": false,
+          "scheduled": false,
+          "executing": true,
+          "running": true,
+          "frames": 2532
+        },
+        "samples": 360,
+        "frameMsP50": 33.29999999993015,
+        "frameMsP95": 50,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": -21.343319716799726,
+          "z": 28.162275942988078,
+          "facing": 2.284064062423966,
+          "moving": false,
+          "y": 17.60678487180794
+        },
+        "gameTime": 399.01666666663243,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": null
+        },
+        "gathering": {
+          "inventory": [
+            {
+              "itemId": "branch",
+              "name": "枝杈",
+              "icon": "枝",
+              "quantity": 0
+            },
+            {
+              "itemId": "mushroom",
+              "name": "蘑菇",
+              "icon": "菇",
+              "quantity": 0
+            }
+          ],
+          "action": null,
+          "selectedTarget": null
+        },
+        "gatheringSources": {
+          "gather.tree-slot-r3-hero-0.branches": {
+            "remaining": 0,
+            "version": 2,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-r3-hero-0:g1",
+            "hostAvailable": false
+          },
+          "gather.tree-slot-r3-hero-0.mushrooms": {
+            "remaining": 0,
+            "version": 2,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-r3-hero-0:g1",
+            "hostAvailable": false
+          },
+          "gather.tree-slot-16-9.branches": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-16-9:g0",
+            "hostAvailable": true
+          },
+          "gather.tree-slot-16-9.mushrooms": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-16-9:g0",
+            "hostAvailable": true
+          },
+          "gather.tree-slot-13-6.branches": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-13-6:g0",
+            "hostAvailable": true
+          },
+          "gather.tree-slot-13-6.mushrooms": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-13-6:g0",
+            "hostAvailable": true
+          },
+          "gather.tree-slot-17-11.branches": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-17-11:g0",
+            "hostAvailable": true
+          },
+          "gather.tree-slot-17-11.mushrooms": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-17-11:g0",
+            "hostAvailable": true
+          },
+          "gather.landmark-elder.branches": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "landmark-elder",
+            "hostAvailable": true
+          },
+          "gather.landmark-elder.mushrooms": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "landmark-elder",
+            "hostAvailable": true
+          }
+        },
+        "warehouse": {
+          "items": [
+            {
+              "itemId": "branch",
+              "name": "枝杈",
+              "icon": "枝",
+              "category": "wood",
+              "description": "从树下拾起的小型枝料，和建筑原木分别保管。",
+              "source": "对应树木的树下落枝",
+              "tags": [
+                "轻修缮",
+                "小木作"
+              ],
+              "quantity": 0,
+              "processing": [
+                {
+                  "id": "sort-branches",
+                  "name": "整理枝料",
+                  "outputs": [
+                    "小木料"
+                  ],
+                  "station": "工作台",
+                  "status": "后续开放",
+                  "parametersReady": false
+                }
+              ]
+            },
+            {
+              "itemId": "mushroom",
+              "name": "蘑菇",
+              "icon": "菇",
+              "category": "forest-produce",
+              "description": "从树种对应的树下蘑菇圈采得。",
+              "source": "松下、栎下的蘑菇圈",
+              "tags": [
+                "森林物产"
+              ],
+              "quantity": 0,
+              "processing": [
+                {
+                  "id": "dry-mushrooms",
+                  "name": "晾制蘑菇",
+                  "outputs": [
+                    "干蘑菇"
+                  ],
+                  "station": "晾晒设施",
+                  "status": "后续开放",
+                  "parametersReady": false
+                }
+              ]
+            },
+            {
+              "itemId": "wood",
+              "name": "原木",
+              "icon": "木",
+              "category": "wood",
+              "description": "合法采伐所得的原木，受年度体量额度约束。",
+              "source": "获准采伐的成熟经营树",
+              "tags": [
+                "建筑木材",
+                "限额采伐"
+              ],
+              "quantity": 5,
+              "processing": []
+            }
+          ],
+          "total": 5,
+          "occupiedKinds": 1
+        }
+      },
+      "audit": [
+        {
+          "resources": {
+            "geometries": 0,
+            "materials": 0,
+            "extras": 0,
+            "disposed": true
+          },
+          "drawCalls": 253,
+          "triangles": 379816,
+          "gpu": {
+            "geometries": 0,
+            "textures": 1
+          },
+          "zoom": 0.76,
+          "yaw": -0.13,
+          "elevation": 0.24,
+          "canvas": {
+            "width": 1280,
+            "height": 720
+          },
+          "treeCount": 580,
+          "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "managedTrees": 151,
+          "gatheringHits": 0,
+          "characters": {
+            "model": "KayKit R3",
+            "mode": "idle",
+            "inspection": null,
+            "stopFound": null,
+            "stopFraction": null,
+            "contactClearance": null,
+            "grip": null,
+            "planMs": 5.800000011920929,
+            "disposed": true
+          },
+          "gatheringPresentation": {
+            "sources": 10,
+            "patches": 38,
+            "batches": 4,
+            "hits": 0
+          },
+          "environment": {
+            "meshes": 0,
+            "geometryTriangles": 0,
+            "geometries": 0,
+            "materials": 0,
+            "environmentMap": true,
+            "pmremSize": 128,
+            "visualTime": 334.1271700000307,
+            "disposed": true
+          },
+          "river": {
+            "materials": 1,
+            "additionalGeometry": 0,
+            "additionalTextures": 0,
+            "visualTime": 334.1271700000307,
+            "disposed": true
+          },
+          "destroyed": true,
+          "contextLost": true,
+          "loop": {
+            "paused": true,
+            "destroyed": true,
+            "scheduled": false,
+            "executing": false,
+            "running": false,
+            "frames": 11188
+          },
+          "samples": 360,
+          "frameMsP50": 33.29999999998836,
+          "frameMsP95": 1015.5,
+          "seed": 104729,
+          "routeNodes": 0,
+          "player": {
+            "x": -21.343319716799726,
+            "z": 28.162275942988078,
+            "facing": 2.284064062423966,
+            "moving": false,
+            "y": 17.60678487180794
+          },
+          "gameTime": 334.0666666666915,
+          "forestry": {
+            "wood": 5,
+            "points": {
+              "year": 1,
+              "available": 19,
+              "used": 5,
+              "reserved": 0
+            },
+            "active": null,
+            "selectedTree": null
+          },
+          "gathering": {
+            "inventory": [
+              {
+                "itemId": "branch",
+                "name": "枝杈",
+                "icon": "枝",
+                "quantity": 0
+              },
+              {
+                "itemId": "mushroom",
+                "name": "蘑菇",
+                "icon": "菇",
+                "quantity": 0
+              }
+            ],
+            "action": null,
+            "selectedTarget": null
+          },
+          "gatheringSources": {
+            "gather.tree-slot-r3-hero-0.branches": {
+              "remaining": 0,
+              "version": 2,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-r3-hero-0:g1",
+              "hostAvailable": false
+            },
+            "gather.tree-slot-r3-hero-0.mushrooms": {
+              "remaining": 0,
+              "version": 2,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-r3-hero-0:g1",
+              "hostAvailable": false
+            },
+            "gather.tree-slot-16-9.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-16-9:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-16-9.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-16-9:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-13-6.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-13-6:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-13-6.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-13-6:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-17-11.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-17-11:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-17-11.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-17-11:g0",
+              "hostAvailable": true
+            },
+            "gather.landmark-elder.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "landmark-elder",
+              "hostAvailable": true
+            },
+            "gather.landmark-elder.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "landmark-elder",
+              "hostAvailable": true
+            }
+          },
+          "warehouse": {
+            "items": [
+              {
+                "itemId": "branch",
+                "name": "枝杈",
+                "icon": "枝",
+                "category": "wood",
+                "description": "从树下拾起的小型枝料，和建筑原木分别保管。",
+                "source": "对应树木的树下落枝",
+                "tags": [
+                  "轻修缮",
+                  "小木作"
+                ],
+                "quantity": 0,
+                "processing": [
+                  {
+                    "id": "sort-branches",
+                    "name": "整理枝料",
+                    "outputs": [
+                      "小木料"
+                    ],
+                    "station": "工作台",
+                    "status": "后续开放",
+                    "parametersReady": false
+                  }
+                ]
+              },
+              {
+                "itemId": "mushroom",
+                "name": "蘑菇",
+                "icon": "菇",
+                "category": "forest-produce",
+                "description": "从树种对应的树下蘑菇圈采得。",
+                "source": "松下、栎下的蘑菇圈",
+                "tags": [
+                  "森林物产"
+                ],
+                "quantity": 0,
+                "processing": [
+                  {
+                    "id": "dry-mushrooms",
+                    "name": "晾制蘑菇",
+                    "outputs": [
+                      "干蘑菇"
+                    ],
+                    "station": "晾晒设施",
+                    "status": "后续开放",
+                    "parametersReady": false
+                  }
+                ]
+              },
+              {
+                "itemId": "wood",
+                "name": "原木",
+                "icon": "木",
+                "category": "wood",
+                "description": "合法采伐所得的原木，受年度体量额度约束。",
+                "source": "获准采伐的成熟经营树",
+                "tags": [
+                  "建筑木材",
+                  "限额采伐"
+                ],
+                "quantity": 5,
+                "processing": []
+              }
+            ],
+            "total": 5,
+            "occupiedKinds": 1
+          }
+        }
+      ]
+    },
+    {
+      "current": {
+        "resources": {
+          "geometries": 36,
+          "materials": 10,
+          "extras": 165,
+          "disposed": false
+        },
+        "drawCalls": 248,
+        "triangles": 382048,
+        "gpu": {
+          "geometries": 33,
+          "textures": 12
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1280,
+          "height": 720
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "gatheringHits": 10,
+        "characters": {
+          "model": "KayKit R3",
+          "mode": "idle",
+          "inspection": null,
+          "stopFound": null,
+          "stopFraction": null,
+          "contactClearance": null,
+          "grip": null,
+          "planMs": 0,
+          "disposed": false
+        },
+        "gatheringPresentation": {
+          "sources": 10,
+          "patches": 38,
+          "batches": 4,
+          "hits": 10
+        },
+        "environment": {
+          "meshes": 7,
+          "geometryTriangles": 10260,
+          "geometries": 7,
+          "materials": 2,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 46.26079999999985,
+          "disposed": false
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 46.26079999999985,
+          "disposed": false
+        },
+        "destroyed": false,
+        "contextLost": false,
+        "loop": {
+          "paused": false,
+          "destroyed": false,
+          "scheduled": false,
+          "executing": true,
+          "running": true,
+          "frames": 1619
+        },
+        "samples": 360,
+        "frameMsP50": 33.29999999993015,
+        "frameMsP95": 49.89999999990687,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": -21.343319716799726,
+          "z": 28.162275942988078,
+          "facing": 2.284064062423966,
+          "moving": false,
+          "y": 17.60678487180794
+        },
+        "gameTime": 445.4666666665902,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": null
+        },
+        "gathering": {
+          "inventory": [
+            {
+              "itemId": "branch",
+              "name": "枝杈",
+              "icon": "枝",
+              "quantity": 0
+            },
+            {
+              "itemId": "mushroom",
+              "name": "蘑菇",
+              "icon": "菇",
+              "quantity": 0
+            }
+          ],
+          "action": null,
+          "selectedTarget": null
+        },
+        "gatheringSources": {
+          "gather.tree-slot-r3-hero-0.branches": {
+            "remaining": 0,
+            "version": 2,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-r3-hero-0:g1",
+            "hostAvailable": false
+          },
+          "gather.tree-slot-r3-hero-0.mushrooms": {
+            "remaining": 0,
+            "version": 2,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-r3-hero-0:g1",
+            "hostAvailable": false
+          },
+          "gather.tree-slot-16-9.branches": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-16-9:g0",
+            "hostAvailable": true
+          },
+          "gather.tree-slot-16-9.mushrooms": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-16-9:g0",
+            "hostAvailable": true
+          },
+          "gather.tree-slot-13-6.branches": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-13-6:g0",
+            "hostAvailable": true
+          },
+          "gather.tree-slot-13-6.mushrooms": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-13-6:g0",
+            "hostAvailable": true
+          },
+          "gather.tree-slot-17-11.branches": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-17-11:g0",
+            "hostAvailable": true
+          },
+          "gather.tree-slot-17-11.mushrooms": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-17-11:g0",
+            "hostAvailable": true
+          },
+          "gather.landmark-elder.branches": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "landmark-elder",
+            "hostAvailable": true
+          },
+          "gather.landmark-elder.mushrooms": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "landmark-elder",
+            "hostAvailable": true
+          }
+        },
+        "warehouse": {
+          "items": [
+            {
+              "itemId": "branch",
+              "name": "枝杈",
+              "icon": "枝",
+              "category": "wood",
+              "description": "从树下拾起的小型枝料，和建筑原木分别保管。",
+              "source": "对应树木的树下落枝",
+              "tags": [
+                "轻修缮",
+                "小木作"
+              ],
+              "quantity": 0,
+              "processing": [
+                {
+                  "id": "sort-branches",
+                  "name": "整理枝料",
+                  "outputs": [
+                    "小木料"
+                  ],
+                  "station": "工作台",
+                  "status": "后续开放",
+                  "parametersReady": false
+                }
+              ]
+            },
+            {
+              "itemId": "mushroom",
+              "name": "蘑菇",
+              "icon": "菇",
+              "category": "forest-produce",
+              "description": "从树种对应的树下蘑菇圈采得。",
+              "source": "松下、栎下的蘑菇圈",
+              "tags": [
+                "森林物产"
+              ],
+              "quantity": 0,
+              "processing": [
+                {
+                  "id": "dry-mushrooms",
+                  "name": "晾制蘑菇",
+                  "outputs": [
+                    "干蘑菇"
+                  ],
+                  "station": "晾晒设施",
+                  "status": "后续开放",
+                  "parametersReady": false
+                }
+              ]
+            },
+            {
+              "itemId": "wood",
+              "name": "原木",
+              "icon": "木",
+              "category": "wood",
+              "description": "合法采伐所得的原木，受年度体量额度约束。",
+              "source": "获准采伐的成熟经营树",
+              "tags": [
+                "建筑木材",
+                "限额采伐"
+              ],
+              "quantity": 5,
+              "processing": []
+            }
+          ],
+          "total": 5,
+          "occupiedKinds": 1
+        }
+      },
+      "audit": [
+        {
+          "resources": {
+            "geometries": 0,
+            "materials": 0,
+            "extras": 0,
+            "disposed": true
+          },
+          "drawCalls": 253,
+          "triangles": 379816,
+          "gpu": {
+            "geometries": 0,
+            "textures": 1
+          },
+          "zoom": 0.76,
+          "yaw": -0.13,
+          "elevation": 0.24,
+          "canvas": {
+            "width": 1280,
+            "height": 720
+          },
+          "treeCount": 580,
+          "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "managedTrees": 151,
+          "gatheringHits": 0,
+          "characters": {
+            "model": "KayKit R3",
+            "mode": "idle",
+            "inspection": null,
+            "stopFound": null,
+            "stopFraction": null,
+            "contactClearance": null,
+            "grip": null,
+            "planMs": 5.800000011920929,
+            "disposed": true
+          },
+          "gatheringPresentation": {
+            "sources": 10,
+            "patches": 38,
+            "batches": 4,
+            "hits": 0
+          },
+          "environment": {
+            "meshes": 0,
+            "geometryTriangles": 0,
+            "geometries": 0,
+            "materials": 0,
+            "environmentMap": true,
+            "pmremSize": 128,
+            "visualTime": 334.1271700000307,
+            "disposed": true
+          },
+          "river": {
+            "materials": 1,
+            "additionalGeometry": 0,
+            "additionalTextures": 0,
+            "visualTime": 334.1271700000307,
+            "disposed": true
+          },
+          "destroyed": true,
+          "contextLost": true,
+          "loop": {
+            "paused": true,
+            "destroyed": true,
+            "scheduled": false,
+            "executing": false,
+            "running": false,
+            "frames": 11188
+          },
+          "samples": 360,
+          "frameMsP50": 33.29999999998836,
+          "frameMsP95": 1015.5,
+          "seed": 104729,
+          "routeNodes": 0,
+          "player": {
+            "x": -21.343319716799726,
+            "z": 28.162275942988078,
+            "facing": 2.284064062423966,
+            "moving": false,
+            "y": 17.60678487180794
+          },
+          "gameTime": 334.0666666666915,
+          "forestry": {
+            "wood": 5,
+            "points": {
+              "year": 1,
+              "available": 19,
+              "used": 5,
+              "reserved": 0
+            },
+            "active": null,
+            "selectedTree": null
+          },
+          "gathering": {
+            "inventory": [
+              {
+                "itemId": "branch",
+                "name": "枝杈",
+                "icon": "枝",
+                "quantity": 0
+              },
+              {
+                "itemId": "mushroom",
+                "name": "蘑菇",
+                "icon": "菇",
+                "quantity": 0
+              }
+            ],
+            "action": null,
+            "selectedTarget": null
+          },
+          "gatheringSources": {
+            "gather.tree-slot-r3-hero-0.branches": {
+              "remaining": 0,
+              "version": 2,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-r3-hero-0:g1",
+              "hostAvailable": false
+            },
+            "gather.tree-slot-r3-hero-0.mushrooms": {
+              "remaining": 0,
+              "version": 2,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-r3-hero-0:g1",
+              "hostAvailable": false
+            },
+            "gather.tree-slot-16-9.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-16-9:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-16-9.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-16-9:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-13-6.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-13-6:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-13-6.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-13-6:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-17-11.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-17-11:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-17-11.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-17-11:g0",
+              "hostAvailable": true
+            },
+            "gather.landmark-elder.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "landmark-elder",
+              "hostAvailable": true
+            },
+            "gather.landmark-elder.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "landmark-elder",
+              "hostAvailable": true
+            }
+          },
+          "warehouse": {
+            "items": [
+              {
+                "itemId": "branch",
+                "name": "枝杈",
+                "icon": "枝",
+                "category": "wood",
+                "description": "从树下拾起的小型枝料，和建筑原木分别保管。",
+                "source": "对应树木的树下落枝",
+                "tags": [
+                  "轻修缮",
+                  "小木作"
+                ],
+                "quantity": 0,
+                "processing": [
+                  {
+                    "id": "sort-branches",
+                    "name": "整理枝料",
+                    "outputs": [
+                      "小木料"
+                    ],
+                    "station": "工作台",
+                    "status": "后续开放",
+                    "parametersReady": false
+                  }
+                ]
+              },
+              {
+                "itemId": "mushroom",
+                "name": "蘑菇",
+                "icon": "菇",
+                "category": "forest-produce",
+                "description": "从树种对应的树下蘑菇圈采得。",
+                "source": "松下、栎下的蘑菇圈",
+                "tags": [
+                  "森林物产"
+                ],
+                "quantity": 0,
+                "processing": [
+                  {
+                    "id": "dry-mushrooms",
+                    "name": "晾制蘑菇",
+                    "outputs": [
+                      "干蘑菇"
+                    ],
+                    "station": "晾晒设施",
+                    "status": "后续开放",
+                    "parametersReady": false
+                  }
+                ]
+              },
+              {
+                "itemId": "wood",
+                "name": "原木",
+                "icon": "木",
+                "category": "wood",
+                "description": "合法采伐所得的原木，受年度体量额度约束。",
+                "source": "获准采伐的成熟经营树",
+                "tags": [
+                  "建筑木材",
+                  "限额采伐"
+                ],
+                "quantity": 5,
+                "processing": []
+              }
+            ],
+            "total": 5,
+            "occupiedKinds": 1
+          }
+        },
+        {
+          "resources": {
+            "geometries": 0,
+            "materials": 0,
+            "extras": 0,
+            "disposed": true
+          },
+          "drawCalls": 248,
+          "triangles": 382048,
+          "gpu": {
+            "geometries": 0,
+            "textures": 1
+          },
+          "zoom": 0.76,
+          "yaw": -0.13,
+          "elevation": 0.24,
+          "canvas": {
+            "width": 1280,
+            "height": 720
+          },
+          "treeCount": 580,
+          "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "managedTrees": 151,
+          "gatheringHits": 0,
+          "characters": {
+            "model": "KayKit R3",
+            "mode": "idle",
+            "inspection": null,
+            "stopFound": null,
+            "stopFraction": null,
+            "contactClearance": null,
+            "grip": null,
+            "planMs": 0,
+            "disposed": true
+          },
+          "gatheringPresentation": {
+            "sources": 10,
+            "patches": 38,
+            "batches": 4,
+            "hits": 0
+          },
+          "environment": {
+            "meshes": 0,
+            "geometryTriangles": 0,
+            "geometries": 0,
+            "materials": 0,
+            "environmentMap": true,
+            "pmremSize": 128,
+            "visualTime": 65.16149999999983,
+            "disposed": true
+          },
+          "river": {
+            "materials": 1,
+            "additionalGeometry": 0,
+            "additionalTextures": 0,
+            "visualTime": 65.16149999999983,
+            "disposed": true
+          },
+          "destroyed": true,
+          "contextLost": true,
+          "loop": {
+            "paused": true,
+            "destroyed": true,
+            "scheduled": false,
+            "executing": false,
+            "running": false,
+            "frames": 2539
+          },
+          "samples": 360,
+          "frameMsP50": 33.29999999993015,
+          "frameMsP95": 50,
+          "seed": 104729,
+          "routeNodes": 0,
+          "player": {
+            "x": -21.343319716799726,
+            "z": 28.162275942988078,
+            "facing": 2.284064062423966,
+            "moving": false,
+            "y": 17.60678487180794
+          },
+          "gameTime": 399.21666666663225,
+          "forestry": {
+            "wood": 5,
+            "points": {
+              "year": 1,
+              "available": 19,
+              "used": 5,
+              "reserved": 0
+            },
+            "active": null,
+            "selectedTree": null
+          },
+          "gathering": {
+            "inventory": [
+              {
+                "itemId": "branch",
+                "name": "枝杈",
+                "icon": "枝",
+                "quantity": 0
+              },
+              {
+                "itemId": "mushroom",
+                "name": "蘑菇",
+                "icon": "菇",
+                "quantity": 0
+              }
+            ],
+            "action": null,
+            "selectedTarget": null
+          },
+          "gatheringSources": {
+            "gather.tree-slot-r3-hero-0.branches": {
+              "remaining": 0,
+              "version": 2,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-r3-hero-0:g1",
+              "hostAvailable": false
+            },
+            "gather.tree-slot-r3-hero-0.mushrooms": {
+              "remaining": 0,
+              "version": 2,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-r3-hero-0:g1",
+              "hostAvailable": false
+            },
+            "gather.tree-slot-16-9.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-16-9:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-16-9.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-16-9:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-13-6.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-13-6:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-13-6.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-13-6:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-17-11.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-17-11:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-17-11.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-17-11:g0",
+              "hostAvailable": true
+            },
+            "gather.landmark-elder.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "landmark-elder",
+              "hostAvailable": true
+            },
+            "gather.landmark-elder.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "landmark-elder",
+              "hostAvailable": true
+            }
+          },
+          "warehouse": {
+            "items": [
+              {
+                "itemId": "branch",
+                "name": "枝杈",
+                "icon": "枝",
+                "category": "wood",
+                "description": "从树下拾起的小型枝料，和建筑原木分别保管。",
+                "source": "对应树木的树下落枝",
+                "tags": [
+                  "轻修缮",
+                  "小木作"
+                ],
+                "quantity": 0,
+                "processing": [
+                  {
+                    "id": "sort-branches",
+                    "name": "整理枝料",
+                    "outputs": [
+                      "小木料"
+                    ],
+                    "station": "工作台",
+                    "status": "后续开放",
+                    "parametersReady": false
+                  }
+                ]
+              },
+              {
+                "itemId": "mushroom",
+                "name": "蘑菇",
+                "icon": "菇",
+                "category": "forest-produce",
+                "description": "从树种对应的树下蘑菇圈采得。",
+                "source": "松下、栎下的蘑菇圈",
+                "tags": [
+                  "森林物产"
+                ],
+                "quantity": 0,
+                "processing": [
+                  {
+                    "id": "dry-mushrooms",
+                    "name": "晾制蘑菇",
+                    "outputs": [
+                      "干蘑菇"
+                    ],
+                    "station": "晾晒设施",
+                    "status": "后续开放",
+                    "parametersReady": false
+                  }
+                ]
+              },
+              {
+                "itemId": "wood",
+                "name": "原木",
+                "icon": "木",
+                "category": "wood",
+                "description": "合法采伐所得的原木，受年度体量额度约束。",
+                "source": "获准采伐的成熟经营树",
+                "tags": [
+                  "建筑木材",
+                  "限额采伐"
+                ],
+                "quantity": 5,
+                "processing": []
+              }
+            ],
+            "total": 5,
+            "occupiedKinds": 1
+          }
+        }
+      ]
+    },
+    {
+      "current": {
+        "resources": {
+          "geometries": 36,
+          "materials": 10,
+          "extras": 165,
+          "disposed": false
+        },
+        "drawCalls": 248,
+        "triangles": 382048,
+        "gpu": {
+          "geometries": 33,
+          "textures": 12
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1280,
+          "height": 720
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "gatheringHits": 10,
+        "characters": {
+          "model": "KayKit R3",
+          "mode": "idle",
+          "inspection": null,
+          "stopFound": null,
+          "stopFraction": null,
+          "contactClearance": null,
+          "grip": null,
+          "planMs": 0,
+          "disposed": false
+        },
+        "gatheringPresentation": {
+          "sources": 10,
+          "patches": 38,
+          "batches": 4,
+          "hits": 10
+        },
+        "environment": {
+          "meshes": 7,
+          "geometryTriangles": 10260,
+          "geometries": 7,
+          "materials": 2,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 78.90249999999978,
+          "disposed": false
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 78.90249999999978,
+          "disposed": false
+        },
+        "destroyed": false,
+        "contextLost": false,
+        "loop": {
+          "paused": false,
+          "destroyed": false,
+          "scheduled": false,
+          "executing": true,
+          "running": true,
+          "frames": 2889
+        },
+        "samples": 360,
+        "frameMsP50": 33,
+        "frameMsP95": 33.5,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": -21.343319716799726,
+          "z": 28.162275942988078,
+          "facing": 2.284064062423966,
+          "moving": false,
+          "y": 17.60678487180794
+        },
+        "gameTime": 524.6499999998515,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": null
+        },
+        "gathering": {
+          "inventory": [
+            {
+              "itemId": "branch",
+              "name": "枝杈",
+              "icon": "枝",
+              "quantity": 0
+            },
+            {
+              "itemId": "mushroom",
+              "name": "蘑菇",
+              "icon": "菇",
+              "quantity": 0
+            }
+          ],
+          "action": null,
+          "selectedTarget": null
+        },
+        "gatheringSources": {
+          "gather.tree-slot-r3-hero-0.branches": {
+            "remaining": 0,
+            "version": 2,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-r3-hero-0:g1",
+            "hostAvailable": false
+          },
+          "gather.tree-slot-r3-hero-0.mushrooms": {
+            "remaining": 0,
+            "version": 2,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-r3-hero-0:g1",
+            "hostAvailable": false
+          },
+          "gather.tree-slot-16-9.branches": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-16-9:g0",
+            "hostAvailable": true
+          },
+          "gather.tree-slot-16-9.mushrooms": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-16-9:g0",
+            "hostAvailable": true
+          },
+          "gather.tree-slot-13-6.branches": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-13-6:g0",
+            "hostAvailable": true
+          },
+          "gather.tree-slot-13-6.mushrooms": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-13-6:g0",
+            "hostAvailable": true
+          },
+          "gather.tree-slot-17-11.branches": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-17-11:g0",
+            "hostAvailable": true
+          },
+          "gather.tree-slot-17-11.mushrooms": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "tree-slot-17-11:g0",
+            "hostAvailable": true
+          },
+          "gather.landmark-elder.branches": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "landmark-elder",
+            "hostAvailable": true
+          },
+          "gather.landmark-elder.mushrooms": {
+            "remaining": 1,
+            "version": 0,
+            "lastPeriod": null,
+            "depletedAt": null,
+            "hostIndividualId": "landmark-elder",
+            "hostAvailable": true
+          }
+        },
+        "warehouse": {
+          "items": [
+            {
+              "itemId": "branch",
+              "name": "枝杈",
+              "icon": "枝",
+              "category": "wood",
+              "description": "从树下拾起的小型枝料，和建筑原木分别保管。",
+              "source": "对应树木的树下落枝",
+              "tags": [
+                "轻修缮",
+                "小木作"
+              ],
+              "quantity": 0,
+              "processing": [
+                {
+                  "id": "sort-branches",
+                  "name": "整理枝料",
+                  "outputs": [
+                    "小木料"
+                  ],
+                  "station": "工作台",
+                  "status": "后续开放",
+                  "parametersReady": false
+                }
+              ]
+            },
+            {
+              "itemId": "mushroom",
+              "name": "蘑菇",
+              "icon": "菇",
+              "category": "forest-produce",
+              "description": "从树种对应的树下蘑菇圈采得。",
+              "source": "松下、栎下的蘑菇圈",
+              "tags": [
+                "森林物产"
+              ],
+              "quantity": 0,
+              "processing": [
+                {
+                  "id": "dry-mushrooms",
+                  "name": "晾制蘑菇",
+                  "outputs": [
+                    "干蘑菇"
+                  ],
+                  "station": "晾晒设施",
+                  "status": "后续开放",
+                  "parametersReady": false
+                }
+              ]
+            },
+            {
+              "itemId": "wood",
+              "name": "原木",
+              "icon": "木",
+              "category": "wood",
+              "description": "合法采伐所得的原木，受年度体量额度约束。",
+              "source": "获准采伐的成熟经营树",
+              "tags": [
+                "建筑木材",
+                "限额采伐"
+              ],
+              "quantity": 5,
+              "processing": []
+            }
+          ],
+          "total": 5,
+          "occupiedKinds": 1
+        }
+      },
+      "audit": [
+        {
+          "resources": {
+            "geometries": 0,
+            "materials": 0,
+            "extras": 0,
+            "disposed": true
+          },
+          "drawCalls": 253,
+          "triangles": 379816,
+          "gpu": {
+            "geometries": 0,
+            "textures": 1
+          },
+          "zoom": 0.76,
+          "yaw": -0.13,
+          "elevation": 0.24,
+          "canvas": {
+            "width": 1280,
+            "height": 720
+          },
+          "treeCount": 580,
+          "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "managedTrees": 151,
+          "gatheringHits": 0,
+          "characters": {
+            "model": "KayKit R3",
+            "mode": "idle",
+            "inspection": null,
+            "stopFound": null,
+            "stopFraction": null,
+            "contactClearance": null,
+            "grip": null,
+            "planMs": 5.800000011920929,
+            "disposed": true
+          },
+          "gatheringPresentation": {
+            "sources": 10,
+            "patches": 38,
+            "batches": 4,
+            "hits": 0
+          },
+          "environment": {
+            "meshes": 0,
+            "geometryTriangles": 0,
+            "geometries": 0,
+            "materials": 0,
+            "environmentMap": true,
+            "pmremSize": 128,
+            "visualTime": 334.1271700000307,
+            "disposed": true
+          },
+          "river": {
+            "materials": 1,
+            "additionalGeometry": 0,
+            "additionalTextures": 0,
+            "visualTime": 334.1271700000307,
+            "disposed": true
+          },
+          "destroyed": true,
+          "contextLost": true,
+          "loop": {
+            "paused": true,
+            "destroyed": true,
+            "scheduled": false,
+            "executing": false,
+            "running": false,
+            "frames": 11188
+          },
+          "samples": 360,
+          "frameMsP50": 33.29999999998836,
+          "frameMsP95": 1015.5,
+          "seed": 104729,
+          "routeNodes": 0,
+          "player": {
+            "x": -21.343319716799726,
+            "z": 28.162275942988078,
+            "facing": 2.284064062423966,
+            "moving": false,
+            "y": 17.60678487180794
+          },
+          "gameTime": 334.0666666666915,
+          "forestry": {
+            "wood": 5,
+            "points": {
+              "year": 1,
+              "available": 19,
+              "used": 5,
+              "reserved": 0
+            },
+            "active": null,
+            "selectedTree": null
+          },
+          "gathering": {
+            "inventory": [
+              {
+                "itemId": "branch",
+                "name": "枝杈",
+                "icon": "枝",
+                "quantity": 0
+              },
+              {
+                "itemId": "mushroom",
+                "name": "蘑菇",
+                "icon": "菇",
+                "quantity": 0
+              }
+            ],
+            "action": null,
+            "selectedTarget": null
+          },
+          "gatheringSources": {
+            "gather.tree-slot-r3-hero-0.branches": {
+              "remaining": 0,
+              "version": 2,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-r3-hero-0:g1",
+              "hostAvailable": false
+            },
+            "gather.tree-slot-r3-hero-0.mushrooms": {
+              "remaining": 0,
+              "version": 2,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-r3-hero-0:g1",
+              "hostAvailable": false
+            },
+            "gather.tree-slot-16-9.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-16-9:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-16-9.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-16-9:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-13-6.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-13-6:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-13-6.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-13-6:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-17-11.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-17-11:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-17-11.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-17-11:g0",
+              "hostAvailable": true
+            },
+            "gather.landmark-elder.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "landmark-elder",
+              "hostAvailable": true
+            },
+            "gather.landmark-elder.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "landmark-elder",
+              "hostAvailable": true
+            }
+          },
+          "warehouse": {
+            "items": [
+              {
+                "itemId": "branch",
+                "name": "枝杈",
+                "icon": "枝",
+                "category": "wood",
+                "description": "从树下拾起的小型枝料，和建筑原木分别保管。",
+                "source": "对应树木的树下落枝",
+                "tags": [
+                  "轻修缮",
+                  "小木作"
+                ],
+                "quantity": 0,
+                "processing": [
+                  {
+                    "id": "sort-branches",
+                    "name": "整理枝料",
+                    "outputs": [
+                      "小木料"
+                    ],
+                    "station": "工作台",
+                    "status": "后续开放",
+                    "parametersReady": false
+                  }
+                ]
+              },
+              {
+                "itemId": "mushroom",
+                "name": "蘑菇",
+                "icon": "菇",
+                "category": "forest-produce",
+                "description": "从树种对应的树下蘑菇圈采得。",
+                "source": "松下、栎下的蘑菇圈",
+                "tags": [
+                  "森林物产"
+                ],
+                "quantity": 0,
+                "processing": [
+                  {
+                    "id": "dry-mushrooms",
+                    "name": "晾制蘑菇",
+                    "outputs": [
+                      "干蘑菇"
+                    ],
+                    "station": "晾晒设施",
+                    "status": "后续开放",
+                    "parametersReady": false
+                  }
+                ]
+              },
+              {
+                "itemId": "wood",
+                "name": "原木",
+                "icon": "木",
+                "category": "wood",
+                "description": "合法采伐所得的原木，受年度体量额度约束。",
+                "source": "获准采伐的成熟经营树",
+                "tags": [
+                  "建筑木材",
+                  "限额采伐"
+                ],
+                "quantity": 5,
+                "processing": []
+              }
+            ],
+            "total": 5,
+            "occupiedKinds": 1
+          }
+        },
+        {
+          "resources": {
+            "geometries": 0,
+            "materials": 0,
+            "extras": 0,
+            "disposed": true
+          },
+          "drawCalls": 248,
+          "triangles": 382048,
+          "gpu": {
+            "geometries": 0,
+            "textures": 1
+          },
+          "zoom": 0.76,
+          "yaw": -0.13,
+          "elevation": 0.24,
+          "canvas": {
+            "width": 1280,
+            "height": 720
+          },
+          "treeCount": 580,
+          "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "managedTrees": 151,
+          "gatheringHits": 0,
+          "characters": {
+            "model": "KayKit R3",
+            "mode": "idle",
+            "inspection": null,
+            "stopFound": null,
+            "stopFraction": null,
+            "contactClearance": null,
+            "grip": null,
+            "planMs": 0,
+            "disposed": true
+          },
+          "gatheringPresentation": {
+            "sources": 10,
+            "patches": 38,
+            "batches": 4,
+            "hits": 0
+          },
+          "environment": {
+            "meshes": 0,
+            "geometryTriangles": 0,
+            "geometries": 0,
+            "materials": 0,
+            "environmentMap": true,
+            "pmremSize": 128,
+            "visualTime": 65.16149999999983,
+            "disposed": true
+          },
+          "river": {
+            "materials": 1,
+            "additionalGeometry": 0,
+            "additionalTextures": 0,
+            "visualTime": 65.16149999999983,
+            "disposed": true
+          },
+          "destroyed": true,
+          "contextLost": true,
+          "loop": {
+            "paused": true,
+            "destroyed": true,
+            "scheduled": false,
+            "executing": false,
+            "running": false,
+            "frames": 2539
+          },
+          "samples": 360,
+          "frameMsP50": 33.29999999993015,
+          "frameMsP95": 50,
+          "seed": 104729,
+          "routeNodes": 0,
+          "player": {
+            "x": -21.343319716799726,
+            "z": 28.162275942988078,
+            "facing": 2.284064062423966,
+            "moving": false,
+            "y": 17.60678487180794
+          },
+          "gameTime": 399.21666666663225,
+          "forestry": {
+            "wood": 5,
+            "points": {
+              "year": 1,
+              "available": 19,
+              "used": 5,
+              "reserved": 0
+            },
+            "active": null,
+            "selectedTree": null
+          },
+          "gathering": {
+            "inventory": [
+              {
+                "itemId": "branch",
+                "name": "枝杈",
+                "icon": "枝",
+                "quantity": 0
+              },
+              {
+                "itemId": "mushroom",
+                "name": "蘑菇",
+                "icon": "菇",
+                "quantity": 0
+              }
+            ],
+            "action": null,
+            "selectedTarget": null
+          },
+          "gatheringSources": {
+            "gather.tree-slot-r3-hero-0.branches": {
+              "remaining": 0,
+              "version": 2,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-r3-hero-0:g1",
+              "hostAvailable": false
+            },
+            "gather.tree-slot-r3-hero-0.mushrooms": {
+              "remaining": 0,
+              "version": 2,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-r3-hero-0:g1",
+              "hostAvailable": false
+            },
+            "gather.tree-slot-16-9.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-16-9:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-16-9.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-16-9:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-13-6.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-13-6:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-13-6.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-13-6:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-17-11.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-17-11:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-17-11.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-17-11:g0",
+              "hostAvailable": true
+            },
+            "gather.landmark-elder.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "landmark-elder",
+              "hostAvailable": true
+            },
+            "gather.landmark-elder.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "landmark-elder",
+              "hostAvailable": true
+            }
+          },
+          "warehouse": {
+            "items": [
+              {
+                "itemId": "branch",
+                "name": "枝杈",
+                "icon": "枝",
+                "category": "wood",
+                "description": "从树下拾起的小型枝料，和建筑原木分别保管。",
+                "source": "对应树木的树下落枝",
+                "tags": [
+                  "轻修缮",
+                  "小木作"
+                ],
+                "quantity": 0,
+                "processing": [
+                  {
+                    "id": "sort-branches",
+                    "name": "整理枝料",
+                    "outputs": [
+                      "小木料"
+                    ],
+                    "station": "工作台",
+                    "status": "后续开放",
+                    "parametersReady": false
+                  }
+                ]
+              },
+              {
+                "itemId": "mushroom",
+                "name": "蘑菇",
+                "icon": "菇",
+                "category": "forest-produce",
+                "description": "从树种对应的树下蘑菇圈采得。",
+                "source": "松下、栎下的蘑菇圈",
+                "tags": [
+                  "森林物产"
+                ],
+                "quantity": 0,
+                "processing": [
+                  {
+                    "id": "dry-mushrooms",
+                    "name": "晾制蘑菇",
+                    "outputs": [
+                      "干蘑菇"
+                    ],
+                    "station": "晾晒设施",
+                    "status": "后续开放",
+                    "parametersReady": false
+                  }
+                ]
+              },
+              {
+                "itemId": "wood",
+                "name": "原木",
+                "icon": "木",
+                "category": "wood",
+                "description": "合法采伐所得的原木，受年度体量额度约束。",
+                "source": "获准采伐的成熟经营树",
+                "tags": [
+                  "建筑木材",
+                  "限额采伐"
+                ],
+                "quantity": 5,
+                "processing": []
+              }
+            ],
+            "total": 5,
+            "occupiedKinds": 1
+          }
+        },
+        {
+          "resources": {
+            "geometries": 0,
+            "materials": 0,
+            "extras": 0,
+            "disposed": true
+          },
+          "drawCalls": 248,
+          "triangles": 382048,
+          "gpu": {
+            "geometries": 0,
+            "textures": 1
+          },
+          "zoom": 0.76,
+          "yaw": -0.13,
+          "elevation": 0.24,
+          "canvas": {
+            "width": 1280,
+            "height": 720
+          },
+          "treeCount": 580,
+          "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "managedTrees": 151,
+          "gatheringHits": 0,
+          "characters": {
+            "model": "KayKit R3",
+            "mode": "idle",
+            "inspection": null,
+            "stopFound": null,
+            "stopFraction": null,
+            "contactClearance": null,
+            "grip": null,
+            "planMs": 0,
+            "disposed": true
+          },
+          "gatheringPresentation": {
+            "sources": 10,
+            "patches": 38,
+            "batches": 4,
+            "hits": 0
+          },
+          "environment": {
+            "meshes": 0,
+            "geometryTriangles": 0,
+            "geometries": 0,
+            "materials": 0,
+            "environmentMap": true,
+            "pmremSize": 128,
+            "visualTime": 46.5434999999998,
+            "disposed": true
+          },
+          "river": {
+            "materials": 1,
+            "additionalGeometry": 0,
+            "additionalTextures": 0,
+            "visualTime": 46.5434999999998,
+            "disposed": true
+          },
+          "destroyed": true,
+          "contextLost": true,
+          "loop": {
+            "paused": true,
+            "destroyed": true,
+            "scheduled": false,
+            "executing": false,
+            "running": false,
+            "frames": 1629
+          },
+          "samples": 360,
+          "frameMsP50": 33.29999999993015,
+          "frameMsP95": 49.89999999990687,
+          "seed": 104729,
+          "routeNodes": 0,
+          "player": {
+            "x": -21.343319716799726,
+            "z": 28.162275942988078,
+            "facing": 2.284064062423966,
+            "moving": false,
+            "y": 17.60678487180794
+          },
+          "gameTime": 445.74999999992326,
+          "forestry": {
+            "wood": 5,
+            "points": {
+              "year": 1,
+              "available": 19,
+              "used": 5,
+              "reserved": 0
+            },
+            "active": null,
+            "selectedTree": null
+          },
+          "gathering": {
+            "inventory": [
+              {
+                "itemId": "branch",
+                "name": "枝杈",
+                "icon": "枝",
+                "quantity": 0
+              },
+              {
+                "itemId": "mushroom",
+                "name": "蘑菇",
+                "icon": "菇",
+                "quantity": 0
+              }
+            ],
+            "action": null,
+            "selectedTarget": null
+          },
+          "gatheringSources": {
+            "gather.tree-slot-r3-hero-0.branches": {
+              "remaining": 0,
+              "version": 2,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-r3-hero-0:g1",
+              "hostAvailable": false
+            },
+            "gather.tree-slot-r3-hero-0.mushrooms": {
+              "remaining": 0,
+              "version": 2,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-r3-hero-0:g1",
+              "hostAvailable": false
+            },
+            "gather.tree-slot-16-9.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-16-9:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-16-9.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-16-9:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-13-6.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-13-6:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-13-6.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-13-6:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-17-11.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-17-11:g0",
+              "hostAvailable": true
+            },
+            "gather.tree-slot-17-11.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "tree-slot-17-11:g0",
+              "hostAvailable": true
+            },
+            "gather.landmark-elder.branches": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "landmark-elder",
+              "hostAvailable": true
+            },
+            "gather.landmark-elder.mushrooms": {
+              "remaining": 1,
+              "version": 0,
+              "lastPeriod": null,
+              "depletedAt": null,
+              "hostIndividualId": "landmark-elder",
+              "hostAvailable": true
+            }
+          },
+          "warehouse": {
+            "items": [
+              {
+                "itemId": "branch",
+                "name": "枝杈",
+                "icon": "枝",
+                "category": "wood",
+                "description": "从树下拾起的小型枝料，和建筑原木分别保管。",
+                "source": "对应树木的树下落枝",
+                "tags": [
+                  "轻修缮",
+                  "小木作"
+                ],
+                "quantity": 0,
+                "processing": [
+                  {
+                    "id": "sort-branches",
+                    "name": "整理枝料",
+                    "outputs": [
+                      "小木料"
+                    ],
+                    "station": "工作台",
+                    "status": "后续开放",
+                    "parametersReady": false
+                  }
+                ]
+              },
+              {
+                "itemId": "mushroom",
+                "name": "蘑菇",
+                "icon": "菇",
+                "category": "forest-produce",
+                "description": "从树种对应的树下蘑菇圈采得。",
+                "source": "松下、栎下的蘑菇圈",
+                "tags": [
+                  "森林物产"
+                ],
+                "quantity": 0,
+                "processing": [
+                  {
+                    "id": "dry-mushrooms",
+                    "name": "晾制蘑菇",
+                    "outputs": [
+                      "干蘑菇"
+                    ],
+                    "station": "晾晒设施",
+                    "status": "后续开放",
+                    "parametersReady": false
+                  }
+                ]
+              },
+              {
+                "itemId": "wood",
+                "name": "原木",
+                "icon": "木",
+                "category": "wood",
+                "description": "合法采伐所得的原木，受年度体量额度约束。",
+                "source": "获准采伐的成熟经营树",
+                "tags": [
+                  "建筑木材",
+                  "限额采伐"
+                ],
+                "quantity": 5,
+                "processing": []
+              }
+            ],
+            "total": 5,
+            "occupiedKinds": 1
+          }
+        }
+      ]
+    }
+  ]
+}

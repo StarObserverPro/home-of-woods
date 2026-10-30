@@ -1,3 +1,4 @@
+import {buildClosedTerrain} from '../world/closed-terrain.ts';
 import * as THREE from "three";
 import { PALETTE, WORLD } from "../content/world.ts";
 import {
@@ -12,31 +13,11 @@ import {createGroundMaterial} from './ground-material.ts';
 export function createTerrain(r: Resources) {
   const nx = (WORLD.maxX - WORLD.minX) / WORLD.step,
     nz = (WORLD.maxZ - WORLD.minZ) / WORLD.step;
-  const positions: number[] = [], indices: number[] = [];
-  for (let zi = 0; zi <= nz; zi++)
-    for (let xi = 0; xi <= nx; xi++) {
-      const x = WORLD.minX + xi * WORLD.step,
-        z = WORLD.minZ + zi * WORLD.step,
-        y = vertexHeight(x, z);
-      positions.push(x, y, z);
-    }
-  for (let z = 0; z < nz; z++)
-    for (let x = 0; x < nx; x++) {
-      const a = z * (nx + 1) + x,
-        b = a + 1,
-        c = a + nx + 1,
-        d = c + 1;
-      indices.push(a, c, b, b, c, d);
-    }
-  const geo = r.geometry("terrain", () => {
-    const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-    g.setIndex(indices);
-    g.computeVertexNormals();
-    return g;
-  });
+  const geo = r.geometry('r5-closed-adaptive-terrain',buildClosedTerrain);
   const mat = createGroundMaterial(r);
-  const ground = new THREE.Mesh(geo, mat);
+  const stone=r.own(new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.88,metalness:0,flatShading:true}));
+  stone.name='r5b-cut-rock-and-flat-crest';
+  const ground = new THREE.Mesh(geo, [mat,stone]);
   ground.receiveShadow = true;
   ground.name = "authoritative-surface";
   const water = new THREE.Mesh(

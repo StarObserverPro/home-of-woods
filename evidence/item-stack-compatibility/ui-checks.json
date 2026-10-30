@@ -1,0 +1,296 @@
+{
+  "viewports": [
+    {
+      "file": "quality-narrow.jpg",
+      "buttons": [
+        {
+          "height": 44,
+          "name": "关闭仓库",
+          "width": 44
+        },
+        {
+          "height": 44,
+          "name": "全部",
+          "width": 54.54999923706055
+        },
+        {
+          "height": 44,
+          "name": "木料",
+          "width": 54.54999923706055
+        },
+        {
+          "height": 44,
+          "name": "林产",
+          "width": 54.54999923706055
+        },
+        {
+          "height": 44,
+          "name": "待识别",
+          "width": 54.54999923706055
+        },
+        {
+          "height": 158.60000610351562,
+          "name": "枝杈 · 未知品质 3 份",
+          "width": 73.0625
+        },
+        {
+          "height": 158.60000610351562,
+          "name": "未识别物品 · 普通 7 份",
+          "width": 73.0625
+        },
+        {
+          "height": 158.60000610351562,
+          "name": "蘑菇 · 精品 2 份",
+          "width": 73.07500457763672
+        },
+        {
+          "height": 138.60000610351562,
+          "name": "蘑菇 · 普通 6 份",
+          "width": 73.0625
+        },
+        {
+          "height": 138.60000610351562,
+          "name": "蘑菇 · 未分级 4 份",
+          "width": 73.0625
+        },
+        {
+          "height": 138.60000610351562,
+          "name": "原木 · 普通 5 份",
+          "width": 73.07500457763672
+        }
+      ],
+      "dialog": {
+        "clientWidth": 265,
+        "height": 816,
+        "scrollWidth": 265,
+        "width": 282
+      },
+      "height": 844,
+      "scrollWidth": 320,
+      "width": 320
+    },
+    {
+      "file": "quality-mobile.jpg",
+      "buttons": [
+        {
+          "height": 44,
+          "name": "关闭仓库",
+          "width": 44
+        },
+        {
+          "height": 44,
+          "name": "全部",
+          "width": 72.1500015258789
+        },
+        {
+          "height": 44,
+          "name": "木料",
+          "width": 72.1500015258789
+        },
+        {
+          "height": 44,
+          "name": "林产",
+          "width": 72.1500015258789
+        },
+        {
+          "height": 44,
+          "name": "待识别",
+          "width": 72.1500015258789
+        },
+        {
+          "height": 138.60000610351562,
+          "name": "枝杈 · 未知品质 3 份",
+          "width": 96.5250015258789
+        },
+        {
+          "height": 138.60000610351562,
+          "name": "未识别物品 · 普通 7 份",
+          "width": 96.5374984741211
+        },
+        {
+          "height": 138.60000610351562,
+          "name": "蘑菇 · 精品 2 份",
+          "width": 96.5250015258789
+        },
+        {
+          "height": 138.60000610351562,
+          "name": "蘑菇 · 普通 6 份",
+          "width": 96.5250015258789
+        },
+        {
+          "height": 138.60000610351562,
+          "name": "蘑菇 · 未分级 4 份",
+          "width": 96.5374984741211
+        },
+        {
+          "height": 138.60000610351562,
+          "name": "原木 · 普通 5 份",
+          "width": 96.5250015258789
+        }
+      ],
+      "dialog": {
+        "clientWidth": 336,
+        "height": 816,
+        "scrollWidth": 336,
+        "width": 352.3999938964844
+      },
+      "height": 844,
+      "scrollWidth": 390,
+      "width": 390
+    },
+    {
+      "file": "quality-desktop.jpg",
+      "buttons": [
+        {
+          "height": 44,
+          "name": "关闭仓库",
+          "width": 44
+        },
+        {
+          "height": 44,
+          "name": "全部",
+          "width": 80
+        },
+        {
+          "height": 44,
+          "name": "木料",
+          "width": 80
+        },
+        {
+          "height": 44,
+          "name": "林产",
+          "width": 80
+        },
+        {
+          "height": 44,
+          "name": "待识别",
+          "width": 84
+        },
+        {
+          "height": 160.60000610351562,
+          "name": "枝杈 · 未知品质 3 份",
+          "width": 179.6875
+        },
+        {
+          "height": 160.60000610351562,
+          "name": "未识别物品 · 普通 7 份",
+          "width": 179.6999969482422
+        },
+        {
+          "height": 160.60000610351562,
+          "name": "蘑菇 · 精品 2 份",
+          "width": 179.6875
+        },
+        {
+          "height": 160.60000610351562,
+          "name": "蘑菇 · 普通 6 份",
+          "width": 179.6999969482422
+        },
+        {
+          "height": 160.60000610351562,
+          "name": "蘑菇 · 未分级 4 份",
+          "width": 179.6875
+        },
+        {
+          "height": 160.60000610351562,
+          "name": "原木 · 普通 5 份",
+          "width": 179.6999969482422
+        }
+      ],
+      "dialog": {
+        "clientWidth": 783,
+        "height": 680,
+        "scrollWidth": 783,
+        "width": 800
+      },
+      "height": 720,
+      "scrollWidth": 1280,
+      "width": 1280
+    },
+    {
+      "file": "quality-landscape.jpg",
+      "buttons": [
+        {
+          "height": 44,
+          "name": "关闭仓库",
+          "width": 44
+        },
+        {
+          "height": 44,
+          "name": "全部",
+          "width": 80
+        },
+        {
+          "height": 44,
+          "name": "木料",
+          "width": 80
+        },
+        {
+          "height": 44,
+          "name": "林产",
+          "width": 80
+        },
+        {
+          "height": 44,
+          "name": "待识别",
+          "width": 84
+        },
+        {
+          "height": 160.60000610351562,
+          "name": "枝杈 · 未知品质 3 份",
+          "width": 181.7875061035156
+        },
+        {
+          "height": 160.60000610351562,
+          "name": "未识别物品 · 普通 7 份",
+          "width": 181.7875061035156
+        },
+        {
+          "height": 160.60000610351562,
+          "name": "蘑菇 · 精品 2 份",
+          "width": 181.7875061035156
+        },
+        {
+          "height": 160.60000610351562,
+          "name": "蘑菇 · 普通 6 份",
+          "width": 181.7875061035156
+        },
+        {
+          "height": 160.60000610351562,
+          "name": "蘑菇 · 未分级 4 份",
+          "width": 181.7875061035156
+        },
+        {
+          "height": 160.60000610351562,
+          "name": "原木 · 普通 5 份",
+          "width": 181.7875061035156
+        }
+      ],
+      "dialog": {
+        "clientWidth": 783,
+        "height": 370.3999938964844,
+        "scrollWidth": 783,
+        "width": 800
+      },
+      "height": 390,
+      "scrollWidth": 844,
+      "width": 844
+    }
+  ],
+  "game": {
+    "collectedOrdinaryMushrooms": 2,
+    "afterOneReentry": 2,
+    "escapeCloses": true,
+    "bOpens": true,
+    "consoleErrors": []
+  },
+  "fixture": {
+    "totalBefore": 27,
+    "totalAfterJsonReloadAndDefinitionRecovery": 27,
+    "unknownItemQuantity": 7,
+    "unknownQualityQuantity": 3,
+    "ordinaryMushroomQuantity": 6,
+    "fineMushroomQuantity": 2,
+    "ungradedMushroomQuantity": 4
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "errors": [],
+  "logs": [
+    {
+      "level": "debug",
+      "message": "[vite] connecting...",
+      "timestamp": "2026-10-30T13:55:13.796Z",
+      "url": "http://127.0.0.1:5187/@vite/client"
+    },
+    {
+      "level": "debug",
+      "message": "[vite] connected.",
+      "timestamp": "2026-10-30T13:55:13.863Z",
+      "url": "http://127.0.0.1:5187/@vite/client"
+    },
+    {
+      "level": "info",
+      "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "timestamp": "2026-10-30T13:55:13.975Z",
+      "url": "http://127.0.0.1:5187/node_modules/.vite/deps/react-dom_client.js?v=657de371"
+    },
+    {
+      "level": "warn",
+      "message": "THREE.WebGLProgram: Program Info Log: (210,86-138): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,39-65): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,87-113): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,39-65): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,87-113): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision",
+      "timestamp": "2026-10-30T13:55:15.573Z",
+      "url": "http://127.0.0.1:5187/@vite/client"
+    },
+    {
+      "level": "debug",
+      "message": "[vite] connecting...",
+      "timestamp": "2026-10-30T14:02:12.913Z",
+      "url": "http://127.0.0.1:5187/@vite/client"
+    },
+    {
+      "level": "debug",
+      "message": "[vite] connected.",
+      "timestamp": "2026-10-30T14:02:12.974Z",
+      "url": "http://127.0.0.1:5187/@vite/client"
+    },
+    {
+      "level": "info",
+      "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "timestamp": "2026-10-30T14:02:13.230Z",
+      "url": "http://127.0.0.1:5187/node_modules/.vite/deps/react-dom_client.js?v=657de371"
+    }
+  ]
+}

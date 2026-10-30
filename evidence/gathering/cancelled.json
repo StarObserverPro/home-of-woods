@@ -1,0 +1,151 @@
+{
+  "current": {
+    "resources": {
+      "geometries": 35,
+      "materials": 9,
+      "extras": 178,
+      "disposed": false
+    },
+    "drawCalls": 213,
+    "triangles": 269160,
+    "gpu": {
+      "geometries": 55,
+      "textures": 8
+    },
+    "zoom": 2.051661156298239,
+    "yaw": -0.13,
+    "elevation": 0.24,
+    "canvas": {
+      "width": 1528,
+      "height": 682
+    },
+    "treeCount": 580,
+    "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "managedTrees": 151,
+    "gatheringHits": 4,
+    "environment": {
+      "meshes": 7,
+      "geometryTriangles": 10260,
+      "geometries": 7,
+      "materials": 2,
+      "environmentMap": true,
+      "pmremSize": 128,
+      "visualTime": 183.8980000000054,
+      "disposed": false
+    },
+    "river": {
+      "materials": 1,
+      "additionalGeometry": 0,
+      "additionalTextures": 0,
+      "visualTime": 183.8980000000054,
+      "disposed": false
+    },
+    "destroyed": false,
+    "contextLost": false,
+    "loop": {
+      "paused": false,
+      "destroyed": false,
+      "scheduled": false,
+      "executing": true,
+      "running": true,
+      "frames": 4103
+    },
+    "samples": 360,
+    "frameMsP50": 33.39999999999418,
+    "frameMsP95": 83.29999999998836,
+    "seed": 104729,
+    "routeNodes": 0,
+    "player": {
+      "x": -25.57141305958868,
+      "z": 13.433078134130284,
+      "facing": -0.7392501733912653,
+      "moving": false,
+      "y": 21.212611094203357
+    },
+    "gameTime": 183.8833333333718,
+    "forestry": {
+      "wood": 0,
+      "points": {
+        "year": 1,
+        "available": 24,
+        "used": 0,
+        "reserved": 0
+      },
+      "active": null,
+      "selectedTree": null
+    },
+    "gathering": {
+      "inventory": [
+        {
+          "itemId": "branch",
+          "name": "枝杈",
+          "icon": "枝",
+          "quantity": 6
+        },
+        {
+          "itemId": "mushroom",
+          "name": "蘑菇",
+          "icon": "菇",
+          "quantity": 2
+        }
+      ],
+      "action": {
+        "actionId": "gather-4",
+        "actorId": "player",
+        "sourceId": "gather.trail.mushrooms",
+        "motionTag": "gather.pluck",
+        "targetAnchor": {
+          "x": -29,
+          "y": 20.532313863313494,
+          "z": 18
+        },
+        "phase": "cancelled",
+        "progress": 0
+      },
+      "selectedTarget": {
+        "id": "gather.trail.mushrooms",
+        "title": "蘑菇簇",
+        "tag": "林间物产",
+        "detail": "草叶间长着一小簇蘑菇，走近后可以采下。",
+        "status": "可以采集",
+        "distance": 5.710690303012236,
+        "reward": "2 份蘑菇",
+        "reason": "",
+        "actions": [
+          {
+            "id": "gather",
+            "label": "走近采集",
+            "enabled": true
+          }
+        ]
+      }
+    },
+    "gatheringSources": {
+      "gather.home.branches": {
+        "remaining": 0,
+        "version": 1,
+        "lastPeriod": null,
+        "depletedAt": 76.06666666666364
+      },
+      "gather.home.mushrooms": {
+        "remaining": 0,
+        "version": 1,
+        "lastPeriod": null,
+        "depletedAt": 84.2999999999965
+      },
+      "gather.trail.branches": {
+        "remaining": 0,
+        "version": 1,
+        "lastPeriod": null,
+        "depletedAt": 163.25000000002206
+      },
+      "gather.trail.mushrooms": {
+        "remaining": 1,
+        "version": 0,
+        "lastPeriod": null,
+        "depletedAt": null
+      }
+    }
+  },
+  "audit": []
+}

@@ -1,0 +1,61 @@
+{
+  "date": "2026-10-30",
+  "scope": "authorized local scene integration; not merged or deployed",
+  "changes": [
+    {
+      "file": "src/world/layout.ts",
+      "beforeSha256": "60b10fd8b8bc9fcc51621b6d4cbdb43fba4e01a78e0969496154122e060b4000",
+      "afterSha256": "c87a8bf7875c7c5db3d4fdab21a321239a55b9a25de2d6b9817941bcfa60fd45"
+    },
+    {
+      "file": "src/world/surface.ts",
+      "beforeSha256": "ffcff185baab03768d2c9715b03999a465cffd76f665ec25b1f52a4a6bbfa2a9",
+      "afterSha256": "bdb949698e23f8160171367ee1c7c73d295d07122274f5ffc3e218c2d82424a8"
+    },
+    {
+      "file": "src/scene/create-scene.ts",
+      "beforeSha256": "69116337604cee8eb5a3c774eb681bc0ac9ceaa15c2f069e8bde762564ac2fd3",
+      "afterSha256": "d18084c591e7052d726263ac09353452095800be50f34273b195c85d5c498ed4"
+    },
+    {
+      "file": "src/scene/terrain.ts",
+      "beforeSha256": "d30edcd651f1388634e0f5ec630e8e1d1bd1fe73753c591dd1d9b64e7b28de18",
+      "afterSha256": "7f2d8ff62ebe97d4faebc2c0dec4b7de73bd4d6aeda7a1368e9eed602c738ddf"
+    },
+    {
+      "file": "src/scene/environment.ts",
+      "beforeSha256": "2e935e66e91034da05ef19e9f963a528b00649fabbdaf2619d450f7fbfd45ab0",
+      "afterSha256": "ec210b9453bce1e8199c887c3f6b5401b0b75cf892dcaa0dfa72c3cdfdb7daed"
+    },
+    {
+      "file": "src/scene/ground-material.ts",
+      "beforeSha256": "86b46b1e45ef6a3b76b1bad95574873f1b0bc143a9119a231bfe20dd515f5398",
+      "afterSha256": "0d2df06dd103b9174cc4c2e34f7396e6b19d57dfca2d602b29d36c439c84169c"
+    },
+    {
+      "file": "src/app/runtime.ts",
+      "beforeSha256": "559af8f47353e4a686125762f9ec7e5c6219b9b26105253cf98387898c60ba90",
+      "afterSha256": "520afc90ab616cc602c80a66659f865f8c301184a28cf007acb36e7d4c56a786"
+    },
+    {
+      "file": "src/ui/App.tsx",
+      "beforeSha256": "d2553a4521c1187b0e147712162c1b47cc78654d75bc32750c79abf2625d8eff",
+      "afterSha256": "e039c48da236510779cf608c4a713c0e7c037dd6cb15992ca307379e640436eb"
+    },
+    {
+      "file": "src/ui/style.css",
+      "beforeSha256": "f2767d0cd70bb0ed6c5e267ba96345f16c21c18aae3422f700f60f83ec5c1e45",
+      "afterSha256": "29ab87b7dc7a6ea05f96d24b66a8b2a566068eb43d3b24051e316a54d0b7f38b"
+    },
+    {
+      "file": "src/domain/save-context.ts",
+      "beforeSha256": "1ebce6e6b695eb5a6836c8d5cb3210c24492abdf5ca17c18270e48144e718b77",
+      "afterSha256": "f0124eb57c13fe6e36f14f1092d03c89aa074058780e2de452d76e4bbccabf6d"
+    },
+    {
+      "file": "vite.config.ts",
+      "beforeSha256": "7f65be2a27f6e29d2de9f5b390b5e75cc8c9b8dfc1739e18ff216d13ba6dd9ff",
+      "afterSha256": "21afd6e5e41729e5298695645b5b77980ac375c1bc76a1f303253580f0bb52da"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 63 modules transformed.
+rendering chunks...
+computing gzip size...
+../../../../.codex/visualizations/2026/10/30/01a18cf7-88a5-7dc2-9d35-bdc21adcad3a/kaykit-character-lab/integration-dist/index.html                     0.54 kB │ gzip:   0.41 kB
+../../../../.codex/visualizations/2026/10/30/01a18cf7-88a5-7dc2-9d35-bdc21adcad3a/kaykit-character-lab/integration-dist/assets/index-xdpj4h1i.css     16.74 kB │ gzip:   4.27 kB
+../../../../.codex/visualizations/2026/10/30/01a18cf7-88a5-7dc2-9d35-bdc21adcad3a/kaykit-character-lab/integration-dist/assets/index-CCTh1UU7.js   1,121.46 kB │ gzip: 332.16 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 2.42s

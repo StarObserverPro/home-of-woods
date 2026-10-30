@@ -5,6 +5,7 @@
 *.png -text
 *.webm -text
 public/assets/licenses/** -text
+sources/kenney/License.txt -text
 # Reviewed receipts retain their exact original bytes, including Windows log encoding.
 evidence/r4/** -text
 evidence/integration/** -text
@@ -12,4 +13,33 @@ evidence/integration/** -text
 # Original tool logs and license notices retain upstream whitespace verbatim.
 evidence/r4/*.log whitespace=-trailing-space
 public/assets/licenses/** whitespace=-trailing-space
+sources/kenney/License.txt whitespace=-trailing-space
 public/third-party-notices.txt whitespace=-blank-at-eof
+
+# New immutable review receipts keep their recorded bytes across platforms.
+evidence/** -text
+sandbox/scene-r5/evidence/** -text
+sandbox/scene-r5/public/assets/licenses/** -text
+sandbox/scene-r5/public/third-party-notices.txt -text
+*.zip -text
+evidence/**/*.log whitespace=-trailing-space
+sandbox/scene-r5/evidence/*.log whitespace=-trailing-space
+
+# Captured runtime files retain exact bytes used by immutable scene evidence.
+src/content/altar.ts -text whitespace=cr-at-eol,-blank-at-eof
+src/content/scene-props.ts -text whitespace=cr-at-eol,-blank-at-eof
+src/scene/altar.ts -text whitespace=cr-at-eol,-blank-at-eof
+src/scene/camp-props.ts -text whitespace=cr-at-eol,-blank-at-eof
+src/scene/creek.ts -text whitespace=cr-at-eol,-blank-at-eof
+src/scene/environment.ts -text whitespace=cr-at-eol,-blank-at-eof
+src/scene/gathering-presentation.ts -text whitespace=cr-at-eol
+tests/scene-props.test.ts -text whitespace=cr-at-eol,-blank-at-eof
+sandbox/scene-r5/src/scene/gathering-presentation.ts -text
+sandbox/scene-r5/index.html -text whitespace=-trailing-space
+sandbox/scene-r5/review.html -text -diff linguist-generated=true whitespace=-trailing-space,-space-before-tab,-blank-at-eof
+# Unmodified receipts and upstream notices keep original whitespace as well.
+evidence/** whitespace=-trailing-space
+sandbox/scene-r5/public/assets/licenses/** whitespace=-trailing-space,-blank-at-eof
+sandbox/scene-r5/public/third-party-notices.txt whitespace=-blank-at-eof
+sandbox/scene-r5/src/scene/gathering-presentation.ts whitespace=cr-at-eol
+docs/ASSET_PIPELINE.md -text whitespace=cr-at-eol

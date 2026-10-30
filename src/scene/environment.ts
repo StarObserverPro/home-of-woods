@@ -1,3 +1,4 @@
+import {daylightAt} from '../domain/scene-props.ts';
 import * as THREE from "three";
 import { Sky } from "three/addons/objects/Sky.js";
 import { ENVIRONMENT_STYLE, MOUNTAINS } from "../content/environment.ts";
@@ -78,6 +79,15 @@ export function buildMountainGeometry(spec:MountainDefinition){
     const a=z*(sx+1)+x,b=a+1,c=a+sx+1,d=c+1;
     if((x+z)%2)indices.push(a,c,d,a,d,b);else indices.push(a,c,b,b,c,d);
   }
+  // Close distant mountain shells too; orbiting outside the valley cannot expose a paper back.
+  const perimeter:number[]=[];
+  for(let x=0;x<sx;x++)perimeter.push(x);
+  for(let z=0;z<sz;z++)perimeter.push(z*(sx+1)+sx);
+  for(let x=sx;x>0;x--)perimeter.push(sz*(sx+1)+x);
+  for(let z=sz;z>0;z--)perimeter.push(z*(sx+1));
+  const underside=perimeter.map(id=>{const next=positions.length/3;positions.push(positions[id*3],spec.baseY-30,positions[id*3+2]);return next;});
+  const center=positions.length/3;positions.push(spec.center[0],spec.baseY-30,spec.center[1]);
+  perimeter.forEach((a,i)=>{const j=(i+1)%perimeter.length,b=perimeter[j],c=underside[i],d=underside[j];indices.push(a,b,c,b,d,c,center,c,d);});
   const indexed=new THREE.BufferGeometry();indexed.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));indexed.setIndex(indices);
   const geometry=indexed.toNonIndexed();indexed.dispose();geometry.computeVertexNormals();
   const p=geometry.getAttribute('position'),colors=new Float32Array(p.count*3),surfaces=new Float32Array(p.count);
@@ -175,10 +185,11 @@ export function createEnvironment(resources:Resources,options:{renderer?:THREE.W
   const sky=new Sky();sky.name='sky-porch-daylight';sky.scale.setScalar(10000);sky.frustumCulled=false;sky.renderOrder=-100;
   resources.own(sky.geometry);resources.own(sky.material);
   const u=sky.material.uniforms;
+  u.reviewNight={value:0};
   u.pnwSkyRadianceScale={value:ENVIRONMENT_STYLE.skyRadianceScale};
   u.pnwSkyTint={value:new THREE.Color().fromArray(ENVIRONMENT_STYLE.skyTint)};
-  sky.material.fragmentShader='uniform float pnwSkyRadianceScale;\nuniform vec3 pnwSkyTint;\n'+sky.material.fragmentShader;
-  sky.material.fragmentShader=sky.material.fragmentShader.replace('gl_FragColor = vec4( texColor, 1.0 );','gl_FragColor = vec4( texColor * pnwSkyTint * pnwSkyRadianceScale, 1.0 );');
+  sky.material.fragmentShader='uniform float reviewNight;uniform float pnwSkyRadianceScale;\nuniform vec3 pnwSkyTint;\n'+sky.material.fragmentShader;
+  sky.material.fragmentShader=sky.material.fragmentShader.replace('gl_FragColor = vec4( texColor, 1.0 );','gl_FragColor = vec4( mix(texColor * pnwSkyTint * pnwSkyRadianceScale,vec3(.008,.015,.038)+vec3(.015,.024,.045)*max(0.,normalize(vWorldPosition).y),reviewNight), 1.0 );');
   for(const key of ['turbidity','rayleigh','mieCoefficient','mieDirectionalG','cloudCoverage','cloudDensity','cloudScale','cloudSpeed'] as const)u[key].value=ENVIRONMENT_STYLE[key];
   u.cloudElevation.value=.38;u.sunPosition.value.copy(sunDirection);u.showSunDisc.value=1;
   group.add(sky);
@@ -192,6 +203,22 @@ export function createEnvironment(resources:Resources,options:{renderer?:THREE.W
   }
   let disposed=false,visualTime=0;
   return{
+    setHour(hour:number){
+      const {day,night,warm,altitude}=daylightAt(hour);
+      sunDirection.set(-.6,Math.max(.08,altitude),-.32).normalize();
+      u.sunPosition.value.copy(sunDirection);u.reviewNight.value=night;
+      u.pnwSkyTint.value.setRGB(.68+warm*.30,.84-warm*.2,1-warm*.42);
+      lighting.sunColor.set('#fff1d3').lerp(new THREE.Color('#f4a46c'),warm*.75).lerp(new THREE.Color('#9aafff'),night);
+      lighting.sunIntensity=.30*night+2.1*day;
+      lighting.skyColor.set('#a3bfd5').lerp(new THREE.Color('#5d76ac'),night);
+      lighting.groundColor.set('#71784f').lerp(new THREE.Color('#17273e'),night);
+      lighting.ambientIntensity=.43+day*.62;
+      lighting.environmentIntensity=.065+day*.235;
+      lighting.haze.set('#819eaf').lerp(new THREE.Color('#171f39'),night);
+      airUniforms.pnwSnowDiffuseFloor.value.fromArray(ENVIRONMENT_STYLE.snowDiffuseFloor).multiplyScalar(.12+.88*day);
+      airUniforms.pnwIceDiffuseFloor.value.fromArray(ENVIRONMENT_STYLE.iceDiffuseFloor).multiplyScalar(.12+.88*day);
+      return {day,night};
+    },
     group,lighting,environmentMap:environmentTarget?.texture??null,
     update(elapsed:number,_dt:number,cameraPosition?:THREE.Vector3,reducedMotion=false){
       if(disposed)return;
@@ -205,42 +232,5 @@ export function createEnvironment(resources:Resources,options:{renderer?:THREE.W
       return{meshes,geometryTriangles:triangles,geometries:geometries.size,materials:materials.size,environmentMap:!!environmentTarget,pmremSize:environmentTarget?128:0,visualTime,disposed};
     },
     dispose(){if(disposed)return;disposed=true;group.removeFromParent();group.clear();},
-  };
-}
-
-/** Replaces only the appearance of the existing world-owned river surface. */
-export function createRiverAppearance(resources:Resources,surface:THREE.Mesh){
-  const previous=surface.material,time={value:0};let disposed=false,visualTime=0;
-  const material=resources.own(new THREE.MeshStandardMaterial({color:0xffffff,roughness:.31,metalness:0,transparent:false,envMapIntensity:.32}));
-  material.name='pnw-flowing-creek';
-  const deep=new THREE.Color('#238f9c'),shallow=new THREE.Color('#73c6ad'),foam=new THREE.Color('#d8eee0');
-  const uniforms={riverTime:time,riverDeep:{value:deep},riverShallow:{value:shallow},riverFoam:{value:foam}};
-  material.onBeforeCompile=shader=>{
-    Object.assign(shader.uniforms,uniforms);
-    shader.vertexShader='varying vec2 vRiverUv;varying vec3 vRiverWorld;\n'+shader.vertexShader;
-    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvRiverUv=uv;vRiverWorld=(modelMatrix*vec4(transformed,1.)).xyz;');
-    shader.fragmentShader=`uniform float riverTime;uniform vec3 riverDeep;uniform vec3 riverShallow;uniform vec3 riverFoam;varying vec2 vRiverUv;varying vec3 vRiverWorld;\n`+shader.fragmentShader;
-    shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
-      float riverAcross=abs(vRiverUv.x*2.-1.);
-      float riverPhase=vRiverWorld.z*.66-riverTime*1.1+sin(vRiverWorld.x*.37)*.7;
-      float riverBands=sin(riverPhase*1.4+vRiverUv.x*8.)*.5+.5;
-      float riverLongStreak=pow(max(0.,sin(vRiverWorld.z*1.52-riverTime*2.0+vRiverUv.x*26.)),14.);
-      float riverEdge=smoothstep(.76,.99,riverAcross);
-      float riverFoamAmount=riverEdge*(.10+.44*riverBands)+riverLongStreak*.09*(1.-riverEdge);
-      diffuseColor.rgb=mix(riverDeep,riverShallow,pow(riverAcross,.65)*.68+riverBands*.045);
-      diffuseColor.rgb=mix(diffuseColor.rgb,riverFoam,riverFoamAmount);
-    `);
-    shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_begin>',`#include <normal_fragment_begin>
-      float riverWx=cos(vRiverWorld.x*1.7+vRiverWorld.z*.18+riverTime*.45)*.022;
-      float riverWz=cos(vRiverWorld.z*.90-riverTime*1.25+vRiverUv.x*7.)*.045;
-      normal=normalize(normal+mat3(viewMatrix)*vec3(riverWx,0.,riverWz));
-    `);
-    shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=clamp(roughnessFactor+sin(riverPhase)*.035,.25,.38);');
-  };
-  material.customProgramCacheKey=()=> 'pnw-flowing-creek-r4';surface.material=material;
-  return{
-    update(elapsed:number,_dt:number,reducedMotion=false){if(disposed)return;if(!reducedMotion)visualTime=elapsed;time.value=visualTime;},
-    stats:()=>({materials:1,additionalGeometry:0,additionalTextures:0,visualTime,disposed}),
-    dispose(){if(disposed)return;disposed=true;if(surface.material===material)surface.material=previous;},
   };
 }

@@ -1,5 +1,9 @@
 import { CABIN, GIANT, HOME, TENT, WORLD_SEED } from "../content/world.ts";
 import { heightAt, pathDistance, riverX, slopeAt } from "./surface.ts";
+import {CAMP_VISITOR} from '../content/characters.ts';
+import {CAMP_PROPS} from '../content/scene-props.ts';
+import fixedSlots from '../content/fixed-tree-slots.json' with {type:'json'};
+const fixedSlotIds=new Set(fixedSlots);
 export type Tree = {
   id: string;
   individualId: string;
@@ -54,20 +58,23 @@ export function makeTrees(seed = WORLD_SEED): Tree[] {
       const scale = 0.85 + rng() * 0.75,
         kind = rng() < (x > -20 ? 0.91 : z < -25 ? 0.22 : 0.85) ? "pine" : "broadleaf";
       const variant = rng();
+      const id = `tree-slot-${row}-${col}`;
+      // Preserve the existing authored roster across terrain rendering changes and saves.
+      if(seed===WORLD_SEED&&!fixedSlotIds.has(id))continue;
       if (
+        seed!==WORLD_SEED&&(
         Math.abs(x - riverX(z)) < 8 ||
         pathDistance(x, z) < 6 ||
         Math.hypot((x - HOME.x)*.85, (z - HOME.z)*.7) < 23 ||
         Math.hypot(x - GIANT.x, z - GIANT.z) < 14 ||
         heightAt(x, z) < 2 ||
-        slopeAt(x, z) > 1.3
+        slopeAt(x, z) > 1.3)
       )
         continue;
       // Keep the camp's east-facing view corridor open.
-      if (x > -24 && x < 8 && z > -28 && z < 36) continue;
+      if (seed!==WORLD_SEED&&x > -24 && x < 8 && z > -28 && z < 36) continue;
       const role =
         x > -79 && x < riverX(z)-8 && z > -76 && z < 66 ? "managed" : "scenery";
-      const id = `tree-slot-${row}-${col}`;
       trees.push({
         id,
         individualId: `${id}:g0`,
@@ -98,8 +105,10 @@ export function makeTrees(seed = WORLD_SEED): Tree[] {
 }
 export function makeColliders(trees: Tree[]): Collider[] {
   return [
+    ...Object.values(CAMP_PROPS).map(p=>({id:p.id,x:p.x,z:p.z,radius:p.radius})),
     { id: "cabin", x:CABIN.x, z:CABIN.z+1.4, halfX: 7.5, halfZ: 7.0 },
     { id: "tent", ...TENT, halfX: 4.4, halfZ: 4.4 },
+    {id:CAMP_VISITOR.id,x:CAMP_VISITOR.x,z:CAMP_VISITOR.z,radius:CAMP_VISITOR.radius},
     ...trees
       .filter((t) => t.role !== "scenery")
       .map((t) => ({

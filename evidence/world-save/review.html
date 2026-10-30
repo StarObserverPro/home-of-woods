@@ -1,0 +1,48 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>世界存档保护检查</title></head>
+<body><div id="root"></div><script type="module">
+import React from 'react';import {createRoot} from 'react-dom/client';
+import {SaveControls} from '/src/ui/SaveControls.tsx';import '/src/ui/style.css';
+import {createState} from '/src/domain/state.ts';import {createSaveContext} from '/src/domain/save-context.ts';
+import {serializeWorldSave,prepareWorldSave} from '/src/domain/world-save.ts';
+import {createSaveController,INITIAL_SAVE_STATUS} from '/src/app/save-controller.ts';
+import {createBrowserWorldSaveStore} from '/src/app/world-save-store.ts';
+import {beginGather} from '/src/domain/gathering.ts';import {advancePlayerGather} from '/src/app/player-actions.ts';
+import {inventoryCount} from '/src/domain/inventory.ts';import {makeTrees,makeColliders} from '/src/world/layout.ts';
+const context=createSaveContext(),names=new Set();let counter=0;
+const store=()=>{const name='how-world-save-test-'+Date.now()+'-'+counter++;names.add(name);return {name,store:createBrowserWorldSaveStore(name)};};
+const check=(value,message)=>{if(!value)throw new Error(message);};
+async function abortTransaction(name){
+ const request=indexedDB.open(name,1);const db=await new Promise((resolve,reject)=>{request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
+ const tx=db.transaction('world','readwrite');tx.objectStore('world').put('must-not-survive','primary');tx.objectStore('world').put('must-not-survive','backup');
+ const done=new Promise(resolve=>{tx.onabort=resolve;});tx.abort();await done;db.close();
+}
+function Review(){
+ const [status,setStatus]=React.useState(INITIAL_SAVE_STATUS),[report,setReport]=React.useState({}),[busy,setBusy]=React.useState(false);
+ const owner=React.useRef(null),world=React.useRef(createState()),unsubscribe=React.useRef(null);
+ React.useEffect(()=>()=>unsubscribe.current?.(),[]);
+ const run=async()=>{setBusy(true);try{
+  const first=store(),a=createSaveController(first.store,context);await a.load();const state=createState();await a.saveNow(state);
+  const source=[...context.registry.sources.values()][0];state.selected=source.sourceId;state.player={...state.player,x:source.x-1,z:source.z};
+  check(beginGather(state,source.sourceId,context.registry,makeColliders(makeTrees())).ok,'begin');advancePlayerGather(state,context.registry,makeColliders(makeTrees()));
+  check(await a.saveNow(state),'save');const before=await first.store.read();await abortTransaction(first.name);check(JSON.stringify(await first.store.read())===JSON.stringify(before),'transaction rollback');
+  const b=createSaveController(first.store,context),c=createSaveController(first.store,context);const [left,right]=await Promise.all([b.load(),c.load()]);left.time+=1;right.time+=2;
+  const race=await Promise.all([b.saveNow(left),c.saveNow(right)]);check(race.filter(Boolean).length===1,'atomic race');
+  const afterRace=await prepareWorldSave((await first.store.read()).primary,context);check('value' in afterRace&&inventoryCount(afterRace.value.inventory,'branch')===3,'race stock');
+  const corrupt=store(),valid=await serializeWorldSave(createState(),context,{sequence:1,savedAt:1});const raw='{broken-world-save';
+  await corrupt.store.compareAndSwap({primary:null,backup:null},{primary:raw,backup:valid});const controller=createSaveController(corrupt.store,context);await controller.load();
+  const initial=await corrupt.store.read();controller.observe(createState());check(await controller.saveNow(createState())===false,'protected write');
+  check(JSON.stringify(await corrupt.store.read())===JSON.stringify(initial),'original preserved');check(await controller.exportRaw('primary')===raw,'raw export');
+  unsubscribe.current?.();owner.current=controller;world.current=createState();unsubscribe.current=controller.subscribe(()=>setStatus(controller.status()));setStatus(controller.status());
+  setReport({databaseBackend:'IndexedDB',branchQuantity:3,sourceRemaining:afterRace.value.gathering.sources[source.sourceId].remaining,abortedTransactionPreserved:true,concurrentWinners:race.filter(Boolean).length,loserStatus:(race[0]?c:b).status().state,corruptRawPreserved:true,rawExportExact:true,protectedStatus:controller.status().state,recovery:null});
+ }catch(error){setReport({error:String(error)});}finally{setBusy(false);}};
+ const restore=async()=>{const restored=await owner.current.restoreValidCopy();check(restored,'recovery');world.current=restored;setReport(previous=>({...previous,recovery:{status:owner.current.status().state,branchQuantity:inventoryCount(restored.inventory,'branch'),time:restored.time}}));};
+ return React.createElement('main',{className:'save-review'},
+  React.createElement('h1',null,'世界存档保护检查'),React.createElement('p',null,'合成数据使用独立测试数据库，不修改正式游戏进度。'),
+  React.createElement('button',{onClick:run,disabled:busy},busy?'检查中':'运行真实数据库检查'),
+  owner.current&&React.createElement(SaveControls,{status,onSave:()=>owner.current.saveNow(world.current),onReload:async()=>{const state=await owner.current.reload();if(state)world.current=state;},onRestore:restore,onExport:which=>owner.current.exportRaw(which)}),
+  React.createElement('pre',{id:'result-data'},JSON.stringify(report,null,2)));
+}
+document.body.style.background='#253e33';document.body.style.color='#f8f2df';
+const style=document.createElement('style');style.textContent='.save-review{position:static;max-width:760px;margin:20px auto;padding:20px;overflow:auto;height:calc(100dvh - 40px)}.save-review h1{font-size:24px}.save-review pre{white-space:pre-wrap;font-size:12px}.save-review button{min-height:44px;padding:8px 12px}.save-review .save-controls{max-width:540px}';document.head.append(style);
+createRoot(document.getElementById('root')).render(React.createElement(Review));
+</script></body></html>

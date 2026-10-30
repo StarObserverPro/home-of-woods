@@ -1,0 +1,16 @@
+{
+  "databaseBackend": "IndexedDB",
+  "branchQuantity": 3,
+  "sourceRemaining": 0,
+  "abortedTransactionPreserved": true,
+  "concurrentWinners": 1,
+  "loserStatus": "conflict",
+  "corruptRawPreserved": true,
+  "rawExportExact": true,
+  "protectedStatus": "protected",
+  "recovery": {
+    "status": "saved",
+    "branchQuantity": 0,
+    "time": 0
+  }
+}

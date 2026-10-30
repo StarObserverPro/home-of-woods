@@ -1,0 +1,337 @@
+{
+  "version": "HOW-CHARACTERS-1",
+  "createdAt": "2026-10-30T15:25:42.864Z",
+  "runtimeFingerprint": "158d8428c96e4f979a934c680c9f34f91d213d0926e9c0ecdd4ab7691853e782",
+  "files": [
+    {
+      "file": "index.html",
+      "bytes": 443,
+      "sha256": "00ea3ca038e44c70a9fd7aca627797094144c40c73f0977ef8a8d8bf4c65d5b5"
+    },
+    {
+      "file": "package-lock.json",
+      "bytes": 31586,
+      "sha256": "22a60826a6f071df7cdef8977c24ee898b37185417e7d9af4ed8cf63a9984ff9"
+    },
+    {
+      "file": "package.json",
+      "bytes": 1011,
+      "sha256": "d58f076b18fef3ef23ddf8ec609f31aa8c05053ec1ddc846c93c7b3dbc28e75b"
+    },
+    {
+      "file": "public/assets/characters/axe.glb",
+      "bytes": 11400,
+      "sha256": "467df584b4ef1c644f81189e41713f69ee4ec44f5364eaf662f5f36c1f284c96"
+    },
+    {
+      "file": "public/assets/characters/motions.glb",
+      "bytes": 178484,
+      "sha256": "cf0370621d7cebfc40299ddbd10126cff78e02b0bd55e3edb73ad812e02edaa5"
+    },
+    {
+      "file": "public/assets/characters/player.glb",
+      "bytes": 447308,
+      "sha256": "f6a4e94f2c7d9434adab18c23dbb2ac6fb52668ef34f48ccc252926cc6bc1d01"
+    },
+    {
+      "file": "public/assets/characters/visitor.glb",
+      "bytes": 447476,
+      "sha256": "23dfa70dd17a20a84b8b4bb5ac75343e07eea90b0066b378f8601d698b9f4be6"
+    },
+    {
+      "file": "public/assets/gathering/branches.glb",
+      "bytes": 9536,
+      "sha256": "a7d7b19bddad0a0dd8d4a9001d721da1f738267e90ddc27457fad0da62706692"
+    },
+    {
+      "file": "public/assets/gathering/mushrooms.glb",
+      "bytes": 15272,
+      "sha256": "6d0d3b01f7a33a5b7dcf8ab52829ce04fa0ad3cdb6ee172f5865c540053422c0"
+    },
+    {
+      "file": "public/assets/licenses/KayKit-Adventurers-2.0-CC0.txt",
+      "bytes": 1554,
+      "sha256": "d4adc31660d1db22eb60eba648e01db41577548f6fa1a3576cb4a6283dae0a58"
+    },
+    {
+      "file": "public/assets/licenses/KayKit-Animations-1.1-CC0.txt",
+      "bytes": 1548,
+      "sha256": "373b159044d1a886ed15f57ca5a7673ba14e2623c460283452705f2056912ed9"
+    },
+    {
+      "file": "public/assets/licenses/Kenney-Nature-Kit-CC0.txt",
+      "bytes": 611,
+      "sha256": "cb96b75e3560ac78d7a53ce6f083f4cdb5c53faea6141b62d63458dcfe1e4b9d"
+    },
+    {
+      "file": "public/assets/m0/broadleaf.glb",
+      "bytes": 56516,
+      "sha256": "e38f4f9f4c508fbb7ac2c9e713723c2d92561c13b2976823809934c311fb74f3"
+    },
+    {
+      "file": "public/assets/m0/cabin.glb",
+      "bytes": 360284,
+      "sha256": "d052c9c644c0a897d596e529f9d91a6e576d50be6d40443468f7c322ec702471"
+    },
+    {
+      "file": "public/assets/m0/pine.glb",
+      "bytes": 86536,
+      "sha256": "7ee8448870b8b0d5fdc570ad489b2721f1c64d31f3328123b51f59056cfc9008"
+    },
+    {
+      "file": "public/assets/m0/ranger.glb",
+      "bytes": 122776,
+      "sha256": "337909639f918add22a930f0ed2c8b0cf2f5000bdedc09579a9966c3b3ff9e97"
+    },
+    {
+      "file": "public/assets/m0/tent.glb",
+      "bytes": 78128,
+      "sha256": "d5979b1dce150d6fae86d3af9476ecc53f6ac6a68dddb90a428dde4359e02ebc"
+    },
+    {
+      "file": "public/assets/manifest.json",
+      "bytes": 22195,
+      "sha256": "b6fc0adfe1227ef3fc62c88aed26871a8165770deac983e006e8726244e75150"
+    },
+    {
+      "file": "public/third-party-notices.txt",
+      "bytes": 4657,
+      "sha256": "620f40a84371570c2ea1fa34cfce71434dfbc31cd36d078c7b51b34adb4babb4"
+    },
+    {
+      "file": "src/app/player-actions.ts",
+      "bytes": 1240,
+      "sha256": "dbb93b8e41d3b30d2e4128d02f5c657c3c56239dfc6292ccde654a57c849207d"
+    },
+    {
+      "file": "src/app/recorder.ts",
+      "bytes": 1099,
+      "sha256": "f5e4ba588c780bb88ddf9583ff1f118d9639d095d8d57c0aaca49161117dbd59"
+    },
+    {
+      "file": "src/app/runtime-loop.ts",
+      "bytes": 1572,
+      "sha256": "324d0cf1af62f77480365ab3abcee496f578210d3b505be9eacbc078af81c291"
+    },
+    {
+      "file": "src/app/runtime.ts",
+      "bytes": 14991,
+      "sha256": "52c1e16d206711a60a8e42308d10dc1f87c197e9d7725c8cbfed2b03a843b82b"
+    },
+    {
+      "file": "src/content/assets.ts",
+      "bytes": 918,
+      "sha256": "2b549ba9b9bcd6b491804871640575cda6aaee62b0ab0c7816678d513d995e4c"
+    },
+    {
+      "file": "src/content/biomes.ts",
+      "bytes": 855,
+      "sha256": "bbe8ff501f2a3f0fd2a7612b58123161638471ba38abdbd206d900da202a0566"
+    },
+    {
+      "file": "src/content/characters.ts",
+      "bytes": 423,
+      "sha256": "17e9060b1285fc4068318f3386a2ea763951427952650ef42486857392aaebf6"
+    },
+    {
+      "file": "src/content/environment.ts",
+      "bytes": 3309,
+      "sha256": "476c9ea83400200a58759b4cb9482840c45249565abce9bc05ea0635cf0c215d"
+    },
+    {
+      "file": "src/content/forestry.ts",
+      "bytes": 316,
+      "sha256": "e90cdca80ec6312a208da6e5cea0ee1aa029b1fe0ae958087641f4dedc22eb51"
+    },
+    {
+      "file": "src/content/gatherables.ts",
+      "bytes": 1554,
+      "sha256": "d89c927b749bb215ec6bce228e5b9993fd05abdcc962e70ea51acea4e8e13bd0"
+    },
+    {
+      "file": "src/content/items.ts",
+      "bytes": 1695,
+      "sha256": "e2b1f9191a5d4617d2280beedccae3281f909fddc025ded04a9d10d038a4c2bd"
+    },
+    {
+      "file": "src/content/processing.ts",
+      "bytes": 942,
+      "sha256": "1ea78523fabab359f37d8a0043c77ea37e0ff11a150f36b913f61dcdf0767158"
+    },
+    {
+      "file": "src/content/tree-resources.ts",
+      "bytes": 983,
+      "sha256": "dd0f0900163ca59f5c60b8e5ad11c9d91f5fc1d98bcfa5012133235b6da6b43d"
+    },
+    {
+      "file": "src/content/valley-r3.json",
+      "bytes": 154825,
+      "sha256": "9c273840effff74647f950e3ef914a1f46129bafe42fe1b9f8979fa67ee3913f"
+    },
+    {
+      "file": "src/content/world.ts",
+      "bytes": 2188,
+      "sha256": "34061ec3fb80f1f50a77326aa1414fe57ce7b75826d8fa73badb2a39b78f5b2d"
+    },
+    {
+      "file": "src/domain/forestry.ts",
+      "bytes": 8545,
+      "sha256": "5d501dae450640b9807eb76c242ef611a66fa5e35d5354e783f253d94886b654"
+    },
+    {
+      "file": "src/domain/gathering-registry.ts",
+      "bytes": 3283,
+      "sha256": "581f2321b5aa723a93db88c8db8b3bd109bcbe5da40c441aa742a50531e5482d"
+    },
+    {
+      "file": "src/domain/gathering-view.ts",
+      "bytes": 2654,
+      "sha256": "c6b73d4952af1e73955f70ed25f3f010f60f740b39ef5c36d5b9781923b5fbb3"
+    },
+    {
+      "file": "src/domain/gathering.ts",
+      "bytes": 12221,
+      "sha256": "7d83a85fd4e102ea9f72e9f114af222e0157adbbcef6f955b4bfc46960f81a13"
+    },
+    {
+      "file": "src/domain/inventory.ts",
+      "bytes": 577,
+      "sha256": "c0983f3b1b1c6912d2ce68321f25a0fa282a51ce4480b9c7488cf220ee6fa776"
+    },
+    {
+      "file": "src/domain/navigation.ts",
+      "bytes": 4877,
+      "sha256": "29bb83d180415bf5d8814c2aed16d78da58afd12f5bb2102ce96d3f3cb929c58"
+    },
+    {
+      "file": "src/domain/processing.ts",
+      "bytes": 1844,
+      "sha256": "a8bb40a3f8cee2fc6bab52a60aea0cae4129ff541bcc33c3d89d781a5f025294"
+    },
+    {
+      "file": "src/domain/state.ts",
+      "bytes": 1296,
+      "sha256": "aa9a553a4cb7bc37abdc66b761a28a62ee2d39ca359af9ab63902381860530b1"
+    },
+    {
+      "file": "src/domain/warehouse-view.ts",
+      "bytes": 1529,
+      "sha256": "f21d365006f5dc489db7affdb085850f38e5b8445f20c57c07481797d6d4e5fc"
+    },
+    {
+      "file": "src/main.tsx",
+      "bytes": 170,
+      "sha256": "bc67f0e06e6d8bee392fc08687f5de93de19adead7174045088073f7c3bc485b"
+    },
+    {
+      "file": "src/scene/axe-contact.ts",
+      "bytes": 5532,
+      "sha256": "e7631c71a5c8d560e185eff2c29e5f392fa7d96a209798a431c7fde648c0ee4b"
+    },
+    {
+      "file": "src/scene/character-grip.ts",
+      "bytes": 1266,
+      "sha256": "aea126474fb15bca812e29aad44a0b9c4df9d51531f24d2d0fb5ee410960fd0a"
+    },
+    {
+      "file": "src/scene/characters.ts",
+      "bytes": 8109,
+      "sha256": "6ffc86d2d36bf5fd492179d703ab54dd675cb481703f49eb9772bb3592d81cae"
+    },
+    {
+      "file": "src/scene/create-scene.ts",
+      "bytes": 20691,
+      "sha256": "69116337604cee8eb5a3c774eb681bc0ac9ceaa15c2f069e8bde762564ac2fd3"
+    },
+    {
+      "file": "src/scene/environment.ts",
+      "bytes": 15730,
+      "sha256": "2e935e66e91034da05ef19e9f963a528b00649fabbdaf2619d450f7fbfd45ab0"
+    },
+    {
+      "file": "src/scene/forestry-presentation.ts",
+      "bytes": 7682,
+      "sha256": "3981c2962545c7ed73f5b8577f6cc3372135ab64bc059373b2bdcba76a666e74"
+    },
+    {
+      "file": "src/scene/gathering-presentation.ts",
+      "bytes": 3991,
+      "sha256": "87637df84b937e84ecc0e2763715e38fe57b0d2c915cd92c21da2bdabe47e8a7"
+    },
+    {
+      "file": "src/scene/ground-material.ts",
+      "bytes": 3706,
+      "sha256": "86b46b1e45ef6a3b76b1bad95574873f1b0bc143a9119a231bfe20dd515f5398"
+    },
+    {
+      "file": "src/scene/interaction-registry.ts",
+      "bytes": 783,
+      "sha256": "13e9fd9c8e25a546eb81696e20fb3d6e4a94567ab19c5415495c1dc7660fb7b4"
+    },
+    {
+      "file": "src/scene/models.ts",
+      "bytes": 8867,
+      "sha256": "fc4dfaefc0324df744c64a5fbc67fa715a51299b5eba6c01f2066bd2adec3925"
+    },
+    {
+      "file": "src/scene/resources.ts",
+      "bytes": 2047,
+      "sha256": "3223ee9304cce3748d03b837213ca07e5bc3b726b34594dc34250be9826ba572"
+    },
+    {
+      "file": "src/scene/terrain.ts",
+      "bytes": 3786,
+      "sha256": "d30edcd651f1388634e0f5ec630e8e1d1bd1fe73753c591dd1d9b64e7b28de18"
+    },
+    {
+      "file": "src/ui/App.tsx",
+      "bytes": 27499,
+      "sha256": "8019c94234281ecedd1cc7563b61878d8a18e8bba3fabe0f0e580a9efa99a562"
+    },
+    {
+      "file": "src/ui/Warehouse.tsx",
+      "bytes": 3618,
+      "sha256": "ccc9ebd1c6153cedf0f2d3f930b6e1436394ff81d2bc6d6262343816fb5f1346"
+    },
+    {
+      "file": "src/ui/style.css",
+      "bytes": 15379,
+      "sha256": "373ce8eef315c7fa88cecd01dcd6aee4ccf7200ac631269aa1d60478fdec3e5e"
+    },
+    {
+      "file": "src/ui/warehouse.css",
+      "bytes": 4048,
+      "sha256": "3aa5c64fc6046d5ca36d9a6789eb9971e22902ffe9a459b6b496a65eda85914c"
+    },
+    {
+      "file": "src/vite-env.d.ts",
+      "bytes": 38,
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5"
+    },
+    {
+      "file": "src/world/gathering-layout.ts",
+      "bytes": 2604,
+      "sha256": "10693be939ee973f448077280b99cefc558d20b0b8a4ba5d335a1d136c5d3b07"
+    },
+    {
+      "file": "src/world/layout.ts",
+      "bytes": 3590,
+      "sha256": "60b10fd8b8bc9fcc51621b6d4cbdb43fba4e01a78e0969496154122e060b4000"
+    },
+    {
+      "file": "src/world/surface.ts",
+      "bytes": 3161,
+      "sha256": "ffcff185baab03768d2c9715b03999a465cffd76f665ec25b1f52a4a6bbfa2a9"
+    },
+    {
+      "file": "tsconfig.json",
+      "bytes": 376,
+      "sha256": "e1d59ebd9c14171a4bd91cb58a4c08e3371b0b65efa53c5ad77c25a4c55e70e6"
+    },
+    {
+      "file": "vite.config.ts",
+      "bytes": 1879,
+      "sha256": "7f65be2a27f6e29d2de9f5b390b5e75cc8c9b8dfc1739e18ff216d13ba6dd9ff"
+    }
+  ]
+}

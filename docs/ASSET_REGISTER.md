@@ -2,7 +2,13 @@
 
 对应 HOW-BASELINE-1.0；准入规则见 [ASSET_PIPELINE](ASSET_PIPELINE.md)，工作清单见 [ART_HUD](ART_HUD.md)。
 
-**当前记录：R4已获回接授权，五个原创GLB与程序场景已接入当前实现分支。** PR合并和发布另行记录；旧PR #1资产不因历史存在而准入。
+**当前记录：R4 基础场景、两项采集及 HOW-CHARACTERS-1 已接入本地实现分支。当前 10 个运行模型，原 ranger 仅归档；manifest 共登记 11 个 GLB。** PR合并和发布另行记录；旧PR #1资产不因历史存在而准入。
+
+## R5d 场景回接（2026-10-30）
+
+沿用用户审看通过的 R5 程序网格/着色器与自绘神谕纹理，新增焦木端头、灰环和不规则碎面；均为本项目原创，不冒称第三方 CC0。没有新增下载、生成服务或付费资产。倒影使用已锁定 Three.js 0.186.1 的 MIT Reflector，通知继续随 public 分发；现有十个运行模型及许可不变。
+
+运行入口为 scene/creek、camp-props、fire、altar、stone-foundation，以及 world 的闭合网格、切边和碎面。倒影单目标 512²/256²，每 3/4 帧有界更新，不重复阴影；火焰 2,808 三角形，祭坛上部 2,910 三角形、一张 512×640 状态文字纹理。文字使用系统字体，不分发字体文件。地形 19,896 三角形、166 个碎面插点，崖顶边固定，背面实际封闭。道具有稳定身份、拾取与碰撞，资源归原 owner。准入指纹、旧合成存档、修整和验证见 [场景记录](../evidence/scene-r5/README.md)。
 
 ## 条目格式
 
@@ -23,6 +29,20 @@
 
 状态规则：许可未明不得标 licensed；仅有截图不得标 integrated；未测性能不能标性能通过。设计稿的通过状态只针对设计参考，不升级为运行时资产验收。
 
+## HOW-CHARACTERS-1（2026-10-30）
+
+用户授权修正止点后回接；本地实现分支已接入，未开新 PR、合并或部署。来自 Kay Lousberg 官方免费包 [Adventurers 2.0](https://kaylousberg.itch.io/kaykit-adventurers) 的 Rogue 及 [Character Animations 1.1](https://kaylousberg.itch.io/kaykit-character-animations)。两个包随附 CC0，具体许可分别保存于 `public/assets/licenses/KayKit-Adventurers-2.0-CC0.txt`、`KayKit-Animations-1.1-CC0.txt`，允许修改、游戏使用和公开再分发；保留作者及修改记录。免费包已核验，不包含付费扩展或工具账号输出。
+
+| 资产 | 原件、修整与规格 | 运行入口 |
+| --- | --- | --- |
+| how-character-player / visitor | 同一 Rogue 源，移除披风、黑发黑眉，眉眼/高光小幅重绘；玩家苔绿、访客赭红。每个 6,418 顶点、7,574 三角、23 骨、1 蒙皮网格/材质；GLB 447,308 / 447,476 字节 | public/assets/characters/player.glb、visitor.glb；scene/characters；玩家与访客独立骨架 |
+| how-character-motions | General、MovementBasic、CombatMelee、Simulation 中选用 Idle_A、Walking_A、PickUp、Waving、Melee_2H_Attack_Slice / Chop，移除演示人体网格；178,484 字节 | public/assets/characters/motions.glb；消费唯一应用时钟，访客仅抽取头/手臂轨道 |
+| how-character-axe | 本项目 Blender 原创单刃斧，11,400 字节，非金属风格材质；不同于第三方模型，未标 CC0 | public/assets/characters/axe.glb；两掌挂点约束刚性柄，实际刃面接触检测 |
+
+采用的源文件限于 `sources/kaykit/adventurers/` 和 `sources/kaykit/animations/`，原文件与产物 hash、取得版本、修改、入口在 manifest；未复制整套免费包。`tools/build-characters.py`、`build-character-axe.py` 在独立 Blender 5.2.3 后台进程生成 `art/characters/*.blend` 和 GLB，`prepare-character-assets.mjs` 组装六段动作，`register-character-assets.mjs` 登记规范字节。原 Rogue 图与重绘图保留在编辑源，工程打包图像且移除外部绝对图像路径。
+
+树干接触读取现有真实几何；竖劈承托桩为原创诊断几何。Models/Resources 统一拥有共享几何、材质、图像纹理及克隆后的独立 skeleton；每实例骨纹理一并释放。旧 `m0/ranger.glb` 仅作历史归档，运行角色引用已替换。本轮来源、实际采伐、手机视口与释放结果见 [角色证据](../evidence/characters/README.md)，不沿用旧人物结论。
+
 ## 实际资产
 
 R4 已于2026-10-30获准回接，当前状态为实现分支已集成，PR待审查，尚未合并或部署。五个 HOW-M0-R3 原创运行GLB共704,240字节，规范字节与原来源保持；回接差异与新检查另见 ../evidence/integration/。
@@ -39,9 +59,18 @@ R4 已于2026-10-30获准回接，当前状态为实现分支已集成，PR待�
 | Sky 天空 / PMREM | 已锁定的 Three.js 0.186.1：three/addons/objects/Sky.js 与 PMREMGenerator；动态云和固定白昼天空、一次生成的 128 尺寸环境图 | Three.js 为 MIT，版权与条件见依赖 LICENSE，并由锁文件约束版本；属于软件依赖，不是 CC0 美术资源。发布时保留依赖版权与许可要求 |
 | Sky Porch 天光 / 薄雾参考 | 用户明确指认的自有站 [Sky Porch](https://sky-porch.starobserverpro.chatgpt.site)；本轮以 Sites 核对 owner、v35。公开源为 atmosphere.js?v=20261018-sunset2、evening-sky.js?v=20261018-sunset2、app.js?v=20261018-enrich4。当前仅按本山谷改写白昼天光及高度衰减近地薄雾方法 | 未发现站点许可声明，不写成 CC0、公共领域或第三方授权。原始 JS 只读抓取在 art/reference/sky-porch/，不进入候选包；站点业务、其他资产和私有资料不迁移。Three Sky 的 MIT 与该参考站的来源边界分别登记 |
 
-新增程序参数集中在 content；运行时仍只从 public/assets/m0/ 读取以下五个 GLB。Sky Porch 抓取与 R3 API 回执同属本地参考材料，不是运行依赖，也不是白名单回接资产。天空云相位、水流与林业表现消费唯一 app 循环；共享资源释放、真实浏览器 shader 和最终场景成本应在当前组合版本检查，不能引用 R3 成绩宣称 R4 通过。
+新增程序参数集中在 content；R4 从 public/assets/m0/ 读取原五个 GLB，采集支线另加载 public/assets/gathering/ 的两个 GLB。Sky Porch 抓取与 R3 API 回执同属本地参考材料，不是运行依赖，也不是白名单回接资产。天空云相位、水流与林业表现消费唯一 app 循环；共享资源释放、真实浏览器 shader 和最终场景成本应在当前组合版本检查，不能引用 R3 成绩宣称 R4 通过。
 
 ## 延用的 R3 模型与地表追踪
+
+本节为原 R3 五模型的历史登记。采集批次新增如下两项，不改变原模型来源。
+
+| 资产 | 来源、权利与修整 | 运行入口 |
+| --- | --- | --- |
+| how-gathering-branches（9,536 字节） | Kenney Nature Kit 2.1 / campfire_logs.glb；CC0，允许修改、游戏使用和公开分发；居中落地，1.9×0.32×1.25，暖木色、粗糙度 .68、金属度 0、保留拓扑 | public/assets/gathering/branches.glb；gathering-presentation / interaction-registry |
+| how-gathering-mushrooms（15,272 字节） | 同包 mushroom_tanGroup.glb；同一 CC0，居中落地，1.5×0.95×1.25，奶油柄/赭色菌盖、粗糙度 .68、金属度 0、保留拓扑 | public/assets/gathering/mushrooms.glb；同一加载和命中流程 |
+
+2026-10-30 重新核对[官方资产页](https://kenney.nl/assets/nature-kit)与随包 [CC0 许可](../public/assets/licenses/Kenney-Nature-Kit-CC0.txt)；原包 SHA-256 为 fa7974a0d342bfe63c38664ba9f8ec1a4aab8ea25f099bdc56870e33588c4d9d，只把采用的两个部件保存在 sources/kenney。加工脚本 tools/build-gathering-assets.mjs 使用锁定 Three.js 的 glTF 解析、bounds 和线性色彩变换，不修改既有 Blender 工程，不将第三方网格改标项目原创。前后尺寸/hash 在 [asset-normalization](../evidence/gathering/asset-normalization.json)，完整来源和加载/释放入口沿用 manifest。默认不阻挡行走，独立命中，共享资源由 Models/Resources 释放。本批实现/验证边界见[采集证据](../evidence/gathering/README.md)。
 
 以下保留原批次来源、修改和规范字节。五个 GLB 均为 R3 定制模型；项目没有因此取得第三方资源的额外权利，也没有将生成稿或定制模型标为 CC0。
 
@@ -78,3 +107,7 @@ Midjourney母版来自本任务原创提示词和局部编辑，没有使用他�
 地表输入来自本任务通过官方Atlas CLI/API产生的配对RGBD，再作人工标注和玩法修整。核对[World Labs条款3.3节](https://www.worldlabs.ai/terms-of-service)（更新日2026-01-21）：付费输出与API输出权利分别见3.3(b)/(d)，免费网页账户输出受3.3(a)限制，不混作同一授权。本批记录的工具链为官方API链路，不包含原始整景输出、账号回执或服务代码；来源署名保留为World Labs Atlas。
 
 Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开构建通知](../public/third-party-notices.txt)分发。Sky Porch仅参考用户自有站的天光/薄雾方法，未复制源站JS或业务，未声明其为CC0。
+
+## 仓库与树种物产的表现复用
+
+本轮继续使用 how-gathering-branches / how-gathering-mushrooms 原始规范字节及已核验许可，未新增第三方素材。树种配置只改变按宿主的地面位置、圈半径、簇数、缩放和朝向；10 个资源池通过 38 个挂点、4 个实例绘制批次呈现。批次借用缓存几何/材质，由同一 Resources owner 释放。仓库图标由 ui/Warehouse.tsx 内原生 SVG 绘制，不含新字体、图标包或生成图片。来源变化、命中、卸载和画面证据见 [本轮验证](../evidence/warehouse-tree-resources/README.md)。

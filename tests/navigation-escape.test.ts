@@ -58,7 +58,7 @@ test('escape still obeys unopened land, river and slope facts',()=>{
   const cases=[
     {name:'closed upper trail',p:{x:-27,z:-74.99},dx:0,dz:-step},
     {name:'water edge',p:{x:13.46,z:40},dx:step,dz:0},
-    {name:'steep slope',p:{x:-54,z:-24},dx:step,dz:0},
+    {name:'steep slope',p:{x:-53.75,z:-26.25},dx:step,dz:0},
   ];
   for(const {name,p,dx,dz} of cases){
     const target={x:p.x+dx,z:p.z+dz};
@@ -69,5 +69,5 @@ test('escape still obeys unopened land, river and slope facts',()=>{
   }
   assert.equal(inOpenArea(-27,-75.01),false);
   assert.ok(heightAt(13.46+step,40)<1.7);
-  assert.ok(slopeAt(-54+step,-24)>MOVEMENT.maxSlope);
+  assert.ok(slopeAt(-53.75+step,-26.25)>MOVEMENT.maxSlope);
 });

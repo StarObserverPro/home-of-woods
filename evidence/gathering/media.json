@@ -1,0 +1,12 @@
+{
+  "file": "evidence/gathering/captures/gathering.webm",
+  "bytes": 2244593,
+  "sha256": "e63806e0c380a285c8ddc752409645016e7b687d302170e8b1990a61160d44b5",
+  "codec": "VP9",
+  "width": 1528,
+  "height": 682,
+  "decodedFrames": 289,
+  "duration": 19.903,
+  "error": null,
+  "verification": "Full ffmpeg decode to null; ffprobe packet time span; actual canvas capture from normal UI actions. HUD is recorded separately by screenshots."
+}
