@@ -1,0 +1,51 @@
+{
+  "version": "HOW-M0-SANDBOX-20261030-r4",
+  "runtimeFingerprint": "00cd10ce44cbc567ad24b854c52867ec1ba27c5215e92d01401e65a4ba50dd42",
+  "createdAt": "2026-10-30T05:09:11.027Z",
+  "videos": [
+    {
+      "file": "evidence/r4/forestry.webm",
+      "bytes": 1653112,
+      "sha256": "48d96d096203ea3689ebc7f4b8f0a852f26e9c587202c89710959b6a6b1c1b51",
+      "codec": "VP9",
+      "width": 1528,
+      "height": 686,
+      "decodedFrames": 299,
+      "decodedSeconds": 19.86,
+      "source": "actual canvas capture; normal UI actions; no synthetic animation"
+    },
+    {
+      "file": "evidence/r4/walk-and-camera.webm",
+      "bytes": 3113472,
+      "sha256": "eff7e5a3f02fc64864d5b56dbcef97ac7fa8de9fa3a434825afa9e6fae2d583a",
+      "codec": "VP9",
+      "width": 1528,
+      "height": 686,
+      "decodedFrames": 296,
+      "decodedSeconds": 19.88,
+      "source": "actual canvas capture; normal UI actions; no synthetic animation"
+    }
+  ],
+  "frames": [
+    {
+      "file": "desktop-chopping.png",
+      "video": "forestry.webm",
+      "second": 3.2
+    },
+    {
+      "file": "desktop-felling.png",
+      "video": "forestry.webm",
+      "second": 6.1
+    },
+    {
+      "file": "desktop-stump.png",
+      "video": "forestry.webm",
+      "second": 9
+    }
+  ],
+  "limits": [
+    "Canvas recordings exclude React HUD; independent screenshots show HUD.",
+    "No real mobile hardware, multi-touch or forced context restoration test.",
+    "Raw RAF frame intervals vary; no claim of locked 60fps."
+  ]
+}

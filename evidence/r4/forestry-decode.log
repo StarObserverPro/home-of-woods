@@ -1,0 +1,19 @@
+Input #0, matroska,webm, from 'evidence/r4/forestry.webm':
+  Metadata:
+    encoder         : Chrome
+  Duration: N/A, start: 0.000000, bitrate: N/A
+  Stream #0:0(eng): Video: vp9 (Profile 0), yuv420p(pc, bt709/bt709/iec61966-2-1), 1528x686, SAR 1:1 DAR 764:343, 1k tbr, 1k tbn (default)
+      Metadata:
+        alpha_mode      : 1
+Stream mapping:
+  Stream #0:0 -> #0:0 (vp9 (native) -> wrapped_avframe (native))
+Press [q] to stop, [?] for help
+Output #0, null, to 'pipe:':
+  Metadata:
+    encoder         : Lavf61.7.100
+  Stream #0:0(eng): Video: wrapped_avframe, yuv420p(pc, bt709/bt709/iec61966-2-1, progressive), 1528x686 [SAR 1:1 DAR 764:343], q=2-31, 200 kb/s, 1k fps, 1k tbn (default)
+      Metadata:
+        alpha_mode      : 1
+        encoder         : Lavc61.19.100 wrapped_avframe
+[out#0/null @ 000001e1b8c6f1c0] video:128KiB audio:0KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown
+frame=  299 fps=0.0 q=-0.0 Lsize=N/A time=00:00:19.86 bitrate=N/A speed=  54x    

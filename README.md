@@ -9,8 +9,27 @@
 - 产品基线：**HOW-BASELINE-1.0，2026-10-29**；需求方向已获用户批准，合并状态以本基线 PR 为准。
 - 本基线 PR 之前的初步试稿、原型、截图、模型、参数和验收结论均不计入新版交付。旧 PR #1 属于被取代的试稿，不能作为 M0–M2 已完成的依据。
 - 历史内容仅供有选择地重新审查；复用的代码或资产必须符合本基线并重新验证。历史记录保留，不重写提交历史。
-- 本次交付为需求与开发约定。创建本基线时，main 只有文档；本 PR 不导入游戏代码、第三方资产或旧原型，不宣称已经实现、部署或验收。
-- 首版面向浏览器单人体验，沿用 TypeScript + Three.js + React HUD 的技术方向；实际版本在实现 PR 锁定。
+- PR #2 已合并为 `d22ac56`。2026-10-30 获准将已审查的 R4 候选接入实现分支，准备实现 PR；本分支包含可行走山谷与有限采伐。代码接入、验证、PR 合并和部署分别记录，尚未部署。
+- 当前锁定 TypeScript 5.9.3、Three.js 0.186.1、React 19.3.1、Vite 8.3.5，使用 Node.js 22.14 或更新兼容版本。
+
+## 运行与检查
+
+```sh
+npm ci
+npm run dev
+npm run check
+npm run verify:evidence
+```
+
+Windows PowerShell 请用 `npm.cmd` 代替 `npm`。开发入口默认为 http://127.0.0.1:5173/；生产预览先 `npm run build`，再 `npm run preview`。
+
+WASD/方向键或点地面移动，拖动旋转、滚轮/按钮缩放，R/按钮复位；手机尺寸提供摇杆与镜头按钮。点击目标只选择；经营树走近后明确挥斧，巨木受保护。Esc 暂停，操作面板可减少动态效果。
+
+`?inspect=1` 提供诊断、卸载重入与录像。开发服务器仅接受本机同源、受限大小的录像，写入 `evidence/integration/captures/`；生产构建没有文件写入接口。游戏状态在本会话内保留，刷新页面会重新开始，完整存档属于 M1。
+
+本轮包括连续山坡/溪谷、帐篷与破屋、五个定制 GLB、固定树位、碰撞寻路、透明 HUD、地被色块、PNW 风格雪山和程序河水。追加有限砍伐链路包含四次挥斧、倾倒、短暂躺地、树桩与原位补生；24 点及成长耗时为候选参数，尚未实现完整年度经济、修屋和持久存档。
+
+验收入口：[当前验证与边界](VERIFICATION.md)、[参数](PARAMETERS.md)、[R4 图像/空间来源](art-direction-r3/PIPELINE.md)、[实机全景](evidence/r4/desktop-home.png)、[采伐实录](evidence/r4/forestry.webm)。原 R4 冻结证据与回接验证分别保存在 `evidence/r4/`、`evidence/integration/`；不把历史录制作当前源码的未经复测证明。
 
 ## 核心文档
 
@@ -21,7 +40,7 @@
 | [运行时与数据](docs/RENDERING.md) | service、状态、地表、渲染与资源生命周期 |
 | [美术、建模与 HUD](docs/ART_HUD.md) | 视觉规格、操作体验、首版资产清单 |
 | [资产获取与接入](docs/ASSET_PIPELINE.md) | CC0 优先、许可审查、Marble 2 / Midjourney、修整和整批接入 |
-| [资产登记](docs/ASSET_REGISTER.md) | 具体资源的来源、授权、修整与接入记录；当前为空 |
+| [资产登记](docs/ASSET_REGISTER.md) | 实际模型、地表和程序资产的来源、授权边界、修整与接入记录 |
 | [开发约定](AGENTS.md) | 基线优先级、scope、验证、PR 与发布纪律 |
 
 ## 第一段可玩体验

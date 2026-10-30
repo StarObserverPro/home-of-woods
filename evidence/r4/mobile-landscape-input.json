@@ -1,0 +1,299 @@
+{
+  "before": {
+    "current": {
+      "resources": {
+        "geometries": 33,
+        "materials": 9,
+        "extras": 169,
+        "disposed": false
+      },
+      "drawCalls": 291,
+      "triangles": 363016,
+      "gpu": {
+        "geometries": 48,
+        "textures": 8
+      },
+      "zoom": 0.76,
+      "yaw": -0.13,
+      "elevation": 0.24,
+      "canvas": {
+        "width": 844,
+        "height": 390
+      },
+      "treeCount": 580,
+      "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "managedTrees": 151,
+      "environment": {
+        "meshes": 7,
+        "geometryTriangles": 10260,
+        "geometries": 7,
+        "materials": 2,
+        "environmentMap": true,
+        "pmremSize": 128,
+        "visualTime": 26.977700000000038,
+        "disposed": false
+      },
+      "river": {
+        "materials": 1,
+        "additionalGeometry": 0,
+        "additionalTextures": 0,
+        "visualTime": 26.977700000000038,
+        "disposed": false
+      },
+      "destroyed": false,
+      "contextLost": false,
+      "loop": {
+        "paused": false,
+        "destroyed": false,
+        "scheduled": false,
+        "executing": true,
+        "running": true,
+        "frames": 1947
+      },
+      "samples": 360,
+      "frameMsP50": 33.30000000000291,
+      "frameMsP95": 66.59999999999854,
+      "seed": 104729,
+      "routeNodes": 0,
+      "player": {
+        "x": -34.256510064386916,
+        "z": -3.6868990963053982,
+        "facing": 3.0115926535897932,
+        "moving": false,
+        "y": 21.5
+      },
+      "gameTime": 64.81666666666428,
+      "forestry": {
+        "wood": 0,
+        "points": {
+          "year": 1,
+          "available": 24,
+          "used": 0,
+          "reserved": 0
+        },
+        "active": null,
+        "selectedTree": null
+      }
+    },
+    "audit": []
+  },
+  "after": {
+    "current": {
+      "resources": {
+        "geometries": 33,
+        "materials": 9,
+        "extras": 169,
+        "disposed": false
+      },
+      "drawCalls": 293,
+      "triangles": 365052,
+      "gpu": {
+        "geometries": 48,
+        "textures": 8
+      },
+      "zoom": 0.6440677966101696,
+      "yaw": -0.13,
+      "elevation": 0.24,
+      "canvas": {
+        "width": 844,
+        "height": 390
+      },
+      "treeCount": 580,
+      "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "managedTrees": 151,
+      "environment": {
+        "meshes": 7,
+        "geometryTriangles": 10260,
+        "geometries": 7,
+        "materials": 2,
+        "environmentMap": true,
+        "pmremSize": 128,
+        "visualTime": 26.977700000000038,
+        "disposed": false
+      },
+      "river": {
+        "materials": 1,
+        "additionalGeometry": 0,
+        "additionalTextures": 0,
+        "visualTime": 26.977700000000038,
+        "disposed": false
+      },
+      "destroyed": false,
+      "contextLost": false,
+      "loop": {
+        "paused": false,
+        "destroyed": false,
+        "scheduled": false,
+        "executing": true,
+        "running": true,
+        "frames": 2236
+      },
+      "samples": 360,
+      "frameMsP50": 33.69999999999709,
+      "frameMsP95": 66.70000000001164,
+      "seed": 104729,
+      "routeNodes": 0,
+      "player": {
+        "x": -30.495887092381338,
+        "z": -3.251800125940607,
+        "facing": 1.4556098319002666,
+        "moving": false,
+        "y": 21.5
+      },
+      "gameTime": 76.69999999999693,
+      "forestry": {
+        "wood": 0,
+        "points": {
+          "year": 1,
+          "available": 24,
+          "used": 0,
+          "reserved": 0
+        },
+        "active": null,
+        "selectedTree": null
+      }
+    },
+    "audit": []
+  },
+  "layout": {
+    "buttons": [
+      {
+        "name": "暂停",
+        "rect": {
+          "bottom": 58,
+          "height": 46,
+          "left": 782,
+          "right": 828,
+          "top": 12,
+          "width": 46,
+          "x": 782,
+          "y": 12
+        }
+      },
+      {
+        "name": "展开路线 ↗",
+        "rect": {
+          "bottom": 199.1999969482422,
+          "height": 44,
+          "left": 714,
+          "right": 824,
+          "top": 155.1999969482422,
+          "width": 110,
+          "x": 714,
+          "y": 155.1999969482422
+        }
+      },
+      {
+        "name": "镜头左转",
+        "rect": {
+          "bottom": 378.3999938964844,
+          "height": 44,
+          "left": 607,
+          "right": 651,
+          "top": 334.3999938964844,
+          "width": 44,
+          "x": 607,
+          "y": 334.3999938964844
+        }
+      },
+      {
+        "name": "镜头右转",
+        "rect": {
+          "bottom": 378.3999938964844,
+          "height": 44,
+          "left": 651,
+          "right": 695,
+          "top": 334.3999938964844,
+          "width": 44,
+          "x": 651,
+          "y": 334.3999938964844
+        }
+      },
+      {
+        "name": "缩小",
+        "rect": {
+          "bottom": 378.3999938964844,
+          "height": 44,
+          "left": 695,
+          "right": 739,
+          "top": 334.3999938964844,
+          "width": 44,
+          "x": 695,
+          "y": 334.3999938964844
+        }
+      },
+      {
+        "name": "放大",
+        "rect": {
+          "bottom": 378.3999938964844,
+          "height": 44,
+          "left": 739,
+          "right": 783,
+          "top": 334.3999938964844,
+          "width": 44,
+          "x": 739,
+          "y": 334.3999938964844
+        }
+      },
+      {
+        "name": "复位镜头",
+        "rect": {
+          "bottom": 378.3999938964844,
+          "height": 44,
+          "left": 783,
+          "right": 827,
+          "top": 334.3999938964844,
+          "width": 44,
+          "x": 783,
+          "y": 334.3999938964844
+        }
+      },
+      {
+        "name": "漫步",
+        "rect": {
+          "bottom": 378.3999938964844,
+          "height": 44,
+          "left": 440,
+          "right": 488,
+          "top": 334.3999938964844,
+          "width": 48,
+          "x": 440,
+          "y": 334.3999938964844
+        }
+      },
+      {
+        "name": "路线",
+        "rect": {
+          "bottom": 378.3999938964844,
+          "height": 44,
+          "left": 491,
+          "right": 539,
+          "top": 334.3999938964844,
+          "width": 48,
+          "x": 491,
+          "y": 334.3999938964844
+        }
+      },
+      {
+        "name": "操作",
+        "rect": {
+          "bottom": 378.3999938964844,
+          "height": 44,
+          "left": 542,
+          "right": 590,
+          "top": 334.3999938964844,
+          "width": 48,
+          "x": 542,
+          "y": 334.3999938964844
+        }
+      }
+    ],
+    "height": 390,
+    "scrollWidth": 844,
+    "width": 844
+  },
+  "actions": [
+    "joystick right 900ms",
+    "zoom out button"
+  ]
+}

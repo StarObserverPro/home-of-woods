@@ -1,0 +1,42 @@
+{
+  "version": "HOW-M0-SANDBOX-20261030-r4",
+  "runtimeFingerprint": "00cd10ce44cbc567ad24b854c52867ec1ba27c5215e92d01401e65a4ba50dd42",
+  "createdAt": "2026-10-30T05:09:11.051Z",
+  "checks": 13,
+  "sourceTests": 19,
+  "cycles": 5,
+  "ordinaryEntryErrors": 0,
+  "performance": {
+    "viewport": {
+      "width": 1528,
+      "height": 686
+    },
+    "gpu": {
+      "geometries": 48,
+      "textures": 8
+    },
+    "p50RangeMs": [
+      16.699999999953434,
+      16.70000000001164
+    ],
+    "p95RangeMs": [
+      32.949999999953434,
+      33.40000000002328
+    ]
+  },
+  "assertions": [
+    "frozen source/assets match",
+    "reserve/pause/cancel is lossless",
+    "committed tree yields once",
+    "five destroyed frame chains and resources converge",
+    "five reentries preserve wood/quota",
+    "390/844 layout and actual joystick actions",
+    "HUD camera action does not navigate",
+    "reduced motion freezes cloud/water time",
+    "Esc pauses and modal resumes",
+    "drag/zoom/reset leave player unchanged",
+    "creek and lookout arrivals reached",
+    "ordinary canvas pick protects giant",
+    "both videos fully decode"
+  ]
+}

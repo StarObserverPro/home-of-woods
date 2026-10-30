@@ -1,0 +1,15 @@
+* text=auto eol=lf
+*.glb -text
+*.blend -text
+*.jpg -text
+*.png -text
+*.webm -text
+public/assets/licenses/** -text
+# Reviewed receipts retain their exact original bytes, including Windows log encoding.
+evidence/r4/** -text
+evidence/integration/** -text
+
+# Original tool logs and license notices retain upstream whitespace verbatim.
+evidence/r4/*.log whitespace=-trailing-space
+public/assets/licenses/** whitespace=-trailing-space
+public/third-party-notices.txt whitespace=-blank-at-eof

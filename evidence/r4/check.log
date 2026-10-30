@@ -1,0 +1,151 @@
+
+> home-of-woods@0.1.0 check
+> npm run verify:assets && npm test && npm run build
+
+
+> home-of-woods@0.1.0 verify:assets
+> node tools/verify-assets.mjs
+
+Verified 5 runtime GLBs and terrain data: hashes, provenance, embedded resources, nonmetallic palette, character pivots and complete finite surface grid.
+
+> home-of-woods@0.1.0 test
+> node --experimental-strip-types --test tests/*.test.ts
+
+TAP version 13
+# (node:26444) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: PNW environment instantiates bounded, distinct landforms with actual snow, exposed rock and glacier channels
+ok 1 - PNW environment instantiates bounded, distinct landforms with actual snow, exposed rock and glacier channels
+  ---
+  duration_ms: 159.8563
+  ...
+# Subtest: environment generation is deterministic and all geometry/material allocations have one releasing owner
+ok 2 - environment generation is deterministic and all geometry/material allocations have one releasing owner
+  ---
+  duration_ms: 142.6686
+  ...
+# Subtest: flowing water keeps the authoritative river geometry and water height while owning only its material
+ok 3 - flowing water keeps the authoritative river geometry and water height while owning only its material
+  ---
+  duration_ms: 58.1731
+  ...
+# (node:31364) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: production GLB presentation swings an axe, tips the committed tree, preserves a pickable stump and never settles state
+ok 4 - production GLB presentation swings an axe, tips the committed tree, preserves a pickable stump and never settles state
+  ---
+  duration_ms: 194.8229
+  ...
+# (node:17196) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: protected landmarks, remote trees and exhausted annual points cannot be felled
+ok 5 - protected landmarks, remote trees and exhausted annual points cannot be felled
+  ---
+  duration_ms: 4.8999
+  ...
+# Subtest: four-hit action reserves once and commits tree, wood, used points and regrowth atomically once
+ok 6 - four-hit action reserves once and commits tree, wood, used points and regrowth atomically once
+  ---
+  duration_ms: 15.5759
+  ...
+# Subtest: cancel, invalidated distance and changed year release reservations without rewards
+ok 7 - cancel, invalidated distance and changed year release reservations without rewards
+  ---
+  duration_ms: 3.359
+  ...
+# Subtest: original slot regrows a new protected immature individual and preserves quota/wood through growth
+ok 8 - original slot regrows a new protected immature individual and preserves quota/wood through growth
+  ---
+  duration_ms: 6.7284
+  ...
+# Subtest: fixed-step simulation and a later due-time audit settle the same committed resource result
+ok 9 - fixed-step simulation and a later due-time audit settle the same committed resource result
+  ---
+  duration_ms: 48.8579
+  ...
+# (node:30260) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: one frame chain, bounded delta, pause/resume baseline and terminal destruction
+ok 10 - one frame chain, bounded delta, pause/resume baseline and terminal destruction
+  ---
+  duration_ms: 3.0282
+  ...
+# Subtest: shared geometry/material cache disposes each allocation once and cannot resurrect
+ok 11 - shared geometry/material cache disposes each allocation once and cannot resurrect
+  ---
+  duration_ms: 9.5305
+  ...
+# (node:39824) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: static model batching preserves distinct geometry for each material group
+ok 12 - static model batching preserves distinct geometry for each material group
+  ---
+  duration_ms: 16.425
+  ...
+# Subtest: collision footprints cover the actual scaled cabin steps and both exported tree trunks
+ok 13 - collision footprints cover the actual scaled cabin steps and both exported tree trunks
+  ---
+  duration_ms: 159.1083
+  ...
+# (node:19364) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: water stays within the stream corridor instead of flooding unrelated low terrain
+ok 14 - water stays within the stream corridor instead of flooding unrelated low terrain
+  ---
+  duration_ms: 114.245
+  ...
+# (node:21044) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: fixed tree slots, generations and landmark identities survive reconstruction
+ok 15 - fixed tree slots, generations and landmark identities survive reconstruction
+  ---
+  duration_ms: 20.0796
+  ...
+# Subtest: triangle interpolation agrees with the actual rendered terrain vertices and diagonal
+ok 16 - triangle interpolation agrees with the actual rendered terrain vertices and diagonal
+  ---
+  duration_ms: 20.6286
+  ...
+# Subtest: spawn and all four scenic destinations are reachable with no collider corner cuts
+ok 17 - spawn and all four scenic destinations are reachable with no collider corner cuts
+  ---
+  duration_ms: 2661.7807
+  ...
+# Subtest: walking from home descends into the valley; rear route rises above the home
+ok 18 - walking from home descends into the valley; rear route rises above the home
+  ---
+  duration_ms: 0.3683
+  ...
+# Subtest: building, tree trunks, stream and unopened high mountain block movement
+ok 19 - building, tree trunks, stream and unopened high mountain block movement
+  ---
+  duration_ms: 3.0009
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3438.2997
+
+> home-of-woods@0.1.0 build
+> tsc -b && vite build
+
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 42 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.54 kB │ gzip:   0.42 kB
+dist/assets/index-B_ChkhrB.css     13.08 kB │ gzip:   3.48 kB
+dist/assets/index-CkTx5Gze.js   1,102.20 kB │ gzip: 325.43 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 814ms

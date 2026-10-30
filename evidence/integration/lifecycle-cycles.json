@@ -1,0 +1,1855 @@
+{
+  "runtimeFingerprint": "e956ca630f5bf91078f7f8147643dbceb844374cbb0eec24a4cdab14032b0e78",
+  "before": {
+    "current": {
+      "resources": {
+        "geometries": 33,
+        "materials": 9,
+        "extras": 169,
+        "disposed": false
+      },
+      "drawCalls": 286,
+      "triangles": 345952,
+      "gpu": {
+        "geometries": 54,
+        "textures": 8
+      },
+      "zoom": 0.76,
+      "yaw": -0.13,
+      "elevation": 0.24,
+      "canvas": {
+        "width": 1528,
+        "height": 686
+      },
+      "treeCount": 580,
+      "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "managedTrees": 151,
+      "environment": {
+        "meshes": 7,
+        "geometryTriangles": 10260,
+        "geometries": 7,
+        "materials": 2,
+        "environmentMap": true,
+        "pmremSize": 128,
+        "visualTime": 161.84563400001548,
+        "disposed": false
+      },
+      "river": {
+        "materials": 1,
+        "additionalGeometry": 0,
+        "additionalTextures": 0,
+        "visualTime": 161.84563400001548,
+        "disposed": false
+      },
+      "destroyed": false,
+      "contextLost": false,
+      "loop": {
+        "paused": false,
+        "destroyed": false,
+        "scheduled": false,
+        "executing": true,
+        "running": true,
+        "frames": 9203
+      },
+      "samples": 360,
+      "frameMsP50": 16.699999999982538,
+      "frameMsP95": 17,
+      "seed": 104729,
+      "routeNodes": 0,
+      "player": {
+        "x": -21.509035376898424,
+        "z": 28.27542668814668,
+        "facing": 2.2724932644838196,
+        "moving": false,
+        "y": 17.620555667508835
+      },
+      "gameTime": 161.83333333335426,
+      "forestry": {
+        "wood": 5,
+        "points": {
+          "year": 1,
+          "available": 19,
+          "used": 5,
+          "reserved": 0
+        },
+        "active": null,
+        "selectedTree": {
+          "id": "tree-slot-r3-hero-0",
+          "individualId": "tree-slot-r3-hero-0:g0",
+          "status": "stump",
+          "statusLabel": "树桩 · 等待补生",
+          "distance": 1.9758291944314872,
+          "canChop": false,
+          "canApproach": false,
+          "cost": 5,
+          "yield": 5,
+          "reason": "树位保留，等待原位补生。",
+          "progress": 0
+        }
+      }
+    },
+    "audit": []
+  },
+  "cycles": [
+    {
+      "current": {
+        "resources": {
+          "geometries": 33,
+          "materials": 9,
+          "extras": 169,
+          "disposed": false
+        },
+        "drawCalls": 286,
+        "triangles": 345952,
+        "gpu": {
+          "geometries": 50,
+          "textures": 8
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1528,
+          "height": 686
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "environment": {
+          "meshes": 7,
+          "geometryTriangles": 10260,
+          "geometries": 7,
+          "materials": 2,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 28.941590000000073,
+          "disposed": false
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 28.941590000000073,
+          "disposed": false
+        },
+        "destroyed": false,
+        "contextLost": false,
+        "loop": {
+          "paused": false,
+          "destroyed": false,
+          "scheduled": false,
+          "executing": true,
+          "running": true,
+          "frames": 1720
+        },
+        "samples": 360,
+        "frameMsP50": 16.699999999982538,
+        "frameMsP95": 16.79999999998836,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": -21.509035376898424,
+          "z": 28.27542668814668,
+          "facing": 2.2724932644838196,
+          "moving": false,
+          "y": 17.620555667508835
+        },
+        "gameTime": 190.96666666671078,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": {
+            "id": "tree-slot-r3-hero-0",
+            "individualId": "tree-slot-r3-hero-0:g0",
+            "status": "stump",
+            "statusLabel": "树桩 · 等待补生",
+            "distance": 1.9758291944314872,
+            "canChop": false,
+            "canApproach": false,
+            "cost": 5,
+            "yield": 5,
+            "reason": "树位保留，等待原位补生。",
+            "progress": 0
+          }
+        }
+      },
+      "audit": [
+        {
+          "resources": {
+            "geometries": 0,
+            "materials": 0,
+            "extras": 0,
+            "disposed": true
+          },
+          "drawCalls": 286,
+          "triangles": 345952,
+          "gpu": {
+            "geometries": 0,
+            "textures": 1
+          },
+          "zoom": 0.76,
+          "yaw": -0.13,
+          "elevation": 0.24,
+          "canvas": {
+            "width": 1528,
+            "height": 686
+          },
+          "treeCount": 580,
+          "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "managedTrees": 151,
+          "environment": {
+            "meshes": 0,
+            "geometryTriangles": 0,
+            "geometries": 0,
+            "materials": 0,
+            "environmentMap": true,
+            "pmremSize": 128,
+            "visualTime": 162.04553400001552,
+            "disposed": true
+          },
+          "river": {
+            "materials": 1,
+            "additionalGeometry": 0,
+            "additionalTextures": 0,
+            "visualTime": 162.04553400001552,
+            "disposed": true
+          },
+          "destroyed": true,
+          "contextLost": true,
+          "loop": {
+            "paused": true,
+            "destroyed": true,
+            "scheduled": false,
+            "executing": false,
+            "running": false,
+            "frames": 9216
+          },
+          "samples": 360,
+          "frameMsP50": 16.699999999982538,
+          "frameMsP95": 17,
+          "seed": 104729,
+          "routeNodes": 0,
+          "player": {
+            "x": -21.509035376898424,
+            "z": 28.27542668814668,
+            "facing": 2.2724932644838196,
+            "moving": false,
+            "y": 17.620555667508835
+          },
+          "gameTime": 162.03333333335442,
+          "forestry": {
+            "wood": 5,
+            "points": {
+              "year": 1,
+              "available": 19,
+              "used": 5,
+              "reserved": 0
+            },
+            "active": null,
+            "selectedTree": {
+              "id": "tree-slot-r3-hero-0",
+              "individualId": "tree-slot-r3-hero-0:g0",
+              "status": "stump",
+              "statusLabel": "树桩 · 等待补生",
+              "distance": 1.9758291944314872,
+              "canChop": false,
+              "canApproach": false,
+              "cost": 5,
+              "yield": 5,
+              "reason": "树位保留，等待原位补生。",
+              "progress": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "current": {
+        "resources": {
+          "geometries": 33,
+          "materials": 9,
+          "extras": 169,
+          "disposed": false
+        },
+        "drawCalls": 286,
+        "triangles": 345952,
+        "gpu": {
+          "geometries": 50,
+          "textures": 8
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1528,
+          "height": 686
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "environment": {
+          "meshes": 7,
+          "geometryTriangles": 10260,
+          "geometries": 7,
+          "materials": 2,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 1.7980819999999942,
+          "disposed": false
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 1.7980819999999942,
+          "disposed": false
+        },
+        "destroyed": false,
+        "contextLost": false,
+        "loop": {
+          "paused": false,
+          "destroyed": false,
+          "scheduled": false,
+          "executing": true,
+          "running": true,
+          "frames": 104
+        },
+        "samples": 104,
+        "frameMsP50": 16.699999999982538,
+        "frameMsP95": 16.800000000017462,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": -21.509035376898424,
+          "z": 28.27542668814668,
+          "facing": 2.2724932644838196,
+          "moving": false,
+          "y": 17.620555667508835
+        },
+        "gameTime": 192.8666666667123,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": {
+            "id": "tree-slot-r3-hero-0",
+            "individualId": "tree-slot-r3-hero-0:g0",
+            "status": "stump",
+            "statusLabel": "树桩 · 等待补生",
+            "distance": 1.9758291944314872,
+            "canChop": false,
+            "canApproach": false,
+            "cost": 5,
+            "yield": 5,
+            "reason": "树位保留，等待原位补生。",
+            "progress": 0
+          }
+        }
+      },
+      "audit": [
+        {
+          "resources": {
+            "geometries": 0,
+            "materials": 0,
+            "extras": 0,
+            "disposed": true
+          },
+          "drawCalls": 286,
+          "triangles": 345952,
+          "gpu": {
+            "geometries": 0,
+            "textures": 1
+          },
+          "zoom": 0.76,
+          "yaw": -0.13,
+          "elevation": 0.24,
+          "canvas": {
+            "width": 1528,
+            "height": 686
+          },
+          "treeCount": 580,
+          "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "managedTrees": 151,
+          "environment": {
+            "meshes": 0,
+            "geometryTriangles": 0,
+            "geometries": 0,
+            "materials": 0,
+            "environmentMap": true,
+            "pmremSize": 128,
+            "visualTime": 162.04553400001552,
+            "disposed": true
+          },
+          "river": {
+            "materials": 1,
+            "additionalGeometry": 0,
+            "additionalTextures": 0,
+            "visualTime": 162.04553400001552,
+            "disposed": true
+          },
+          "destroyed": true,
+          "contextLost": true,
+          "loop": {
+            "paused": true,
+            "destroyed": true,
+            "scheduled": false,
+            "executing": false,
+            "running": false,
+            "frames": 9216
+          },
+          "samples": 360,
+          "frameMsP50": 16.699999999982538,
+          "frameMsP95": 17,
+          "seed": 104729,
+          "routeNodes": 0,
+          "player": {
+            "x": -21.509035376898424,
+            "z": 28.27542668814668,
+            "facing": 2.2724932644838196,
+            "moving": false,
+            "y": 17.620555667508835
+          },
+          "gameTime": 162.03333333335442,
+          "forestry": {
+            "wood": 5,
+            "points": {
+              "year": 1,
+              "available": 19,
+              "used": 5,
+              "reserved": 0
+            },
+            "active": null,
+            "selectedTree": {
+              "id": "tree-slot-r3-hero-0",
+              "individualId": "tree-slot-r3-hero-0:g0",
+              "status": "stump",
+              "statusLabel": "树桩 · 等待补生",
+              "distance": 1.9758291944314872,
+              "canChop": false,
+              "canApproach": false,
+              "cost": 5,
+              "yield": 5,
+              "reason": "树位保留，等待原位补生。",
+              "progress": 0
+            }
+          }
+        },
+        {
+          "resources": {
+            "geometries": 0,
+            "materials": 0,
+            "extras": 0,
+            "disposed": true
+          },
+          "drawCalls": 286,
+          "triangles": 345952,
+          "gpu": {
+            "geometries": 0,
+            "textures": 1
+          },
+          "zoom": 0.76,
+          "yaw": -0.13,
+          "elevation": 0.24,
+          "canvas": {
+            "width": 1528,
+            "height": 686
+          },
+          "treeCount": 580,
+          "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "managedTrees": 151,
+          "environment": {
+            "meshes": 0,
+            "geometryTriangles": 0,
+            "geometries": 0,
+            "materials": 0,
+            "environmentMap": true,
+            "pmremSize": 128,
+            "visualTime": 29.057990000000064,
+            "disposed": true
+          },
+          "river": {
+            "materials": 1,
+            "additionalGeometry": 0,
+            "additionalTextures": 0,
+            "visualTime": 29.057990000000064,
+            "disposed": true
+          },
+          "destroyed": true,
+          "contextLost": true,
+          "loop": {
+            "paused": true,
+            "destroyed": true,
+            "scheduled": false,
+            "executing": false,
+            "running": false,
+            "frames": 1728
+          },
+          "samples": 360,
+          "frameMsP50": 16.699999999982538,
+          "frameMsP95": 16.79999999998836,
+          "seed": 104729,
+          "routeNodes": 0,
+          "player": {
+            "x": -21.509035376898424,
+            "z": 28.27542668814668,
+            "facing": 2.2724932644838196,
+            "moving": false,
+            "y": 17.620555667508835
+          },
+          "gameTime": 191.08333333337754,
+          "forestry": {
+            "wood": 5,
+            "points": {
+              "year": 1,
+              "available": 19,
+              "used": 5,
+              "reserved": 0
+            },
+            "active": null,
+            "selectedTree": {
+              "id": "tree-slot-r3-hero-0",
+              "individualId": "tree-slot-r3-hero-0:g0",
+              "status": "stump",
+              "statusLabel": "树桩 · 等待补生",
+              "distance": 1.9758291944314872,
+              "canChop": false,
+              "canApproach": false,
+              "cost": 5,
+              "yield": 5,
+              "reason": "树位保留，等待原位补生。",
+              "progress": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "current": {
+        "resources": {
+          "geometries": 33,
+          "materials": 9,
+          "extras": 169,
+          "disposed": false
+        },
+        "drawCalls": 286,
+        "triangles": 345952,
+        "gpu": {
+          "geometries": 50,
+          "textures": 8
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1528,
+          "height": 686
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "environment": {
+          "meshes": 7,
+          "geometryTriangles": 10260,
+          "geometries": 7,
+          "materials": 2,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 1.648315999999991,
+          "disposed": false
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 1.648315999999991,
+          "disposed": false
+        },
+        "destroyed": false,
+        "contextLost": false,
+        "loop": {
+          "paused": false,
+          "destroyed": false,
+          "scheduled": false,
+          "executing": true,
+          "running": true,
+          "frames": 92
+        },
+        "samples": 92,
+        "frameMsP50": 16.699999999982538,
+        "frameMsP95": 17.099999999976717,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": -21.509035376898424,
+          "z": 28.27542668814668,
+          "facing": 2.2724932644838196,
+          "moving": false,
+          "y": 17.620555667508835
+        },
+        "gameTime": 194.58333333338032,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": {
+            "id": "tree-slot-r3-hero-0",
+            "individualId": "tree-slot-r3-hero-0:g0",
+            "status": "stump",
+            "statusLabel": "树桩 · 等待补生",
+            "distance": 1.9758291944314872,
+            "canChop": false,
+            "canApproach": false,
+            "cost": 5,
+            "yield": 5,
+            "reason": "树位保留，等待原位补生。",
+            "progress": 0
+          }
+        }
+      },
+      "audit": [
+        {
+          "resources": {
+            "geometries": 0,
+            "materials": 0,
+            "extras": 0,
+            "disposed": true
+          },
+          "drawCalls": 286,
+          "triangles": 345952,
+          "gpu": {
+            "geometries": 0,
+            "textures": 1
+          },
+          "zoom": 0.76,
+          "yaw": -0.13,
+          "elevation": 0.24,
+          "canvas": {
+            "width": 1528,
+            "height": 686
+          },
+          "treeCount": 580,
+          "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "managedTrees": 151,
+          "environment": {
+            "meshes": 0,
+            "geometryTriangles": 0,
+            "geometries": 0,
+            "materials": 0,
+            "environmentMap": true,
+            "pmremSize": 128,
+            "visualTime": 162.04553400001552,
+            "disposed": true
+          },
+          "river": {
+            "materials": 1,
+            "additionalGeometry": 0,
+            "additionalTextures": 0,
+            "visualTime": 162.04553400001552,
+            "disposed": true
+          },
+          "destroyed": true,
+          "contextLost": true,
+          "loop": {
+            "paused": true,
+            "destroyed": true,
+            "scheduled": false,
+            "executing": false,
+            "running": false,
+            "frames": 9216
+          },
+          "samples": 360,
+          "frameMsP50": 16.699999999982538,
+          "frameMsP95": 17,
+          "seed": 104729,
+          "routeNodes": 0,
+          "player": {
+            "x": -21.509035376898424,
+            "z": 28.27542668814668,
+            "facing": 2.2724932644838196,
+            "moving": false,
+            "y": 17.620555667508835
+          },
+          "gameTime": 162.03333333335442,
+          "forestry": {
+            "wood": 5,
+            "points": {
+              "year": 1,
+              "available": 19,
+              "used": 5,
+              "reserved": 0
+            },
+            "active": null,
+            "selectedTree": {
+              "id": "tree-slot-r3-hero-0",
+              "individualId": "tree-slot-r3-hero-0:g0",
+              "status": "stump",
+              "statusLabel": "树桩 · 等待补生",
+              "distance": 1.9758291944314872,
+              "canChop": false,
+              "canApproach": false,
+              "cost": 5,
+              "yield": 5,
+              "reason": "树位保留，等待原位补生。",
+              "progress": 0
+            }
+          }
+        },
+        {
+          "resources": {
+            "geometries": 0,
+            "materials": 0,
+            "extras": 0,
+            "disposed": true
+          },
+          "drawCalls": 286,
+          "triangles": 345952,
+          "gpu": {
+            "geometries": 0,
+            "textures": 1
+          },
+          "zoom": 0.76,
+          "yaw": -0.13,
+          "elevation": 0.24,
+          "canvas": {
+            "width": 1528,
+            "height": 686
+          },
+          "treeCount": 580,
+          "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "managedTrees": 151,
+          "environment": {
+            "meshes": 0,
+            "geometryTriangles": 0,
+            "geometries": 0,
+            "materials": 0,
+            "environmentMap": true,
+            "pmremSize": 128,
+            "visualTime": 29.057990000000064,
+            "disposed": true
+          },
+          "river": {
+            "materials": 1,
+            "additionalGeometry": 0,
+            "additionalTextures": 0,
+            "visualTime": 29.057990000000064,
+            "disposed": true
+          },
+          "destroyed": true,
+          "contextLost": true,
+          "loop": {
+            "paused": true,
+            "destroyed": true,
+            "scheduled": false,
+            "executing": false,
+            "running": false,
+            "frames": 1728
+          },
+          "samples": 360,
+          "frameMsP50": 16.699999999982538,
+          "frameMsP95": 16.79999999998836,
+          "seed": 104729,
+          "routeNodes": 0,
+          "player": {
+            "x": -21.509035376898424,
+            "z": 28.27542668814668,
+            "facing": 2.2724932644838196,
+            "moving": false,
+            "y": 17.620555667508835
+          },
+          "gameTime": 191.08333333337754,
+          "forestry": {
+            "wood": 5,
+            "points": {
+              "year": 1,
+              "available": 19,
+              "used": 5,
+              "reserved": 0
+            },
+            "active": null,
+            "selectedTree": {
+              "id": "tree-slot-r3-hero-0",
+              "individualId": "tree-slot-r3-hero-0:g0",
+              "status": "stump",
+              "statusLabel": "树桩 · 等待补生",
+              "distance": 1.9758291944314872,
+              "canChop": false,
+              "canApproach": false,
+              "cost": 5,
+              "yield": 5,
+              "reason": "树位保留，等待原位补生。",
+              "progress": 0
+            }
+          }
+        },
+        {
+          "resources": {
+            "geometries": 0,
+            "materials": 0,
+            "extras": 0,
+            "disposed": true
+          },
+          "drawCalls": 286,
+          "triangles": 345952,
+          "gpu": {
+            "geometries": 0,
+            "textures": 1
+          },
+          "zoom": 0.76,
+          "yaw": -0.13,
+          "elevation": 0.24,
+          "canvas": {
+            "width": 1528,
+            "height": 686
+          },
+          "treeCount": 580,
+          "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "managedTrees": 151,
+          "environment": {
+            "meshes": 0,
+            "geometryTriangles": 0,
+            "geometries": 0,
+            "materials": 0,
+            "environmentMap": true,
+            "pmremSize": 128,
+            "visualTime": 1.8812819999999766,
+            "disposed": true
+          },
+          "river": {
+            "materials": 1,
+            "additionalGeometry": 0,
+            "additionalTextures": 0,
+            "visualTime": 1.8812819999999766,
+            "disposed": true
+          },
+          "destroyed": true,
+          "contextLost": true,
+          "loop": {
+            "paused": true,
+            "destroyed": true,
+            "scheduled": false,
+            "executing": false,
+            "running": false,
+            "frames": 110
+          },
+          "samples": 109,
+          "frameMsP50": 16.699999999982538,
+          "frameMsP95": 16.800000000017462,
+          "seed": 104729,
+          "routeNodes": 0,
+          "player": {
+            "x": -21.509035376898424,
+            "z": 28.27542668814668,
+            "facing": 2.2724932644838196,
+            "moving": false,
+            "y": 17.620555667508835
+          },
+          "gameTime": 192.9500000000457,
+          "forestry": {
+            "wood": 5,
+            "points": {
+              "year": 1,
+              "available": 19,
+              "used": 5,
+              "reserved": 0
+            },
+            "active": null,
+            "selectedTree": {
+              "id": "tree-slot-r3-hero-0",
+              "individualId": "tree-slot-r3-hero-0:g0",
+              "status": "stump",
+              "statusLabel": "树桩 · 等待补生",
+              "distance": 1.9758291944314872,
+              "canChop": false,
+              "canApproach": false,
+              "cost": 5,
+              "yield": 5,
+              "reason": "树位保留，等待原位补生。",
+              "progress": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "current": {
+        "resources": {
+          "geometries": 33,
+          "materials": 9,
+          "extras": 169,
+          "disposed": false
+        },
+        "drawCalls": 286,
+        "triangles": 345952,
+        "gpu": {
+          "geometries": 50,
+          "textures": 8
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1528,
+          "height": 686
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "environment": {
+          "meshes": 7,
+          "geometryTriangles": 10260,
+          "geometries": 7,
+          "materials": 2,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 1.632215999999986,
+          "disposed": false
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 1.632215999999986,
+          "disposed": false
+        },
+        "destroyed": false,
+        "contextLost": false,
+        "loop": {
+          "paused": false,
+          "destroyed": false,
+          "scheduled": false,
+          "executing": true,
+          "running": true,
+          "frames": 93
+        },
+        "samples": 93,
+        "frameMsP50": 16.699999999982538,
+        "frameMsP95": 17.199999999982538,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": -21.509035376898424,
+          "z": 28.27542668814668,
+          "facing": 2.2724932644838196,
+          "moving": false,
+          "y": 17.620555667508835
+        },
+        "gameTime": 196.40000000004844,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": {
+            "id": "tree-slot-r3-hero-0",
+            "individualId": "tree-slot-r3-hero-0:g0",
+            "status": "stump",
+            "statusLabel": "树桩 · 等待补生",
+            "distance": 1.9758291944314872,
+            "canChop": false,
+            "canApproach": false,
+            "cost": 5,
+            "yield": 5,
+            "reason": "树位保留，等待原位补生。",
+            "progress": 0
+          }
+        }
+      },
+      "audit": [
+        {
+          "resources": {
+            "geometries": 0,
+            "materials": 0,
+            "extras": 0,
+            "disposed": true
+          },
+          "drawCalls": 286,
+          "triangles": 345952,
+          "gpu": {
+            "geometries": 0,
+            "textures": 1
+          },
+          "zoom": 0.76,
+          "yaw": -0.13,
+          "elevation": 0.24,
+          "canvas": {
+            "width": 1528,
+            "height": 686
+          },
+          "treeCount": 580,
+          "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "managedTrees": 151,
+          "environment": {
+            "meshes": 0,
+            "geometryTriangles": 0,
+            "geometries": 0,
+            "materials": 0,
+            "environmentMap": true,
+            "pmremSize": 128,
+            "visualTime": 162.04553400001552,
+            "disposed": true
+          },
+          "river": {
+            "materials": 1,
+            "additionalGeometry": 0,
+            "additionalTextures": 0,
+            "visualTime": 162.04553400001552,
+            "disposed": true
+          },
+          "destroyed": true,
+          "contextLost": true,
+          "loop": {
+            "paused": true,
+            "destroyed": true,
+            "scheduled": false,
+            "executing": false,
+            "running": false,
+            "frames": 9216
+          },
+          "samples": 360,
+          "frameMsP50": 16.699999999982538,
+          "frameMsP95": 17,
+          "seed": 104729,
+          "routeNodes": 0,
+          "player": {
+            "x": -21.509035376898424,
+            "z": 28.27542668814668,
+            "facing": 2.2724932644838196,
+            "moving": false,
+            "y": 17.620555667508835
+          },
+          "gameTime": 162.03333333335442,
+          "forestry": {
+            "wood": 5,
+            "points": {
+              "year": 1,
+              "available": 19,
+              "used": 5,
+              "reserved": 0
+            },
+            "active": null,
+            "selectedTree": {
+              "id": "tree-slot-r3-hero-0",
+              "individualId": "tree-slot-r3-hero-0:g0",
+              "status": "stump",
+              "statusLabel": "树桩 · 等待补生",
+              "distance": 1.9758291944314872,
+              "canChop": false,
+              "canApproach": false,
+              "cost": 5,
+              "yield": 5,
+              "reason": "树位保留，等待原位补生。",
+              "progress": 0
+            }
+          }
+        },
+        {
+          "resources": {
+            "geometries": 0,
+            "materials": 0,
+            "extras": 0,
+            "disposed": true
+          },
+          "drawCalls": 286,
+          "triangles": 345952,
+          "gpu": {
+            "geometries": 0,
+            "textures": 1
+          },
+          "zoom": 0.76,
+          "yaw": -0.13,
+          "elevation": 0.24,
+          "canvas": {
+            "width": 1528,
+            "height": 686
+          },
+          "treeCount": 580,
+          "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "managedTrees": 151,
+          "environment": {
+            "meshes": 0,
+            "geometryTriangles": 0,
+            "geometries": 0,
+            "materials": 0,
+            "environmentMap": true,
+            "pmremSize": 128,
+            "visualTime": 29.057990000000064,
+            "disposed": true
+          },
+          "river": {
+            "materials": 1,
+            "additionalGeometry": 0,
+            "additionalTextures": 0,
+            "visualTime": 29.057990000000064,
+            "disposed": true
+          },
+          "destroyed": true,
+          "contextLost": true,
+          "loop": {
+            "paused": true,
+            "destroyed": true,
+            "scheduled": false,
+            "executing": false,
+            "running": false,
+            "frames": 1728
+          },
+          "samples": 360,
+          "frameMsP50": 16.699999999982538,
+          "frameMsP95": 16.79999999998836,
+          "seed": 104729,
+          "routeNodes": 0,
+          "player": {
+            "x": -21.509035376898424,
+            "z": 28.27542668814668,
+            "facing": 2.2724932644838196,
+            "moving": false,
+            "y": 17.620555667508835
+          },
+          "gameTime": 191.08333333337754,
+          "forestry": {
+            "wood": 5,
+            "points": {
+              "year": 1,
+              "available": 19,
+              "used": 5,
+              "reserved": 0
+            },
+            "active": null,
+            "selectedTree": {
+              "id": "tree-slot-r3-hero-0",
+              "individualId": "tree-slot-r3-hero-0:g0",
+              "status": "stump",
+              "statusLabel": "树桩 · 等待补生",
+              "distance": 1.9758291944314872,
+              "canChop": false,
+              "canApproach": false,
+              "cost": 5,
+              "yield": 5,
+              "reason": "树位保留，等待原位补生。",
+              "progress": 0
+            }
+          }
+        },
+        {
+          "resources": {
+            "geometries": 0,
+            "materials": 0,
+            "extras": 0,
+            "disposed": true
+          },
+          "drawCalls": 286,
+          "triangles": 345952,
+          "gpu": {
+            "geometries": 0,
+            "textures": 1
+          },
+          "zoom": 0.76,
+          "yaw": -0.13,
+          "elevation": 0.24,
+          "canvas": {
+            "width": 1528,
+            "height": 686
+          },
+          "treeCount": 580,
+          "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "managedTrees": 151,
+          "environment": {
+            "meshes": 0,
+            "geometryTriangles": 0,
+            "geometries": 0,
+            "materials": 0,
+            "environmentMap": true,
+            "pmremSize": 128,
+            "visualTime": 1.8812819999999766,
+            "disposed": true
+          },
+          "river": {
+            "materials": 1,
+            "additionalGeometry": 0,
+            "additionalTextures": 0,
+            "visualTime": 1.8812819999999766,
+            "disposed": true
+          },
+          "destroyed": true,
+          "contextLost": true,
+          "loop": {
+            "paused": true,
+            "destroyed": true,
+            "scheduled": false,
+            "executing": false,
+            "running": false,
+            "frames": 110
+          },
+          "samples": 109,
+          "frameMsP50": 16.699999999982538,
+          "frameMsP95": 16.800000000017462,
+          "seed": 104729,
+          "routeNodes": 0,
+          "player": {
+            "x": -21.509035376898424,
+            "z": 28.27542668814668,
+            "facing": 2.2724932644838196,
+            "moving": false,
+            "y": 17.620555667508835
+          },
+          "gameTime": 192.9500000000457,
+          "forestry": {
+            "wood": 5,
+            "points": {
+              "year": 1,
+              "available": 19,
+              "used": 5,
+              "reserved": 0
+            },
+            "active": null,
+            "selectedTree": {
+              "id": "tree-slot-r3-hero-0",
+              "individualId": "tree-slot-r3-hero-0:g0",
+              "status": "stump",
+              "statusLabel": "树桩 · 等待补生",
+              "distance": 1.9758291944314872,
+              "canChop": false,
+              "canApproach": false,
+              "cost": 5,
+              "yield": 5,
+              "reason": "树位保留，等待原位补生。",
+              "progress": 0
+            }
+          }
+        },
+        {
+          "resources": {
+            "geometries": 0,
+            "materials": 0,
+            "extras": 0,
+            "disposed": true
+          },
+          "drawCalls": 286,
+          "triangles": 345952,
+          "gpu": {
+            "geometries": 0,
+            "textures": 1
+          },
+          "zoom": 0.76,
+          "yaw": -0.13,
+          "elevation": 0.24,
+          "canvas": {
+            "width": 1528,
+            "height": 686
+          },
+          "treeCount": 580,
+          "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "managedTrees": 151,
+          "environment": {
+            "meshes": 0,
+            "geometryTriangles": 0,
+            "geometries": 0,
+            "materials": 0,
+            "environmentMap": true,
+            "pmremSize": 128,
+            "visualTime": 1.8480160000000023,
+            "disposed": true
+          },
+          "river": {
+            "materials": 1,
+            "additionalGeometry": 0,
+            "additionalTextures": 0,
+            "visualTime": 1.8480160000000023,
+            "disposed": true
+          },
+          "destroyed": true,
+          "contextLost": true,
+          "loop": {
+            "paused": true,
+            "destroyed": true,
+            "scheduled": false,
+            "executing": false,
+            "running": false,
+            "frames": 105
+          },
+          "samples": 104,
+          "frameMsP50": 16.699999999982538,
+          "frameMsP95": 16.800000000017462,
+          "seed": 104729,
+          "routeNodes": 0,
+          "player": {
+            "x": -21.509035376898424,
+            "z": 28.27542668814668,
+            "facing": 2.2724932644838196,
+            "moving": false,
+            "y": 17.620555667508835
+          },
+          "gameTime": 194.78333333338048,
+          "forestry": {
+            "wood": 5,
+            "points": {
+              "year": 1,
+              "available": 19,
+              "used": 5,
+              "reserved": 0
+            },
+            "active": null,
+            "selectedTree": {
+              "id": "tree-slot-r3-hero-0",
+              "individualId": "tree-slot-r3-hero-0:g0",
+              "status": "stump",
+              "statusLabel": "树桩 · 等待补生",
+              "distance": 1.9758291944314872,
+              "canChop": false,
+              "canApproach": false,
+              "cost": 5,
+              "yield": 5,
+              "reason": "树位保留，等待原位补生。",
+              "progress": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "current": {
+        "resources": {
+          "geometries": 33,
+          "materials": 9,
+          "extras": 169,
+          "disposed": false
+        },
+        "drawCalls": 286,
+        "triangles": 345952,
+        "gpu": {
+          "geometries": 50,
+          "textures": 8
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1528,
+          "height": 686
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "environment": {
+          "meshes": 7,
+          "geometryTriangles": 10260,
+          "geometries": 7,
+          "materials": 2,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 1.8147820000000057,
+          "disposed": false
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 1.8147820000000057,
+          "disposed": false
+        },
+        "destroyed": false,
+        "contextLost": false,
+        "loop": {
+          "paused": false,
+          "destroyed": false,
+          "scheduled": false,
+          "executing": true,
+          "running": true,
+          "frames": 97
+        },
+        "samples": 97,
+        "frameMsP50": 16.699999999982538,
+        "frameMsP95": 33.30000000001746,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": -21.509035376898424,
+          "z": 28.27542668814668,
+          "facing": 2.2724932644838196,
+          "moving": false,
+          "y": 17.620555667508835
+        },
+        "gameTime": 198.4333333333834,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": {
+            "id": "tree-slot-r3-hero-0",
+            "individualId": "tree-slot-r3-hero-0:g0",
+            "status": "stump",
+            "statusLabel": "树桩 · 等待补生",
+            "distance": 1.9758291944314872,
+            "canChop": false,
+            "canApproach": false,
+            "cost": 5,
+            "yield": 5,
+            "reason": "树位保留，等待原位补生。",
+            "progress": 0
+          }
+        }
+      },
+      "audit": [
+        {
+          "resources": {
+            "geometries": 0,
+            "materials": 0,
+            "extras": 0,
+            "disposed": true
+          },
+          "drawCalls": 286,
+          "triangles": 345952,
+          "gpu": {
+            "geometries": 0,
+            "textures": 1
+          },
+          "zoom": 0.76,
+          "yaw": -0.13,
+          "elevation": 0.24,
+          "canvas": {
+            "width": 1528,
+            "height": 686
+          },
+          "treeCount": 580,
+          "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "managedTrees": 151,
+          "environment": {
+            "meshes": 0,
+            "geometryTriangles": 0,
+            "geometries": 0,
+            "materials": 0,
+            "environmentMap": true,
+            "pmremSize": 128,
+            "visualTime": 162.04553400001552,
+            "disposed": true
+          },
+          "river": {
+            "materials": 1,
+            "additionalGeometry": 0,
+            "additionalTextures": 0,
+            "visualTime": 162.04553400001552,
+            "disposed": true
+          },
+          "destroyed": true,
+          "contextLost": true,
+          "loop": {
+            "paused": true,
+            "destroyed": true,
+            "scheduled": false,
+            "executing": false,
+            "running": false,
+            "frames": 9216
+          },
+          "samples": 360,
+          "frameMsP50": 16.699999999982538,
+          "frameMsP95": 17,
+          "seed": 104729,
+          "routeNodes": 0,
+          "player": {
+            "x": -21.509035376898424,
+            "z": 28.27542668814668,
+            "facing": 2.2724932644838196,
+            "moving": false,
+            "y": 17.620555667508835
+          },
+          "gameTime": 162.03333333335442,
+          "forestry": {
+            "wood": 5,
+            "points": {
+              "year": 1,
+              "available": 19,
+              "used": 5,
+              "reserved": 0
+            },
+            "active": null,
+            "selectedTree": {
+              "id": "tree-slot-r3-hero-0",
+              "individualId": "tree-slot-r3-hero-0:g0",
+              "status": "stump",
+              "statusLabel": "树桩 · 等待补生",
+              "distance": 1.9758291944314872,
+              "canChop": false,
+              "canApproach": false,
+              "cost": 5,
+              "yield": 5,
+              "reason": "树位保留，等待原位补生。",
+              "progress": 0
+            }
+          }
+        },
+        {
+          "resources": {
+            "geometries": 0,
+            "materials": 0,
+            "extras": 0,
+            "disposed": true
+          },
+          "drawCalls": 286,
+          "triangles": 345952,
+          "gpu": {
+            "geometries": 0,
+            "textures": 1
+          },
+          "zoom": 0.76,
+          "yaw": -0.13,
+          "elevation": 0.24,
+          "canvas": {
+            "width": 1528,
+            "height": 686
+          },
+          "treeCount": 580,
+          "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "managedTrees": 151,
+          "environment": {
+            "meshes": 0,
+            "geometryTriangles": 0,
+            "geometries": 0,
+            "materials": 0,
+            "environmentMap": true,
+            "pmremSize": 128,
+            "visualTime": 29.057990000000064,
+            "disposed": true
+          },
+          "river": {
+            "materials": 1,
+            "additionalGeometry": 0,
+            "additionalTextures": 0,
+            "visualTime": 29.057990000000064,
+            "disposed": true
+          },
+          "destroyed": true,
+          "contextLost": true,
+          "loop": {
+            "paused": true,
+            "destroyed": true,
+            "scheduled": false,
+            "executing": false,
+            "running": false,
+            "frames": 1728
+          },
+          "samples": 360,
+          "frameMsP50": 16.699999999982538,
+          "frameMsP95": 16.79999999998836,
+          "seed": 104729,
+          "routeNodes": 0,
+          "player": {
+            "x": -21.509035376898424,
+            "z": 28.27542668814668,
+            "facing": 2.2724932644838196,
+            "moving": false,
+            "y": 17.620555667508835
+          },
+          "gameTime": 191.08333333337754,
+          "forestry": {
+            "wood": 5,
+            "points": {
+              "year": 1,
+              "available": 19,
+              "used": 5,
+              "reserved": 0
+            },
+            "active": null,
+            "selectedTree": {
+              "id": "tree-slot-r3-hero-0",
+              "individualId": "tree-slot-r3-hero-0:g0",
+              "status": "stump",
+              "statusLabel": "树桩 · 等待补生",
+              "distance": 1.9758291944314872,
+              "canChop": false,
+              "canApproach": false,
+              "cost": 5,
+              "yield": 5,
+              "reason": "树位保留，等待原位补生。",
+              "progress": 0
+            }
+          }
+        },
+        {
+          "resources": {
+            "geometries": 0,
+            "materials": 0,
+            "extras": 0,
+            "disposed": true
+          },
+          "drawCalls": 286,
+          "triangles": 345952,
+          "gpu": {
+            "geometries": 0,
+            "textures": 1
+          },
+          "zoom": 0.76,
+          "yaw": -0.13,
+          "elevation": 0.24,
+          "canvas": {
+            "width": 1528,
+            "height": 686
+          },
+          "treeCount": 580,
+          "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "managedTrees": 151,
+          "environment": {
+            "meshes": 0,
+            "geometryTriangles": 0,
+            "geometries": 0,
+            "materials": 0,
+            "environmentMap": true,
+            "pmremSize": 128,
+            "visualTime": 1.8812819999999766,
+            "disposed": true
+          },
+          "river": {
+            "materials": 1,
+            "additionalGeometry": 0,
+            "additionalTextures": 0,
+            "visualTime": 1.8812819999999766,
+            "disposed": true
+          },
+          "destroyed": true,
+          "contextLost": true,
+          "loop": {
+            "paused": true,
+            "destroyed": true,
+            "scheduled": false,
+            "executing": false,
+            "running": false,
+            "frames": 110
+          },
+          "samples": 109,
+          "frameMsP50": 16.699999999982538,
+          "frameMsP95": 16.800000000017462,
+          "seed": 104729,
+          "routeNodes": 0,
+          "player": {
+            "x": -21.509035376898424,
+            "z": 28.27542668814668,
+            "facing": 2.2724932644838196,
+            "moving": false,
+            "y": 17.620555667508835
+          },
+          "gameTime": 192.9500000000457,
+          "forestry": {
+            "wood": 5,
+            "points": {
+              "year": 1,
+              "available": 19,
+              "used": 5,
+              "reserved": 0
+            },
+            "active": null,
+            "selectedTree": {
+              "id": "tree-slot-r3-hero-0",
+              "individualId": "tree-slot-r3-hero-0:g0",
+              "status": "stump",
+              "statusLabel": "树桩 · 等待补生",
+              "distance": 1.9758291944314872,
+              "canChop": false,
+              "canApproach": false,
+              "cost": 5,
+              "yield": 5,
+              "reason": "树位保留，等待原位补生。",
+              "progress": 0
+            }
+          }
+        },
+        {
+          "resources": {
+            "geometries": 0,
+            "materials": 0,
+            "extras": 0,
+            "disposed": true
+          },
+          "drawCalls": 286,
+          "triangles": 345952,
+          "gpu": {
+            "geometries": 0,
+            "textures": 1
+          },
+          "zoom": 0.76,
+          "yaw": -0.13,
+          "elevation": 0.24,
+          "canvas": {
+            "width": 1528,
+            "height": 686
+          },
+          "treeCount": 580,
+          "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "managedTrees": 151,
+          "environment": {
+            "meshes": 0,
+            "geometryTriangles": 0,
+            "geometries": 0,
+            "materials": 0,
+            "environmentMap": true,
+            "pmremSize": 128,
+            "visualTime": 1.8480160000000023,
+            "disposed": true
+          },
+          "river": {
+            "materials": 1,
+            "additionalGeometry": 0,
+            "additionalTextures": 0,
+            "visualTime": 1.8480160000000023,
+            "disposed": true
+          },
+          "destroyed": true,
+          "contextLost": true,
+          "loop": {
+            "paused": true,
+            "destroyed": true,
+            "scheduled": false,
+            "executing": false,
+            "running": false,
+            "frames": 105
+          },
+          "samples": 104,
+          "frameMsP50": 16.699999999982538,
+          "frameMsP95": 16.800000000017462,
+          "seed": 104729,
+          "routeNodes": 0,
+          "player": {
+            "x": -21.509035376898424,
+            "z": 28.27542668814668,
+            "facing": 2.2724932644838196,
+            "moving": false,
+            "y": 17.620555667508835
+          },
+          "gameTime": 194.78333333338048,
+          "forestry": {
+            "wood": 5,
+            "points": {
+              "year": 1,
+              "available": 19,
+              "used": 5,
+              "reserved": 0
+            },
+            "active": null,
+            "selectedTree": {
+              "id": "tree-slot-r3-hero-0",
+              "individualId": "tree-slot-r3-hero-0:g0",
+              "status": "stump",
+              "statusLabel": "树桩 · 等待补生",
+              "distance": 1.9758291944314872,
+              "canChop": false,
+              "canApproach": false,
+              "cost": 5,
+              "yield": 5,
+              "reason": "树位保留，等待原位补生。",
+              "progress": 0
+            }
+          }
+        },
+        {
+          "resources": {
+            "geometries": 0,
+            "materials": 0,
+            "extras": 0,
+            "disposed": true
+          },
+          "drawCalls": 286,
+          "triangles": 345952,
+          "gpu": {
+            "geometries": 0,
+            "textures": 1
+          },
+          "zoom": 0.76,
+          "yaw": -0.13,
+          "elevation": 0.24,
+          "canvas": {
+            "width": 1528,
+            "height": 686
+          },
+          "treeCount": 580,
+          "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "managedTrees": 151,
+          "environment": {
+            "meshes": 0,
+            "geometryTriangles": 0,
+            "geometries": 0,
+            "materials": 0,
+            "environmentMap": true,
+            "pmremSize": 128,
+            "visualTime": 1.8648159999999916,
+            "disposed": true
+          },
+          "river": {
+            "materials": 1,
+            "additionalGeometry": 0,
+            "additionalTextures": 0,
+            "visualTime": 1.8648159999999916,
+            "disposed": true
+          },
+          "destroyed": true,
+          "contextLost": true,
+          "loop": {
+            "paused": true,
+            "destroyed": true,
+            "scheduled": false,
+            "executing": false,
+            "running": false,
+            "frames": 108
+          },
+          "samples": 107,
+          "frameMsP50": 16.699999999982538,
+          "frameMsP95": 16.89999999999418,
+          "seed": 104729,
+          "routeNodes": 0,
+          "player": {
+            "x": -21.509035376898424,
+            "z": 28.27542668814668,
+            "facing": 2.2724932644838196,
+            "moving": false,
+            "y": 17.620555667508835
+          },
+          "gameTime": 196.63333333338196,
+          "forestry": {
+            "wood": 5,
+            "points": {
+              "year": 1,
+              "available": 19,
+              "used": 5,
+              "reserved": 0
+            },
+            "active": null,
+            "selectedTree": {
+              "id": "tree-slot-r3-hero-0",
+              "individualId": "tree-slot-r3-hero-0:g0",
+              "status": "stump",
+              "statusLabel": "树桩 · 等待补生",
+              "distance": 1.9758291944314872,
+              "canChop": false,
+              "canApproach": false,
+              "cost": 5,
+              "yield": 5,
+              "reason": "树位保留，等待原位补生。",
+              "progress": 0
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

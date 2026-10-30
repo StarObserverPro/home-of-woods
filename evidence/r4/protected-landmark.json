@@ -1,0 +1,90 @@
+{
+  "current": {
+    "resources": {
+      "geometries": 33,
+      "materials": 9,
+      "extras": 169,
+      "disposed": false
+    },
+    "drawCalls": 270,
+    "triangles": 335292,
+    "gpu": {
+      "geometries": 54,
+      "textures": 8
+    },
+    "zoom": 0.76,
+    "yaw": -0.13,
+    "elevation": 0.24,
+    "canvas": {
+      "width": 1528,
+      "height": 686
+    },
+    "treeCount": 580,
+    "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "managedTrees": 151,
+    "environment": {
+      "meshes": 7,
+      "geometryTriangles": 10260,
+      "geometries": 7,
+      "materials": 2,
+      "environmentMap": true,
+      "pmremSize": 128,
+      "visualTime": 351.5185000000645,
+      "disposed": false
+    },
+    "river": {
+      "materials": 1,
+      "additionalGeometry": 0,
+      "additionalTextures": 0,
+      "visualTime": 351.5185000000645,
+      "disposed": false
+    },
+    "destroyed": false,
+    "contextLost": false,
+    "loop": {
+      "paused": false,
+      "destroyed": false,
+      "scheduled": false,
+      "executing": true,
+      "running": true,
+      "frames": 18392
+    },
+    "samples": 360,
+    "frameMsP50": 16.699999999953434,
+    "frameMsP95": 33.20000000001164,
+    "seed": 104729,
+    "routeNodes": 0,
+    "player": {
+      "x": 3.113097102882056,
+      "z": 47.873591837942875,
+      "facing": -0.7298779672615084,
+      "moving": false,
+      "y": 1.622505659960341
+    },
+    "gameTime": 351.500000000009,
+    "forestry": {
+      "wood": 5,
+      "points": {
+        "year": 1,
+        "available": 19,
+        "used": 5,
+        "reserved": 0
+      },
+      "active": null,
+      "selectedTree": {
+        "id": "landmark-elder",
+        "individualId": "landmark-elder",
+        "status": "standing",
+        "statusLabel": "永久保护地标",
+        "distance": 6.377261573794835,
+        "canChop": false,
+        "canApproach": false,
+        "cost": 24,
+        "yield": 24,
+        "reason": "巨木是永久保护的地标，不能砍伐。",
+        "progress": 0
+      }
+    }
+  },
+  "audit": []
+}

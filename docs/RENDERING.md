@@ -1,6 +1,19 @@
 # 运行时、数据与资源管理
 
-对应 HOW-BASELINE-1.0；本文件是首版实现契约，尚未按本版实现或验收。参考水晶花园的库存事务、主循环、道具生命周期和交互注册，保留本项目清楚的唯一所有者，不移植其他项目业务或私有记录。
+对应 HOW-BASELINE-1.0。M0 与有限采伐的 R4 实现已获用户授权回接工作分支，实现 实现分支待PR审查、未合并、未部署；原 R4 验证与主体回接验证分开记录。本文保留后续 M1/M2 的契约，并标明当前已经存在的所有者。参考水晶花园的库存事务、主循环、道具生命周期和交互注册，不移植其他项目业务或私有记录。
+
+## 当前实现
+
+| 当前文件 | 已承担的责任 |
+| --- | --- |
+| src/app/runtime.ts、runtime-loop.ts | 组合唯一 GameState、命令和固定步长主循环；移动、林业、暂停/隐藏及场景重入 |
+| src/domain/state.ts、forestry.ts | 唯一模拟时间、树位/逐代个体、资格与距离、额度预留/取消/一次结算、树桩与原位补生 |
+| src/world/surface.ts、layout.ts、domain/navigation.ts | 同一三角形地表插值、固定布局、碰撞与寻路；林业碰撞读取当前阶段 |
+| src/scene/create-scene.ts、models.ts、resources.ts | 场景、相机、拾取、模型加载、共享 GPU 资源及销毁 |
+| src/scene/forestry-presentation.ts、ground-material.ts、environment.ts | 消费状态的挥斧倒树、规划地被、原创雪山、天空/PMREM 与原河面材质；不提交经济 |
+| src/ui/App.tsx | 读取快照并发意图；持有同一会话状态引用供重入，不另存余额或复制玩法规则 |
+
+当前没有持久存档、完整日历、通用制作/交易/建筑事务模块或在线服务。下面涉及这些功能的类型、service 与存档键是后续实现契约，不应作为已有接口调用。实际有限林业合同见 [forestry-r4](forestry-r4.md)，参数见 [PARAMETERS](../PARAMETERS.md)，回接状态见 [scope](scopes/m0-walkable-valley.md)。
 
 ## 分层
 
@@ -19,6 +32,8 @@
 
 Service 为纯本地规则模块，不设首版在线经济、账号或微服务。模块共享同一份 game state，不各存一份余额、日期或树木表。
 
+当前 forestry 模块已经承担有限采伐和基础原位换代；下表其他模块按 M1/M2 的实际功能逐步建立，不先增加无人使用的空 service。
+
 | 模块 | 责任 |
 | --- | --- |
 | inventory / transaction | 检查整笔材料增减与装备变更；生成候选结果或返回原因 |
@@ -33,6 +48,8 @@ Service 为纯本地规则模块，不设首版在线经济、账号或微服务
 开始采伐可持有短暂预留；完成时复核个体/年度/体量，或安全取消释放。读档恢复中断动作时，先按同一规则恢复/取消预留，不能把它当作已消费和可领取的两份资源。首版不做长期交易许可证。
 
 ## 持久化数据
+
+以下为 M1/M2 持久化语义。R4 的 GameState 目前只含 seed、time、forestry、player、selected、route、visited；运行时重建复用同一引用，刷新或关闭页面不会被宣称为可恢复存档。
 
 | 记录 | 最小字段语义 |
 | --- | --- |
@@ -57,14 +74,16 @@ TreeSlot 与 TreeIndividual 分开；实体 ID 不取自实例绘制索引。可
 | renderer / scene / camera | scene/create-scene；其他模式显式借用相机控制 |
 | requestAnimationFrame | app/runtime-loop；唯一帧调度 |
 | game state / 命令提交 | app 持有 domain 状态；统一 commit |
-| 游戏时间 / 到期结算 | domain/calendar；普通 tick 和休息共用 |
+| 游戏时间 / 到期结算 | 当前 GameState.time 由 app/runtime 固定步长推进，domain/forestry 处理林业到期；后续 calendar / 休息仍共用此唯一时钟 |
 | 地表与路径事实 | world/surface 与解析布局 |
 | 动态占地 / 树位使用 | domain 空间状态 |
 | 共享 GPU 资源 | scene/resources 缓存 owner |
-| 道具更新 / 拾取 | scene/prop-runtime、interaction-registry |
-| 存档写入 | app/save-controller |
+| 道具更新 / 拾取 | 当前 scene/create-scene 和 forestry-presentation；扩展时拆分，保留稳定实体映射 |
+| 存档写入 | M1 的 app/save-controller；R4 尚无持久化写入者 |
 
 文件名可在实现时调整，责任不可分裂。没有第二套库存、备用 RAF、模型内存档写入或外部工具的并行状态源。
+
+林业完成在同步步骤中结算原木、已用点数、释放预留和补生时间；之后表现倾倒、树桩及倒伏源树短暂停留。倒伏源树不再参与拾取，树桩沿用原 slotId；新个体换代，不因切换表现而改写奖励。云、水和动作表现都借用同一应用循环，减少动态效果不会创建另一时钟。
 
 ## 时间与生命周期
 
@@ -95,6 +114,8 @@ Marble 2 可用于空间建立与交互试验。接入时将可玩地表、碰�
 缓存键含规格、变体与版本；按需加载经批准资源，只提交实际使用文件，不打包整套素材库。性能阈值在 M0 目标设备采样后确定，不把未测帧率写成结果。
 
 ## 验证
+
+冻结 R4 的原始版本为 [source-freeze.json](../evidence/r4/source-freeze.json) 中的指纹；当时已有 19 项测试、类型/构建、浏览器 shader 编译、桌面/手机视口输入、五次卸载重入与当前游戏录像记录，详见 [VERIFICATION](../VERIFICATION.md)。用户授权回接后，最终分支检查另存 evidence/integration，不覆盖或改写原 R4 回执。真实手机性能/多指操作、强制图形上下文恢复和未来存档/年度行为仍需对应证据。
 
 验证固定 seed/相机/状态的家园全景、树木阶段、修缮、互动和移动端；记录设备、浏览器、视口、实体数、draw calls、三角形、纹理/几何计数与帧时间。重复预览、区块往返、暂停恢复和卸载后资源计数应收敛。
 

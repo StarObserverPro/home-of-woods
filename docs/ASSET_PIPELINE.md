@@ -1,6 +1,14 @@
 # 资产获取、工具使用与接入流程
 
-对应 HOW-BASELINE-1.0；本基线 PR 不下载、采购、生成或导入美术资产。此文件确定后续的免费资源优先策略、工具分工与准入要求。
+对应 HOW-BASELINE-1.0；最初基线 PR 仅建立规范。当前 R4 已完成设计/空间试验、独立模型和运行时接入，并于 2026-10-30 获用户授权按白名单回接主体工作分支、准备实现 PR；实现分支待PR审查、未合并、未部署。以下流程持续约束当前及后续资产，不把回接授权外推为采购、合并或发布授权。
+
+## 当前批次与证据
+
+本轮实际链路为 Midjourney R3 构图与局部编辑 → Atlas RGBD/多视图空间试验 → 人工审查地面锚点与玩法清理 → 统一地表及五个独立 Blender GLB → R4 林业、地被、雪山、天光、水面和 HUD。具体操作、失败分支与采用理由见 [R3 PIPELINE](../art-direction-r3/PIPELINE.md)；原始账号回执、临时链接和整景 SPZ 不进入公开回接包。
+
+当前生产 GLB 是项目原创模型；Kenney 曾作为 CC0 候选审查，manifest 的 previousSource 不表示生产网格仍复用该候选，也不将生成参考统一标成 CC0。运行时文件、来源与 hash 由 [manifest](../public/assets/manifest.json)、[ASSET_REGISTER](ASSET_REGISTER.md) 和原 [R4 source-freeze](../evidence/r4/source-freeze.json) 追踪。Blender 重新导出存在极小浮点差异，保留规范运行时 GLB，差异说明见 [re-export-audit](../art/re-export-audit.json)。
+
+回接清单与授权记录位于 [integration/intake.json](../evidence/integration/intake.json)；回接后的加载、构建、交互和资源检查另存 evidence/integration。原 R4 已取得的工程和实机证据仍由 [VERIFICATION](../VERIFICATION.md) 说明，不能靠复制证据目录给后续修改自动记为 verified。
 
 ## 1. 选择顺序与授权
 
@@ -29,13 +37,13 @@
 
 使用官方允许的操作方式；本项目不预设第三方非官方 API 或脚本自动化。实际使用时核验 [条款](https://docs.midjourney.com/hc/en-us/articles/32083055291277-Terms-of-Service) 与 [使用说明](https://docs.midjourney.com/hc/en-us/articles/27870375276557-Using-Images-Videos-Commercially)。生成稿不自动标为 CC0。
 
-设计稿用于审稿和模型修整方向；不能代替独立模型、碰撞、动作或实机截图。纳入仓库前同样检查输出权利及输入素材约束。本次未调用 Midjourney。
+设计稿用于审稿和模型修整方向；不能代替独立模型、碰撞、动作或实机截图。纳入仓库前同样检查输出权利及输入素材约束。本轮实际沿用用户已登录页面，比较少量 Draft 候选，使用屋顶局部蒙版、清晰度编辑与 Reframe 扩图；采用和淘汰分别登记在 R3 PIPELINE。用户指定最多每分钟提交一次、优先 Draft；局部编辑输出按实际模式记录，不把所有 Edit 都称为 Draft。后续继续遵循这项频率和用量约束。
 
 ## 4. Marble 2：场景建立与交互原型
 
 允许用于山谷空间建立、场景构图、可漫游空间与交互试验。具体操作与导出能力按账号当时已开放的接口执行，不把通用 Marble 功能、预览能力或不同版本能力当作本账号已具备。
 
-实际使用前核验 [Marble 2 文档](https://marble5.worldlabs.ai/docs/quickstart)、[API 能力](https://marble5.worldlabs.ai/docs/api-reference) 与 [World Labs 条款](https://docs.worldlabs.ai/terms-of-service)。工具权限、导出权利、公开入库/发布条件和成本记录在资源条目，不在仓库写入密钥、签名 URL 或账号身份。本次未调用 Marble 2。
+实际使用前核验 [Marble 2 文档](https://marble5.worldlabs.ai/docs/quickstart)、[API 能力](https://marble5.worldlabs.ai/docs/api-reference) 与 [World Labs 条款](https://docs.worldlabs.ai/terms-of-service)。工具权限、导出权利、公开入库/发布条件和成本记录在资源条目，不在仓库写入密钥、签名 URL 或账号身份。本轮实际完成 Atlas 图像转配对 RGBD、平移视图、三视图 Draft splat 和局部网格提取；扩展视图失败及有界重试已如实登记。大角度视图存在缺面和漂浮斑块，整景网格不可分离，均未作为整块经营区接入。
 
 导入后统一坐标、尺度、材质、地表与碰撞；把可经营树、巨木资源点、可修缮建筑、道路和交互锚点接入本项目 world/domain。交互动作转成现有命令，库存、时间、额度、再生与存档仍由本地游戏拥有。
 
@@ -56,6 +64,6 @@
 
 具体记录格式见 [ASSET_REGISTER](ASSET_REGISTER.md)。每个运行时资产可追到来源文件、许可依据、修改过程和游戏入口；CC0 也记录出处以便维护。对于要求署名的许可，必要通知同时出现在分发物与适当的游戏署名入口。
 
-后续首次资产接入建立机器可读 manifest 与许可证目录；此文档 PR 不创建虚假的资源记录或通过结果。若新增加载器、材质或资源缓存代码，相应 PR 同时验证加载失败回退、重复进入释放与共享资源不被误销毁。
+当前已建立 public/assets/manifest.json 与 public/assets/licenses/，后续批次在同一登记体系补充实际产物，不预填假资源或通过结果。R4 的模型、地表来源、缓存与释放已有原冻结版本检查；当前实现 PR 仍需完成主体回接复核。若新增加载器、材质或资源缓存代码，相应 PR 同时验证加载失败回退、重复进入释放与共享资源不被误销毁。
 
 本基线之前的所有试稿默认未准入。需要复用时，从候选授权和风格审查重新进入本流程；旧展示效果、旧测试通过或旧使用记录均不构成豁免。

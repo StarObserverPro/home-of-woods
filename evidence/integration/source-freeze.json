@@ -1,0 +1,192 @@
+{
+  "version": "HOW-M0-R4-INTEGRATION",
+  "createdAt": "2026-10-30T12:11:17.510Z",
+  "runtimeFingerprint": "e956ca630f5bf91078f7f8147643dbceb844374cbb0eec24a4cdab14032b0e78",
+  "files": [
+    {
+      "file": "index.html",
+      "bytes": 443,
+      "sha256": "00ea3ca038e44c70a9fd7aca627797094144c40c73f0977ef8a8d8bf4c65d5b5"
+    },
+    {
+      "file": "package-lock.json",
+      "bytes": 31586,
+      "sha256": "22a60826a6f071df7cdef8977c24ee898b37185417e7d9af4ed8cf63a9984ff9"
+    },
+    {
+      "file": "package.json",
+      "bytes": 882,
+      "sha256": "fc01934c8d740fca5c57c0874b8c533703d39183089f5c4be202595dda0370a4"
+    },
+    {
+      "file": "public/assets/licenses/Kenney-Nature-Kit-CC0.txt",
+      "bytes": 611,
+      "sha256": "cb96b75e3560ac78d7a53ce6f083f4cdb5c53faea6141b62d63458dcfe1e4b9d"
+    },
+    {
+      "file": "public/assets/m0/broadleaf.glb",
+      "bytes": 56516,
+      "sha256": "e38f4f9f4c508fbb7ac2c9e713723c2d92561c13b2976823809934c311fb74f3"
+    },
+    {
+      "file": "public/assets/m0/cabin.glb",
+      "bytes": 360284,
+      "sha256": "d052c9c644c0a897d596e529f9d91a6e576d50be6d40443468f7c322ec702471"
+    },
+    {
+      "file": "public/assets/m0/pine.glb",
+      "bytes": 86536,
+      "sha256": "7ee8448870b8b0d5fdc570ad489b2721f1c64d31f3328123b51f59056cfc9008"
+    },
+    {
+      "file": "public/assets/m0/ranger.glb",
+      "bytes": 122776,
+      "sha256": "337909639f918add22a930f0ed2c8b0cf2f5000bdedc09579a9966c3b3ff9e97"
+    },
+    {
+      "file": "public/assets/m0/tent.glb",
+      "bytes": 78128,
+      "sha256": "d5979b1dce150d6fae86d3af9476ecc53f6ac6a68dddb90a428dde4359e02ebc"
+    },
+    {
+      "file": "public/assets/manifest.json",
+      "bytes": 11428,
+      "sha256": "4dfbaecd67ecf12b75d9a2f44e47fbb68c2f525cd53870208f46b7291de39b8c"
+    },
+    {
+      "file": "public/third-party-notices.txt",
+      "bytes": 4657,
+      "sha256": "620f40a84371570c2ea1fa34cfce71434dfbc31cd36d078c7b51b34adb4babb4"
+    },
+    {
+      "file": "src/app/recorder.ts",
+      "bytes": 1099,
+      "sha256": "f5e4ba588c780bb88ddf9583ff1f118d9639d095d8d57c0aaca49161117dbd59"
+    },
+    {
+      "file": "src/app/runtime-loop.ts",
+      "bytes": 1572,
+      "sha256": "324d0cf1af62f77480365ab3abcee496f578210d3b505be9eacbc078af81c291"
+    },
+    {
+      "file": "src/app/runtime.ts",
+      "bytes": 11208,
+      "sha256": "13a4cf783687ed20c9a6ff83f485318a0d7ecf51a2c7296addb278e0481c02bc"
+    },
+    {
+      "file": "src/content/biomes.ts",
+      "bytes": 855,
+      "sha256": "bbe8ff501f2a3f0fd2a7612b58123161638471ba38abdbd206d900da202a0566"
+    },
+    {
+      "file": "src/content/environment.ts",
+      "bytes": 3309,
+      "sha256": "476c9ea83400200a58759b4cb9482840c45249565abce9bc05ea0635cf0c215d"
+    },
+    {
+      "file": "src/content/forestry.ts",
+      "bytes": 261,
+      "sha256": "0b32b7ac62c6ff98abcefec5f0b9d99db771ddb61dee6bc9b7b1173642b76717"
+    },
+    {
+      "file": "src/content/valley-r3.json",
+      "bytes": 154825,
+      "sha256": "9c273840effff74647f950e3ef914a1f46129bafe42fe1b9f8979fa67ee3913f"
+    },
+    {
+      "file": "src/content/world.ts",
+      "bytes": 2188,
+      "sha256": "34061ec3fb80f1f50a77326aa1414fe57ce7b75826d8fa73badb2a39b78f5b2d"
+    },
+    {
+      "file": "src/domain/forestry.ts",
+      "bytes": 8523,
+      "sha256": "9e1ac9eae64df4b590909843c7df388be39891e49cd05725d44846fdf6dff975"
+    },
+    {
+      "file": "src/domain/navigation.ts",
+      "bytes": 4877,
+      "sha256": "29bb83d180415bf5d8814c2aed16d78da58afd12f5bb2102ce96d3f3cb929c58"
+    },
+    {
+      "file": "src/domain/state.ts",
+      "bytes": 767,
+      "sha256": "e6d537d332bee8160e541c68ca1061a22a47e2dd881bbc63d5d95c08ecad38e1"
+    },
+    {
+      "file": "src/main.tsx",
+      "bytes": 170,
+      "sha256": "bc67f0e06e6d8bee392fc08687f5de93de19adead7174045088073f7c3bc485b"
+    },
+    {
+      "file": "src/scene/create-scene.ts",
+      "bytes": 19485,
+      "sha256": "28127bf4eef4cc479de02e374a1b0c9cd356a916a7be380b1bccf2ae18d0f0de"
+    },
+    {
+      "file": "src/scene/environment.ts",
+      "bytes": 15730,
+      "sha256": "2e935e66e91034da05ef19e9f963a528b00649fabbdaf2619d450f7fbfd45ab0"
+    },
+    {
+      "file": "src/scene/forestry-presentation.ts",
+      "bytes": 9097,
+      "sha256": "3ab242b64d7d66ea26e94571f2cc2a2bd4f464e4b155d6116e29f807c6d59d85"
+    },
+    {
+      "file": "src/scene/ground-material.ts",
+      "bytes": 3706,
+      "sha256": "86b46b1e45ef6a3b76b1bad95574873f1b0bc143a9119a231bfe20dd515f5398"
+    },
+    {
+      "file": "src/scene/models.ts",
+      "bytes": 7731,
+      "sha256": "f08df4b701cb8b1d11a0845ebd7abada85ea077ee0a657c598783729748fb8af"
+    },
+    {
+      "file": "src/scene/resources.ts",
+      "bytes": 2047,
+      "sha256": "3223ee9304cce3748d03b837213ca07e5bc3b726b34594dc34250be9826ba572"
+    },
+    {
+      "file": "src/scene/terrain.ts",
+      "bytes": 3786,
+      "sha256": "d30edcd651f1388634e0f5ec630e8e1d1bd1fe73753c591dd1d9b64e7b28de18"
+    },
+    {
+      "file": "src/ui/App.tsx",
+      "bytes": 24174,
+      "sha256": "a4197fb73484d0d68f10e02b5e1c438393d9f6224c0d6f18ea15619291a4a6dc"
+    },
+    {
+      "file": "src/ui/style.css",
+      "bytes": 15246,
+      "sha256": "cdd260b79eff5e870f3af373d484819daaf65c51dd6e61f186ca1c7382eefa2c"
+    },
+    {
+      "file": "src/vite-env.d.ts",
+      "bytes": 38,
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5"
+    },
+    {
+      "file": "src/world/layout.ts",
+      "bytes": 3448,
+      "sha256": "726530ca74f283a6bcd76b1c05a1eb93d5ae132117886858f0e92644ac1d26ae"
+    },
+    {
+      "file": "src/world/surface.ts",
+      "bytes": 3161,
+      "sha256": "ffcff185baab03768d2c9715b03999a465cffd76f665ec25b1f52a4a6bbfa2a9"
+    },
+    {
+      "file": "tsconfig.json",
+      "bytes": 376,
+      "sha256": "e1d59ebd9c14171a4bd91cb58a4c08e3371b0b65efa53c5ad77c25a4c55e70e6"
+    },
+    {
+      "file": "vite.config.ts",
+      "bytes": 1739,
+      "sha256": "79c6cf01ea5e4168b1972ec6d4192bbd88dee69bb3dca78580d72165536317f0"
+    }
+  ]
+}

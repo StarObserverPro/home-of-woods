@@ -1,0 +1,261 @@
+{
+  "schemaVersion": 1,
+  "baseline": "HOW-BASELINE-1.0",
+  "batchId": "HOW-M0-R3",
+  "acquiredDate": "2026-10-29",
+  "assets": [
+    {
+      "assetId": "how-m0-pine",
+      "batchId": "HOW-M0-R3",
+      "role": "runtime",
+      "status": "integrated",
+      "file": "public/assets/m0/pine.glb",
+      "bytes": 86536,
+      "sha256": "7ee8448870b8b0d5fdc570ad489b2721f1c64d31f3328123b51f59056cfc9008",
+      "source": {
+        "author": "Home of Woods — original task modelling",
+        "script": "tools/build-assets.py",
+        "tool": "Blender 5.2.3 LTS",
+        "inputs": "Original clustered-crown remodel using user-approved MJ R3 as visual reference; archived Kenney CC0 candidates were not reused in this mesh",
+        "reference": {
+          "type": "generated-concept",
+          "provider": "Midjourney",
+          "jobId": "c428daff-5a22-41d8-91bb-e5a82a0ea49a",
+          "index": 3,
+          "use": "Visual guide only; no reference raster or third-party mesh embedded; not relabelled CC0",
+          "terms": {
+            "reviewedDate": "2026-10-30",
+            "url": "https://docs.midjourney.com/hc/en-us/articles/32083055291277-Terms-of-Service",
+            "scope": "Original generated design reference; not CC0; account and third-party conditions in section 4 remain applicable."
+          }
+        }
+      },
+      "license": {
+        "id": "project-original",
+        "thirdPartyContent": false,
+        "note": "Original mesh; visual reference is a generated concept, not marked CC0"
+      },
+      "adaptation": "Original eight-sided rounded three-tier pine, thick trunk, smooth broad highlights; distant procedural LOD preserves the silhouette",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/create-scene.ts",
+        "collision": "src/world/layout.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "evidence": [
+        "evidence/r4/desktop-home.png",
+        "evidence/integration/"
+      ],
+      "limitations": "Integrated on the implementation branch; not merged or deployed. Full M1 calendar, crafting and persistence are outside this batch.",
+      "previousSource": {
+        "author": "Kenney",
+        "page": "https://kenney.nl/assets/nature-kit",
+        "pack": "Nature Kit 2.1",
+        "archiveSha256": "FA7974A0D342BFE63C38664BA9F8EC1A4AAB8EA25F099BDC56870E33588C4D9D",
+        "part": "tree_pineRoundC.glb",
+        "sha256": "29080A4935BAE6B4AB29066F22C99C58F88B23CE4E2F79B4DCBB5E76DE73F69D"
+      }
+    },
+    {
+      "assetId": "how-m0-broadleaf",
+      "batchId": "HOW-M0-R3",
+      "role": "runtime",
+      "status": "integrated",
+      "file": "public/assets/m0/broadleaf.glb",
+      "bytes": 56516,
+      "sha256": "e38f4f9f4c508fbb7ac2c9e713723c2d92561c13b2976823809934c311fb74f3",
+      "source": {
+        "author": "Home of Woods — original task modelling",
+        "script": "tools/build-assets.py",
+        "tool": "Blender 5.2.3 LTS",
+        "inputs": "Original clustered-crown remodel using user-approved MJ R3 as visual reference; archived Kenney CC0 candidates were not reused in this mesh",
+        "reference": {
+          "type": "generated-concept",
+          "provider": "Midjourney",
+          "jobId": "c428daff-5a22-41d8-91bb-e5a82a0ea49a",
+          "index": 3,
+          "use": "Visual guide only; no reference raster or third-party mesh embedded; not relabelled CC0",
+          "terms": {
+            "reviewedDate": "2026-10-30",
+            "url": "https://docs.midjourney.com/hc/en-us/articles/32083055291277-Terms-of-Service",
+            "scope": "Original generated design reference; not CC0; account and third-party conditions in section 4 remain applicable."
+          }
+        }
+      },
+      "license": {
+        "id": "project-original",
+        "thirdPartyContent": false,
+        "note": "Original mesh; visual reference is a generated concept, not marked CC0"
+      },
+      "adaptation": "Original six-lobe rounded crown, thick branching trunk; distant LOD uses fewer lobes; giant is a stable independent instance",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/create-scene.ts",
+        "collision": "src/world/layout.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "evidence": [
+        "evidence/r4/desktop-home.png",
+        "evidence/integration/"
+      ],
+      "limitations": "Integrated on the implementation branch; not merged or deployed. Full M1 calendar, crafting and persistence are outside this batch.",
+      "previousSource": {
+        "author": "Kenney",
+        "page": "https://kenney.nl/assets/nature-kit",
+        "pack": "Nature Kit 2.1",
+        "archiveSha256": "FA7974A0D342BFE63C38664BA9F8EC1A4AAB8EA25F099BDC56870E33588C4D9D",
+        "part": "tree_oak.glb",
+        "sha256": "D7FD8773674928C50C11B66D12C636D49BDCC15A8B1C7FBB98E6F63A3439A3F3"
+      }
+    },
+    {
+      "assetId": "how-m0-cabin",
+      "batchId": "HOW-M0-R3",
+      "role": "runtime",
+      "status": "integrated",
+      "file": "public/assets/m0/cabin.glb",
+      "bytes": 360284,
+      "sha256": "d052c9c644c0a897d596e529f9d91a6e576d50be6d40443468f7c322ec702471",
+      "source": {
+        "author": "Home of Woods — original task modelling",
+        "script": "tools/build-assets.py",
+        "tool": "Blender 5.2.3 LTS",
+        "inputs": "Original project model from requirements; R3 palette and roof/proportion refinements; no third-party mesh reused",
+        "reference": {
+          "type": "generated-concept",
+          "provider": "Midjourney",
+          "jobId": "c428daff-5a22-41d8-91bb-e5a82a0ea49a",
+          "index": 3,
+          "use": "Visual guide only; no reference raster or third-party mesh embedded; not relabelled CC0",
+          "terms": {
+            "reviewedDate": "2026-10-30",
+            "url": "https://docs.midjourney.com/hc/en-us/articles/32083055291277-Terms-of-Service",
+            "scope": "Original generated design reference; not CC0; account and third-party conditions in section 4 remain applicable."
+          }
+        }
+      },
+      "license": {
+        "id": "project-original",
+        "thirdPartyContent": false,
+        "note": "Original project models; not relabelled as CC0"
+      },
+      "adaptation": "Original beveled log cabin with exposed rafters and missing roof boards; world scale 1.6 and independent collision footprint",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/create-scene.ts",
+        "collision": "src/world/layout.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "evidence": [
+        "evidence/r4/desktop-home.png",
+        "evidence/integration/"
+      ],
+      "limitations": "Integrated on the implementation branch; not merged or deployed. Full M1 calendar, crafting and persistence are outside this batch."
+    },
+    {
+      "assetId": "how-m0-tent",
+      "batchId": "HOW-M0-R3",
+      "role": "runtime",
+      "status": "integrated",
+      "file": "public/assets/m0/tent.glb",
+      "bytes": 78128,
+      "sha256": "d5979b1dce150d6fae86d3af9476ecc53f6ac6a68dddb90a428dde4359e02ebc",
+      "source": {
+        "author": "Home of Woods — original task modelling",
+        "script": "tools/build-assets.py",
+        "tool": "Blender 5.2.3 LTS",
+        "inputs": "Original project model from requirements; R3 palette and roof/proportion refinements; no third-party mesh reused",
+        "reference": {
+          "type": "generated-concept",
+          "provider": "Midjourney",
+          "jobId": "c428daff-5a22-41d8-91bb-e5a82a0ea49a",
+          "index": 3,
+          "use": "Visual guide only; no reference raster or third-party mesh embedded; not relabelled CC0",
+          "terms": {
+            "reviewedDate": "2026-10-30",
+            "url": "https://docs.midjourney.com/hc/en-us/articles/32083055291277-Terms-of-Service",
+            "scope": "Original generated design reference; not CC0; account and third-party conditions in section 4 remain applicable."
+          }
+        }
+      },
+      "license": {
+        "id": "project-original",
+        "thirdPartyContent": false,
+        "note": "Original project models; not relabelled as CC0"
+      },
+      "adaptation": "Original thick A-frame canvas, poles and ground pivot; world scale 1.6 and independent collision footprint",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/create-scene.ts",
+        "collision": "src/world/layout.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "evidence": [
+        "evidence/r4/desktop-home.png",
+        "evidence/integration/"
+      ],
+      "limitations": "Integrated on the implementation branch; not merged or deployed. Full M1 calendar, crafting and persistence are outside this batch."
+    },
+    {
+      "assetId": "how-m0-ranger",
+      "batchId": "HOW-M0-R3",
+      "role": "runtime",
+      "status": "integrated",
+      "file": "public/assets/m0/ranger.glb",
+      "bytes": 122776,
+      "sha256": "337909639f918add22a930f0ed2c8b0cf2f5000bdedc09579a9966c3b3ff9e97",
+      "source": {
+        "author": "Home of Woods — original task modelling",
+        "script": "tools/build-assets.py",
+        "tool": "Blender 5.2.3 LTS",
+        "inputs": "Original modelling from project requirements; no third-party image/model inputs"
+      },
+      "license": {
+        "id": "project-original",
+        "thirdPartyContent": false,
+        "note": "Original project models; not relabelled as CC0"
+      },
+      "adaptation": "Original large-head short-limb ranger with four independent animation pivots, ground root and opaque nonmetallic palette",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/create-scene.ts",
+        "collision": "src/world/layout.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "evidence": [
+        "evidence/r4/desktop-home.png",
+        "evidence/integration/"
+      ],
+      "limitations": "Integrated on the implementation branch; not merged or deployed. Full M1 calendar, crafting and persistence are outside this batch."
+    }
+  ],
+  "worldSource": {
+    "file": "src/content/valley-r3.json",
+    "bytes": 154825,
+    "sha256": "9c273840effff74647f950e3ef914a1f46129bafe42fe1b9f8979fa67ee3913f",
+    "source": "Reviewed RGBD ground annotations from the original generated R3 concept, with explicit authored contours and gameplay cleanup",
+    "sourceFiles": [
+      "art/reference/r3-ground-annotations.json",
+      "tools/build-r3-surface.mjs"
+    ],
+    "transform": {
+      "xzScale": 6,
+      "verticalExaggeration": 1.6,
+      "zOffset": 24
+    },
+    "license": {
+      "id": "project-layout-from-generated-reference",
+      "note": "Not CC0; no real-place/private scan or reference raster embedded",
+      "reviewedDate": "2026-10-30",
+      "terms": "https://www.worldlabs.ai/terms-of-service",
+      "basis": "Atlas official API output and authored ground cleanup; section 3.3(d) governs API output rights. No raw SPZ, response credentials, signed URLs or service code is distributed."
+    }
+  },
+  "integration": {
+    "revision": "HOW-M0-R4-INTEGRATION",
+    "authorizedDate": "2026-10-30",
+    "status": "integrated-on-feature-branch",
+    "captureRuntimeFingerprint": "00cd10ce44cbc567ad24b854c52867ec1ba27c5215e92d01401e65a4ba50dd42",
+    "validation": "evidence/integration/"
+  }
+}
