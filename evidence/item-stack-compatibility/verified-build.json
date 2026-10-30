@@ -1,0 +1,163 @@
+{
+  "version": "HOW-ITEM-STACKS-1",
+  "runtimeFingerprint": "d4fd629c4c7a25c7b6215c46333832ab4e8b5f31ebfbe0093530585270c61293",
+  "sourceArchiveSha256": "67ac64d3d2841ac41ae5ec148ed2b6cbf5690844a8e2d6adaf71557b37f010be",
+  "buildArchiveSha256": "3fd35d5100e885cdf838f33081b2acfc4ac4c3cd6ec5873607491fe4b4798cef",
+  "files": [
+    {
+      "file": "assets/characters/axe.glb",
+      "bytes": 11400,
+      "sha256": "467df584b4ef1c644f81189e41713f69ee4ec44f5364eaf662f5f36c1f284c96"
+    },
+    {
+      "file": "assets/characters/motions.glb",
+      "bytes": 178484,
+      "sha256": "cf0370621d7cebfc40299ddbd10126cff78e02b0bd55e3edb73ad812e02edaa5"
+    },
+    {
+      "file": "assets/characters/player.glb",
+      "bytes": 447308,
+      "sha256": "f6a4e94f2c7d9434adab18c23dbb2ac6fb52668ef34f48ccc252926cc6bc1d01"
+    },
+    {
+      "file": "assets/characters/visitor.glb",
+      "bytes": 447476,
+      "sha256": "23dfa70dd17a20a84b8b4bb5ac75343e07eea90b0066b378f8601d698b9f4be6"
+    },
+    {
+      "file": "assets/gathering/branches.glb",
+      "bytes": 9536,
+      "sha256": "a7d7b19bddad0a0dd8d4a9001d721da1f738267e90ddc27457fad0da62706692"
+    },
+    {
+      "file": "assets/gathering/mushrooms.glb",
+      "bytes": 15272,
+      "sha256": "6d0d3b01f7a33a5b7dcf8ab52829ce04fa0ad3cdb6ee172f5865c540053422c0"
+    },
+    {
+      "file": "assets/index-BenQNqp6.css",
+      "bytes": 16941,
+      "sha256": "6f3d58188b9a4b126f0b6bba4d4dca60ae971f51352bd01cfea90d369026bd52"
+    },
+    {
+      "file": "assets/index-Bub_QitQ.js",
+      "bytes": 1128292,
+      "sha256": "4ce7df9227f57513b500ff5c80cd4f5a2510e2950b02c7e52a0e1d1beec73edb"
+    },
+    {
+      "file": "assets/licenses/KayKit-Adventurers-2.0-CC0.txt",
+      "bytes": 1554,
+      "sha256": "d4adc31660d1db22eb60eba648e01db41577548f6fa1a3576cb4a6283dae0a58"
+    },
+    {
+      "file": "assets/licenses/KayKit-Animations-1.1-CC0.txt",
+      "bytes": 1548,
+      "sha256": "373b159044d1a886ed15f57ca5a7673ba14e2623c460283452705f2056912ed9"
+    },
+    {
+      "file": "assets/licenses/Kenney-Nature-Kit-CC0.txt",
+      "bytes": 611,
+      "sha256": "cb96b75e3560ac78d7a53ce6f083f4cdb5c53faea6141b62d63458dcfe1e4b9d"
+    },
+    {
+      "file": "assets/m0/broadleaf.glb",
+      "bytes": 56516,
+      "sha256": "e38f4f9f4c508fbb7ac2c9e713723c2d92561c13b2976823809934c311fb74f3"
+    },
+    {
+      "file": "assets/m0/cabin.glb",
+      "bytes": 360284,
+      "sha256": "d052c9c644c0a897d596e529f9d91a6e576d50be6d40443468f7c322ec702471"
+    },
+    {
+      "file": "assets/m0/pine.glb",
+      "bytes": 86536,
+      "sha256": "7ee8448870b8b0d5fdc570ad489b2721f1c64d31f3328123b51f59056cfc9008"
+    },
+    {
+      "file": "assets/m0/ranger.glb",
+      "bytes": 122776,
+      "sha256": "337909639f918add22a930f0ed2c8b0cf2f5000bdedc09579a9966c3b3ff9e97"
+    },
+    {
+      "file": "assets/m0/tent.glb",
+      "bytes": 78128,
+      "sha256": "d5979b1dce150d6fae86d3af9476ecc53f6ac6a68dddb90a428dde4359e02ebc"
+    },
+    {
+      "file": "assets/manifest.json",
+      "bytes": 22195,
+      "sha256": "b6fc0adfe1227ef3fc62c88aed26871a8165770deac983e006e8726244e75150"
+    },
+    {
+      "file": "index.html",
+      "bytes": 542,
+      "sha256": "82d9de5453afdce16559ee0995627277490dff3ef5adf00473e7fcebac47bba8"
+    },
+    {
+      "file": "third-party-notices.txt",
+      "bytes": 4657,
+      "sha256": "620f40a84371570c2ea1fa34cfce71434dfbc31cd36d078c7b51b34adb4babb4"
+    }
+  ],
+  "evidenceFiles": [
+    {
+      "file": "check.log",
+      "sha256": "7743e3a81883505786c227439c5093857df0ef6078cafda1f7f64c48f2541c47"
+    },
+    {
+      "file": "game-collected-desktop.jpg",
+      "sha256": "106652e87d27a9aa0571d1cdbcd4c7c5d846ef0ea7b4cf6666e7a0b30817d5b1"
+    },
+    {
+      "file": "game-mobile.jpg",
+      "sha256": "4977b5c48350ae850f2f347b02d50ee41ff17a6ccca4960e14a01a620d0d8c01"
+    },
+    {
+      "file": "historical-evidence.log",
+      "sha256": "ba7e991a320c7606dc4b9c649c2b8d1e1d879743b2f9521183b4b4ff6eb59cf4"
+    },
+    {
+      "file": "production-desktop.jpg",
+      "sha256": "ff654d492eaac78a21f173e07b01217740b1865a18f66beece630bff6965a22c"
+    },
+    {
+      "file": "production-smoke.json",
+      "sha256": "269d58c8a06b2123562d7d0e92bbbb43bf0ce01e9ea5e369b57f038f6caaf949"
+    },
+    {
+      "file": "quality-desktop.jpg",
+      "sha256": "db38cd67208694ebd5f6bbde89f34300771d585d1659970043729e5626818b41"
+    },
+    {
+      "file": "quality-landscape.jpg",
+      "sha256": "3726696ebfab689b753166eadbb2f27685a03003424c42819f78593a8a880eac"
+    },
+    {
+      "file": "quality-mobile.jpg",
+      "sha256": "fe1e282f9524b4bb299202dbe8c01aa30d2cff29aa8cb2b74d13ee389567fdf6"
+    },
+    {
+      "file": "quality-narrow.jpg",
+      "sha256": "8481f89313caa53a3f8f3c797970d52a265b33a99e9d6a0cbf9fb67a2fa69e9e"
+    },
+    {
+      "file": "ui-checks.json",
+      "sha256": "ba681a82ac1f10966b144e192548d809fde8d6973b6d165998d58fefd0df47da"
+    },
+    {
+      "file": "unknown-mobile.jpg",
+      "sha256": "c153a7c85cb6023281c9b537e6c241837f8304c7d8c4ad2eea5ec4ea3ba7c891"
+    }
+  ],
+  "checks": {
+    "tests": 52,
+    "failures": 0,
+    "command": "npm.cmd run check",
+    "environment": {
+      "node": "v22.14.0",
+      "platform": "win32",
+      "arch": "x64"
+    }
+  }
+}

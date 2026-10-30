@@ -13,6 +13,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          fetch-depth: 0 # Historical R4 evidence is verified against its immutable source commit.
       - uses: actions/setup-node@v7
         with:
           node-version: '22.14.0'
@@ -20,3 +21,22 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run verify:evidence
+      - run: node tools/audit-delivery-evidence.mjs
+  scene-sandbox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: sandbox/scene-r5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22.14.0'
+          package-manager-cache: false
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: node verify-review.mjs

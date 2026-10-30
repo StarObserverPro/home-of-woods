@@ -1,0 +1,50 @@
+{
+  "layout": {
+    "buttons": [
+      {
+        "height": 44,
+        "name": "关闭仓库",
+        "width": 44
+      },
+      {
+        "height": 44,
+        "name": "全部",
+        "width": 80
+      },
+      {
+        "height": 44,
+        "name": "木料",
+        "width": 80
+      },
+      {
+        "height": 44,
+        "name": "林产",
+        "width": 80
+      },
+      {
+        "height": 134,
+        "name": "枝杈 3 份",
+        "width": 181.7875061035156
+      },
+      {
+        "height": 134,
+        "name": "蘑菇 4 份",
+        "width": 181.7875061035156
+      },
+      {
+        "height": 134,
+        "name": "原木 0 份",
+        "width": 181.7875061035156
+      }
+    ],
+    "dialog": {
+      "height": 370.3999938964844,
+      "width": 800,
+      "x": 22,
+      "y": 10
+    },
+    "height": 390,
+    "scrollWidth": 844,
+    "width": 844
+  }
+}

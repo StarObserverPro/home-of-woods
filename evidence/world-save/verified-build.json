@@ -1,0 +1,223 @@
+{
+  "version": "HOW-WORLD-SAVE-1",
+  "runtimeFingerprint": "0227c1d8b43c33f20c72303249e9f5cfef0f29044a5bd25eb0ac092db9f56fd0",
+  "sourceArchiveSha256": "2092620acba40724d0bed1be99589f77b9aa39986ec8f547e88d7deba3629280",
+  "buildArchiveSha256": "51b7ef7b79882e462826d5c815479d4533600b2e3a31bdeb02a413b127057513",
+  "files": [
+    {
+      "file": "assets/characters/axe.glb",
+      "bytes": 11400,
+      "sha256": "467df584b4ef1c644f81189e41713f69ee4ec44f5364eaf662f5f36c1f284c96"
+    },
+    {
+      "file": "assets/characters/motions.glb",
+      "bytes": 178484,
+      "sha256": "cf0370621d7cebfc40299ddbd10126cff78e02b0bd55e3edb73ad812e02edaa5"
+    },
+    {
+      "file": "assets/characters/player.glb",
+      "bytes": 447308,
+      "sha256": "f6a4e94f2c7d9434adab18c23dbb2ac6fb52668ef34f48ccc252926cc6bc1d01"
+    },
+    {
+      "file": "assets/characters/visitor.glb",
+      "bytes": 447476,
+      "sha256": "23dfa70dd17a20a84b8b4bb5ac75343e07eea90b0066b378f8601d698b9f4be6"
+    },
+    {
+      "file": "assets/gathering/branches.glb",
+      "bytes": 9536,
+      "sha256": "a7d7b19bddad0a0dd8d4a9001d721da1f738267e90ddc27457fad0da62706692"
+    },
+    {
+      "file": "assets/gathering/mushrooms.glb",
+      "bytes": 15272,
+      "sha256": "6d0d3b01f7a33a5b7dcf8ab52829ce04fa0ad3cdb6ee172f5865c540053422c0"
+    },
+    {
+      "file": "assets/index-BDq4YFW5.css",
+      "bytes": 18041,
+      "sha256": "abb72f7b8cb2dc9e6dc307beafb77503cf70f0bc21423f91d0678408eeb482a2"
+    },
+    {
+      "file": "assets/index-C-xu52dP.js",
+      "bytes": 1154126,
+      "sha256": "ba848838697ea3381dcfa997974b416147dae55b27b25597d247c8ed22a896fe"
+    },
+    {
+      "file": "assets/licenses/KayKit-Adventurers-2.0-CC0.txt",
+      "bytes": 1554,
+      "sha256": "d4adc31660d1db22eb60eba648e01db41577548f6fa1a3576cb4a6283dae0a58"
+    },
+    {
+      "file": "assets/licenses/KayKit-Animations-1.1-CC0.txt",
+      "bytes": 1548,
+      "sha256": "373b159044d1a886ed15f57ca5a7673ba14e2623c460283452705f2056912ed9"
+    },
+    {
+      "file": "assets/licenses/Kenney-Nature-Kit-CC0.txt",
+      "bytes": 611,
+      "sha256": "cb96b75e3560ac78d7a53ce6f083f4cdb5c53faea6141b62d63458dcfe1e4b9d"
+    },
+    {
+      "file": "assets/m0/broadleaf.glb",
+      "bytes": 56516,
+      "sha256": "e38f4f9f4c508fbb7ac2c9e713723c2d92561c13b2976823809934c311fb74f3"
+    },
+    {
+      "file": "assets/m0/cabin.glb",
+      "bytes": 360284,
+      "sha256": "d052c9c644c0a897d596e529f9d91a6e576d50be6d40443468f7c322ec702471"
+    },
+    {
+      "file": "assets/m0/pine.glb",
+      "bytes": 86536,
+      "sha256": "7ee8448870b8b0d5fdc570ad489b2721f1c64d31f3328123b51f59056cfc9008"
+    },
+    {
+      "file": "assets/m0/ranger.glb",
+      "bytes": 122776,
+      "sha256": "337909639f918add22a930f0ed2c8b0cf2f5000bdedc09579a9966c3b3ff9e97"
+    },
+    {
+      "file": "assets/m0/tent.glb",
+      "bytes": 78128,
+      "sha256": "d5979b1dce150d6fae86d3af9476ecc53f6ac6a68dddb90a428dde4359e02ebc"
+    },
+    {
+      "file": "assets/manifest.json",
+      "bytes": 22195,
+      "sha256": "b6fc0adfe1227ef3fc62c88aed26871a8165770deac983e006e8726244e75150"
+    },
+    {
+      "file": "index.html",
+      "bytes": 542,
+      "sha256": "48b70d9bc15d54ffa65e0e017580a62e13af53a52b290a72a1dc9444155afc95"
+    },
+    {
+      "file": "third-party-notices.txt",
+      "bytes": 4657,
+      "sha256": "620f40a84371570c2ea1fa34cfce71434dfbc31cd36d078c7b51b34adb4babb4"
+    }
+  ],
+  "evidenceFiles": [
+    {
+      "file": "check.log",
+      "sha256": "639664aa2a7f7d03bc353dc6f27e69912a68cedbe93169e33fac30659d1a9817"
+    },
+    {
+      "file": "chop-after-reload.json",
+      "sha256": "83bdf9e87dcf5734600558ba520b5e5c5beb468a2fcc208114f0e58bc3777c88"
+    },
+    {
+      "file": "chop-before-reload.json",
+      "sha256": "3ff83b210a7d2728084b7e0a45e46b1533a7dffc63590f2477deda92d93b7572"
+    },
+    {
+      "file": "chop-restored.jpg",
+      "sha256": "0b712308eccd435d340896a51d01dcbb8f6e4f9fbb289fe079cf3207b37ec85c"
+    },
+    {
+      "file": "chop-saved.jpg",
+      "sha256": "7829bbd36ba4d1e014987d3bd0685a814ee0867751f30c09e2e62e5f75a70b44"
+    },
+    {
+      "file": "database-protection.json",
+      "sha256": "6b7dc5a3917af19e05f9273f38c080a067b9cafb5ed94cd1dc42a2c1ddb67f7a"
+    },
+    {
+      "file": "database-recovery.json",
+      "sha256": "b6e76eb9d0b4ea6fd180fcc6b6b2983998a46d4a00d19c6e8d9e0f1aed72cffa"
+    },
+    {
+      "file": "exported-corrupt.json",
+      "sha256": "029c25dfad386b8cded844d25176f33a0e367fead21734056a8c712f22eb5776"
+    },
+    {
+      "file": "felled-before-reload.json",
+      "sha256": "d4e6be6c513b3e73ba19a67fe89f34f57dcc81abd7fb7584df4d8d27cbb45bb7"
+    },
+    {
+      "file": "felled-reload-1.json",
+      "sha256": "800ed1d5ea645c8602947fa5320662f44427df60bea36faeed4d54fcb0b7de2a"
+    },
+    {
+      "file": "felled-reload-2.json",
+      "sha256": "acf07c1874c8a82195144391c97e3ae7c33ba8bb092377a2d612a9a9f830846f"
+    },
+    {
+      "file": "felled-saved.jpg",
+      "sha256": "80d6c8afb5a5b00618cdfb83bf9535d0eaee761afee555d99a41419b31884ebf"
+    },
+    {
+      "file": "final-before-production.json",
+      "sha256": "6950bf6e3600ccc78fd13541b378a40a6d62c9698c9f9eb3c7be8f50c25915e9"
+    },
+    {
+      "file": "game-hud.jpg",
+      "sha256": "ec48b575739abe873ae2abdbdbc67c1110dd6c61eeeccae12d2ce22024dc631e"
+    },
+    {
+      "file": "layout-checks.json",
+      "sha256": "4853653ca4a2184d01f771a9d23dece019152d947148cfcd6eb2250904b411e9"
+    },
+    {
+      "file": "menu-narrow.jpg",
+      "sha256": "81c658bc36ac1a7917cabe3757af15f2a957ca0bde27026ebf823d1aaf3d81ce"
+    },
+    {
+      "file": "production-menu.jpg",
+      "sha256": "8491a2a7ec4c3fc28c17bb5154cfc12d2018fd1d09ba9794399525442d3cedaf"
+    },
+    {
+      "file": "production-smoke.json",
+      "sha256": "3eb58d33c32c026588fc50df06781ac4f2fee3197109e7ae50031113a372db58"
+    },
+    {
+      "file": "protected-save.jpg",
+      "sha256": "cddf9315038d5289c8a9bd88d634fd152f86684d7969cebee9cc5ab01149205f"
+    },
+    {
+      "file": "protection-layout.json",
+      "sha256": "a96a63231e23a6c3dd63d0ec08c99220ad41b957baf1113edf9f13b2aff5bb2e"
+    },
+    {
+      "file": "real-page-conflict.jpg",
+      "sha256": "fba6eeaf17c86f50356e264180e197c9dd9ef576b68249bfe280e0c1cd1307e4"
+    },
+    {
+      "file": "real-page-conflict.json",
+      "sha256": "82c1613e08a0bbf993b16b443d00ff5c6c738960a22d9cf9079fe0e396938f1c"
+    },
+    {
+      "file": "recovered-save.jpg",
+      "sha256": "ff700628cf4bff14eb82c223d8bdc1ce56176152889f563a0ae7c23d9154b4ee"
+    },
+    {
+      "file": "saved-world-menu.jpg",
+      "sha256": "099c85e918820e73bcea63b056b16d63cf006521a9cfd07c5d0d901d4349e84f"
+    },
+    {
+      "file": "warehouse-types.jpg",
+      "sha256": "6e6f0b06df4ce46132a937103da0ee943c2fa6362cde7bd303385701fe54d380"
+    },
+    {
+      "file": "warehouse-types.txt",
+      "sha256": "b752f3794eafa706ad8e750fb22268525ea0c7638ae3f8958b1a4b55d21f70f8"
+    },
+    {
+      "file": "world-tests.log",
+      "sha256": "283c5ee8609d3b2653d30f789f082df1eebd890f3d6736c024d6a40fe64d759d"
+    }
+  ],
+  "checks": {
+    "tests": 70,
+    "failures": 0,
+    "command": "npm.cmd run check",
+    "environment": {
+      "node": "v22.14.0",
+      "platform": "win32",
+      "arch": "x64"
+    }
+  }
+}

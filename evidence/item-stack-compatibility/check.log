@@ -1,0 +1,330 @@
+
+> home-of-woods@0.1.0 check
+> npm run verify:assets && npm test && npm run build
+
+
+> home-of-woods@0.1.0 verify:assets
+> node tools/verify-assets.mjs
+
+Verified 11 registered GLBs and terrain data: hashes, source licenses, embedded resources, nonmetallic palette, legacy pivots, skinned characters and complete finite surface grid.
+
+> home-of-woods@0.1.0 test
+> node --experimental-strip-types --test tests/*.test.ts
+
+TAP version 13
+# (node:41468) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: actual skinned character stops at real tree solids, keeps two palms on the handle, and cancels without gameplay writes
+ok 1 - actual skinned character stops at real tree solids, keeps two palms on the handle, and cancels without gameplay writes
+  ---
+  duration_ms: 4018.3015
+  ...
+# Subtest: vertical inspector is bounded by the support top and NPC gestures leave legs fixed
+ok 2 - vertical inspector is bounded by the support top and NPC gestures leave legs fixed
+  ---
+  duration_ms: 218.9236
+  ...
+# Subtest: character instances share buffers but have independent skeletons and bone textures release once
+ok 3 - character instances share buffers but have independent skeletons and bone textures release once
+  ---
+  duration_ms: 137.6362
+  ...
+# (node:21924) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: PNW environment instantiates bounded, distinct landforms with actual snow, exposed rock and glacier channels
+ok 4 - PNW environment instantiates bounded, distinct landforms with actual snow, exposed rock and glacier channels
+  ---
+  duration_ms: 291.3674
+  ...
+# Subtest: environment generation is deterministic and all geometry/material allocations have one releasing owner
+ok 5 - environment generation is deterministic and all geometry/material allocations have one releasing owner
+  ---
+  duration_ms: 420.2669
+  ...
+# Subtest: flowing water keeps the authoritative river geometry and water height while owning only its material
+ok 6 - flowing water keeps the authoritative river geometry and water height while owning only its material
+  ---
+  duration_ms: 117.1564
+  ...
+# (node:32980) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: production tree GLBs tip after commit, preserve a pickable stump and never settle state
+ok 7 - production tree GLBs tip after commit, preserve a pickable stump and never settle state
+  ---
+  duration_ms: 374.8141
+  ...
+# (node:32276) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: protected landmarks, remote trees and exhausted annual points cannot be felled
+ok 8 - protected landmarks, remote trees and exhausted annual points cannot be felled
+  ---
+  duration_ms: 24.7963
+  ...
+# Subtest: four-hit action reserves once and commits tree, wood, used points and regrowth atomically once
+ok 9 - four-hit action reserves once and commits tree, wood, used points and regrowth atomically once
+  ---
+  duration_ms: 134.1688
+  ...
+# Subtest: cancel, invalidated distance and changed year release reservations without rewards
+ok 10 - cancel, invalidated distance and changed year release reservations without rewards
+  ---
+  duration_ms: 12.5546
+  ...
+# Subtest: original slot regrows a new protected immature individual and preserves quota/wood through growth
+ok 11 - original slot regrows a new protected immature individual and preserves quota/wood through growth
+  ---
+  duration_ms: 20.3184
+  ...
+# Subtest: fixed-step simulation and a later due-time audit settle the same committed resource result
+ok 12 - fixed-step simulation and a later due-time audit settle the same committed resource result
+  ---
+  duration_ms: 143.4066
+  ...
+# (node:37592) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: actual admitted GLBs share resources, keep source identities through depletion and release hit mappings on unload
+ok 13 - actual admitted GLBs share resources, keep source identities through depletion and release hit mappings on unload
+  ---
+  duration_ms: 403.3334
+  ...
+# (node:38536) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: registry rejects duplicate identities, bad references/strategies/numbers/anchors and unreachable sources
+ok 14 - registry rejects duplicate identities, bad references/strategies/numbers/anchors and unreachable sources
+  ---
+  duration_ms: 105.2218
+  ...
+# Subtest: both kinds use the same reachable route, action, inventory candidate and atomic commit
+ok 15 - both kinds use the same reachable route, action, inventory candidate and atomic commit
+  ---
+  duration_ms: 10634.6557
+  ...
+# Subtest: candidate creation does not mutate balances, stale inventory/source/action and replay are rejected
+ok 16 - candidate creation does not mutate balances, stale inventory/source/action and replay are rejected
+  ---
+  duration_ms: 24.5262
+  ...
+# Subtest: movement, target change, cancellation, changed source and obstacles before completion do not award inventory
+ok 17 - movement, target change, cancellation, changed source and obstacles before completion do not award inventory
+  ---
+  duration_ms: 69.4392
+  ...
+# Subtest: one player action owner prevents simultaneous chopping/gathering
+ok 18 - one player action owner prevents simultaneous chopping/gathering
+  ---
+  duration_ms: 13.0049
+  ...
+# Subtest: action receiver can observe approaching, performing/progress, completed and cancelled without writing rewards
+ok 19 - action receiver can observe approaching, performing/progress, completed and cancelled without writing rewards
+  ---
+  duration_ms: 30.9709
+  ...
+# Subtest: unconfigured recovery, serialization and representation rebuild never replenish sources
+ok 20 - unconfigured recovery, serialization and representation rebuild never replenish sources
+  ---
+  duration_ms: 20.0677
+  ...
+# Subtest: period refill is monotonic, idempotent, capacity capped and independent from depletion wait
+ok 21 - period refill is monotonic, idempotent, capacity capped and independent from depletion wait
+  ---
+  duration_ms: 17.1697
+  ...
+# Subtest: depletion waits from the final unit, each point has an independent deadline, due restoration is once
+ok 22 - depletion waits from the final unit, each point has an independent deadline, due restoration is once
+  ---
+  duration_ms: 24.4789
+  ...
+# (node:15236) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: ordinary, fine and legacy ungraded stacks merge only within the same identity
+ok 23 - ordinary, fine and legacy ungraded stacks merge only within the same identity
+  ---
+  duration_ms: 137.1053
+  ...
+# Subtest: multi-line debits are atomic, cannot use their own output to fund inputs, and reject stale revisions
+ok 24 - multi-line debits are atomic, cannot use their own output to fund inputs, and reject stale revisions
+  ---
+  duration_ms: 4.2635
+  ...
+# Subtest: catalog additions, reorder and display edits neither migrate nor rewrite owned identities
+ok 25 - catalog additions, reorder and display edits neither migrate nor rewrite owned identities
+  ---
+  duration_ms: 1.4974
+  ...
+# Subtest: unknown item and quality records survive normal transactions and JSON reload, but cannot be consumed
+ok 26 - unknown item and quality records survive normal transactions and JSON reload, but cannot be consumed
+  ---
+  duration_ms: 85.0553
+  ...
+# Subtest: retired definitions preserve owned stock, allow explicit consumption and cannot be newly awarded
+ok 27 - retired definitions preserve owned stock, allow explicit consumption and cannot be newly awarded
+  ---
+  duration_ms: 1.1581
+  ...
+# Subtest: safe normalization writes once and reloads as restored; legacy grades are never guessed
+ok 28 - safe normalization writes once and reloads as restored; legacy grades are never guessed
+  ---
+  duration_ms: 6.4124
+  ...
+# Subtest: future structures, unknown fields, broken identities and invalid numbers retain the exact raw save
+ok 29 - future structures, unknown fields, broken identities and invalid numbers retain the exact raw save
+  ---
+  duration_ms: 2.16
+  ...
+# Subtest: legacy session wood transfers once with no quota or world mutation and no reclassification
+ok 30 - legacy session wood transfers once with no quota or world mutation and no reclassification
+  ---
+  duration_ms: 81.0358
+  ...
+# Subtest: conflicting owners and invalid old balances protect the whole session before any assignment
+ok 31 - conflicting owners and invalid old balances protect the whole session before any assignment
+  ---
+  duration_ms: 1.4516
+  ...
+# Subtest: a current persisted slice hydrates runtime revision without changing stock and protects extra runtime fields
+ok 32 - a current persisted slice hydrates runtime revision without changing stock and protects extra runtime fields
+  ---
+  duration_ms: 2.5472
+  ...
+# Subtest: felling awards only ordinary stock once; inventory failure cannot partially spend quota or fell a tree
+ok 33 - felling awards only ordinary stock once; inventory failure cannot partially spend quota or fell a tree
+  ---
+  duration_ms: 74.2195
+  ...
+# (node:17272) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: one frame chain, bounded delta, pause/resume baseline and terminal destruction
+ok 34 - one frame chain, bounded delta, pause/resume baseline and terminal destruction
+  ---
+  duration_ms: 3.0452
+  ...
+# Subtest: shared geometry/material cache disposes each allocation once and cannot resurrect
+ok 35 - shared geometry/material cache disposes each allocation once and cannot resurrect
+  ---
+  duration_ms: 12.0925
+  ...
+# (node:16908) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: one early GLB failure releases later shared production resources without reviving the owner or blocking a fresh retry
+ok 36 - one early GLB failure releases later shared production resources without reviving the owner or blocking a fresh retry
+  ---
+  duration_ms: 843.7897
+  ...
+# (node:36220) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: static model batching preserves distinct geometry for each material group
+ok 37 - static model batching preserves distinct geometry for each material group
+  ---
+  duration_ms: 24.6668
+  ...
+# Subtest: collision footprints cover the actual scaled cabin steps and both exported tree trunks
+ok 38 - collision footprints cover the actual scaled cabin steps and both exported tree trunks
+  ---
+  duration_ms: 263.6959
+  ...
+# (node:12236) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: a player beside a regrown sapling can walk out after its authoritative trunk grows around them
+ok 39 - a player beside a regrown sapling can walk out after its authoritative trunk grows around them
+  ---
+  duration_ms: 99.5845
+  ...
+# Subtest: retreat cannot deepen an existing overlap or enter another trunk or building
+ok 40 - retreat cannot deepen an existing overlap or enter another trunk or building
+  ---
+  duration_ms: 7.0549
+  ...
+# Subtest: escape still obeys unopened land, river and slope facts
+ok 41 - escape still obeys unopened land, river and slope facts
+  ---
+  duration_ms: 1.9633
+  ...
+# (node:27344) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: water stays within the stream corridor instead of flooding unrelated low terrain
+ok 42 - water stays within the stream corridor instead of flooding unrelated low terrain
+  ---
+  duration_ms: 141.8704
+  ...
+# (node:37312) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: resource identities resolve to fixed hosts and species-specific circles grounded on the shared surface
+ok 43 - resource identities resolve to fixed hosts and species-specific circles grounded on the shared surface
+  ---
+  duration_ms: 9839.6624
+  ...
+# Subtest: felling invalidates hosted resources and stale candidates; cancellation does not deplete the host
+ok 44 - felling invalidates hosted resources and stale candidates; cancellation does not deplete the host
+  ---
+  duration_ms: 342.1125
+  ...
+# Subtest: new tree generations have new host identity and no mature-resource windfall
+ok 45 - new tree generations have new host identity and no mature-resource windfall
+  ---
+  duration_ms: 35.3902
+  ...
+# Subtest: warehouse derives wood and collected goods from their owning balances and exposes processing data without mutation
+ok 46 - warehouse derives wood and collected goods from their owning balances and exposes processing data without mutation
+  ---
+  duration_ms: 17.1005
+  ...
+# Subtest: processing registry rejects dangling/duplicate data, invalid parameters and small-material structure-wood creation
+ok 47 - processing registry rejects dangling/duplicate data, invalid parameters and small-material structure-wood creation
+  ---
+  duration_ms: 2.5469
+  ...
+# (node:9356) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: fixed tree slots, generations and landmark identities survive reconstruction
+ok 48 - fixed tree slots, generations and landmark identities survive reconstruction
+  ---
+  duration_ms: 32.9401
+  ...
+# Subtest: triangle interpolation agrees with the actual rendered terrain vertices and diagonal
+ok 49 - triangle interpolation agrees with the actual rendered terrain vertices and diagonal
+  ---
+  duration_ms: 56.2137
+  ...
+# Subtest: spawn and all four scenic destinations are reachable with no collider corner cuts
+ok 50 - spawn and all four scenic destinations are reachable with no collider corner cuts
+  ---
+  duration_ms: 8109.9905
+  ...
+# Subtest: walking from home descends into the valley; rear route rises above the home
+ok 51 - walking from home descends into the valley; rear route rises above the home
+  ---
+  duration_ms: 0.5958
+  ...
+# Subtest: building, tree trunks, stream and unopened high mountain block movement
+ok 52 - building, tree trunks, stream and unopened high mountain block movement
+  ---
+  duration_ms: 5.3599
+  ...
+1..52
+# tests 52
+# suites 0
+# pass 52
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 12919.614
+
+> home-of-woods@0.1.0 build
+> tsc -b && vite build
+
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 67 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.54 kB │ gzip:   0.41 kB
+dist/assets/index-BenQNqp6.css     16.94 kB │ gzip:   4.32 kB
+dist/assets/index-Bub_QitQ.js   1,128.29 kB │ gzip: 334.43 kB
+
+✓ built in 1.69s
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.

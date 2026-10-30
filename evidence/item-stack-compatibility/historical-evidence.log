@@ -1,0 +1,8 @@
+
+> home-of-woods@0.1.0 verify:evidence
+> node tools/audit-evidence.mjs && node tools/audit-gathering-evidence.mjs && node tools/audit-warehouse-evidence.mjs && node tools/audit-character-evidence.mjs
+
+{"historicalRevision":"4ed0c0f4d047540fb50095ef11bf4cc4fc042529","integrationRuntimeFingerprint":"e956ca630f5bf91078f7f8147643dbceb844374cbb0eec24a4cdab14032b0e78","captureRuntimeFingerprint":"00cd10ce44cbc567ad24b854c52867ec1ba27c5215e92d01401e65a4ba50dd42","captureDifferences":9,"captureCycles":5,"integrationCycles":5,"videos":[{"file":"evidence/r4/forestry.webm","frames":299,"seconds":19.86},{"file":"evidence/r4/walk-and-camera.webm","frames":296,"seconds":19.88}],"result":"passed","mode":"read-only historical; current gathering checked separately"}
+{"version":"HOW-GATHERING-1","historicalRuntimeFingerprint":"e488663b10a65a10504ca3d13f9ab35afaef61a1d697014c2a8a1dab06f0b9e6","cycles":3,"videoBytes":2244593,"result":"passed","mode":"read-only historical gathering receipts; active source checked separately"}
+{"version":"HOW-WAREHOUSE-TREES-1","runtimeFingerprint":"6584b29ca3de1674fb4e91bf6e62e7f54a1096965fe8f7f7b59da70690cc644f","cycles":3,"views":3,"sources":10,"patches":38,"batches":4,"result":"passed","sourceMode":"bundled frozen source archive","mode":"read-only warehouse/tree-resource evidence"}
+{"version":"HOW-CHARACTERS-1","runtimeFingerprint":"158d8428c96e4f979a934c680c9f34f91d213d0926e9c0ecdd4ab7691853e782","cycles":3,"tests":41,"mediaBytes":1406309,"result":"passed","sourceMode":"frozen complete runtime plus live character entries; concurrent inventory changes excluded"}

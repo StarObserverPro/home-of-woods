@@ -1,0 +1,102 @@
+{
+  "runtimeFingerprint": "158d8428c96e4f979a934c680c9f34f91d213d0926e9c0ecdd4ab7691853e782",
+  "sourceArchiveSha256": "676ca3b7d82dab66270b43c1a93bb20567dffa1008cf49b0021b566d0ac106e3",
+  "buildArchiveSha256": "696dbf8bf0b3c9557e6d9ee2d92dbfc430470bac2cbc85d232711d50c09949c4",
+  "files": [
+    {
+      "file": "assets/characters/axe.glb",
+      "bytes": 11400,
+      "sha256": "467df584b4ef1c644f81189e41713f69ee4ec44f5364eaf662f5f36c1f284c96"
+    },
+    {
+      "file": "assets/characters/motions.glb",
+      "bytes": 178484,
+      "sha256": "cf0370621d7cebfc40299ddbd10126cff78e02b0bd55e3edb73ad812e02edaa5"
+    },
+    {
+      "file": "assets/characters/player.glb",
+      "bytes": 447308,
+      "sha256": "f6a4e94f2c7d9434adab18c23dbb2ac6fb52668ef34f48ccc252926cc6bc1d01"
+    },
+    {
+      "file": "assets/characters/visitor.glb",
+      "bytes": 447476,
+      "sha256": "23dfa70dd17a20a84b8b4bb5ac75343e07eea90b0066b378f8601d698b9f4be6"
+    },
+    {
+      "file": "assets/gathering/branches.glb",
+      "bytes": 9536,
+      "sha256": "a7d7b19bddad0a0dd8d4a9001d721da1f738267e90ddc27457fad0da62706692"
+    },
+    {
+      "file": "assets/gathering/mushrooms.glb",
+      "bytes": 15272,
+      "sha256": "6d0d3b01f7a33a5b7dcf8ab52829ce04fa0ad3cdb6ee172f5865c540053422c0"
+    },
+    {
+      "file": "assets/index-CCTh1UU7.js",
+      "bytes": 1121460,
+      "sha256": "ef1dc1422f8ecd52566224905c8119412d66d636695ed0f0c0a2251800a33aab"
+    },
+    {
+      "file": "assets/index-xdpj4h1i.css",
+      "bytes": 16743,
+      "sha256": "e8df59634d7b4a3c0d242a4015b2d7d37ee121481563b6cba8745dc341b1625e"
+    },
+    {
+      "file": "assets/licenses/KayKit-Adventurers-2.0-CC0.txt",
+      "bytes": 1554,
+      "sha256": "d4adc31660d1db22eb60eba648e01db41577548f6fa1a3576cb4a6283dae0a58"
+    },
+    {
+      "file": "assets/licenses/KayKit-Animations-1.1-CC0.txt",
+      "bytes": 1548,
+      "sha256": "373b159044d1a886ed15f57ca5a7673ba14e2623c460283452705f2056912ed9"
+    },
+    {
+      "file": "assets/licenses/Kenney-Nature-Kit-CC0.txt",
+      "bytes": 611,
+      "sha256": "cb96b75e3560ac78d7a53ce6f083f4cdb5c53faea6141b62d63458dcfe1e4b9d"
+    },
+    {
+      "file": "assets/m0/broadleaf.glb",
+      "bytes": 56516,
+      "sha256": "e38f4f9f4c508fbb7ac2c9e713723c2d92561c13b2976823809934c311fb74f3"
+    },
+    {
+      "file": "assets/m0/cabin.glb",
+      "bytes": 360284,
+      "sha256": "d052c9c644c0a897d596e529f9d91a6e576d50be6d40443468f7c322ec702471"
+    },
+    {
+      "file": "assets/m0/pine.glb",
+      "bytes": 86536,
+      "sha256": "7ee8448870b8b0d5fdc570ad489b2721f1c64d31f3328123b51f59056cfc9008"
+    },
+    {
+      "file": "assets/m0/ranger.glb",
+      "bytes": 122776,
+      "sha256": "337909639f918add22a930f0ed2c8b0cf2f5000bdedc09579a9966c3b3ff9e97"
+    },
+    {
+      "file": "assets/m0/tent.glb",
+      "bytes": 78128,
+      "sha256": "d5979b1dce150d6fae86d3af9476ecc53f6ac6a68dddb90a428dde4359e02ebc"
+    },
+    {
+      "file": "assets/manifest.json",
+      "bytes": 22195,
+      "sha256": "b6fc0adfe1227ef3fc62c88aed26871a8165770deac983e006e8726244e75150"
+    },
+    {
+      "file": "index.html",
+      "bytes": 542,
+      "sha256": "ffce09e2957a40d476203b386155c03b5e46fabbf22d83b2bac8b65d4ca87705"
+    },
+    {
+      "file": "third-party-notices.txt",
+      "bytes": 4657,
+      "sha256": "620f40a84371570c2ea1fa34cfce71434dfbc31cd36d078c7b51b34adb4babb4"
+    }
+  ]
+}

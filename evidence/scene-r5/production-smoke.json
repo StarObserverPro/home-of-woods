@@ -1,0 +1,13 @@
+{
+  "date":"2026-10-30",
+  "source":"actual CUA browser inspection of Vite production preview",
+  "scripts":["/assets/index-BJ1HXIrW.js"],
+  "consoleErrors":[],
+  "shaderErrors":0,
+  "canvas":{"width":1280,"height":720},
+  "treeCount":580,
+  "terrain":{"closed":true,"hardRim":true,"facetedPatches":166,"totalTriangles":19896},
+  "appearance":{"hour":15.0553333333333,"fire":false,"altar":"ready","offering":"empty","reflections":true},
+  "hearth":"charcoal",
+  "save":"saved"
+}

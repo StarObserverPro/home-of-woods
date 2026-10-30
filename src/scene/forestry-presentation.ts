@@ -9,13 +9,12 @@ import type {Resources} from './resources.ts';
 
 type ForestryPresentationOptions={
   resources:Resources; forestGroup:THREE.Group; trees:Tree[];
-  selections:Map<string,THREE.Object3D>; player:THREE.Object3D;
-  limbs:(THREE.Object3D|undefined)[];
+  selections:Map<string,THREE.Object3D>;
 };
 // The domain has already settled the tree; this short rest only makes its landing legible.
 const FALLEN_HOLD_SECONDS=1.8;
 /** Presentation only: consumes committed world state; no timers, rewards or gameplay writes. */
-export function createForestryPresentation({resources:r,forestGroup,trees,selections,player,limbs}:ForestryPresentationOptions){
+export function createForestryPresentation({resources:r,forestGroup,trees,selections}:ForestryPresentationOptions){
   let disposed=false;
   const treeById=new Map(trees.map(t=>[t.id,t])),stumps=new Map<string,THREE.Group>();
   const baseRotations=new Map<string,THREE.Quaternion>();
@@ -23,19 +22,10 @@ export function createForestryPresentation({resources:r,forestGroup,trees,select
   const bark=r.material(PALETTE.wood,.72),cutWood=r.material('#d9b07a',.78),ringWood=r.material('#966a3d',.8);
   const stumpGeometry=r.geometry('forestry-stump-r4',()=>new THREE.CylinderGeometry(1,.95,.5,10));
   const ringGeometry=r.geometry('forestry-growth-ring-r4',()=>new THREE.RingGeometry(.67,.72,16));
-  const rightArm=limbs[3],leftArm=limbs[2];
-  const rightZ=rightArm?.rotation.z??0,leftZ=leftArm?.rotation.z??0;
-  const axe=new THREE.Group();axe.name='forestry-hand-axe';axe.visible=false;
-  const handle=new THREE.Mesh(r.geometry('forestry-axe-handle-r4',()=>new THREE.CylinderGeometry(.065,.075,1.05,7)),r.material('#b78348',.7));
-  handle.position.set(0,-.48,.1);axe.add(handle);
-  const head=new THREE.Mesh(r.geometry('forestry-axe-head-r4',()=>{
-    const shape=new THREE.Shape();shape.moveTo(-.1,.15);shape.lineTo(.17,.2);shape.lineTo(.46,.16);shape.lineTo(.48,-.18);shape.lineTo(.15,-.14);shape.lineTo(-.1,-.12);shape.closePath();
-    return new THREE.ExtrudeGeometry(shape,{depth:.2,bevelEnabled:true,bevelSegments:1,bevelSize:.025,bevelThickness:.025,steps:1}).translate(0,-.97,0);
-  }),r.material('#a8b4ae',.57));head.castShadow=true;axe.add(head);
-  if(rightArm){axe.position.set(0,-.35,.03);rightArm.add(axe);}else{axe.position.set(.5,1.1,.3);player.add(axe);}
   const chips=new THREE.InstancedMesh(r.geometry('forestry-woodchip-r4',()=>new THREE.BoxGeometry(.13,.07,.1)),cutWood,18);
   chips.name='forestry-hit-chips';chips.visible=false;chips.frustumCulled=false;forestGroup.add(chips);
   const dummy=new THREE.Object3D(),rotation=new THREE.Quaternion(),axis=new THREE.Vector3();
+  const chipOrigin=new THREE.Vector3();let chipTree:string|null=null;
   const getStump=(tree:Tree)=>{
     let root=stumps.get(tree.id);if(root)return root;
     root=new THREE.Group();root.name=tree.id;root.userData.forestryRole='stump';
@@ -78,18 +68,7 @@ export function createForestryPresentation({resources:r,forestGroup,trees,select
       }else if(stumps.has(id))stumps.get(id)!.visible=false;
     }
     const action=state.forestry.active;
-    axe.visible=action?.phase==='chopping';
-    if(action?.phase==='chopping'){
-      const phase=((state.time-action.startedAt)/(FORESTRY.chopSeconds/FORESTRY.hits))%1;
-      let swing=phase<.35?THREE.MathUtils.lerp(.1,.85,phase/.35):phase<.58?THREE.MathUtils.lerp(.85,-1.32,(phase-.35)/.23):THREE.MathUtils.lerp(-1.32,.1,(phase-.58)/.42);
-      if(reducedMotion)swing*=.65;
-      if(rightArm){rightArm.rotation.x=swing;rightArm.rotation.z=rightZ-.12;}
-      if(leftArm){leftArm.rotation.x=swing*.65-.2;leftArm.rotation.z=leftZ+.12;}
-      if(!rightArm)axe.rotation.x=swing;
-    }else{
-      if(rightArm)rightArm.rotation.z=rightZ;if(leftArm)leftArm.rotation.z=leftZ;
-    }
-    chips.visible=false;
+    chips.visible=false;chips.position.set(0,0,0);chipTree=null;
     if(action&&!reducedMotion){
       const tree=treeById.get(action.treeId)!,life=state.forestry.slots[action.treeId],cycle=FORESTRY.chopSeconds/FORESTRY.hits;
       const elapsed=state.time-action.startedAt,stroke=Math.min(FORESTRY.hits-1,Math.floor(elapsed/cycle-.58));
@@ -97,6 +76,7 @@ export function createForestryPresentation({resources:r,forestGroup,trees,select
       if(stroke>=0&&age>=0&&age<.48){
         const dir=life.fallDirection,radius=(tree.kind==='pine'?.43:.66)*tree.scale;
         const bx=tree.x-dir.x*radius,bz=tree.z-dir.z*radius,by=heightAt(tree.x,tree.z)+1.2;
+        chipOrigin.set(bx,by,bz);chipTree=tree.id;
         for(let i=0;i<18;i++){
           const vx=-dir.x*1.8+Math.sin(i*2.4)*2.1,vz=-dir.z*1.8+Math.cos(i*1.8)*2;
           dummy.position.set(bx+vx*age,by+(1.8+(i%5)*.25)*age-5.5*age*age,bz+vz*age);
@@ -122,9 +102,10 @@ export function createForestryPresentation({resources:r,forestGroup,trees,select
   }
   return{
     update,
+    alignContact(impact:{treeId:string;point:THREE.Vector3}|null){if(impact&&chips.visible&&chipTree===impact.treeId)chips.position.copy(impact.point).sub(chipOrigin);},
     getPickTargets:()=>pickTargets,
     dispose(){
-      if(disposed)return;disposed=true;axe.removeFromParent();chips.removeFromParent();chips.dispose();
+      if(disposed)return;disposed=true;chips.removeFromParent();chips.dispose();
       stumps.forEach(o=>o.removeFromParent());stumps.clear();pickTargets.length=0;baseRotations.clear();treeById.clear();
       // Geometry and materials belong to the scene's Resources owner, not this adapter.
     },

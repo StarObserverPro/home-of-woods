@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {MOUNTAINS,ENVIRONMENT_LIMITS} from '../src/content/environment.ts';
 import {Resources} from '../src/scene/resources.ts';
-import {buildMountainGeometry,createEnvironment,createRiverAppearance} from '../src/scene/environment.ts';
+import {buildMountainGeometry,createEnvironment} from '../src/scene/environment.ts';
+import {createCreek} from '../src/scene/creek.ts';
 import {createTerrain} from '../src/scene/terrain.ts';
 
 test('PNW environment instantiates bounded, distinct landforms with actual snow, exposed rock and glacier channels',()=>{
@@ -62,16 +63,17 @@ test('environment generation is deterministic and all geometry/material allocati
   }
 });
 
-test('flowing water keeps the authoritative river geometry and water height while owning only its material',()=>{
+test('reflective creek keeps the authoritative river geometry and height, bounds its target, and releases its owned material',()=>{
   const resources=new Resources(),{water}=createTerrain(resources),geometry=water.geometry,oldMaterial=water.material;
   const positions=Array.from(geometry.getAttribute('position').array),height=water.position.y,oldGeometries=resources.stats().geometries;
-  const river=createRiverAppearance(resources,water),material=water.material;
+  const river=createCreek(resources,water),reflector=river.group.getObjectByName('bounded-planar-river-reflection') as THREE.Mesh<THREE.BufferGeometry,THREE.ShaderMaterial>,material=reflector.material;
   let releases=0;(material as THREE.Material).addEventListener('dispose',()=>releases++);
   assert.equal(water.geometry,geometry);assert.equal(water.position.y,height);
-  assert.equal(resources.stats().geometries,oldGeometries);
-  river.update(8,.1);assert.equal(river.stats().visualTime,8);
-  river.update(90,.1,true);assert.equal(river.stats().visualTime,8);
+  assert.ok(resources.stats().geometries<=oldGeometries+3);
+  assert.equal(river.stats().renderTargets,1);assert.equal(river.stats().spray,48);
+  river.update(8,1,false,true,false);assert.equal(material.uniforms.time.value,8);assert.equal(river.stats().reflectionSize,512);
+  river.update(90,1,true,true,true);assert.equal(material.uniforms.time.value,8);assert.equal(river.stats().reflectionSize,256);
   assert.deepEqual(Array.from(geometry.getAttribute('position').array),positions);
-  river.dispose();river.dispose();assert.equal(water.material,oldMaterial);assert.equal(releases,0);
+  river.dispose();river.dispose();assert.equal(water.material,oldMaterial);assert.equal(water.visible,true);assert.equal(releases,0);
   resources.dispose();assert.equal(releases,1);
 });

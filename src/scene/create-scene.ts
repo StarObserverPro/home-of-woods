@@ -6,8 +6,17 @@ import { heightAt, clamp } from "../world/surface.ts";
 import { Resources } from "./resources.ts";
 import { Models, createSign } from "./models.ts";
 import { createScenery, createTerrain } from "./terrain.ts";
-import {createEnvironment,createRiverAppearance} from './environment.ts';
+import {createEnvironment} from './environment.ts';
+import {createCreek} from './creek.ts';
+import {createCampProps} from './camp-props.ts';
+import {VIEWS,CAMP_PROPS} from '../content/scene-props.ts';
+import type {SceneAppearance,SceneViewPreset} from '../content/scene-props.ts';
+import {sceneAppearanceAt,daylightAt} from '../domain/scene-props.ts';
 import {createForestryPresentation} from './forestry-presentation.ts';
+import { createGatheringPresentation } from './gathering-presentation.ts';
+import type { GatheringRegistry } from '../domain/gathering-registry.ts';
+import {createCharacters} from './characters.ts';
+import type {CharacterInspection} from './characters.ts';
 
 export type SceneIntent =
   | { kind: "select"; id: string }
@@ -16,6 +25,7 @@ export async function createScene(
   host: HTMLElement,
   trees: Tree[],
   intent: (value: SceneIntent) => void,
+  gatheringRegistry: GatheringRegistry,
 ) {
   const r = new Resources(),
     models = new Models(r);
@@ -36,6 +46,8 @@ export async function createScene(
     throw error;
   }
   renderer.setPixelRatio(1);
+  let shaderErrors=0;
+  renderer.debug.onShaderError=(gl,program)=>{shaderErrors++;console.error('Scene shader compilation',gl.getProgramInfoLog(program));};
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -85,7 +97,10 @@ export async function createScene(
   sun.shadow.radius = 3;
   scene.add(sun, sun.target);
   const { ground, water } = createTerrain(r);
-  const river=createRiverAppearance(r,water);
+  const river=createCreek(r,water),camp=createCampProps(r);
+  scene.add(river.group,camp.group);
+  let appearance=sceneAppearanceAt(0),scenePreset:SceneViewPreset|null=null,sceneOverrides:Partial<SceneAppearance>={};
+  let sceneCamera:{yaw:number;elevation:number;zoom:number;target:THREE.Vector3}|null=null;
   scene.add(ground, water);
   const scenery = createScenery(r);
   scene.add(scenery.group);
@@ -155,16 +170,12 @@ export async function createScene(
     });
     propFades.set(root, { center, radius, materials });
   });
-  const player = models.clone("ranger");
-  scene.add(player);
-  const limbs = ["leg_L", "leg_R", "arm_L", "arm_R"].map((name) => {
-    let found: THREE.Object3D | undefined;
-    player.traverse((o) => {
-      if (o.name.startsWith(name)) found = o;
-    });
-    return found;
-  });
-  const forestry=createForestryPresentation({resources:r,forestGroup:forest.group,trees,selections:forest.selections,player,limbs});
+  const characters=createCharacters(r,models,trees,forest.selections),player=characters.player;
+  scene.add(player,characters.visitor);
+  let inspectionCamera:{yaw:number;elevation:number;zoom:number;target:THREE.Vector3}|null=null;
+  const forestry=createForestryPresentation({resources:r,forestGroup:forest.group,trees,selections:forest.selections});
+  const gathering = createGatheringPresentation(r, models, gatheringRegistry);
+  scene.add(gathering.group);
   const signs = [
     { x: -24, z: -37, label: "宅后望台 ↑" },
     { x: -31, z: -74, label: "深山 · 待开放" },
@@ -241,15 +252,19 @@ export async function createScene(
     mesh.updateWorldMatrix(true,false);
   });
   const pick = (clientX: number, clientY: number) => {
+    scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);
     const rect = canvas.getBoundingClientRect();
     pointer.set(
       ((clientX - rect.left) / rect.width) * 2 - 1,
       1 - ((clientY - rect.top) / rect.height) * 2,
     );
     ray.setFromCamera(pointer, camera);
-    const hit = ray.intersectObjects([...forestry.getPickTargets(),...props.values()], true)[0],
+    const hit = ray.intersectObjects([...forestry.getPickTargets(),...props.values(),...gathering.hits.objects(),...camp.hits.filter(o=>o.userData.propActive!==false)], true)[0],
       terrainHit = ray.intersectObject(ground)[0];
     if (hit && (!terrainHit || hit.distance < terrainHit.distance + 0.2)) {
+      if(hit.object.userData.propId){intent({kind:'select',id:hit.object.userData.propId});return;}
+      const sourceId = gathering.hits.resolve(hit.object);
+      if (sourceId) { intent({ kind: 'select', id: sourceId }); return; }
       let root: THREE.Object3D = hit.object;
       while (
         root.parent &&
@@ -351,6 +366,14 @@ export async function createScene(
   observer.observe(host);
   resize();
   const view = {
+    getAppearance:()=>({...appearance}),
+    inspectScene(preset:SceneViewPreset|null,overrides:Partial<SceneAppearance>={}){
+      if(preset&&!sceneCamera)sceneCamera={yaw,elevation,zoom,target:target.clone()};
+      if(!preset&&sceneCamera){({yaw,elevation,zoom}=sceneCamera);target.copy(sceneCamera.target);sceneCamera=null;}
+      scenePreset=preset;sceneOverrides=preset?{...overrides}:{};
+      if(preset){const p=VIEWS[preset];yaw=p.yaw;elevation=p.elevation;zoom=p.zoom;target.fromArray(p.target);}river.invalidate();
+    },
+    capture(state:GameState){view.render(state,0);return canvas.toDataURL('image/png');},
     canvas,
     camera,
     renderer,
@@ -369,41 +392,54 @@ export async function createScene(
     setReducedMotion(value: boolean) {
       reducedMotion = value;
     },
+    inspectCharacter(value:CharacterInspection){
+      if(value&&!inspectionCamera){inspectionCamera={yaw,elevation,zoom,target:target.clone()};yaw=player.rotation.y-.6;elevation=.24;zoom=1;}
+      if(!value&&inspectionCamera){({yaw,elevation,zoom}=inspectionCamera);target.copy(inspectionCamera.target);inspectionCamera=null;}
+      characters.setInspection(value);
+    },
     render(state: GameState, dt: number) {
       if (destroyed) return;
-      elapsed += dt;
+      elapsed = state.time;
+      appearance={...sceneAppearanceAt(state.time),...sceneOverrides};
+      if(sceneOverrides.hour!==undefined&&sceneOverrides.fire===undefined)appearance.fire=daylightAt(appearance.hour).night>.5;
+      const sky=environment.setHour(appearance.hour);
+      hemi.color.copy(light.skyColor);hemi.groundColor.copy(light.groundColor);hemi.intensity=light.ambientIntensity;
+      sun.color.copy(light.sunColor);sun.intensity=light.sunIntensity;sun.position.copy(sun.target.position).addScaledVector(light.sunDirection,135);
+      scene.environmentIntensity=light.environmentIntensity;(scene.fog as THREE.Fog).color.copy(light.haze);
+      camp.update(elapsed,appearance,state.inventory,sky.night,reducedMotion);
       const { x, z, facing, moving } = state.player,
         y = heightAt(x, z);
-      player.position.set(x, y, z);
-      player.rotation.y = facing;
-      const gait = moving && !reducedMotion ? Math.sin(elapsed * 11) * 0.55 : 0;
-      limbs.forEach((o, i) => {
-        if (o) o.rotation.x = gait * (i % 2 ? 1 : -1);
-      });
       forestry.update(state,reducedMotion);
+      characters.update(state,reducedMotion);
+      forestry.alignContact(characters.getImpact());
+      gathering.update(state.gathering);
       const framing = Math.min(1, (CAMERA.zoom / zoom) ** 2);
-      desired.set(x,y+1.5,z).lerp(overview,(mobile ? .12 : .75)*framing);
-      target.lerp(desired, reducedMotion ? 1 : 1 - Math.exp(-dt * 5));
+      const inspecting=characters.getInspection()!==null;
+      desired.set(x,y+(inspecting?1.25:1.5),z).lerp(overview,inspecting?0:(mobile ? .12 : .75)*framing);
+      if(inspecting)target.copy(desired);else if(scenePreset){target.fromArray(VIEWS[scenePreset].target);if(scenePreset==='altar')target.y=camp.foundation.levelY+1.9;if(scenePreset==='ritual')target.y=camp.foundation.levelY+2.5;}else target.lerp(desired, reducedMotion ? 1 : 1 - Math.exp(-dt * 5));
       offset
         .set(
           Math.sin(yaw) * Math.cos(elevation),
           Math.sin(elevation),
           Math.cos(yaw) * Math.cos(elevation),
         )
-        .multiplyScalar(110);
+        .multiplyScalar(inspecting?11:scenePreset?VIEWS[scenePreset].distance:110);
       camera.position.copy(target).add(offset);
+      if(camera.position.x>WORLD.minX&&camera.position.x<WORLD.maxX&&camera.position.z>WORLD.minZ&&camera.position.z<WORLD.maxZ)camera.position.y=Math.max(camera.position.y,heightAt(camera.position.x,camera.position.z)+3);
+      if(scenePreset)for(const tree of trees)if(Math.hypot(camera.position.x-tree.x,camera.position.z-tree.z)<3*tree.scale)camera.position.y=Math.max(camera.position.y,heightAt(tree.x,tree.z)+9*tree.scale);
       camera.lookAt(target);
-      camera.zoom = zoom * (mobile ? 1.45 : 1);
+      camera.zoom = zoom * (mobile ? scenePreset?.8:1.45 : 1);
       camera.updateProjectionMatrix();
       environment.update(elapsed,dt,camera.position,reducedMotion);
-      river.update(elapsed,dt,reducedMotion);
+      scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);
+      river.update(elapsed,sky.day,reducedMotion,appearance.reflections,host.clientWidth<600||host.clientHeight<500);
       const selected = state.selected
-        ? (treeById.get(state.selected) ??
+        ? (gatheringRegistry.sources.get(state.selected) ?? treeById.get(state.selected) ??
           (state.selected === "cabin"
             ? CABIN
             : state.selected === "tent"
               ? TENT
-              : null))
+              : Object.values(CAMP_PROPS).find(p=>p.id===state.selected)??null))
         : null;
       marker.visible = !!selected;
       if (selected) {
@@ -413,7 +449,7 @@ export async function createScene(
           selected.z,
         );
         marker.scale.setScalar(
-          "role" in selected && selected.role === "landmark"
+          'sourceId' in selected ? 1.25 : "role" in selected && selected.role === "landmark"
             ? 3.8
             : "kind" in selected
               ? 1.6
@@ -462,10 +498,12 @@ export async function createScene(
           mesh.material = overlap ? fade : opaque;
         });
       });
+      renderer.info.reset();renderer.info.autoReset=false;
       renderer.render(scene, camera);
     },
     stats() {
       return {
+        appearance:{...appearance},scenePreset,camp:camp.stats(),terrain:ground.geometry.userData,shaderErrors,
         resources: r.stats(),
         drawCalls: renderer.info.render.calls,
         triangles: renderer.info.render.triangles,
@@ -477,6 +515,9 @@ export async function createScene(
         treeCount: trees.length,
         graphicsBackend,
         managedTrees: trees.filter((t) => t.role === "managed").length,
+        gatheringHits: gathering.hits.size,
+        characters:characters.stats(),
+        gatheringPresentation: gathering.stats(),
         environment:environment.stats(),
         river:river.stats(),
         destroyed,
@@ -495,12 +536,16 @@ export async function createScene(
       canvas.removeEventListener("contextmenu", contextMenu);
       pointers.clear();
       forestry.dispose();
+      characters.dispose();
+      gathering.dispose();
       river.dispose();
+      camp.dispose();
       environment.dispose();
       scene.environment=null;
       scene.clear();
       props.clear();
       forest.selections.clear();
+      models.clear();
       r.dispose();
       sun.shadow.map?.depthTexture?.dispose();
       sun.shadow.map?.dispose();

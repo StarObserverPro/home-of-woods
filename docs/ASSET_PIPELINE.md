@@ -1,8 +1,12 @@
 # 资产获取、工具使用与接入流程
 
+2026-10-30 追加 HOW-CHARACTERS-1：按用户明确回接授权，只接入选定 KayKit Rogue、六段动作、重绘色图及本地斧头；原包 CC0、源文件 hash、修改与释放责任分别登记在 [ASSET_REGISTER](ASSET_REGISTER.md)。独立设计沙盒与整套素材包不进入运行时；完整可重建来源保留采用的部件和脚本。后续外观变更、PR 合并与部署另行记录。
+
 对应 HOW-BASELINE-1.0；最初基线 PR 仅建立规范。当前 R4 已完成设计/空间试验、独立模型和运行时接入，并于 2026-10-30 获用户授权按白名单回接主体工作分支、准备实现 PR；实现分支待PR审查、未合并、未部署。以下流程持续约束当前及后续资产，不把回接授权外推为采购、合并或发布授权。
 
 ## 当前批次与证据
+
+HOW-GATHERING-1 对旧本地 Kenney Nature Kit 2.1 包重新核对官方页和随包 CC0，逐项采用 campfire_logs 与 mushroom_tanGroup；没有继承旧试稿的准入或完成结论。`tools/build-gathering-assets.mjs` 做可复现 glTF 根节点/尺寸/材质修整，具体源部件和许可在 sources/kenney，产物加入既有 manifest。前后尺寸/hash 见 [asset-normalization](../evidence/gathering/asset-normalization.json)，两类在同一可玩功能包接入，验证见[本批证据](../evidence/gathering/README.md)。
 
 本轮实际链路为 Midjourney R3 构图与局部编辑 → Atlas RGBD/多视图空间试验 → 人工审查地面锚点与玩法清理 → 统一地表及五个独立 Blender GLB → R4 林业、地被、雪山、天光、水面和 HUD。具体操作、失败分支与采用理由见 [R3 PIPELINE](../art-direction-r3/PIPELINE.md)；原始账号回执、临时链接和整景 SPZ 不进入公开回接包。
 
@@ -67,3 +71,7 @@
 当前已建立 public/assets/manifest.json 与 public/assets/licenses/，后续批次在同一登记体系补充实际产物，不预填假资源或通过结果。R4 的模型、地表来源、缓存与释放已有原冻结版本检查；当前实现 PR 仍需完成主体回接复核。若新增加载器、材质或资源缓存代码，相应 PR 同时验证加载失败回退、重复进入释放与共享资源不被误销毁。
 
 本基线之前的所有试稿默认未准入。需要复用时，从候选授权和风格审查重新进入本流程；旧展示效果、旧测试通过或旧使用记录均不构成豁免。
+
+## 2026-10-30 R5d 场景回接
+
+用户已批准选定 R5 成果进入主体。本轮不整包覆盖沙盒 runtime/UI；按白名单适配场景、地表、碰撞、点选与资源释放，保留现有角色、库存和世界存档。原创网格与文字纹理、MIT Reflector、预算和实机记录见 [资产登记](ASSET_REGISTER.md)及[回接证据](../evidence/scene-r5/README.md)。沙盒历史源码/截图保持独立归属。

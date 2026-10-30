@@ -1,0 +1,406 @@
+{
+  "date": "2026-10-30",
+  "scope": "local R5c independent sandbox; not integrated or published",
+  "acceptedCreekAppearanceAndLayoutUnchanged": true,
+  "acceptedFireFoundationAndCrestModulesUnchanged": true,
+  "runtimeAssets": 10,
+  "offlineBytes": 3231366,
+  "offlineSha256": "e08b4580c363ca045f2cb949eac435202b3ee88cb2a8507cc44f22e331ff2f29",
+  "offlineAssetBytesMatch": true,
+  "offlineModuleSyntaxValid": true,
+  "offlineFileProtocolBrowserTest": "not run: browser URL policy blocks file scheme",
+  "files": [
+    {
+      "path": "ASSET_REGISTER.md",
+      "sha256": "199325c4045ae8da3a71158d3aa7393a9fea9280e98561101bca7655eb603ed5"
+    },
+    {
+      "path": "README.md",
+      "sha256": "0dda3186b831e1e2137544f64d7b521c1431b1ba63565044d5192323360f69d4"
+    },
+    {
+      "path": "VERIFICATION-R5C.md",
+      "sha256": "8b750a663240b98a7fc20df14c46e188a455a0402485981fe4f10dcaeef7019a"
+    },
+    {
+      "path": "export-review.mjs",
+      "sha256": "20ee698b61ad9c52f8a1502e6b02e534ec62953850edec1f8b11fff774b2685b"
+    },
+    {
+      "path": "index.html",
+      "sha256": "44e7c35db14941c10dfdb099787d984c6bde53142863e86173923618afc91a96"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "7f403747d7b201526177b757e0dddc4703b863a7e6b603d1b6b86dc2ee073cb0"
+    },
+    {
+      "path": "package.json",
+      "sha256": "bff06200dc173b5b0017c7232cee962d45df9fcc3c2ca60fe7b2907c0f4973f1"
+    },
+    {
+      "path": "public/assets/characters/axe.glb",
+      "sha256": "467df584b4ef1c644f81189e41713f69ee4ec44f5364eaf662f5f36c1f284c96"
+    },
+    {
+      "path": "public/assets/characters/motions.glb",
+      "sha256": "cf0370621d7cebfc40299ddbd10126cff78e02b0bd55e3edb73ad812e02edaa5"
+    },
+    {
+      "path": "public/assets/characters/player.glb",
+      "sha256": "f6a4e94f2c7d9434adab18c23dbb2ac6fb52668ef34f48ccc252926cc6bc1d01"
+    },
+    {
+      "path": "public/assets/characters/visitor.glb",
+      "sha256": "23dfa70dd17a20a84b8b4bb5ac75343e07eea90b0066b378f8601d698b9f4be6"
+    },
+    {
+      "path": "public/assets/gathering/branches.glb",
+      "sha256": "a7d7b19bddad0a0dd8d4a9001d721da1f738267e90ddc27457fad0da62706692"
+    },
+    {
+      "path": "public/assets/gathering/mushrooms.glb",
+      "sha256": "6d0d3b01f7a33a5b7dcf8ab52829ce04fa0ad3cdb6ee172f5865c540053422c0"
+    },
+    {
+      "path": "public/assets/licenses/KayKit-Adventurers-2.0-CC0.txt",
+      "sha256": "d4adc31660d1db22eb60eba648e01db41577548f6fa1a3576cb4a6283dae0a58"
+    },
+    {
+      "path": "public/assets/licenses/KayKit-Animations-1.1-CC0.txt",
+      "sha256": "373b159044d1a886ed15f57ca5a7673ba14e2623c460283452705f2056912ed9"
+    },
+    {
+      "path": "public/assets/licenses/Kenney-Nature-Kit-CC0.txt",
+      "sha256": "cb96b75e3560ac78d7a53ce6f083f4cdb5c53faea6141b62d63458dcfe1e4b9d"
+    },
+    {
+      "path": "public/assets/m0/broadleaf.glb",
+      "sha256": "e38f4f9f4c508fbb7ac2c9e713723c2d92561c13b2976823809934c311fb74f3"
+    },
+    {
+      "path": "public/assets/m0/cabin.glb",
+      "sha256": "d052c9c644c0a897d596e529f9d91a6e576d50be6d40443468f7c322ec702471"
+    },
+    {
+      "path": "public/assets/m0/pine.glb",
+      "sha256": "7ee8448870b8b0d5fdc570ad489b2721f1c64d31f3328123b51f59056cfc9008"
+    },
+    {
+      "path": "public/assets/m0/tent.glb",
+      "sha256": "d5979b1dce150d6fae86d3af9476ecc53f6ac6a68dddb90a428dde4359e02ebc"
+    },
+    {
+      "path": "public/third-party-notices.txt",
+      "sha256": "620f40a84371570c2ea1fa34cfce71434dfbc31cd36d078c7b51b34adb4babb4"
+    },
+    {
+      "path": "src/app/inventory-session.ts",
+      "sha256": "abc92e958f2e10e86485bced1df0ff565a0205ef6394357c4d420d5b36c13cc2"
+    },
+    {
+      "path": "src/app/player-actions.ts",
+      "sha256": "dbb93b8e41d3b30d2e4128d02f5c657c3c56239dfc6292ccde654a57c849207d"
+    },
+    {
+      "path": "src/app/recorder.ts",
+      "sha256": "f5e4ba588c780bb88ddf9583ff1f118d9639d095d8d57c0aaca49161117dbd59"
+    },
+    {
+      "path": "src/app/runtime-loop.ts",
+      "sha256": "324d0cf1af62f77480365ab3abcee496f578210d3b505be9eacbc078af81c291"
+    },
+    {
+      "path": "src/app/runtime.ts",
+      "sha256": "7e84d64b86ca3bf767c6f36349800eab6f20e439ff06777404ac50040b2cf442"
+    },
+    {
+      "path": "src/content/altar.ts",
+      "sha256": "2387538fd438287475ccd08bf855916e63f7bfec7940ed2a2e1648c7855de86f"
+    },
+    {
+      "path": "src/content/assets.ts",
+      "sha256": "2b549ba9b9bcd6b491804871640575cda6aaee62b0ab0c7816678d513d995e4c"
+    },
+    {
+      "path": "src/content/biomes.ts",
+      "sha256": "bbe8ff501f2a3f0fd2a7612b58123161638471ba38abdbd206d900da202a0566"
+    },
+    {
+      "path": "src/content/characters.ts",
+      "sha256": "17e9060b1285fc4068318f3386a2ea763951427952650ef42486857392aaebf6"
+    },
+    {
+      "path": "src/content/cliffs.ts",
+      "sha256": "347ef0ebc70d61c4abc6e5a9190d8082d9dadab12cb92d02ba1fbcd74e47ac95"
+    },
+    {
+      "path": "src/content/environment.ts",
+      "sha256": "476c9ea83400200a58759b4cb9482840c45249565abce9bc05ea0635cf0c215d"
+    },
+    {
+      "path": "src/content/forestry.ts",
+      "sha256": "1f5ff70656cbbb6d6cf5b6e78d34e9d7563964b8885ce5cb98e6bb5b6e6ff45b"
+    },
+    {
+      "path": "src/content/gatherables.ts",
+      "sha256": "380201c796ce70fa794ed69bf5ad70f11b21ec0e4a5e10bc94c4520f81ce58eb"
+    },
+    {
+      "path": "src/content/items.ts",
+      "sha256": "5144f5c3658b9095833cbdd231603c5fdb77c8d69890ed14dceeef627751301e"
+    },
+    {
+      "path": "src/content/processing.ts",
+      "sha256": "1ea78523fabab359f37d8a0043c77ea37e0ff11a150f36b913f61dcdf0767158"
+    },
+    {
+      "path": "src/content/qualities.ts",
+      "sha256": "86001d43a1b38125279515fae17c9c3815b789f6ccc2d038fe0169676f38d5d9"
+    },
+    {
+      "path": "src/content/scene-review.ts",
+      "sha256": "14902bf73d8fc570c174c0a48e23589255244f5ca41ea2a126c90039817adfe6"
+    },
+    {
+      "path": "src/content/tree-resources.ts",
+      "sha256": "dd0f0900163ca59f5c60b8e5ad11c9d91f5fc1d98bcfa5012133235b6da6b43d"
+    },
+    {
+      "path": "src/content/valley-r3.json",
+      "sha256": "9c273840effff74647f950e3ef914a1f46129bafe42fe1b9f8979fa67ee3913f"
+    },
+    {
+      "path": "src/content/world.ts",
+      "sha256": "34061ec3fb80f1f50a77326aa1414fe57ce7b75826d8fa73badb2a39b78f5b2d"
+    },
+    {
+      "path": "src/domain/forestry.ts",
+      "sha256": "fff0066b4920cffcc946231c64f0772fbd154ec07dbdfce14e860422ca921683"
+    },
+    {
+      "path": "src/domain/gathering-registry.ts",
+      "sha256": "9a9f3d04d44bcfe76dcf19bca49efc8e8b0be9fdcaae5498ab398c35ca3c4961"
+    },
+    {
+      "path": "src/domain/gathering-view.ts",
+      "sha256": "fe04d1618cf2a7a9daa455b59003b2b4ffa8c36030ab74441718d592d47c566f"
+    },
+    {
+      "path": "src/domain/gathering.ts",
+      "sha256": "d2083d01f3c3ad8ce36bb03c152756f2809c1e8ccede25755535d5dca019d15e"
+    },
+    {
+      "path": "src/domain/inventory-persistence.ts",
+      "sha256": "28b8e95d3e6a21c474842f66c0cca21b7ece195a4a3bfc2b345ea34b2d205efa"
+    },
+    {
+      "path": "src/domain/inventory.ts",
+      "sha256": "8b38802d743bd9383fd3c95512ec3f1905a8c7a69884489d49c50902aabbadbf"
+    },
+    {
+      "path": "src/domain/item-catalog.ts",
+      "sha256": "d3decf03e6cf4894d9447bb339faa58eabcd5c29ef936e3822b2d6ea43d9bba1"
+    },
+    {
+      "path": "src/domain/navigation.ts",
+      "sha256": "29bb83d180415bf5d8814c2aed16d78da58afd12f5bb2102ce96d3f3cb929c58"
+    },
+    {
+      "path": "src/domain/processing.ts",
+      "sha256": "a8bb40a3f8cee2fc6bab52a60aea0cae4129ff541bcc33c3d89d781a5f025294"
+    },
+    {
+      "path": "src/domain/scene-review.ts",
+      "sha256": "9d50790f564900f329c0f4542f4610fb96457b5f68b2626953d0e6216f968fe5"
+    },
+    {
+      "path": "src/domain/state.ts",
+      "sha256": "aa9a553a4cb7bc37abdc66b761a28a62ee2d39ca359af9ab63902381860530b1"
+    },
+    {
+      "path": "src/domain/warehouse-view.ts",
+      "sha256": "4c5a5cadd6f1e5bbb220c9b2b6716785fa6aa9dae462fde7778f07538456aa10"
+    },
+    {
+      "path": "src/review-main.ts",
+      "sha256": "e92474c938f75449d836764c96a7186608d237ca5a6722e72680baae73f91770"
+    },
+    {
+      "path": "src/review.css",
+      "sha256": "b04486d453202f859cb8358931effe5069c92a1a16afc3801113bcee111c2c89"
+    },
+    {
+      "path": "src/scene/altar.ts",
+      "sha256": "374bdb482ba8c4bc8331eb7e44b31b5c6bb77e2c58ac737a1018caa7c9a66d92"
+    },
+    {
+      "path": "src/scene/axe-contact.ts",
+      "sha256": "e7631c71a5c8d560e185eff2c29e5f392fa7d96a209798a431c7fde648c0ee4b"
+    },
+    {
+      "path": "src/scene/camp-props.ts",
+      "sha256": "cdd82d11432482a4fabc9f168671f997c65c78702073127a7e4ec795f1fdde49"
+    },
+    {
+      "path": "src/scene/character-grip.ts",
+      "sha256": "aea126474fb15bca812e29aad44a0b9c4df9d51531f24d2d0fb5ee410960fd0a"
+    },
+    {
+      "path": "src/scene/characters.ts",
+      "sha256": "6ffc86d2d36bf5fd492179d703ab54dd675cb481703f49eb9772bb3592d81cae"
+    },
+    {
+      "path": "src/scene/create-scene.ts",
+      "sha256": "e78892b9f2a1e31e04f01c84ca7017680098f6fe573298035ff6fe203058b577"
+    },
+    {
+      "path": "src/scene/creek.ts",
+      "sha256": "4fcb73e75db7b272f0f7edffafc9cf06677660b28d96d9c3a9918f0f29f874bf"
+    },
+    {
+      "path": "src/scene/environment.ts",
+      "sha256": "9ceff7dc17523ceb6e98eed333a07520519600b3920e88707d8dd273b7bda12b"
+    },
+    {
+      "path": "src/scene/fire.ts",
+      "sha256": "5d65c07e2f6a1fb3ead24c02b7427079f00b7485c79d7c88bc538811650b4f13"
+    },
+    {
+      "path": "src/scene/forestry-presentation.ts",
+      "sha256": "3981c2962545c7ed73f5b8577f6cc3372135ab64bc059373b2bdcba76a666e74"
+    },
+    {
+      "path": "src/scene/gathering-presentation.ts",
+      "sha256": "87637df84b937e84ecc0e2763715e38fe57b0d2c915cd92c21da2bdabe47e8a7"
+    },
+    {
+      "path": "src/scene/ground-material.ts",
+      "sha256": "0d2df06dd103b9174cc4c2e34f7396e6b19d57dfca2d602b29d36c439c84169c"
+    },
+    {
+      "path": "src/scene/interaction-registry.ts",
+      "sha256": "13e9fd9c8e25a546eb81696e20fb3d6e4a94567ab19c5415495c1dc7660fb7b4"
+    },
+    {
+      "path": "src/scene/models.ts",
+      "sha256": "fc4dfaefc0324df744c64a5fbc67fa715a51299b5eba6c01f2066bd2adec3925"
+    },
+    {
+      "path": "src/scene/resources.ts",
+      "sha256": "3223ee9304cce3748d03b837213ca07e5bc3b726b34594dc34250be9826ba572"
+    },
+    {
+      "path": "src/scene/stone-foundation.ts",
+      "sha256": "6ef35ba48da115cde6f8c9507bb71d63a93b0897c7931a453cb0916596cc42ad"
+    },
+    {
+      "path": "src/scene/terrain.ts",
+      "sha256": "7f2d8ff62ebe97d4faebc2c0dec4b7de73bd4d6aeda7a1368e9eed602c738ddf"
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5"
+    },
+    {
+      "path": "src/world/closed-terrain.ts",
+      "sha256": "2a6a14d8d08c7be1ffd1c9e2d49389ca06656ae0ae430bdd43621187e53bf80e"
+    },
+    {
+      "path": "src/world/gathering-layout.ts",
+      "sha256": "10693be939ee973f448077280b99cefc558d20b0b8a4ba5d335a1d136c5d3b07"
+    },
+    {
+      "path": "src/world/gorge-profile.ts",
+      "sha256": "7f832f7b52cab06dcd7c76358fb333ecf9c69c3d04c9b2f3d6454a03afa0c15a"
+    },
+    {
+      "path": "src/world/layout.ts",
+      "sha256": "cdae532d26e9d570618f7cd72bfcd43127f49d3f1fe8c8a41d8b6e7dc794a89f"
+    },
+    {
+      "path": "src/world/prop-foundation.ts",
+      "sha256": "a445a7a4dea623e80774f88ad89339019ee0e7d26bea3281ff51102faeb77e64"
+    },
+    {
+      "path": "src/world/rim-triangles.ts",
+      "sha256": "09e84dac808491d8f0eaf6419ac004a84c588ec33236643edb6ab5db3c23d423"
+    },
+    {
+      "path": "src/world/river.ts",
+      "sha256": "b44154aed78aab887e62183269320e4886d19288834c085612e3b6860e044d9d"
+    },
+    {
+      "path": "src/world/rock-facets.ts",
+      "sha256": "74920a449ca20f0cd31ba48e161c0bbb2d6095ca4921afb77fb3000e63495499"
+    },
+    {
+      "path": "src/world/surface.ts",
+      "sha256": "bdb949698e23f8160171367ee1c7c73d295d07122274f5ffc3e218c2d82424a8"
+    },
+    {
+      "path": "tests/character-contact.test.ts",
+      "sha256": "b224debb3f66af629278f7ea85e0c0bcb11fd5fcfcb467f66d372c3802e0065d"
+    },
+    {
+      "path": "tests/environment.test.ts",
+      "sha256": "ea35d31969988c117fa099f028306244ce9c5958b6908b1f248b7d1c88b8da27"
+    },
+    {
+      "path": "tests/forestry-presentation.test.ts",
+      "sha256": "d3410934dd8801244dbaac4cdeff9b00387d11a63e7f0a0cdc355485e6a60254"
+    },
+    {
+      "path": "tests/forestry.test.ts",
+      "sha256": "26cb55ac1f9b8e1bb3283c9e37185dcc97e780831725d1cb2e54adc41447b870"
+    },
+    {
+      "path": "tests/gathering-presentation.test.ts",
+      "sha256": "7073561c5092b41790409ceae14081b73e80f18e9f6dd883f954e66c0bb3ee3f"
+    },
+    {
+      "path": "tests/gathering.test.ts",
+      "sha256": "f6f3125d5261bbbc3c8ea4e05522db47fbf2ff7db717728068d1d3412a02f6c5"
+    },
+    {
+      "path": "tests/glb-fixtures.ts",
+      "sha256": "5af082c985d54b8c47c1a3144d78dad57bf603a478e2b405d6a443cc630af4c1"
+    },
+    {
+      "path": "tests/item-compatibility.test.ts",
+      "sha256": "f98bef3b18cff95e3ff5e4bcaa03821c9849aa135e1eeed353505abae46e7845"
+    },
+    {
+      "path": "tests/lifecycle.test.ts",
+      "sha256": "0b693bcdb3652fd955b1f442a8d8d68c9cca98d5d685a0b9e5c951361375316a"
+    },
+    {
+      "path": "tests/model-loading-failure.test.ts",
+      "sha256": "1ab7771a85acd1a75563f8f66d34b10c9ef3bc9f1a40c4fc6bb36de5cc94e333"
+    },
+    {
+      "path": "tests/models.test.ts",
+      "sha256": "fa7ba24d298de4dafc878f33ec1643a52ab38ba217c20dc8c43719d3d2d83ab6"
+    },
+    {
+      "path": "tests/review.test.ts",
+      "sha256": "9736a1298d674c060e8ae882986ba492f0f7d54130cfbad6676b9af9a857a833"
+    },
+    {
+      "path": "tests/tree-resources-warehouse.test.ts",
+      "sha256": "eb18e0ccea939f8c19beaaa4ac863d093eb66690f68f1ef63ff20d58cd5813a1"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "e1d59ebd9c14171a4bd91cb58a4c08e3371b0b65efa53c5ad77c25a4c55e70e6"
+    },
+    {
+      "path": "verify-review.mjs",
+      "sha256": "f6cc2aee8ccdae264c1a742c87005bad062b0fb382c853abf7ccf6e8ca98f0bc"
+    },
+    {
+      "path": "vite.config.ts",
+      "sha256": "92ca64fbf64e16af007090a21b259ad1d0c2eba2b5d2e987d19c464fc32fdda3"
+    }
+  ]
+}

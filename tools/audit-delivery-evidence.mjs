@@ -1,0 +1,31 @@
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+import assert from 'node:assert/strict';
+import { verifiedSourceReader } from './read-verified-source.mjs';
+const root = 'evidence/delivery/';
+const sha = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
+const read = file => JSON.parse(fs.readFileSync(root + file, 'utf8'));
+const preparation = read('preparation.json');
+const reviewed = read('reviewed-source-freeze.json');
+assert.equal(sha(JSON.stringify(reviewed.files)), reviewed.runtimeFingerprint);
+assert.equal(reviewed.runtimeFingerprint, preparation.reviewedFingerprint);
+assert.equal(sha(fs.readFileSync(root + 'reviewed-source-freeze.json')), preparation.reviewedFreezeSha256);
+assert.equal(sha(fs.readFileSync(root + 'reviewed-source.zip')), preparation.reviewedArchiveSha256);
+const source = verifiedSourceReader(root + 'reviewed-source.zip', false);
+const allowed = new Set(['README.md', 'docs/GAME_DESIGN.md', 'docs/MILESTONES.md', 'docs/scopes/scene-r5-integration.md', 'evidence/scene-r5/README.md']);
+const changes = [];
+for (const file of reviewed.files) {
+  assert.equal(sha(source(file.file)), file.sha256, `Reviewed source archive drift: ${file.file}`);
+  const current = sha(fs.readFileSync(file.file));
+  if (current === file.sha256) continue;
+  assert.ok(allowed.has(file.file), `Runtime changed after visual review: ${file.file}`);
+  changes.push({ file: file.file, beforeSha256: file.sha256, afterSha256: current });
+}
+assert.deepEqual(changes, preparation.changes);
+const current = JSON.parse(fs.readFileSync('evidence/scene-r5/source-freeze.json', 'utf8'));
+assert.equal(current.runtimeFingerprint, preparation.deliveryFingerprint);
+assert.match(fs.readFileSync(root + 'check.log', 'utf8'), /# pass 81\s+# fail 0/);
+assert.match(fs.readFileSync(root + 'sandbox-tests.log', 'utf8'), /# pass 51\s+# fail 0/);
+assert.equal(sha(fs.readFileSync(root + 'check.log')), preparation.checkLogSha256);
+assert.equal(sha(fs.readFileSync(root + 'sandbox-tests.log')), preparation.sandboxLogSha256);
+console.log(JSON.stringify({ reviewedFiles: reviewed.files.length, documentationChanges: changes.length, reviewedRuntimeUnchanged: true, mainTests: 81, sandboxTests: 51, result: 'passed' }));

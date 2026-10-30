@@ -14,3 +14,21 @@ coverage/
 .cache/
 playwright-report/
 test-results/
+
+# Review evidence required by read-only audits and linked verification reports.
+!evidence/characters/tests.log
+!evidence/characters/build.log
+!evidence/characters/contact-tests.log
+!evidence/item-stack-compatibility/historical-evidence.log
+!evidence/world-save/world-tests.log
+!evidence/scene-r5/*-tests.log
+!evidence/scene-r5/*-build.log
+!evidence/scene-r5/*-check.log
+!sandbox/scene-r5/evidence/check-*.log
+!sandbox/scene-r5/evidence/r5*-check-*.log
+!sandbox/scene-r5/evidence/r5b-final-tests.log
+!evidence/scene-r5/assets.log
+!evidence/scene-r5/build.log
+!evidence/scene-r5/tests.log
+!evidence/scene-r5/history-evidence.log
+!evidence/delivery/sandbox-tests.log

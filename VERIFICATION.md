@@ -1,5 +1,11 @@
 # R4 回接与原候选验收记录
 
+当前另追加 **HOW-SCENE-R5D-1** 场景回接，见 [本轮实现和证据](evidence/scene-r5/README.md)。下文角色、仓库、采集与 R4 记录保持历史归属；主体组合根的改动通过 scene-r5/capture-bridge 连接旧角色指纹与当前源和检查，不把旧截图作为新组合的实机证据。未开新 PR、合并或部署。
+
+当前组合版为 **HOW-CHARACTERS-1**，在本地仓库/树种物产版本上追加 KayKit 玩家、访客与双手持斧止点。本轮已测源、构建、真实 UI 操作、手机视口和重复卸载记录见 [角色回接证据](evidence/characters/README.md)。下文 R4 与仓库版本均为历史记录；原仓库 `verified-source.zip` 的只读审计仍运行，角色 source-freeze 绑定完整归档并复核工作区角色入口；随后并行的库存兼容改动不在本轮 41 项/生产截图结论中。`freeze:runtime` 只写 `evidence/characters/source-freeze.json`，不会覆盖旧回执。当前版本未开新 PR、合并或部署。
+
+当前另有本地采集支线 HOW-GATHERING-1：落枝堆、蘑菇簇、最小库存和动作/恢复契约，完整状态与本轮证据以 [evidence/gathering/README](evidence/gathering/README.md) 为准。下文为 PR #3 的历史 R4/回接记录；旧截图、录像和回执保持原字节，校验源码时绑定 `4ed0c0f`，不再将工作区新增功能冒称为旧冻结版本。`verify:evidence` 同时运行历史与当前采集审计；`freeze:runtime` 只写当前采集冻结，不覆盖旧回执。
+
 对应 HOW-BASELINE-1.0。原候选 HOW-M0-SANDBOX-20261030-r4 的完整清单在 evidence/r4/source-freeze.json，指纹为 `00cd10ce44cbc567ad24b854c52867ec1ba27c5215e92d01401e65a4ba50dd42`。回接源码另以 evidence/integration/source-freeze.json 冻结，capture-bridge.json 逐文件列出差异；两者不冒称为同一次录制。
 
 PR #2 已合并为 d22ac56b641ceaf3deb0d220084af63a5e600b0d。2026-10-30 已获准将选定 R4 接入主体并准备实现 PR，当前代码和资产位于实现分支；实现 PR 合并和发布另行记录。早期 R3 和 R4 首检材料保留为历史，不代替最终材料。
@@ -51,3 +57,13 @@ PR #2 已合并为 d22ac56b641ceaf3deb0d220084af63a5e600b0d。2026-10-30 已获�
 回接采用已审查包的白名单，原始清单保留在 evidence/r4/REVIEW_MANIFEST.json，实际接入清单在 evidence/integration/intake.json。未复制账号回执、签名下载地址、原始 Sky Porch JS、整景 SPZ、旧草稿、node_modules 或其他项目资料。第三方MIT通知随 public/third-party-notices.txt 分发。
 
 主体根目录按 README 安装和运行。此次回接授权已经取得，无需再次询问；当前目标是完成可审查实现PR，合并该实现PR和部署分别遵守后续授权。GitHub Verify 在PR与main提交上执行依赖安装、工程检查和证据校验。
+
+## 当前仓库与树木物产版本
+
+当前实现已进一步修改仓库、宿主和实例绘制；[gathering v1](evidence/gathering/README.md)保持历史回执。当前源码冻结与实际验证移至 [warehouse-tree-resources](evidence/warehouse-tree-resources/README.md)。旧采集源码当时未提交或另存完整归档，其指纹只作为历史标识；当前源文件校验绑定本轮新冻结，旧回执不充当当前版本证明。
+
+## 物品身份与品质兼容追加
+
+完整世界存档现已进一步接入，参见 [world-save](evidence/world-save/README.md)。其校验覆盖库存、额度、树木、资源池和动作；实机中断挥斧读档、重复刷新、真实 IndexedDB 并发/回滚和损坏保护分别记录。本节后面的物品阶段描述及归档仍绑定当时版本。
+
+本轮将原木、枝杈和蘑菇统一到按物品/品质堆叠的库存，实现库存切片 JSON 兼容加载、未知目录保留和旧会话整笔适配。实际检查、桌面/手机截图及本轮源码指纹见 [物品兼容证据](evidence/item-stack-compatibility/README.md)。前述 R4、采集、仓库与角色冻结回执仍绑定各自源码，不替代本轮验证。完整世界持久化和加工执行尚未实现。

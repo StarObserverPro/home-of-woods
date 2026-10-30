@@ -1,0 +1,31 @@
+{
+  "blender": "5.2.3 LTS",
+  "assets": [
+    {
+      "variant": "player",
+      "bones": 23,
+      "vertices": 6418,
+      "triangles": 7574,
+      "materials": 1,
+      "recoloured_pixels": 134528,
+      "scale": 0.78,
+      "hair": "black",
+      "eyes_reshaped": 2,
+      "brows_softened": 2,
+      "eye_glints": 2
+    },
+    {
+      "variant": "npc",
+      "bones": 23,
+      "vertices": 6418,
+      "triangles": 7574,
+      "materials": 1,
+      "recoloured_pixels": 134528,
+      "scale": 0.78,
+      "hair": "black",
+      "eyes_reshaped": 2,
+      "brows_softened": 2,
+      "eye_glints": 2
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+.warehouse-dialog { color: #f8f2df; width: min(800px, calc(100vw - 36px)); max-height: calc(100dvh - 40px); margin: auto; padding: 26px; border: 1px solid #e9edcd55; border-radius: 18px; background: linear-gradient(125deg,#1b3b30f5,#263e31f2); box-shadow: 0 24px 90px #071d1766; text-shadow: var(--hud-shadow); }
+.warehouse-dialog::backdrop { background: #0e211345; backdrop-filter: blur(3px); }
+.warehouse-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.warehouse-heading h2 { margin: 5px 0 7px; font-weight: 500; font-size: 30px; letter-spacing: .14em; }
+.warehouse-heading p { margin: 0; font-size: 12px; color: #d2dfc4; }
+.warehouse-heading > button { font-size: 29px; }
+.warehouse-categories { display: flex; gap: 8px; margin: 20px 0; border-bottom: 1px solid #d9e8ce33; padding-bottom: 12px; }
+.warehouse-categories button { min-width: 80px; padding: 0 18px; border-radius: 9px; color: #d5dfc8; }
+.warehouse-categories button[aria-pressed=true] { color: #fff3cc; background: #cad4a21f; box-shadow: inset 0 0 0 1px #e2d8a355; }
+.warehouse-content { display: grid; grid-template-columns: 1.1fr 1fr; gap: 26px; align-items: start; }
+.warehouse-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.warehouse-item { min-height: 134px; min-width: 0; display: grid; justify-items: start; position: relative; padding: 15px; gap: 5px; text-align: left; background: #b8d19b0c; border: 1px solid #d9e8ce24; border-radius: 10px; }
+.warehouse-item[aria-pressed=true] { border-color: #e8d7a5a6; background: #d2d1a718; }
+.warehouse-item > span { font-size: 14px; }
+.warehouse-item strong { justify-self: end; align-self: end; max-width: 100%; overflow-wrap: anywhere; font-size: 23px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.warehouse-item small { margin-left: 4px; font-size: 10px; font-weight: 400; color: #c2d2b7; }
+.warehouse-detail { min-width: 0; padding: 6px 0 4px 22px; border-left: 1px solid #d9e8ce33; }
+.warehouse-detail-title { display: flex; align-items: center; gap: 12px; }
+.warehouse-detail h3 { font-size: 22px; font-weight: 500; margin: 0 0 5px; }
+.warehouse-detail-title span { font-size: 12px; color: #d2dfc4; }
+.warehouse-detail p { font-size: 13px; line-height: 1.9; margin: 14px 0; color: #e0e8d4; }
+.warehouse-detail h4 { font-weight: 500; font-size: 13px; margin: 21px 0 3px; color: #efdfb8; }
+.warehouse-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.warehouse-tags span { border-radius: 5px; padding: 4px 7px; background: #e0d4a110; font-size: 10px; color: #d0dbc1; }
+.warehouse-processing { margin-top: 10px; padding: 12px; border: 1px solid #d9e8ce24; border-radius: 8px; }
+.warehouse-processing > div { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.warehouse-processing strong { font-size: 13px; font-weight: 500; }
+.warehouse-processing span, .warehouse-processing small { color: #c5d2b6; font-size: 10px; }
+.warehouse-processing p { margin: 8px 0 3px; font-size: 12px; }
+.warehouse-dialog footer { font-size: 10px; color: #bfcfb3; margin-top: 23px; padding-top: 15px; border-top: 1px solid #d9e8ce24; }
+@media (max-width:600px) {
+  .warehouse-dialog { width: calc(100vw - 24px); max-height: calc(100dvh - 28px); padding: 20px 16px; }
+  .warehouse-heading h2 { font-size: 25px; }
+  .warehouse-categories { margin: 16px 0; gap: 5px; }
+  .warehouse-categories button { flex: 1; min-width: 0; padding: 0 5px; font-size: 12px; white-space: nowrap; }
+  .warehouse-content { grid-template-columns: 1fr; gap: 20px; }
+  .warehouse-grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 7px; }
+  .warehouse-item { padding: 10px; min-height: 132px; }
+  .warehouse-item svg { width: 34px; height: 34px; }
+  .warehouse-item strong { font-size: 20px; }
+  .warehouse-detail { border-left: 0; border-top: 1px solid #d9e8ce33; padding: 18px 0 0; }
+  .warehouse-detail h4 { margin-top: 15px; }
+}
+@media (max-height:500px) { .warehouse-dialog { max-height: calc(100dvh - 20px); padding: 15px 22px; } .warehouse-categories { margin: 12px 0; } }
+
+.warehouse-quality { display: block; margin-top: 4px; color: #cbd8bf; font-size: 10px; }
+.warehouse-quality.is-fine { color: #f2d18e; }
+.warehouse-identity { overflow-wrap: anywhere; font-size: 11px; }
+
+.warehouse-categories { flex-wrap: wrap; }

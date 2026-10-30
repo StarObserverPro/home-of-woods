@@ -1,0 +1,54 @@
+[
+  {
+    "name": "branches",
+    "source": "campfire_logs.glb",
+    "sourceSha256": "98d87cdcf9095b94fd348d0946e911dd4ca6c0956bac3318cfd2b0030b86055a",
+    "originalBounds": {
+      "min": [
+        -0.145926163,
+        -0.05,
+        -0.145926163
+      ],
+      "max": [
+        0.145926163,
+        0.012599829999999992,
+        0.145926163
+      ]
+    },
+    "size": [
+      1.9,
+      0.32,
+      1.25
+    ],
+    "bytes": 9536,
+    "sha256": "a7d7b19bddad0a0dd8d4a9001d721da1f738267e90ddc27457fad0da62706692",
+    "topology": "unchanged",
+    "materials": "nonmetallic; project palette; roughness .68"
+  },
+  {
+    "name": "mushrooms",
+    "source": "mushroom_tanGroup.glb",
+    "sourceSha256": "2dc979485f164d7dce34329096271f44e0c9ea329c104251d94bcfbc8f8fe05e",
+    "originalBounds": {
+      "min": [
+        -0.136329442,
+        -0.05,
+        -0.112013608
+      ],
+      "max": [
+        0.133301556,
+        0.200488,
+        0.142182991
+      ]
+    },
+    "size": [
+      1.5,
+      0.95,
+      1.25
+    ],
+    "bytes": 15272,
+    "sha256": "6d0d3b01f7a33a5b7dcf8ab52829ce04fa0ad3cdb6ee172f5865c540053422c0",
+    "topology": "unchanged",
+    "materials": "nonmetallic; project palette; roughness .68"
+  }
+]

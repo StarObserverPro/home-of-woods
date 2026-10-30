@@ -1,0 +1,2790 @@
+{
+  "resources": {
+    "geometries": 36,
+    "materials": 10,
+    "extras": 165,
+    "disposed": false
+  },
+  "drawCalls": 154,
+  "triangles": 266134,
+  "gpu": {
+    "geometries": 36,
+    "textures": 12
+  },
+  "zoom": 0.76,
+  "yaw": -0.13,
+  "elevation": 0.24,
+  "canvas": {
+    "width": 356,
+    "height": 535
+  },
+  "treeCount": 580,
+  "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "managedTrees": 151,
+  "gatheringHits": 10,
+  "characters": {
+    "model": "KayKit R3",
+    "mode": "horizontal",
+    "inspection": null,
+    "stopFound": true,
+    "stopFraction": 0.35537390783429146,
+    "contactClearance": 0.0010729685614791137,
+    "grip": {
+      "handSeparation": 0.28314353109926144,
+      "leftGripRadialGap": 3.0982026232525974e-15,
+      "leftGripAlongHandle": 0.2831435310992593
+    },
+    "planMs": 20.80000001192093,
+    "disposed": false
+  },
+  "gatheringPresentation": {
+    "sources": 10,
+    "patches": 38,
+    "batches": 4,
+    "hits": 10
+  },
+  "environment": {
+    "meshes": 7,
+    "geometryTriangles": 10260,
+    "geometries": 7,
+    "materials": 2,
+    "environmentMap": true,
+    "pmremSize": 128,
+    "visualTime": 94.58659999999941,
+    "disposed": false
+  },
+  "river": {
+    "materials": 1,
+    "additionalGeometry": 0,
+    "additionalTextures": 0,
+    "visualTime": 94.58659999999941,
+    "disposed": false
+  },
+  "destroyed": false,
+  "contextLost": false,
+  "loop": {
+    "paused": true,
+    "destroyed": false,
+    "scheduled": false,
+    "executing": false,
+    "running": false,
+    "frames": 1531
+  },
+  "samples": 360,
+  "frameMsP50": 49.90000000002328,
+  "frameMsP95": 83.20000000006985,
+  "seed": 104729,
+  "routeNodes": 0,
+  "player": {
+    "x": -21.337562449307903,
+    "z": 28.16624430151624,
+    "facing": 2.287877899107259,
+    "moving": false,
+    "y": 17.605457260903695
+  },
+  "gameTime": 372.09999999999025,
+  "forestry": {
+    "wood": 0,
+    "points": {
+      "year": 1,
+      "available": 19,
+      "used": 0,
+      "reserved": 5
+    },
+    "active": {
+      "treeId": "tree-slot-r3-hero-0",
+      "phase": "chopping",
+      "progress": 0.3935185185181606,
+      "hits": 1,
+      "totalHits": 4
+    },
+    "selectedTree": {
+      "id": "tree-slot-r3-hero-0",
+      "individualId": "tree-slot-r3-hero-0:g0",
+      "status": "chopping",
+      "statusLabel": "正在挥斧",
+      "distance": 1.774598285984087,
+      "canChop": false,
+      "canApproach": false,
+      "cost": 5,
+      "yield": 5,
+      "reason": "正在挥斧，可取消或移动离开。",
+      "progress": 0.3935185185181606
+    }
+  },
+  "gathering": {
+    "inventory": [
+      {
+        "typeId": "wood.branch",
+        "name": "枝料",
+        "icon": "枝",
+        "quantity": 3
+      },
+      {
+        "typeId": "fungus.fresh",
+        "name": "鲜菌类",
+        "icon": "菇",
+        "quantity": 0
+      }
+    ],
+    "action": {
+      "actionId": "gather-1",
+      "actorId": "player",
+      "sourceId": "gather.tree-slot-r3-hero-0.branches",
+      "motionTag": "gather.pickup",
+      "targetAnchor": {
+        "x": -19.70581803215093,
+        "y": 18.034487353981735,
+        "z": 24.326134451810926
+      },
+      "phase": "completed",
+      "progress": 1
+    },
+    "selectedTarget": null
+  },
+  "gatheringSources": {
+    "gather.tree-slot-r3-hero-0.branches": {
+      "remaining": 0,
+      "version": 1,
+      "lastPeriod": null,
+      "depletedAt": 27.73333333333304,
+      "hostIndividualId": "tree-slot-r3-hero-0:g0",
+      "hostAvailable": true
+    },
+    "gather.tree-slot-r3-hero-0.mushrooms": {
+      "remaining": 1,
+      "version": 0,
+      "lastPeriod": null,
+      "depletedAt": null,
+      "hostIndividualId": "tree-slot-r3-hero-0:g0",
+      "hostAvailable": true
+    },
+    "gather.tree-slot-16-9.branches": {
+      "remaining": 1,
+      "version": 0,
+      "lastPeriod": null,
+      "depletedAt": null,
+      "hostIndividualId": "tree-slot-16-9:g0",
+      "hostAvailable": true
+    },
+    "gather.tree-slot-16-9.mushrooms": {
+      "remaining": 1,
+      "version": 0,
+      "lastPeriod": null,
+      "depletedAt": null,
+      "hostIndividualId": "tree-slot-16-9:g0",
+      "hostAvailable": true
+    },
+    "gather.tree-slot-13-6.branches": {
+      "remaining": 1,
+      "version": 0,
+      "lastPeriod": null,
+      "depletedAt": null,
+      "hostIndividualId": "tree-slot-13-6:g0",
+      "hostAvailable": true
+    },
+    "gather.tree-slot-13-6.mushrooms": {
+      "remaining": 1,
+      "version": 0,
+      "lastPeriod": null,
+      "depletedAt": null,
+      "hostIndividualId": "tree-slot-13-6:g0",
+      "hostAvailable": true
+    },
+    "gather.tree-slot-17-11.branches": {
+      "remaining": 1,
+      "version": 0,
+      "lastPeriod": null,
+      "depletedAt": null,
+      "hostIndividualId": "tree-slot-17-11:g0",
+      "hostAvailable": true
+    },
+    "gather.tree-slot-17-11.mushrooms": {
+      "remaining": 1,
+      "version": 0,
+      "lastPeriod": null,
+      "depletedAt": null,
+      "hostIndividualId": "tree-slot-17-11:g0",
+      "hostAvailable": true
+    },
+    "gather.landmark-elder.branches": {
+      "remaining": 1,
+      "version": 0,
+      "lastPeriod": null,
+      "depletedAt": null,
+      "hostIndividualId": "landmark-elder",
+      "hostAvailable": true
+    },
+    "gather.landmark-elder.mushrooms": {
+      "remaining": 1,
+      "version": 0,
+      "lastPeriod": null,
+      "depletedAt": null,
+      "hostIndividualId": "landmark-elder",
+      "hostAvailable": true
+    }
+  },
+  "warehouse": {
+    "categories": [
+      {
+        "id": "wood",
+        "name": "木料"
+      },
+      {
+        "id": "forest-produce",
+        "name": "林产"
+      }
+    ],
+    "items": [
+      {
+        "key": "[\"branch\",\"ordinary\"]",
+        "itemId": "branch",
+        "qualityId": "ordinary",
+        "qualityName": "普通",
+        "recognized": true,
+        "name": "枝杈",
+        "icon": "枝",
+        "symbol": "branch",
+        "category": "wood",
+        "typeName": "枝料",
+        "materialName": "未细分木材",
+        "uses": [
+          "轻型修缮",
+          "小木作"
+        ],
+        "description": "从树下拾起的小型枝料，和建筑原木分别保管。",
+        "source": "对应树木的树下落枝",
+        "tags": [
+          "轻修缮",
+          "小木作"
+        ],
+        "quantity": 3,
+        "processing": [
+          {
+            "id": "sort-branches",
+            "name": "整理枝料",
+            "outputs": [
+              "小木料"
+            ],
+            "station": "工作台",
+            "status": "后续开放",
+            "parametersReady": false
+          }
+        ]
+      },
+      {
+        "key": "[\"mushroom\",\"ordinary\"]",
+        "itemId": "mushroom",
+        "qualityId": "ordinary",
+        "qualityName": "普通",
+        "recognized": true,
+        "name": "蘑菇",
+        "icon": "菇",
+        "symbol": "mushroom",
+        "category": "forest-produce",
+        "typeName": "鲜菌类",
+        "materialName": "未细分菌类",
+        "uses": [
+          "林产保存",
+          "林产交换"
+        ],
+        "description": "从树种对应的树下蘑菇圈采得。",
+        "source": "松下、栎下的蘑菇圈",
+        "tags": [
+          "森林物产"
+        ],
+        "quantity": 0,
+        "processing": [
+          {
+            "id": "dry-mushrooms",
+            "name": "晾制蘑菇",
+            "outputs": [
+              "干蘑菇"
+            ],
+            "station": "晾晒设施",
+            "status": "后续开放",
+            "parametersReady": false
+          }
+        ]
+      },
+      {
+        "key": "[\"wood\",\"ordinary\"]",
+        "itemId": "wood",
+        "qualityId": "ordinary",
+        "qualityName": "普通",
+        "recognized": true,
+        "name": "原木",
+        "icon": "木",
+        "symbol": "wood",
+        "category": "wood",
+        "typeName": "原木",
+        "materialName": "未细分木材",
+        "uses": [
+          "结构木作"
+        ],
+        "description": "合法采伐所得的原木，受年度体量额度约束。",
+        "source": "获准采伐的成熟经营树",
+        "tags": [
+          "建筑木材",
+          "限额采伐"
+        ],
+        "quantity": 0,
+        "processing": []
+      }
+    ],
+    "total": 3,
+    "occupiedKinds": 1
+  },
+  "save": {
+    "state": "saved",
+    "message": "世界已保存",
+    "savedAt": 1793379938219,
+    "canSave": true,
+    "canRestore": true,
+    "hasPrimary": true,
+    "hasBackup": true,
+    "diagnostics": []
+  },
+  "worldState": {
+    "seed": 104729,
+    "time": 372.09999999999025,
+    "forestry": {
+      "ledger": {
+        "year": 1,
+        "base": 24,
+        "used": 0,
+        "reserved": 5
+      },
+      "slots": {
+        "tree-slot-5-5": {
+          "slotId": "tree-slot-5-5",
+          "individualId": "tree-slot-5-5:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-5-6": {
+          "slotId": "tree-slot-5-6",
+          "individualId": "tree-slot-5-6:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-5-7": {
+          "slotId": "tree-slot-5-7",
+          "individualId": "tree-slot-5-7:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-5-8": {
+          "slotId": "tree-slot-5-8",
+          "individualId": "tree-slot-5-8:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-5-9": {
+          "slotId": "tree-slot-5-9",
+          "individualId": "tree-slot-5-9:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-5-10": {
+          "slotId": "tree-slot-5-10",
+          "individualId": "tree-slot-5-10:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-5-12": {
+          "slotId": "tree-slot-5-12",
+          "individualId": "tree-slot-5-12:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-5-13": {
+          "slotId": "tree-slot-5-13",
+          "individualId": "tree-slot-5-13:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-5-14": {
+          "slotId": "tree-slot-5-14",
+          "individualId": "tree-slot-5-14:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-5-15": {
+          "slotId": "tree-slot-5-15",
+          "individualId": "tree-slot-5-15:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-5-16": {
+          "slotId": "tree-slot-5-16",
+          "individualId": "tree-slot-5-16:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-5-17": {
+          "slotId": "tree-slot-5-17",
+          "individualId": "tree-slot-5-17:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-5-18": {
+          "slotId": "tree-slot-5-18",
+          "individualId": "tree-slot-5-18:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-5-19": {
+          "slotId": "tree-slot-5-19",
+          "individualId": "tree-slot-5-19:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-5-20": {
+          "slotId": "tree-slot-5-20",
+          "individualId": "tree-slot-5-20:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-5-21": {
+          "slotId": "tree-slot-5-21",
+          "individualId": "tree-slot-5-21:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-5-22": {
+          "slotId": "tree-slot-5-22",
+          "individualId": "tree-slot-5-22:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-5-23": {
+          "slotId": "tree-slot-5-23",
+          "individualId": "tree-slot-5-23:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-5-24": {
+          "slotId": "tree-slot-5-24",
+          "individualId": "tree-slot-5-24:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-5-25": {
+          "slotId": "tree-slot-5-25",
+          "individualId": "tree-slot-5-25:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-5-26": {
+          "slotId": "tree-slot-5-26",
+          "individualId": "tree-slot-5-26:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-6-5": {
+          "slotId": "tree-slot-6-5",
+          "individualId": "tree-slot-6-5:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-6-6": {
+          "slotId": "tree-slot-6-6",
+          "individualId": "tree-slot-6-6:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-6-7": {
+          "slotId": "tree-slot-6-7",
+          "individualId": "tree-slot-6-7:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-6-8": {
+          "slotId": "tree-slot-6-8",
+          "individualId": "tree-slot-6-8:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-6-9": {
+          "slotId": "tree-slot-6-9",
+          "individualId": "tree-slot-6-9:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-6-10": {
+          "slotId": "tree-slot-6-10",
+          "individualId": "tree-slot-6-10:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-6-12": {
+          "slotId": "tree-slot-6-12",
+          "individualId": "tree-slot-6-12:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-6-13": {
+          "slotId": "tree-slot-6-13",
+          "individualId": "tree-slot-6-13:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-6-14": {
+          "slotId": "tree-slot-6-14",
+          "individualId": "tree-slot-6-14:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-6-15": {
+          "slotId": "tree-slot-6-15",
+          "individualId": "tree-slot-6-15:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-6-16": {
+          "slotId": "tree-slot-6-16",
+          "individualId": "tree-slot-6-16:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-6-17": {
+          "slotId": "tree-slot-6-17",
+          "individualId": "tree-slot-6-17:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-6-18": {
+          "slotId": "tree-slot-6-18",
+          "individualId": "tree-slot-6-18:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-6-19": {
+          "slotId": "tree-slot-6-19",
+          "individualId": "tree-slot-6-19:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-6-20": {
+          "slotId": "tree-slot-6-20",
+          "individualId": "tree-slot-6-20:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-6-21": {
+          "slotId": "tree-slot-6-21",
+          "individualId": "tree-slot-6-21:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-6-22": {
+          "slotId": "tree-slot-6-22",
+          "individualId": "tree-slot-6-22:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-6-23": {
+          "slotId": "tree-slot-6-23",
+          "individualId": "tree-slot-6-23:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-6-24": {
+          "slotId": "tree-slot-6-24",
+          "individualId": "tree-slot-6-24:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-6-25": {
+          "slotId": "tree-slot-6-25",
+          "individualId": "tree-slot-6-25:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-7-5": {
+          "slotId": "tree-slot-7-5",
+          "individualId": "tree-slot-7-5:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-7-6": {
+          "slotId": "tree-slot-7-6",
+          "individualId": "tree-slot-7-6:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-7-7": {
+          "slotId": "tree-slot-7-7",
+          "individualId": "tree-slot-7-7:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-7-8": {
+          "slotId": "tree-slot-7-8",
+          "individualId": "tree-slot-7-8:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-7-9": {
+          "slotId": "tree-slot-7-9",
+          "individualId": "tree-slot-7-9:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-7-10": {
+          "slotId": "tree-slot-7-10",
+          "individualId": "tree-slot-7-10:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-7-12": {
+          "slotId": "tree-slot-7-12",
+          "individualId": "tree-slot-7-12:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-7-13": {
+          "slotId": "tree-slot-7-13",
+          "individualId": "tree-slot-7-13:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-7-14": {
+          "slotId": "tree-slot-7-14",
+          "individualId": "tree-slot-7-14:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-7-15": {
+          "slotId": "tree-slot-7-15",
+          "individualId": "tree-slot-7-15:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-7-16": {
+          "slotId": "tree-slot-7-16",
+          "individualId": "tree-slot-7-16:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-7-17": {
+          "slotId": "tree-slot-7-17",
+          "individualId": "tree-slot-7-17:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-7-18": {
+          "slotId": "tree-slot-7-18",
+          "individualId": "tree-slot-7-18:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-7-19": {
+          "slotId": "tree-slot-7-19",
+          "individualId": "tree-slot-7-19:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-7-20": {
+          "slotId": "tree-slot-7-20",
+          "individualId": "tree-slot-7-20:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-7-21": {
+          "slotId": "tree-slot-7-21",
+          "individualId": "tree-slot-7-21:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-7-22": {
+          "slotId": "tree-slot-7-22",
+          "individualId": "tree-slot-7-22:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-7-23": {
+          "slotId": "tree-slot-7-23",
+          "individualId": "tree-slot-7-23:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-7-24": {
+          "slotId": "tree-slot-7-24",
+          "individualId": "tree-slot-7-24:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-8-6": {
+          "slotId": "tree-slot-8-6",
+          "individualId": "tree-slot-8-6:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-8-7": {
+          "slotId": "tree-slot-8-7",
+          "individualId": "tree-slot-8-7:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-8-8": {
+          "slotId": "tree-slot-8-8",
+          "individualId": "tree-slot-8-8:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-8-9": {
+          "slotId": "tree-slot-8-9",
+          "individualId": "tree-slot-8-9:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-8-10": {
+          "slotId": "tree-slot-8-10",
+          "individualId": "tree-slot-8-10:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-8-12": {
+          "slotId": "tree-slot-8-12",
+          "individualId": "tree-slot-8-12:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-8-13": {
+          "slotId": "tree-slot-8-13",
+          "individualId": "tree-slot-8-13:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-8-14": {
+          "slotId": "tree-slot-8-14",
+          "individualId": "tree-slot-8-14:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-8-15": {
+          "slotId": "tree-slot-8-15",
+          "individualId": "tree-slot-8-15:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-8-16": {
+          "slotId": "tree-slot-8-16",
+          "individualId": "tree-slot-8-16:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-8-17": {
+          "slotId": "tree-slot-8-17",
+          "individualId": "tree-slot-8-17:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-8-18": {
+          "slotId": "tree-slot-8-18",
+          "individualId": "tree-slot-8-18:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-8-19": {
+          "slotId": "tree-slot-8-19",
+          "individualId": "tree-slot-8-19:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-8-20": {
+          "slotId": "tree-slot-8-20",
+          "individualId": "tree-slot-8-20:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-8-21": {
+          "slotId": "tree-slot-8-21",
+          "individualId": "tree-slot-8-21:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-8-22": {
+          "slotId": "tree-slot-8-22",
+          "individualId": "tree-slot-8-22:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-8-23": {
+          "slotId": "tree-slot-8-23",
+          "individualId": "tree-slot-8-23:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-9-5": {
+          "slotId": "tree-slot-9-5",
+          "individualId": "tree-slot-9-5:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-9-6": {
+          "slotId": "tree-slot-9-6",
+          "individualId": "tree-slot-9-6:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-9-7": {
+          "slotId": "tree-slot-9-7",
+          "individualId": "tree-slot-9-7:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-9-13": {
+          "slotId": "tree-slot-9-13",
+          "individualId": "tree-slot-9-13:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-9-14": {
+          "slotId": "tree-slot-9-14",
+          "individualId": "tree-slot-9-14:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-9-15": {
+          "slotId": "tree-slot-9-15",
+          "individualId": "tree-slot-9-15:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-9-16": {
+          "slotId": "tree-slot-9-16",
+          "individualId": "tree-slot-9-16:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-9-17": {
+          "slotId": "tree-slot-9-17",
+          "individualId": "tree-slot-9-17:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-9-18": {
+          "slotId": "tree-slot-9-18",
+          "individualId": "tree-slot-9-18:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-9-19": {
+          "slotId": "tree-slot-9-19",
+          "individualId": "tree-slot-9-19:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-9-20": {
+          "slotId": "tree-slot-9-20",
+          "individualId": "tree-slot-9-20:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-9-21": {
+          "slotId": "tree-slot-9-21",
+          "individualId": "tree-slot-9-21:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-9-22": {
+          "slotId": "tree-slot-9-22",
+          "individualId": "tree-slot-9-22:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-9-23": {
+          "slotId": "tree-slot-9-23",
+          "individualId": "tree-slot-9-23:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-10-5": {
+          "slotId": "tree-slot-10-5",
+          "individualId": "tree-slot-10-5:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-10-6": {
+          "slotId": "tree-slot-10-6",
+          "individualId": "tree-slot-10-6:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-10-7": {
+          "slotId": "tree-slot-10-7",
+          "individualId": "tree-slot-10-7:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-10-15": {
+          "slotId": "tree-slot-10-15",
+          "individualId": "tree-slot-10-15:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-10-16": {
+          "slotId": "tree-slot-10-16",
+          "individualId": "tree-slot-10-16:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-10-17": {
+          "slotId": "tree-slot-10-17",
+          "individualId": "tree-slot-10-17:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-10-18": {
+          "slotId": "tree-slot-10-18",
+          "individualId": "tree-slot-10-18:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-10-19": {
+          "slotId": "tree-slot-10-19",
+          "individualId": "tree-slot-10-19:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-10-20": {
+          "slotId": "tree-slot-10-20",
+          "individualId": "tree-slot-10-20:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-10-21": {
+          "slotId": "tree-slot-10-21",
+          "individualId": "tree-slot-10-21:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-11-5": {
+          "slotId": "tree-slot-11-5",
+          "individualId": "tree-slot-11-5:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-11-6": {
+          "slotId": "tree-slot-11-6",
+          "individualId": "tree-slot-11-6:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-11-15": {
+          "slotId": "tree-slot-11-15",
+          "individualId": "tree-slot-11-15:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-11-16": {
+          "slotId": "tree-slot-11-16",
+          "individualId": "tree-slot-11-16:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-11-17": {
+          "slotId": "tree-slot-11-17",
+          "individualId": "tree-slot-11-17:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-11-18": {
+          "slotId": "tree-slot-11-18",
+          "individualId": "tree-slot-11-18:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-11-19": {
+          "slotId": "tree-slot-11-19",
+          "individualId": "tree-slot-11-19:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-11-20": {
+          "slotId": "tree-slot-11-20",
+          "individualId": "tree-slot-11-20:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-12-5": {
+          "slotId": "tree-slot-12-5",
+          "individualId": "tree-slot-12-5:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-12-6": {
+          "slotId": "tree-slot-12-6",
+          "individualId": "tree-slot-12-6:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-12-15": {
+          "slotId": "tree-slot-12-15",
+          "individualId": "tree-slot-12-15:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-12-16": {
+          "slotId": "tree-slot-12-16",
+          "individualId": "tree-slot-12-16:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-12-17": {
+          "slotId": "tree-slot-12-17",
+          "individualId": "tree-slot-12-17:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-12-18": {
+          "slotId": "tree-slot-12-18",
+          "individualId": "tree-slot-12-18:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-13-5": {
+          "slotId": "tree-slot-13-5",
+          "individualId": "tree-slot-13-5:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-13-6": {
+          "slotId": "tree-slot-13-6",
+          "individualId": "tree-slot-13-6:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-13-15": {
+          "slotId": "tree-slot-13-15",
+          "individualId": "tree-slot-13-15:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-13-16": {
+          "slotId": "tree-slot-13-16",
+          "individualId": "tree-slot-13-16:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-13-17": {
+          "slotId": "tree-slot-13-17",
+          "individualId": "tree-slot-13-17:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-14-5": {
+          "slotId": "tree-slot-14-5",
+          "individualId": "tree-slot-14-5:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-14-6": {
+          "slotId": "tree-slot-14-6",
+          "individualId": "tree-slot-14-6:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-14-15": {
+          "slotId": "tree-slot-14-15",
+          "individualId": "tree-slot-14-15:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-14-16": {
+          "slotId": "tree-slot-14-16",
+          "individualId": "tree-slot-14-16:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-15-5": {
+          "slotId": "tree-slot-15-5",
+          "individualId": "tree-slot-15-5:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-15-6": {
+          "slotId": "tree-slot-15-6",
+          "individualId": "tree-slot-15-6:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-15-7": {
+          "slotId": "tree-slot-15-7",
+          "individualId": "tree-slot-15-7:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-15-15": {
+          "slotId": "tree-slot-15-15",
+          "individualId": "tree-slot-15-15:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-16-5": {
+          "slotId": "tree-slot-16-5",
+          "individualId": "tree-slot-16-5:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-16-6": {
+          "slotId": "tree-slot-16-6",
+          "individualId": "tree-slot-16-6:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-16-7": {
+          "slotId": "tree-slot-16-7",
+          "individualId": "tree-slot-16-7:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-16-8": {
+          "slotId": "tree-slot-16-8",
+          "individualId": "tree-slot-16-8:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-16-9": {
+          "slotId": "tree-slot-16-9",
+          "individualId": "tree-slot-16-9:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-16-15": {
+          "slotId": "tree-slot-16-15",
+          "individualId": "tree-slot-16-15:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-17-5": {
+          "slotId": "tree-slot-17-5",
+          "individualId": "tree-slot-17-5:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-17-6": {
+          "slotId": "tree-slot-17-6",
+          "individualId": "tree-slot-17-6:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-17-7": {
+          "slotId": "tree-slot-17-7",
+          "individualId": "tree-slot-17-7:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-17-8": {
+          "slotId": "tree-slot-17-8",
+          "individualId": "tree-slot-17-8:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-17-11": {
+          "slotId": "tree-slot-17-11",
+          "individualId": "tree-slot-17-11:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-17-12": {
+          "slotId": "tree-slot-17-12",
+          "individualId": "tree-slot-17-12:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-18-5": {
+          "slotId": "tree-slot-18-5",
+          "individualId": "tree-slot-18-5:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-18-6": {
+          "slotId": "tree-slot-18-6",
+          "individualId": "tree-slot-18-6:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-18-7": {
+          "slotId": "tree-slot-18-7",
+          "individualId": "tree-slot-18-7:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-18-8": {
+          "slotId": "tree-slot-18-8",
+          "individualId": "tree-slot-18-8:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-18-11": {
+          "slotId": "tree-slot-18-11",
+          "individualId": "tree-slot-18-11:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-19-5": {
+          "slotId": "tree-slot-19-5",
+          "individualId": "tree-slot-19-5:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-19-6": {
+          "slotId": "tree-slot-19-6",
+          "individualId": "tree-slot-19-6:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-19-7": {
+          "slotId": "tree-slot-19-7",
+          "individualId": "tree-slot-19-7:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-20-6": {
+          "slotId": "tree-slot-20-6",
+          "individualId": "tree-slot-20-6:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "tree-slot-r3-hero-0": {
+          "slotId": "tree-slot-r3-hero-0",
+          "individualId": "tree-slot-r3-hero-0:g0",
+          "generation": 0,
+          "status": "chopping",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0.753726891247486,
+            "z": -0.6571877763701943
+          },
+          "actionId": "chop-1-tree-slot-r3-hero-0:g0"
+        },
+        "tree-slot-r3-hero-1": {
+          "slotId": "tree-slot-r3-hero-1",
+          "individualId": "tree-slot-r3-hero-1:g0",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        },
+        "landmark-elder": {
+          "slotId": "landmark-elder",
+          "individualId": "landmark-elder",
+          "generation": 0,
+          "status": "standing",
+          "felledAt": null,
+          "regrowAt": null,
+          "bornAt": null,
+          "maturesAt": null,
+          "fallDirection": {
+            "x": 0,
+            "z": 1
+          },
+          "actionId": null
+        }
+      },
+      "active": {
+        "id": "chop-1-tree-slot-r3-hero-0:g0",
+        "treeId": "tree-slot-r3-hero-0",
+        "individualId": "tree-slot-r3-hero-0:g0",
+        "year": 1,
+        "cost": 5,
+        "yield": 5,
+        "reward": {
+          "itemId": "wood",
+          "qualityId": "ordinary"
+        },
+        "startedAt": 370.68333333332487,
+        "committedAt": null,
+        "phase": "chopping"
+      },
+      "nextAction": 2,
+      "completedActions": []
+    },
+    "inventory": {
+      "schemaVersion": 1,
+      "revision": 1,
+      "stacks": [
+        {
+          "itemId": "branch",
+          "qualityId": "ordinary",
+          "quantity": 3
+        }
+      ]
+    },
+    "gathering": {
+      "sources": {
+        "gather.tree-slot-r3-hero-0.branches": {
+          "remaining": 0,
+          "version": 1,
+          "lastPeriod": null,
+          "depletedAt": 27.73333333333304,
+          "hostIndividualId": "tree-slot-r3-hero-0:g0",
+          "hostAvailable": true
+        },
+        "gather.tree-slot-r3-hero-0.mushrooms": {
+          "remaining": 1,
+          "version": 0,
+          "lastPeriod": null,
+          "depletedAt": null,
+          "hostIndividualId": "tree-slot-r3-hero-0:g0",
+          "hostAvailable": true
+        },
+        "gather.tree-slot-16-9.branches": {
+          "remaining": 1,
+          "version": 0,
+          "lastPeriod": null,
+          "depletedAt": null,
+          "hostIndividualId": "tree-slot-16-9:g0",
+          "hostAvailable": true
+        },
+        "gather.tree-slot-16-9.mushrooms": {
+          "remaining": 1,
+          "version": 0,
+          "lastPeriod": null,
+          "depletedAt": null,
+          "hostIndividualId": "tree-slot-16-9:g0",
+          "hostAvailable": true
+        },
+        "gather.tree-slot-13-6.branches": {
+          "remaining": 1,
+          "version": 0,
+          "lastPeriod": null,
+          "depletedAt": null,
+          "hostIndividualId": "tree-slot-13-6:g0",
+          "hostAvailable": true
+        },
+        "gather.tree-slot-13-6.mushrooms": {
+          "remaining": 1,
+          "version": 0,
+          "lastPeriod": null,
+          "depletedAt": null,
+          "hostIndividualId": "tree-slot-13-6:g0",
+          "hostAvailable": true
+        },
+        "gather.tree-slot-17-11.branches": {
+          "remaining": 1,
+          "version": 0,
+          "lastPeriod": null,
+          "depletedAt": null,
+          "hostIndividualId": "tree-slot-17-11:g0",
+          "hostAvailable": true
+        },
+        "gather.tree-slot-17-11.mushrooms": {
+          "remaining": 1,
+          "version": 0,
+          "lastPeriod": null,
+          "depletedAt": null,
+          "hostIndividualId": "tree-slot-17-11:g0",
+          "hostAvailable": true
+        },
+        "gather.landmark-elder.branches": {
+          "remaining": 1,
+          "version": 0,
+          "lastPeriod": null,
+          "depletedAt": null,
+          "hostIndividualId": "landmark-elder",
+          "hostAvailable": true
+        },
+        "gather.landmark-elder.mushrooms": {
+          "remaining": 1,
+          "version": 0,
+          "lastPeriod": null,
+          "depletedAt": null,
+          "hostIndividualId": "landmark-elder",
+          "hostAvailable": true
+        }
+      },
+      "action": {
+        "actionId": "gather-1",
+        "actorId": "player",
+        "sourceId": "gather.tree-slot-r3-hero-0.branches",
+        "motionTag": "gather.pickup",
+        "targetAnchor": {
+          "x": -19.70581803215093,
+          "y": 18.034487353981735,
+          "z": 24.326134451810926
+        },
+        "phase": "completed",
+        "progress": 1,
+        "sourceVersion": 0,
+        "startedAt": 27.73333333333304,
+        "durationSeconds": 0,
+        "reward": {
+          "itemId": "branch",
+          "qualityId": "ordinary",
+          "quantity": 3
+        }
+      },
+      "nextAction": 2,
+      "settled": {
+        "gather-1": true
+      }
+    },
+    "player": {
+      "x": -21.337562449307903,
+      "z": 28.16624430151624,
+      "facing": 2.287877899107259,
+      "moving": false
+    },
+    "selected": "tree-slot-r3-hero-0",
+    "route": [],
+    "visited": [
+      "home"
+    ]
+  }
+}

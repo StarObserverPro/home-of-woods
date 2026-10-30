@@ -22,13 +22,16 @@ test("fixed tree slots, generations and landmark identities survive reconstructi
   assert.ok(trees.some((t) => t.kind === "pine"));
   assert.ok(trees.some((t) => t.kind === "broadleaf"));
 });
-test("triangle interpolation agrees with the actual rendered terrain vertices and diagonal", () => {
+test("terrain vertices and uncut grass cells retain triangle interpolation; split cliff interiors use the geometry gate", () => {
   for (let x = -60; x < 20; x += 2)
     for (let z = -54; z < 65; z += 2) {
       assert.ok(Math.abs(heightAt(x, z) - vertexHeight(x, z)) < 1e-10);
       const a = vertexHeight(x, z),
         b = vertexHeight(x + 2, z),
         c = vertexHeight(x, z + 2);
+      // The gorge also clips the narrow cap on its grass side. Its actual faces
+      // are sampled throughout by scene-integration.test, rather than an old grid diagonal.
+      if(Math.abs(x-riverX(z))<32)continue;
       assert.ok(
         Math.abs(
           heightAt(x + 0.5, z + 0.5) - (a + (b - a) * 0.25 + (c - a) * 0.25),

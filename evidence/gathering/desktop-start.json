@@ -1,0 +1,139 @@
+{
+  "current": {
+    "resources": {
+      "geometries": 35,
+      "materials": 9,
+      "extras": 178,
+      "disposed": false
+    },
+    "drawCalls": 310,
+    "triangles": 360924,
+    "gpu": {
+      "geometries": 54,
+      "textures": 8
+    },
+    "zoom": 0.76,
+    "yaw": -0.13,
+    "elevation": 0.24,
+    "canvas": {
+      "width": 1528,
+      "height": 682
+    },
+    "treeCount": 580,
+    "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "managedTrees": 151,
+    "gatheringHits": 4,
+    "environment": {
+      "meshes": 7,
+      "geometryTriangles": 10260,
+      "geometries": 7,
+      "materials": 2,
+      "environmentMap": true,
+      "pmremSize": 128,
+      "visualTime": 44.514200000000066,
+      "disposed": false
+    },
+    "river": {
+      "materials": 1,
+      "additionalGeometry": 0,
+      "additionalTextures": 0,
+      "visualTime": 44.514200000000066,
+      "disposed": false
+    },
+    "destroyed": false,
+    "contextLost": false,
+    "loop": {
+      "paused": false,
+      "destroyed": false,
+      "scheduled": false,
+      "executing": true,
+      "running": true,
+      "frames": 883
+    },
+    "samples": 360,
+    "frameMsP50": 33.30000000000291,
+    "frameMsP95": 66.69999999999709,
+    "seed": 104729,
+    "routeNodes": 0,
+    "player": {
+      "x": -35,
+      "z": 2,
+      "facing": 0,
+      "moving": false,
+      "y": 21.5
+    },
+    "gameTime": 44.49999999999876,
+    "forestry": {
+      "wood": 0,
+      "points": {
+        "year": 1,
+        "available": 24,
+        "used": 0,
+        "reserved": 0
+      },
+      "active": null,
+      "selectedTree": null
+    },
+    "gathering": {
+      "inventory": [
+        {
+          "itemId": "branch",
+          "name": "枝杈",
+          "icon": "枝",
+          "quantity": 0
+        },
+        {
+          "itemId": "mushroom",
+          "name": "蘑菇",
+          "icon": "菇",
+          "quantity": 0
+        }
+      ],
+      "action": null,
+      "selectedTarget": {
+        "id": "gather.home.branches",
+        "title": "落枝堆",
+        "tag": "林间物产",
+        "detail": "林间落下的干枝，可以拾起来留作小型木料。",
+        "status": "可以采集",
+        "distance": 3.6055512754639896,
+        "reward": "3 份枝杈",
+        "reason": "",
+        "actions": [
+          {
+            "id": "gather",
+            "label": "走近采集",
+            "enabled": true
+          }
+        ]
+      }
+    },
+    "gatheringSources": {
+      "gather.home.branches": {
+        "remaining": 1,
+        "version": 0,
+        "lastPeriod": null,
+        "depletedAt": null
+      },
+      "gather.home.mushrooms": {
+        "remaining": 1,
+        "version": 0,
+        "lastPeriod": null,
+        "depletedAt": null
+      },
+      "gather.trail.branches": {
+        "remaining": 1,
+        "version": 0,
+        "lastPeriod": null,
+        "depletedAt": null
+      },
+      "gather.trail.mushrooms": {
+        "remaining": 1,
+        "version": 0,
+        "lastPeriod": null,
+        "depletedAt": null
+      }
+    }
+  },
+  "audit": []
+}

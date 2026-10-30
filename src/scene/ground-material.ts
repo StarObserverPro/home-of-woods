@@ -22,6 +22,7 @@ export function createGroundMaterial(r:Resources){
   const helpers=`
 varying vec2 vGroundXZ;
 varying float vGroundUp;
+varying vec3 vGroundWorld;
 float patchHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float patchNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(patchHash(i),patchHash(i+vec2(1.,0.)),f.x),mix(patchHash(i+vec2(0.,1.)),patchHash(i+vec2(1.,1.)),f.x),f.y);}
 float segmentD(vec2 p,vec2 a,vec2 b){vec2 v=b-a;return length(p-a-v*clamp(dot(p-a,v)/dot(v,v),0.,1.));}
@@ -45,15 +46,22 @@ vec3 groundCover(vec2 p){
  float steep=1.-smoothstep(.45,.72,vGroundUp);
  cover=mix(cover,${rgb(GROUND_PLAN.scree)}*(.94+.06*step(.54,cellTone)),steep*.78);
  float roadD=10000.;${roads}
- return mix(cover,${rgb(PALETTE.path)},1.-smoothstep(2.4,2.65,roadD));
+ float vergeNoise=(patchNoise(p*.65)-.5)*.24;
+ float road=1.-smoothstep(2.24+vergeNoise,2.55+vergeNoise,roadD);
+ float centerWear=1.-smoothstep(.7,1.9,roadD);
+ float gravel=step(.92,patchHash(floor(p*7.)))*.10;
+ vec3 trail=mix(${rgb(PALETTE.path)},${rgb('#c5a077')},centerWear*.38);
+ trail*=.97+patchNoise(p*2.4)*.06+gravel;
+ return mix(cover,trail,road);
 }`;
   material.onBeforeCompile=shader=>{
-    shader.vertexShader='varying vec2 vGroundXZ;varying float vGroundUp;\n'+shader.vertexShader;
-    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvGroundXZ=position.xz;vGroundUp=abs(normal.y);');
+    shader.vertexShader='varying vec2 vGroundXZ;varying float vGroundUp;varying vec3 vGroundWorld;\n'+shader.vertexShader;
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvGroundXZ=position.xz;vGroundUp=abs(normal.y);vGroundWorld=(modelMatrix*vec4(position,1.)).xyz;');
+    shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_begin>','#include <normal_fragment_begin>\nvec3 facet=normalize(cross(dFdx(vGroundWorld),dFdy(vGroundWorld)));facet*=gl_FrontFacing?1.:-1.;if(abs(facet.y)<.76)normal=normalize(mat3(viewMatrix)*facet);');
     shader.fragmentShader=helpers+'\n'+shader.fragmentShader;
     shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\ndiffuseColor.rgb=groundCover(vGroundXZ);');
   };
-  material.customProgramCacheKey=()=>`r4-planned-ground-${JSON.stringify(GROUND_PLAN)}-${JSON.stringify(PATH)}-${JSON.stringify(RIVER_KNOTS)}`;
+  material.customProgramCacheKey=()=>`r5-faceted-trail-${JSON.stringify(GROUND_PLAN)}-${JSON.stringify(PATH)}-${JSON.stringify(RIVER_KNOTS)}`;
   material.name='planned-understory-meadow-digital-blocks';
   return material;
 }

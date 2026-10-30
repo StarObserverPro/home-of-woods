@@ -1,11 +1,15 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
+import {geometryContactTarget} from './axe-contact.ts';
 import { PALETTE } from "../content/world.ts";
+import { RUNTIME_MODELS } from '../content/assets.ts';
 import type { Tree } from "../world/layout.ts";
 import type { Resources } from "./resources.ts";
 export class Models {
   templates = new Map<string, THREE.Group>();
+  animations = new Map<string, THREE.AnimationClip[]>();
   private r: Resources;
   constructor(r: Resources) {
     this.r = r;
@@ -15,31 +19,46 @@ export class Models {
     let failed = false;
     try {
       await Promise.all(
-        ["cabin", "tent", "ranger", "pine", "broadleaf"].map(async (name) => {
-          const gltf = await loader.loadAsync(`/assets/m0/${name}.glb`);
+        RUNTIME_MODELS.map(async ({name, url}) => {
+          const gltf = await loader.loadAsync(url);
           gltf.scene.traverse((o) => {
             if (o instanceof THREE.Mesh) {
               this.r.own(o.geometry);
               const mats = Array.isArray(o.material) ? o.material : [o.material];
-              mats.forEach((m) => this.r.own(m));
+              mats.forEach((m) => {
+                this.r.own(m);
+                for(const value of Object.values(m))if(value instanceof THREE.Texture)this.r.own(value);
+              });
               o.castShadow = true;
               o.receiveShadow = true;
             }
           });
-          if (!failed && !this.r.disposed) this.templates.set(name, gltf.scene);
+          if (!failed && !this.r.disposed){this.templates.set(name, gltf.scene);this.animations.set(name,gltf.animations);}
         }),
       );
     } catch (error) {
       failed = true;
       this.templates.clear();
+      this.animations.clear();
       throw error;
     }
   }
   clone(name: string) {
-    const object = this.templates.get(name)?.clone(true);
-    if (!object) throw new Error(`Missing model ${name}`);
+    const source=this.templates.get(name);
+    if(!source)throw new Error(`Missing model ${name}`);
+    const object=cloneSkeleton(source) as THREE.Group;
+    object.traverse(o=>{if(o instanceof THREE.SkinnedMesh)this.r.own(o.skeleton);});
     return object;
   }
+  trunkContact(tree:Tree,root:THREE.Object3D){
+    const source=this.templates.get(tree.kind)!;
+    source.updateMatrixWorld(true);root.updateWorldMatrix(true,false);
+    const name=tree.kind==='pine'?'chunky_pine_trunk':'broadleaf_flared_trunk';
+    let trunk:THREE.Mesh|undefined;source.traverse(o=>{if(o instanceof THREE.Mesh&&o.name.startsWith(name))trunk=o;});
+    if(!trunk)throw new Error(`Missing actual trunk: ${tree.kind}`);
+    return geometryContactTarget(trunk.geometry,root.matrixWorld.clone().multiply(trunk.matrixWorld));
+  }
+  clear(){this.templates.clear();this.animations.clear();}
   staticClone(name: string) {
     const source = this.templates.get(name)!;
     source.updateMatrixWorld(true);

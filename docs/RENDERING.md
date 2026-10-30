@@ -4,6 +4,8 @@
 
 ## 当前实现
 
+采集支线新增 content/items、qualities、gatherables、assets，world/gathering-layout，domain/gathering-registry、gathering、gathering-view、inventory，app/player-actions 和 scene/gathering-presentation、interaction-registry。固定来源、库存、动作与恢复记录进入唯一 GameState；枝杈、蘑菇与原木统一由 inventory 按物品和品质持有，forestry 只持有林业额度与树木状态。app 同步复核并提交，场景不发物品。职责、动作契约和正式恢复未启用的边界见 [GATHERING_GUIDE](GATHERING_GUIDE.md)。
+
 | 当前文件 | 已承担的责任 |
 | --- | --- |
 | src/app/runtime.ts、runtime-loop.ts | 组合唯一 GameState、命令和固定步长主循环；移动、林业、暂停/隐藏及场景重入 |
@@ -13,7 +15,7 @@
 | src/scene/forestry-presentation.ts、ground-material.ts、environment.ts | 消费状态的挥斧倒树、规划地被、原创雪山、天空/PMREM 与原河面材质；不提交经济 |
 | src/ui/App.tsx | 读取快照并发意图；持有同一会话状态引用供重入，不另存余额或复制玩法规则 |
 
-当前没有持久存档、完整日历、通用制作/交易/建筑事务模块或在线服务。下面涉及这些功能的类型、service 与存档键是后续实现契约，不应作为已有接口调用。实际有限林业合同见 [forestry-r4](forestry-r4.md)，参数见 [PARAMETERS](../PARAMETERS.md)，回接状态见 [scope](scopes/m0-walkable-valley.md)。
+当前已有现有世界的 IndexedDB 存档与事务备份；完整日历、通用制作/交易/建筑事务模块及在线服务尚未实现。下面涉及这些功能的类型、service 与存档键是后续实现契约，不应作为已有接口调用。实际有限林业合同见 [forestry-r4](forestry-r4.md)，参数见 [PARAMETERS](../PARAMETERS.md)，回接状态见 [scope](scopes/m0-walkable-valley.md)。
 
 ## 分层
 
@@ -49,7 +51,7 @@ Service 为纯本地规则模块，不设首版在线经济、账号或微服务
 
 ## 持久化数据
 
-以下为 M1/M2 持久化语义。R4 的 GameState 目前只含 seed、time、forestry、player、selected、route、visited；运行时重建复用同一引用，刷新或关闭页面不会被宣称为可恢复存档。
+以下为 M1/M2 持久化语义。原 R4 的 GameState 包含 seed、time、forestry、player、selected、route、visited；本轮再加入 inventory 与 gathering（含来源、恢复及动作记录）。运行时重建复用同一引用；当前世界快照已整体持久化上述切片，刷新后校验并恢复，游戏时间不按真实离线时间补进度。
 
 | 记录 | 最小字段语义 |
 | --- | --- |
@@ -59,7 +61,7 @@ Service 为纯本地规则模块，不设首版在线经济、账号或微服务
 | TreeIndividual | 独立 ID、树位、树种、出生时间、尺寸/变异、健康/保护、资源池与结算记录 |
 | ForestLandmark | 固定巨木 ID、位置、不可采伐语义与独立资源池 |
 | ForestryLedger | 年度基础/已授特批/已用/预留，特批上限累计与命令记录 |
-| InventoryState | 物品数量、必要树种/等级/结构用途；不逐根编号普通枝条 |
+| InventoryState | schemaVersion、事务 revision、按 itemId 与 qualityId 合并的稀疏数量；不逐根编号普通枝条 |
 | BuildingState | 建筑 ID、占地、修缮/升级状态、初始结构与实际投入 |
 | FeatureState | M2 实现时加入祈愿、待生效赐福、来访和商货；不提前建空模块 |
 
@@ -67,7 +69,13 @@ TreeSlot 与 TreeIndividual 分开；实体 ID 不取自实例绘制索引。可
 
 存档统一包含 schemaVersion、布局版本和所有玩法切片，独立键 home-of-woods-save-v1。写入前做全状态校验；失败保留上一份有效数据，损坏/未知版本先保留原字节再报告，不擅自覆盖新档。库存与额度不得分别恢复。
 
+物产细分、普通/精品堆叠、旧泛品保留、目录未知项与加工结果版本见 [物品扩展与存档兼容方案](ITEM_DATA_EVOLUTION.md)。身份、品质堆叠、库存切片 JSON 读写及旧会话适配已经实现；库存 schemaVersion 与运行时 revision 分开，原木已归统一库存。domain/inventory-persistence 对未知目录保留记录，对未来结构和损坏数据返回 protected 且保留原数据；app/inventory-session 在场景创建前整笔校验旧库存与旧林业余额。当前完整世界存档由 app/save-controller 经 app/world-save-store 的单笔 IndexedDB 事务写入主档和备份，包含版本和 SHA-256 摘要；损坏与未来数据受到保护。加工执行后续按 M1 接入，详见 [世界存档与目录](WORLD_SAVE.md)。
+
 ## 唯一 owner
+
+R5d 回接：domain/scene-props 从 GameState.time 派生视觉时刻和篝火开关；camp-props 只读 inventory，altar 只消费表现状态；不增加时钟、GameState 切片或存档写入者。creek 的单个倒影目标由既有 Resources 释放。检视借用相机并暂停既有循环，结束后恢复角色跟随。
+
+地形网格和 surface 共用切边/碎面规则，远端减点、侧壁和底部封闭。content/fixed-tree-slots 固定现有 580 个树位，防止新坡度筛选删除或重抽存档个体。新道具和神谕加入原可选身份集合。巨木导航点因祭坛碰撞从 (-8,48) 移到 (-6,48)，ID 不变。证据见 [场景回接](../evidence/scene-r5/README.md)。
 
 | 对象 | 所有者 |
 | --- | --- |
@@ -79,7 +87,7 @@ TreeSlot 与 TreeIndividual 分开；实体 ID 不取自实例绘制索引。可
 | 动态占地 / 树位使用 | domain 空间状态 |
 | 共享 GPU 资源 | scene/resources 缓存 owner |
 | 道具更新 / 拾取 | 当前 scene/create-scene 和 forestry-presentation；扩展时拆分，保留稳定实体映射 |
-| 存档写入 | M1 的 app/save-controller；R4 尚无持久化写入者 |
+| 存档写入 | app/save-controller 唯一协调；app/world-save-store 唯一执行 IndexedDB 原子写入 |
 
 文件名可在实现时调整，责任不可分裂。没有第二套库存、备用 RAF、模型内存档写入或外部工具的并行状态源。
 
@@ -120,3 +128,15 @@ Marble 2 可用于空间建立与交互试验。接入时将可玩地表、碰�
 验证固定 seed/相机/状态的家园全景、树木阶段、修缮、互动和移动端；记录设备、浏览器、视口、实体数、draw calls、三角形、纹理/几何计数与帧时间。重复预览、区块往返、暂停恢复和卸载后资源计数应收敛。
 
 行为重点：巨木/幼树禁伐、年度边界、特批上限、重复结算、逐树资源容量、原位换代、人工种植冲突、材料单向转换、建筑投入回收与存档往返。不要用源码字符串匹配代替实际状态与交互测试。
+
+## 角色、接触与骨架所有权
+
+`scene/characters` 是唯一角色表现适配器，消费 app 的 GameState.time；不建立 RAF、不提交库存或采伐结果。玩家按空闲/行走/采集/采伐切换原包动作，营地访客从 Idle 基姿只叠加头与手臂轨道。SkeletonUtils.clone 为每个实体复制独立骨架；模型缓存共享几何/材质/纹理，Resources 同时拥有纹理与独立 skeleton，销毁时释放 boneTexture。迟到加载由终端 owner 立即释放。
+
+`character-grip` 从左右掌槽同步刚性斧柄；`axe-contact` 对实际斧刃与树干世界几何作保守投影，搜索首次达到最大入木边界的姿态，整套骨骼停留后反向回收。树干轻微受击偏转时重新收紧止点。竖劈使用承托圆桩顶面，不允许斧刃穿底。几何采样缓存不持有额外 GPU 资源。木屑消费实际接触点，domain 仍按原 3.6 秒事务一次提交。
+
+动作检视暂停唯一模拟钟并隔离输入，保留和恢复相机；木段/承托桩只作诊断表现。当前组合版验证见 [角色回接](../evidence/characters/README.md)。
+
+## 仓库与树木物产追加
+
+content/tree-resources、world/gathering-layout 管理按树种的圈形挂点及固定宿主；domain/gathering 在采伐后同步宿主代次与可用性，不发放成熟资源。scene/gathering-presentation 使用缓存模型的四个实例绘制批次，命中代理与资源池身份分开，更新只改实例矩阵。domain/warehouse-view 从唯一权威余额派生仓库视图，ui/Warehouse 只读展示；仓库面板通过 runtime.setInterfaceOpen 共用暂停与输入所有者。content/processing、domain/processing 的实际只读数据服务由仓库消费，不存在加工执行旁路。当前版本与旧采集证据分别冻结，见 [本轮记录](../evidence/warehouse-tree-resources/README.md)。

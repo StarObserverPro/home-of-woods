@@ -1,0 +1,507 @@
+{
+  "schemaVersion": 1,
+  "baseline": "HOW-BASELINE-1.0",
+  "batchId": "HOW-M0-R3",
+  "acquiredDate": "2026-10-29",
+  "assets": [
+    {
+      "assetId": "how-m0-pine",
+      "batchId": "HOW-M0-R3",
+      "role": "runtime",
+      "status": "integrated",
+      "file": "public/assets/m0/pine.glb",
+      "bytes": 86536,
+      "sha256": "7ee8448870b8b0d5fdc570ad489b2721f1c64d31f3328123b51f59056cfc9008",
+      "source": {
+        "author": "Home of Woods — original task modelling",
+        "script": "tools/build-assets.py",
+        "tool": "Blender 5.2.3 LTS",
+        "inputs": "Original clustered-crown remodel using user-approved MJ R3 as visual reference; archived Kenney CC0 candidates were not reused in this mesh",
+        "reference": {
+          "type": "generated-concept",
+          "provider": "Midjourney",
+          "jobId": "c428daff-5a22-41d8-91bb-e5a82a0ea49a",
+          "index": 3,
+          "use": "Visual guide only; no reference raster or third-party mesh embedded; not relabelled CC0",
+          "terms": {
+            "reviewedDate": "2026-10-30",
+            "url": "https://docs.midjourney.com/hc/en-us/articles/32083055291277-Terms-of-Service",
+            "scope": "Original generated design reference; not CC0; account and third-party conditions in section 4 remain applicable."
+          }
+        }
+      },
+      "license": {
+        "id": "project-original",
+        "thirdPartyContent": false,
+        "note": "Original mesh; visual reference is a generated concept, not marked CC0"
+      },
+      "adaptation": "Original eight-sided rounded three-tier pine, thick trunk, smooth broad highlights; distant procedural LOD preserves the silhouette",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/create-scene.ts",
+        "collision": "src/world/layout.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "evidence": [
+        "evidence/r4/desktop-home.png",
+        "evidence/integration/"
+      ],
+      "limitations": "Integrated on the implementation branch; not merged or deployed. Full M1 calendar, crafting and persistence are outside this batch.",
+      "previousSource": {
+        "author": "Kenney",
+        "page": "https://kenney.nl/assets/nature-kit",
+        "pack": "Nature Kit 2.1",
+        "archiveSha256": "FA7974A0D342BFE63C38664BA9F8EC1A4AAB8EA25F099BDC56870E33588C4D9D",
+        "part": "tree_pineRoundC.glb",
+        "sha256": "29080A4935BAE6B4AB29066F22C99C58F88B23CE4E2F79B4DCBB5E76DE73F69D"
+      }
+    },
+    {
+      "assetId": "how-m0-broadleaf",
+      "batchId": "HOW-M0-R3",
+      "role": "runtime",
+      "status": "integrated",
+      "file": "public/assets/m0/broadleaf.glb",
+      "bytes": 56516,
+      "sha256": "e38f4f9f4c508fbb7ac2c9e713723c2d92561c13b2976823809934c311fb74f3",
+      "source": {
+        "author": "Home of Woods — original task modelling",
+        "script": "tools/build-assets.py",
+        "tool": "Blender 5.2.3 LTS",
+        "inputs": "Original clustered-crown remodel using user-approved MJ R3 as visual reference; archived Kenney CC0 candidates were not reused in this mesh",
+        "reference": {
+          "type": "generated-concept",
+          "provider": "Midjourney",
+          "jobId": "c428daff-5a22-41d8-91bb-e5a82a0ea49a",
+          "index": 3,
+          "use": "Visual guide only; no reference raster or third-party mesh embedded; not relabelled CC0",
+          "terms": {
+            "reviewedDate": "2026-10-30",
+            "url": "https://docs.midjourney.com/hc/en-us/articles/32083055291277-Terms-of-Service",
+            "scope": "Original generated design reference; not CC0; account and third-party conditions in section 4 remain applicable."
+          }
+        }
+      },
+      "license": {
+        "id": "project-original",
+        "thirdPartyContent": false,
+        "note": "Original mesh; visual reference is a generated concept, not marked CC0"
+      },
+      "adaptation": "Original six-lobe rounded crown, thick branching trunk; distant LOD uses fewer lobes; giant is a stable independent instance",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/create-scene.ts",
+        "collision": "src/world/layout.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "evidence": [
+        "evidence/r4/desktop-home.png",
+        "evidence/integration/"
+      ],
+      "limitations": "Integrated on the implementation branch; not merged or deployed. Full M1 calendar, crafting and persistence are outside this batch.",
+      "previousSource": {
+        "author": "Kenney",
+        "page": "https://kenney.nl/assets/nature-kit",
+        "pack": "Nature Kit 2.1",
+        "archiveSha256": "FA7974A0D342BFE63C38664BA9F8EC1A4AAB8EA25F099BDC56870E33588C4D9D",
+        "part": "tree_oak.glb",
+        "sha256": "D7FD8773674928C50C11B66D12C636D49BDCC15A8B1C7FBB98E6F63A3439A3F3"
+      }
+    },
+    {
+      "assetId": "how-m0-cabin",
+      "batchId": "HOW-M0-R3",
+      "role": "runtime",
+      "status": "integrated",
+      "file": "public/assets/m0/cabin.glb",
+      "bytes": 360284,
+      "sha256": "d052c9c644c0a897d596e529f9d91a6e576d50be6d40443468f7c322ec702471",
+      "source": {
+        "author": "Home of Woods — original task modelling",
+        "script": "tools/build-assets.py",
+        "tool": "Blender 5.2.3 LTS",
+        "inputs": "Original project model from requirements; R3 palette and roof/proportion refinements; no third-party mesh reused",
+        "reference": {
+          "type": "generated-concept",
+          "provider": "Midjourney",
+          "jobId": "c428daff-5a22-41d8-91bb-e5a82a0ea49a",
+          "index": 3,
+          "use": "Visual guide only; no reference raster or third-party mesh embedded; not relabelled CC0",
+          "terms": {
+            "reviewedDate": "2026-10-30",
+            "url": "https://docs.midjourney.com/hc/en-us/articles/32083055291277-Terms-of-Service",
+            "scope": "Original generated design reference; not CC0; account and third-party conditions in section 4 remain applicable."
+          }
+        }
+      },
+      "license": {
+        "id": "project-original",
+        "thirdPartyContent": false,
+        "note": "Original project models; not relabelled as CC0"
+      },
+      "adaptation": "Original beveled log cabin with exposed rafters and missing roof boards; world scale 1.6 and independent collision footprint",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/create-scene.ts",
+        "collision": "src/world/layout.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "evidence": [
+        "evidence/r4/desktop-home.png",
+        "evidence/integration/"
+      ],
+      "limitations": "Integrated on the implementation branch; not merged or deployed. Full M1 calendar, crafting and persistence are outside this batch."
+    },
+    {
+      "assetId": "how-m0-tent",
+      "batchId": "HOW-M0-R3",
+      "role": "runtime",
+      "status": "integrated",
+      "file": "public/assets/m0/tent.glb",
+      "bytes": 78128,
+      "sha256": "d5979b1dce150d6fae86d3af9476ecc53f6ac6a68dddb90a428dde4359e02ebc",
+      "source": {
+        "author": "Home of Woods — original task modelling",
+        "script": "tools/build-assets.py",
+        "tool": "Blender 5.2.3 LTS",
+        "inputs": "Original project model from requirements; R3 palette and roof/proportion refinements; no third-party mesh reused",
+        "reference": {
+          "type": "generated-concept",
+          "provider": "Midjourney",
+          "jobId": "c428daff-5a22-41d8-91bb-e5a82a0ea49a",
+          "index": 3,
+          "use": "Visual guide only; no reference raster or third-party mesh embedded; not relabelled CC0",
+          "terms": {
+            "reviewedDate": "2026-10-30",
+            "url": "https://docs.midjourney.com/hc/en-us/articles/32083055291277-Terms-of-Service",
+            "scope": "Original generated design reference; not CC0; account and third-party conditions in section 4 remain applicable."
+          }
+        }
+      },
+      "license": {
+        "id": "project-original",
+        "thirdPartyContent": false,
+        "note": "Original project models; not relabelled as CC0"
+      },
+      "adaptation": "Original thick A-frame canvas, poles and ground pivot; world scale 1.6 and independent collision footprint",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/create-scene.ts",
+        "collision": "src/world/layout.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "evidence": [
+        "evidence/r4/desktop-home.png",
+        "evidence/integration/"
+      ],
+      "limitations": "Integrated on the implementation branch; not merged or deployed. Full M1 calendar, crafting and persistence are outside this batch."
+    },
+    {
+      "assetId": "how-m0-ranger",
+      "batchId": "HOW-M0-R3",
+      "role": "archived",
+      "status": "superseded",
+      "file": "public/assets/m0/ranger.glb",
+      "bytes": 122776,
+      "sha256": "337909639f918add22a930f0ed2c8b0cf2f5000bdedc09579a9966c3b3ff9e97",
+      "source": {
+        "author": "Home of Woods — original task modelling",
+        "script": "tools/build-assets.py",
+        "tool": "Blender 5.2.3 LTS",
+        "inputs": "Original modelling from project requirements; no third-party image/model inputs"
+      },
+      "license": {
+        "id": "project-original",
+        "thirdPartyContent": false,
+        "note": "Original project models; not relabelled as CC0"
+      },
+      "adaptation": "Original large-head short-limb ranger with four independent animation pivots, ground root and opaque nonmetallic palette",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/create-scene.ts",
+        "collision": "src/world/layout.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "evidence": [
+        "evidence/r4/desktop-home.png",
+        "evidence/integration/"
+      ],
+      "limitations": "Retained canonical R4 historical asset; current player uses how-character-player."
+    },
+    {
+      "assetId": "how-gathering-branches",
+      "batchId": "HOW-GATHERING-1",
+      "role": "runtime",
+      "status": "integrated",
+      "file": "public/assets/gathering/branches.glb",
+      "bytes": 9536,
+      "sha256": "a7d7b19bddad0a0dd8d4a9001d721da1f738267e90ddc27457fad0da62706692",
+      "source": {
+        "author": "Kenney",
+        "page": "https://kenney.nl/assets/nature-kit",
+        "pack": "Nature Kit 2.1",
+        "part": "campfire_logs.glb",
+        "sha256": "98d87cdcf9095b94fd348d0946e911dd4ca6c0956bac3318cfd2b0030b86055a",
+        "archiveSha256": "fa7974a0d342bfe63c38664ba9f8ec1a4aab8ea25f099bdc56870e33588c4d9d",
+        "acquisition": "Previously downloaded package re-reviewed on 2026-10-30; current official asset page and bundled license agree on CC0; only these selected source files admitted."
+      },
+      "license": {
+        "id": "CC0-1.0",
+        "evidence": "public/assets/licenses/Kenney-Nature-Kit-CC0.txt",
+        "thirdPartyContent": true,
+        "reviewedDate": "2026-10-30",
+        "rights": "Modification, game use and public redistribution under CC0; original license retained."
+      },
+      "adaptation": "tools/build-gathering-assets.mjs: preserved topology; normalized ground pivot and dimensions 1.9 x 0.32 x 1.25; project palette; roughness .68; metallic 0",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/gathering-presentation.ts",
+        "collision": "Nonblocking; shared surface and navigation; separately registered pick proxy",
+        "disposal": "src/scene/resources.ts"
+      },
+      "evidence": [
+        "evidence/gathering/asset-normalization.json"
+      ],
+      "limitations": "Feature branch only. Regeneration configuration disabled. No character animation or persistence claimed."
+    },
+    {
+      "assetId": "how-gathering-mushrooms",
+      "batchId": "HOW-GATHERING-1",
+      "role": "runtime",
+      "status": "integrated",
+      "file": "public/assets/gathering/mushrooms.glb",
+      "bytes": 15272,
+      "sha256": "6d0d3b01f7a33a5b7dcf8ab52829ce04fa0ad3cdb6ee172f5865c540053422c0",
+      "source": {
+        "author": "Kenney",
+        "page": "https://kenney.nl/assets/nature-kit",
+        "pack": "Nature Kit 2.1",
+        "part": "mushroom_tanGroup.glb",
+        "sha256": "2dc979485f164d7dce34329096271f44e0c9ea329c104251d94bcfbc8f8fe05e",
+        "archiveSha256": "fa7974a0d342bfe63c38664ba9f8ec1a4aab8ea25f099bdc56870e33588c4d9d",
+        "acquisition": "Previously downloaded package re-reviewed on 2026-10-30; current official asset page and bundled license agree on CC0; only these selected source files admitted."
+      },
+      "license": {
+        "id": "CC0-1.0",
+        "evidence": "public/assets/licenses/Kenney-Nature-Kit-CC0.txt",
+        "thirdPartyContent": true,
+        "reviewedDate": "2026-10-30",
+        "rights": "Modification, game use and public redistribution under CC0; original license retained."
+      },
+      "adaptation": "tools/build-gathering-assets.mjs: preserved topology; normalized ground pivot and dimensions 1.5 x 0.95 x 1.25; project palette; roughness .68; metallic 0",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/gathering-presentation.ts",
+        "collision": "Nonblocking; shared surface and navigation; separately registered pick proxy",
+        "disposal": "src/scene/resources.ts"
+      },
+      "evidence": [
+        "evidence/gathering/asset-normalization.json"
+      ],
+      "limitations": "Feature branch only. Regeneration configuration disabled. No character animation or persistence claimed."
+    },
+    {
+      "assetId": "how-character-player",
+      "batchId": "HOW-CHARACTERS-1",
+      "role": "runtime",
+      "status": "integrated",
+      "file": "public/assets/characters/player.glb",
+      "bytes": 447308,
+      "sha256": "f6a4e94f2c7d9434adab18c23dbb2ac6fb52668ef34f48ccc252926cc6bc1d01",
+      "source": {
+        "author": "Kay Lousberg",
+        "page": "https://kaylousberg.itch.io/kaykit-adventurers",
+        "pack": "KayKit Adventurers 2.0 FREE",
+        "reviewedDate": "2026-10-30",
+        "files": [
+          {
+            "file": "sources/kaykit/adventurers/Rogue.glb",
+            "sha256": "cae5d9b2f08d53f7b4ab2617d9f42f021c546eb10920455fdcd82a110867fae4"
+          },
+          {
+            "file": "sources/kaykit/adventurers/rogue_texture.png",
+            "sha256": "2e2fc741e20e7e2c85b176c8143b49b769bca0d2ed1a1cfc1807a758a0e4d3e1"
+          }
+        ]
+      },
+      "license": {
+        "id": "CC0-1.0",
+        "evidence": "public/assets/licenses/KayKit-Adventurers-2.0-CC0.txt",
+        "thirdPartyContent": true,
+        "rights": "Source assets allow modification, game use and public redistribution; original license and modification record retained."
+      },
+      "adaptation": "Rogue without cape; forest palette; black hair/brows; softened brows; eyes +6% width/+8% height and small highlights; one skin/material; 23 bones; embedded .78 scale; scene scale 1.5",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/characters.ts",
+        "contact": "src/scene/axe-contact.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "evidence": [
+        "evidence/characters/"
+      ],
+      "limitations": "Local project integration; no PR merge or deployment; inspector vertical cutting is not a crafting transaction."
+    },
+    {
+      "assetId": "how-character-visitor",
+      "batchId": "HOW-CHARACTERS-1",
+      "role": "runtime",
+      "status": "integrated",
+      "file": "public/assets/characters/visitor.glb",
+      "bytes": 447476,
+      "sha256": "23dfa70dd17a20a84b8b4bb5ac75343e07eea90b0066b378f8601d698b9f4be6",
+      "source": {
+        "author": "Kay Lousberg",
+        "page": "https://kaylousberg.itch.io/kaykit-adventurers",
+        "pack": "KayKit Adventurers 2.0 FREE",
+        "reviewedDate": "2026-10-30",
+        "files": [
+          {
+            "file": "sources/kaykit/adventurers/Rogue.glb",
+            "sha256": "cae5d9b2f08d53f7b4ab2617d9f42f021c546eb10920455fdcd82a110867fae4"
+          },
+          {
+            "file": "sources/kaykit/adventurers/rogue_texture.png",
+            "sha256": "2e2fc741e20e7e2c85b176c8143b49b769bca0d2ed1a1cfc1807a758a0e4d3e1"
+          }
+        ]
+      },
+      "license": {
+        "id": "CC0-1.0",
+        "evidence": "public/assets/licenses/KayKit-Adventurers-2.0-CC0.txt",
+        "thirdPartyContent": true,
+        "rights": "Source assets allow modification, game use and public redistribution; original license and modification record retained."
+      },
+      "adaptation": "Same reviewed mesh/face edits, rust clothing; independent skeleton; arms/head-only wave",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/characters.ts",
+        "contact": "src/scene/axe-contact.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "evidence": [
+        "evidence/characters/"
+      ],
+      "limitations": "Local project integration; no PR merge or deployment; inspector vertical cutting is not a crafting transaction."
+    },
+    {
+      "assetId": "how-character-motions",
+      "batchId": "HOW-CHARACTERS-1",
+      "role": "runtime",
+      "status": "integrated",
+      "file": "public/assets/characters/motions.glb",
+      "bytes": 178484,
+      "sha256": "cf0370621d7cebfc40299ddbd10126cff78e02b0bd55e3edb73ad812e02edaa5",
+      "source": {
+        "author": "Kay Lousberg",
+        "page": "https://kaylousberg.itch.io/kaykit-character-animations",
+        "pack": "KayKit Character Animations 1.1 FREE",
+        "reviewedDate": "2026-10-30",
+        "files": [
+          {
+            "file": "sources/kaykit/animations/General.glb",
+            "sha256": "5f725c0f745f36078c7238968cd5c04843cbc6260689eb6e7f5e2bbd7ffdd7ad"
+          },
+          {
+            "file": "sources/kaykit/animations/MovementBasic.glb",
+            "sha256": "11422afd50abf7e8c92ea107e2e0bc94abd38023d6d15f55ad580347efbfa29e"
+          },
+          {
+            "file": "sources/kaykit/animations/CombatMelee.glb",
+            "sha256": "c55e6ec1c79e83ae21d46fe1cd921c1b64be8b9a524a24517e51c6ba99231459"
+          },
+          {
+            "file": "sources/kaykit/animations/Simulation.glb",
+            "sha256": "ab6ffeed40c8281dd0ce0506534eadf7385151f1c266643a10fa2a0f0a7ba3b1"
+          }
+        ]
+      },
+      "license": {
+        "id": "CC0-1.0",
+        "evidence": "public/assets/licenses/KayKit-Animations-1.1-CC0.txt",
+        "thirdPartyContent": true,
+        "rights": "Source assets allow modification, game use and public redistribution; original license and modification record retained."
+      },
+      "adaptation": "Only Idle_A, Walking_A, PickUp, Waving and two Melee_2H attacks; no mannequin meshes; scene samples a stopped/recovered pose without changing source clips",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/characters.ts",
+        "contact": "src/scene/axe-contact.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "evidence": [
+        "evidence/characters/"
+      ],
+      "limitations": "Local project integration; no PR merge or deployment; inspector vertical cutting is not a crafting transaction."
+    },
+    {
+      "assetId": "how-character-axe",
+      "batchId": "HOW-CHARACTERS-1",
+      "role": "runtime",
+      "status": "integrated",
+      "file": "public/assets/characters/axe.glb",
+      "bytes": 11400,
+      "sha256": "467df584b4ef1c644f81189e41713f69ee4ec44f5364eaf662f5f36c1f284c96",
+      "source": {
+        "author": "Home of Woods original modelling",
+        "reviewedDate": "2026-10-30",
+        "files": [
+          {
+            "file": "tools/build-character-axe.py",
+            "sha256": "8079de07e696c08b3b6a450909cacab86b0659fa6e159362396166bae59c6dbc"
+          }
+        ]
+      },
+      "license": {
+        "id": "project-original",
+        "thirdPartyContent": false
+      },
+      "adaptation": "Original single-bit wood axe; right palm origin, two-hand alignment; actual cutting-head geometry used for contact constraints",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/characters.ts",
+        "contact": "src/scene/axe-contact.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "evidence": [
+        "evidence/characters/"
+      ],
+      "limitations": "Local project integration; no PR merge or deployment; inspector vertical cutting is not a crafting transaction."
+    }
+  ],
+  "worldSource": {
+    "file": "src/content/valley-r3.json",
+    "bytes": 154825,
+    "sha256": "9c273840effff74647f950e3ef914a1f46129bafe42fe1b9f8979fa67ee3913f",
+    "source": "Reviewed RGBD ground annotations from the original generated R3 concept, with explicit authored contours and gameplay cleanup",
+    "sourceFiles": [
+      "art/reference/r3-ground-annotations.json",
+      "tools/build-r3-surface.mjs"
+    ],
+    "transform": {
+      "xzScale": 6,
+      "verticalExaggeration": 1.6,
+      "zOffset": 24
+    },
+    "license": {
+      "id": "project-layout-from-generated-reference",
+      "note": "Not CC0; no real-place/private scan or reference raster embedded",
+      "reviewedDate": "2026-10-30",
+      "terms": "https://www.worldlabs.ai/terms-of-service",
+      "basis": "Atlas official API output and authored ground cleanup; section 3.3(d) governs API output rights. No raw SPZ, response credentials, signed URLs or service code is distributed."
+    }
+  },
+  "integration": {
+    "revision": "HOW-M0-R4-INTEGRATION",
+    "authorizedDate": "2026-10-30",
+    "status": "integrated-on-feature-branch",
+    "captureRuntimeFingerprint": "00cd10ce44cbc567ad24b854c52867ec1ba27c5215e92d01401e65a4ba50dd42",
+    "validation": "evidence/integration/"
+  },
+  "characterIntegration": {
+    "batch": "HOW-CHARACTERS-1",
+    "authorizedDate": "2026-10-30",
+    "status": "integrated-on-local-branch",
+    "validation": "evidence/characters/"
+  }
+}

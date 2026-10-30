@@ -6,6 +6,14 @@ import type { GameState } from "../domain/state.ts";
 import { WAYPOINTS, PATH, RIVER_KNOTS, GIANT, HOME, START } from "../content/world.ts";
 import { makeTrees } from "../world/layout.ts";
 import { recordCanvas } from "../app/recorder.ts";
+import { Warehouse } from './Warehouse.tsx';
+import { SaveControls } from './SaveControls.tsx';
+import { createSaveController, INITIAL_SAVE_STATUS } from '../app/save-controller.ts';
+import type { SaveController } from '../app/save-controller.ts';
+import { createBrowserWorldSaveStore } from '../app/world-save-store.ts';
+import { createSaveContext } from '../domain/save-context.ts';
+import {sceneAppearanceAt,scenePropDetails} from '../domain/scene-props.ts';
+import {SceneInspector} from './SceneInspector.tsx';
 
 function Leaf({ size = 24 }: { size?: number }) {
   return (
@@ -68,7 +76,7 @@ function Icon({ name }: { name: string }) {
         <>
           <path d="M4 8a8 8 0 1 1 0 8M4 3v5h5" />
         </>
-      ) : name === "axe" ? (
+      ) : name === 'warehouse' ? (<><path d="M4 7h16v14H4ZM3 7l9-5 9 5M8 11h8v10M8 15h8" /></>) : name === "axe" ? (
         <>
           <path d="m7 21 9-16M12 4l6 4-2 5-7-4Z" />
         </>
@@ -100,17 +108,23 @@ const empty: Snapshot = {
     active: null,
     selectedTree: null,
   },
+  gathering: { inventory: [], action: null, selectedTarget: null },
+  warehouse: { categories: [], items: [], total: 0, occupiedKinds: 0 },
+  save: INITIAL_SAVE_STATUS,
+  appearance:sceneAppearanceAt(0),
 };
 export function App() {
   const host = useRef<HTMLDivElement>(null),
     runtime = useRef<Runtime | null>(null),
     sessionState = useRef<GameState | null>(null),
+    saveOwner = useRef<SaveController | null>(null),
     pauseDialog = useRef<HTMLDialogElement>(null);
   const [snapshot, setSnapshot] = useState(empty),
     [ready, setReady] = useState(false),
     [error, setError] = useState(""),
     [mapOpen, setMapOpen] = useState(false),
     [help, setHelp] = useState(false),
+    [warehouseOpen, setWarehouseOpen] = useState(false),
     [reduced, setReduced] = useState(false),
     [mountVersion, setMountVersion] = useState(0),
     [audit, setAudit] = useState<Record<string, unknown>[]>([]);
@@ -119,7 +133,7 @@ export function App() {
   const recording = useRef<(() => void) | null>(null),
     recordUrlRef = useRef("");
   const recordBlob=useRef<Blob|null>(null);
-  const recordMode=useRef<'walkthrough'|'forestry'>('walkthrough');
+  const recordMode=useRef<'walkthrough'|'forestry'|'gathering'>('walkthrough');
   const [recordSaved,setRecordSaved]=useState('');
   const [recordUrl, setRecordUrl] = useState(""),
     [capturing, setCapturing] = useState(false);
@@ -130,7 +144,7 @@ export function App() {
     },
     [],
   );
-  const startRecording = (mode:'walkthrough'|'forestry'='walkthrough') => {
+  const startRecording = (mode:'walkthrough'|'forestry'|'gathering'='walkthrough') => {
     const canvas = host.current?.querySelector("canvas");
     if (!canvas || capturing) return;
     recordMode.current=mode;
@@ -162,6 +176,7 @@ export function App() {
     let cancelled = false;
     setReady(false);
     setError("");
+    saveOwner.current ??= createSaveController(createBrowserWorldSaveStore(), createSaveContext());
     createRuntime(host.current!, (value) => {
       if (!cancelled) {
         setSnapshot(value);
@@ -171,7 +186,7 @@ export function App() {
           setHelp(false);
         }
       }
-    }, sessionState.current ?? undefined)
+    }, sessionState.current ?? undefined, saveOwner.current)
       .then((value) => {
         if (cancelled) {
           value.destroy();
@@ -201,11 +216,22 @@ export function App() {
   useEffect(() => {
     runtime.current?.setReducedMotion(reduced);
   }, [reduced, ready]);
+  useEffect(() => { runtime.current?.setInterfaceOpen(warehouseOpen); },[warehouseOpen,ready]);
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if(e.code!=='KeyB'||e.repeat||e.target instanceof HTMLElement && e.target.closest('input,textarea,select,[contenteditable]'))return;
+      if(!ready||snapshot.paused)return;
+      e.preventDefault();e.stopPropagation();setWarehouseOpen(v=>!v);
+    };
+    document.addEventListener('keydown',key,true);return()=>document.removeEventListener('keydown',key,true);
+  },[ready,snapshot.paused]);
   const selectedTree = snapshot.selected ? treeById.get(snapshot.selected) : undefined;
   const forest = snapshot.forestry;
   const treeAction = forest.selectedTree;
   const activeAction = forest.active;
-  const selected =
+  const gatherTarget = snapshot.gathering.selectedTarget;
+  const gatherAction = snapshot.gathering.action;
+  const selected = gatherTarget ?? scenePropDetails(snapshot.selected,snapshot.appearance,forest.wood) ?? (
     snapshot.selected === "cabin"
       ? {
           title: "旧木屋",
@@ -243,7 +269,7 @@ export function App() {
                     ? "一层层圆润的针叶树冠，在山坡上为新家挡风。"
                     : "枝叶在春光里铺展开。沿小路走近，看看它粗壮的树干。",
             }
-          : null;
+          : null);
   const stickOrigin = useRef<{ x: number; y: number; id: number } | null>(null),
     [stick, setStick] = useState({ x: 0, y: 0 });
   const stickDown = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -283,9 +309,10 @@ export function App() {
             <span className="brand-name">森林之家</span>
             <h1>{snapshot.zone}</h1>
             <p className="journey-meta">
-              <span>春日 · 晴</span>
+              <span>{snapshot.appearance.hour>=19||snapshot.appearance.hour<6?'春夜':snapshot.appearance.hour>=17?'春暮':'春日'} · 晴</span>
               <span>风景 {snapshot.visited.length}/4</span>
-              <span>木材 {forest.wood}</span>
+              <span>原木 {forest.wood}</span>
+              {snapshot.gathering.inventory.map(item => <span key={item.typeId}>{item.name} {item.quantity}</span>)}
             </p>
           </div>
         </section>
@@ -410,6 +437,7 @@ export function App() {
           <Icon name="map" />
           <span>路线</span>
         </button>
+        <button aria-label="打开仓库" aria-pressed={warehouseOpen} onClick={()=>setWarehouseOpen(true)}><Icon name="warehouse"/><span>仓库</span></button>
         <button
           className={help ? "active" : ""}
           aria-pressed={help}
@@ -424,6 +452,11 @@ export function App() {
         </button>
       </nav>
       </div>
+      <Warehouse open={warehouseOpen} view={snapshot.warehouse} onClose={()=>setWarehouseOpen(false)}/>
+      <button className="save-indicator" aria-label="查看世界存档" title={snapshot.save.message} onClick={() => runtime.current?.pause(true)}>
+        <span className="save-label">存档 · </span>{({loading:'读取中',ready:'待保存',saving:'保存中',saved:'已保存',protected:'受保护',conflict:'需重读',failed:'未保存'} as const)[snapshot.save.state]}
+      </button>
+      {['protected','conflict','failed'].includes(snapshot.save.state) && <aside className="save-warning" role="alert">{snapshot.save.message}</aside>}
       <div className="input-hint">
         <kbd>W A S D</kbd> 移动 <i /> 点地面前往 <i /> 拖动转镜头 · 滚轮缩放
       </div>
@@ -443,6 +476,14 @@ export function App() {
           </div>
           <h2>{selected.title}</h2>
           <p>{selected.detail}</p>
+          {gatherTarget && <div className="tree-work">
+            <div className="tree-facts"><span>{gatherTarget.status}</span><span>距你 {gatherTarget.distance.toFixed(1)}</span></div>
+            {gatherTarget.status === '可以采集' && <p className="tree-cost">可得 {gatherTarget.reward}</p>}
+            {gatherTarget.reason && <p className="action-reason">{gatherTarget.reason}</p>}
+            <p className="action-message" role="status" aria-live="polite">{snapshot.message}</p>
+            {gatherAction?.sourceId === gatherTarget.id && ['approaching','performing'].includes(gatherAction.phase) && <p>{gatherAction.phase === 'approaching' ? '正在走近…' : '正在采集…'}</p>}
+            <div className="tree-actions">{gatherTarget.actions.map(action => <button key={action.id} className="context-button" disabled={!action.enabled} onClick={()=>runtime.current?.targetAction(action.id)}>{action.label}</button>)}</div>
+          </div>}
           {treeAction && (
             <div className="tree-work">
               <div className="tree-facts">
@@ -530,6 +571,8 @@ export function App() {
             <b>认识目标</b>　点击树、帐篷或木屋查看详情。
           </p>
           <p><b>砍树</b>　选中经营树、走近后挥斧。巨木始终受到保护。</p>
+          <p><b>采集</b>　点选落枝堆或蘑菇簇，再按“采集 / 走近采集”或 E。移动或切换目标可取消。</p>
+          <p><b>仓库</b>　底部“仓库”或 B 查看分类物品与加工方向；Esc 收起后继续巡林。</p>
           <p>
             <b>歇一会</b>　Esc 或右上角暂停。离开页面时，山谷也会等你。
           </p>
@@ -571,6 +614,11 @@ export function App() {
         <span className="eyebrow">A LITTLE BREATHING ROOM</span>
         <h2>山谷会等你</h2>
         <p>歇一会儿，再继续散步。</p>
+        <SaveControls status={snapshot.save}
+          onSave={() => runtime.current?.saveWorld() ?? Promise.resolve(false)}
+          onReload={() => runtime.current?.reloadWorld() ?? Promise.resolve(false)}
+          onRestore={() => runtime.current?.restoreWorldCopy() ?? Promise.resolve(false)}
+          onExport={which => runtime.current?.exportWorldRecord(which) ?? Promise.resolve(null)}/>
         <button
           className="primary-button"
           autoFocus
@@ -610,6 +658,7 @@ export function App() {
       {diagnostic && (
         <details className="diagnostics">
           <summary>运行检查</summary>
+          <SceneInspector key={mountVersion} runtime={()=>runtime.current} active={typeof snapshot.stats.scenePreset==='string'} audits={audit}/>
           <button
             disabled={capturing}
             onClick={() => {
@@ -641,12 +690,18 @@ export function App() {
           <button onClick={() => runtime.current?.select("cabin")}>
             选择木屋
           </button>
+          <button onClick={() => runtime.current?.selectGathering('branch')}>选择落枝堆</button>
+          <button onClick={() => runtime.current?.selectGathering('mushroom')}>选择蘑菇簇</button>
+          <button onClick={()=>runtime.current?.inspectCharacter('horizontal')}>检视横砍止点</button>
+          <button onClick={()=>runtime.current?.inspectCharacter('vertical')}>检视竖劈止点</button>
+          <button onClick={()=>runtime.current?.inspectCharacter(null)}>结束动作检视</button>
           <button onClick={()=>startRecording('walkthrough')} disabled={capturing}>
             {capturing && recordMode.current==='walkthrough' ? "录制漫步中…" : "录制20秒漫步"}
           </button>
           <button onClick={()=>startRecording('forestry')} disabled={capturing}>
             {capturing && recordMode.current==='forestry' ? "录制采伐中…" : "录制20秒采伐"}
           </button>
+          <button onClick={()=>startRecording('gathering')} disabled={capturing}>{capturing && recordMode.current==='gathering' ? '录制采集中…' : '录制20秒采集'}</button>
           {recordUrl && (
             <>
             <video
