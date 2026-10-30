@@ -1,0 +1,31 @@
+Browser tab: 1407493652, Title: "森林之家 · 山谷初见", URL: "http://127.0.0.1:5173/".
+1 AXWebArea 森林之家 · 山谷初见, URL: 127.0.0.1:5173/
+	2 container
+		3 container 森林之家可玩山谷
+		4 container 当前位置
+			5 text 森林之家
+			6 heading 山间营地, Value: 1
+				7 text 山间营地
+			8 text 春日 · 晴 风景  1 /4 木材  0
+		9 button 暂停
+		16 container 镜头控制
+			17 button 镜头左转
+			18 button 镜头右转
+			19 button 缩小
+			20 button 放大
+			21 button 复位镜头
+		22 container 探索工具
+			23 checkbox 漫步, Value: 1
+			24 checkbox 路线, Value: 0
+			25 checkbox 操作, Value: 0
+		26 text W A S D
+		27 text 移动 点地面前往 拖动转镜头 · 滚轮缩放 古老地标 · 永久保护
+		28 button 关闭目标详情
+		29 heading 守林巨木, Value: 2
+			30 text 守林巨木
+		31 text 山路旁的老朋友，树荫下留出了一块安静的空地。它会一直留在山谷。
+		32 text 永久保护地标 距你  53.3
+		33 text 巨木是永久保护的地标，不能砍伐。
+		34 text 已选中目标，可以查看详情。
+
+The focused UI element is 3 container 森林之家可玩山谷

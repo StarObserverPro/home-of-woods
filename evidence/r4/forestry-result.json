@@ -1,0 +1,90 @@
+{
+  "current": {
+    "resources": {
+      "geometries": 33,
+      "materials": 9,
+      "extras": 169,
+      "disposed": false
+    },
+    "drawCalls": 162,
+    "triangles": 209808,
+    "gpu": {
+      "geometries": 54,
+      "textures": 8
+    },
+    "zoom": 2.4,
+    "yaw": -0.13,
+    "elevation": 0.24,
+    "canvas": {
+      "width": 1528,
+      "height": 686
+    },
+    "treeCount": 580,
+    "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "managedTrees": 151,
+    "environment": {
+      "meshes": 7,
+      "geometryTriangles": 10260,
+      "geometries": 7,
+      "materials": 2,
+      "environmentMap": true,
+      "pmremSize": 128,
+      "visualTime": 119.76520000001014,
+      "disposed": false
+    },
+    "river": {
+      "materials": 1,
+      "additionalGeometry": 0,
+      "additionalTextures": 0,
+      "visualTime": 119.76520000001014,
+      "disposed": false
+    },
+    "destroyed": false,
+    "contextLost": false,
+    "loop": {
+      "paused": false,
+      "destroyed": false,
+      "scheduled": false,
+      "executing": true,
+      "running": true,
+      "frames": 5713
+    },
+    "samples": 360,
+    "frameMsP50": 16.69999999999709,
+    "frameMsP95": 17,
+    "seed": 104729,
+    "routeNodes": 0,
+    "player": {
+      "x": -21.509035376898424,
+      "z": 28.27542668814668,
+      "facing": 2.2724932644838196,
+      "moving": false,
+      "y": 17.620555667508835
+    },
+    "gameTime": 119.74999999999449,
+    "forestry": {
+      "wood": 5,
+      "points": {
+        "year": 1,
+        "available": 19,
+        "used": 5,
+        "reserved": 0
+      },
+      "active": null,
+      "selectedTree": {
+        "id": "tree-slot-r3-hero-0",
+        "individualId": "tree-slot-r3-hero-0:g0",
+        "status": "stump",
+        "statusLabel": "树桩 · 等待补生",
+        "distance": 1.9758291944314872,
+        "canChop": false,
+        "canApproach": false,
+        "cost": 5,
+        "yield": 5,
+        "reason": "树位保留，等待原位补生。",
+        "progress": 0
+      }
+    }
+  },
+  "audit": []
+}

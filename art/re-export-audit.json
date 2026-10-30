@@ -1,0 +1,13 @@
+{
+  "note": "Fresh Blender re-export is not byte-identical. Float differences in cabin/tent are at most 5.96e-8; vertex attributes elsewhere identical. Canonical reviewed runtime GLBs retained from prior build.",
+  "reports": [
+    {
+      "name": "ranger",
+      "orientedTriangleMultisetIdentical": true
+    },
+    {
+      "name": "broadleaf",
+      "orientedTriangleMultisetIdentical": true
+    }
+  ]
+}

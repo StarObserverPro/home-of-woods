@@ -1,0 +1,64 @@
+{
+  "captureRuntimeFingerprint": "00cd10ce44cbc567ad24b854c52867ec1ba27c5215e92d01401e65a4ba50dd42",
+  "integratedRuntimeFingerprint": "e956ca630f5bf91078f7f8147643dbceb844374cbb0eec24a4cdab14032b0e78",
+  "changes": [
+    {
+      "file": "package-lock.json",
+      "beforeSha256": "6494c051320d6e18c01e8b0a84391c50943cd0014f15a2319e6b16b6b8606c03",
+      "afterSha256": "22a60826a6f071df7cdef8977c24ee898b37185417e7d9af4ed8cf63a9984ff9",
+      "kind": "content-changed"
+    },
+    {
+      "file": "package.json",
+      "beforeSha256": "aacd5a76c51836d31e1ce41b5dc7c90428a03c8fdbeb662298dbc9b28487729a",
+      "afterSha256": "fc01934c8d740fca5c57c0874b8c533703d39183089f5c4be202595dda0370a4",
+      "kind": "content-changed"
+    },
+    {
+      "file": "public/assets/manifest.json",
+      "beforeSha256": "6ef488fcfa24d3b2b5af5b25be38756fc6656ac307f3b91ed6318b06281dc285",
+      "afterSha256": "4dfbaecd67ecf12b75d9a2f44e47fbb68c2f525cd53870208f46b7291de39b8c",
+      "kind": "content-changed"
+    },
+    {
+      "file": "src/domain/navigation.ts",
+      "beforeSha256": "4473b50c18432f644ea9feed6523572e4c8aecd985a7a26f6872a3d9d39b07cd",
+      "afterSha256": "29bb83d180415bf5d8814c2aed16d78da58afd12f5bb2102ce96d3f3cb929c58",
+      "kind": "content-changed"
+    },
+    {
+      "file": "src/scene/models.ts",
+      "beforeSha256": "a31c4a05d17d93c65ce4b80b31aac4a74c856da7a72a777ca14a648a1bf34a80",
+      "afterSha256": "f08df4b701cb8b1d11a0845ebd7abada85ea077ee0a657c598783729748fb8af",
+      "kind": "content-changed"
+    },
+    {
+      "file": "src/scene/resources.ts",
+      "beforeSha256": "1ec902aa064652b4e638632bb31e424c53532e0dc9d0f1fc95e9a6de66e86dd3",
+      "afterSha256": "3223ee9304cce3748d03b837213ca07e5bc3b726b34594dc34250be9826ba572",
+      "kind": "content-changed"
+    },
+    {
+      "file": "src/ui/App.tsx",
+      "beforeSha256": "6099ea7afd72c5b35fa466f4b66c968e8a2cd69c93e0f0a400679631c0deeb24",
+      "afterSha256": "a4197fb73484d0d68f10e02b5e1c438393d9f6224c0d6f18ea15619291a4a6dc",
+      "kind": "content-changed"
+    },
+    {
+      "file": "src/ui/style.css",
+      "beforeSha256": "02c5628bebc130141b43a51fca4730130f8076a5fc7f3cc870246afdd83da9bf",
+      "afterSha256": "cdd260b79eff5e870f3af373d484819daaf65c51dd6e61f186ca1c7382eefa2c",
+      "kind": "line-endings"
+    },
+    {
+      "file": "vite.config.ts",
+      "beforeSha256": "f6d993fd85cf067cc0e1d71b68cb7159174df80fe1e33a83002a8ba58045d4c6",
+      "afterSha256": "79c6cf01ea5e4168b1972ec6d4192bbd88dee69bb3dca78580d72165536317f0",
+      "kind": "content-changed"
+    }
+  ],
+  "addedFiles": [
+    "public/third-party-notices.txt"
+  ],
+  "note": "R4 screenshots/video are immutable historical captures. Current source is separately frozen and tested; source differences are explicit, not relabelled as an identical recording."
+}

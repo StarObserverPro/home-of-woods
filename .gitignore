@@ -5,6 +5,11 @@ coverage/
 .env.*
 !.env.example
 *.log
+!evidence/**/check.log
+!evidence/**/forestry-decode.log
+!evidence/**/walk-decode.log
+*.tsbuildinfo
+*.tmp
 .DS_Store
 .cache/
 playwright-report/

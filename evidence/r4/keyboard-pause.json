@@ -1,0 +1,158 @@
+{
+  "paused": {
+    "current": {
+      "resources": {
+        "geometries": 33,
+        "materials": 9,
+        "extras": 169,
+        "disposed": false
+      },
+      "drawCalls": 293,
+      "triangles": 365052,
+      "gpu": {
+        "geometries": 48,
+        "textures": 8
+      },
+      "zoom": 0.6440677966101696,
+      "yaw": -0.13,
+      "elevation": 0.24,
+      "canvas": {
+        "width": 844,
+        "height": 390
+      },
+      "treeCount": 580,
+      "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "managedTrees": 151,
+      "environment": {
+        "meshes": 7,
+        "geometryTriangles": 10260,
+        "geometries": 7,
+        "materials": 2,
+        "environmentMap": true,
+        "pmremSize": 128,
+        "visualTime": 26.977700000000038,
+        "disposed": false
+      },
+      "river": {
+        "materials": 1,
+        "additionalGeometry": 0,
+        "additionalTextures": 0,
+        "visualTime": 26.977700000000038,
+        "disposed": false
+      },
+      "destroyed": false,
+      "contextLost": false,
+      "loop": {
+        "paused": true,
+        "destroyed": false,
+        "scheduled": false,
+        "executing": false,
+        "running": false,
+        "frames": 2243
+      },
+      "samples": 360,
+      "frameMsP50": 33.69999999999709,
+      "frameMsP95": 66.70000000001164,
+      "seed": 104729,
+      "routeNodes": 0,
+      "player": {
+        "x": -30.495887092381338,
+        "z": -3.251800125940607,
+        "facing": 1.4556098319002666,
+        "moving": false,
+        "y": 21.5
+      },
+      "gameTime": 76.93333333333025,
+      "forestry": {
+        "wood": 0,
+        "points": {
+          "year": 1,
+          "available": 24,
+          "used": 0,
+          "reserved": 0
+        },
+        "active": null,
+        "selectedTree": null
+      }
+    },
+    "audit": []
+  },
+  "resumed": {
+    "current": {
+      "resources": {
+        "geometries": 33,
+        "materials": 9,
+        "extras": 169,
+        "disposed": false
+      },
+      "drawCalls": 293,
+      "triangles": 365052,
+      "gpu": {
+        "geometries": 48,
+        "textures": 8
+      },
+      "zoom": 0.6440677966101696,
+      "yaw": -0.13,
+      "elevation": 0.24,
+      "canvas": {
+        "width": 844,
+        "height": 390
+      },
+      "treeCount": 580,
+      "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "managedTrees": 151,
+      "environment": {
+        "meshes": 7,
+        "geometryTriangles": 10260,
+        "geometries": 7,
+        "materials": 2,
+        "environmentMap": true,
+        "pmremSize": 128,
+        "visualTime": 26.977700000000038,
+        "disposed": false
+      },
+      "river": {
+        "materials": 1,
+        "additionalGeometry": 0,
+        "additionalTextures": 0,
+        "visualTime": 26.977700000000038,
+        "disposed": false
+      },
+      "destroyed": false,
+      "contextLost": false,
+      "loop": {
+        "paused": false,
+        "destroyed": false,
+        "scheduled": false,
+        "executing": true,
+        "running": true,
+        "frames": 2248
+      },
+      "samples": 360,
+      "frameMsP50": 33.60000000000582,
+      "frameMsP95": 66.69999999999709,
+      "seed": 104729,
+      "routeNodes": 0,
+      "player": {
+        "x": -30.495887092381338,
+        "z": -3.251800125940607,
+        "facing": 1.4556098319002666,
+        "moving": false,
+        "y": 21.5
+      },
+      "gameTime": 77.08333333333024,
+      "forestry": {
+        "wood": 0,
+        "points": {
+          "year": 1,
+          "available": 24,
+          "used": 0,
+          "reserved": 0
+        },
+        "active": null,
+        "selectedTree": null
+      }
+    },
+    "audit": []
+  }
+}

@@ -1,0 +1,550 @@
+{
+  "sourceVersion": "HOW-M0-SANDBOX-20261030-r4",
+  "sourceRuntimeFingerprint": "00cd10ce44cbc567ad24b854c52867ec1ba27c5215e92d01401e65a4ba50dd42",
+  "authorizedDate": "2026-10-30",
+  "status": "integrating-on-feature-branch",
+  "files": [
+    {
+      "file": "PARAMETERS.md",
+      "bytes": 7236,
+      "sha256": "f00f3098a4585b6b8ccf67a62b81b57d52d6abfa23c4779eee49ca15b051dbe5",
+      "normalizedTextSha256": "f00f3098a4585b6b8ccf67a62b81b57d52d6abfa23c4779eee49ca15b051dbe5"
+    },
+    {
+      "file": "VERIFICATION.md",
+      "bytes": 6415,
+      "sha256": "8b8ccecba08be4e6372e582e879b6f9419a5951100a957417163edeb6a63a1a6",
+      "normalizedTextSha256": "8b8ccecba08be4e6372e582e879b6f9419a5951100a957417163edeb6a63a1a6"
+    },
+    {
+      "file": "art-direction-r3/PIPELINE.md",
+      "bytes": 4010,
+      "sha256": "37b17d09cea0039cafdbf4829d977a2a240ed25034c55b07f33a9ed3c7571f7a",
+      "normalizedTextSha256": "cd3318965df580b1a794053ed3288dfb80d12bf7bae1ee23e7d3597026c8d873"
+    },
+    {
+      "file": "art-direction-r3/valley-master-r3.jpg",
+      "bytes": 294947,
+      "sha256": "5ebc044b6a1c00e5e764ce386c2ca14422e5a9eb233ce1c3f66f6ddab2db6384"
+    },
+    {
+      "file": "art/environment-r4.md",
+      "bytes": 7171,
+      "sha256": "f6851ba3aca91e0c4bab30d28a6ee24fe519b65718c9740157fc3e8186bf9fac",
+      "normalizedTextSha256": "f6851ba3aca91e0c4bab30d28a6ee24fe519b65718c9740157fc3e8186bf9fac"
+    },
+    {
+      "file": "art/re-export-audit.json",
+      "bytes": 405,
+      "sha256": "75de31fa46fa7d7a4c4a08bb53555369d6bba240d4d6224b01f85734ef1461a7",
+      "normalizedTextSha256": "75de31fa46fa7d7a4c4a08bb53555369d6bba240d4d6224b01f85734ef1461a7"
+    },
+    {
+      "file": "art/reference/r3-ground-annotations.json",
+      "bytes": 8717,
+      "sha256": "6b4372e18fbe2d8277669a92949ec7201905a9d54f36be11caf7fd2ddc31a498",
+      "normalizedTextSha256": "6b4372e18fbe2d8277669a92949ec7201905a9d54f36be11caf7fd2ddc31a498"
+    },
+    {
+      "file": "art/woodland-m0.blend",
+      "bytes": 1933709,
+      "sha256": "c93adc7d07b189143b8f18391a6d5d47c2531b3086b082ac8f6edefb2ab8fb11"
+    },
+    {
+      "file": "docs/SCOPE-R4.md",
+      "bytes": 5903,
+      "sha256": "f04c9f82f5b7b53ebf4a86950e936e3d3695f3cca55fe9bb5d9b31c0efbd4ac1",
+      "normalizedTextSha256": "f04c9f82f5b7b53ebf4a86950e936e3d3695f3cca55fe9bb5d9b31c0efbd4ac1"
+    },
+    {
+      "file": "docs/forestry-r4.md",
+      "bytes": 3393,
+      "sha256": "15cb536105cbe50c9a6b0471878595f6ffad372db31eeb9eefe2e585483e7e19",
+      "normalizedTextSha256": "15cb536105cbe50c9a6b0471878595f6ffad372db31eeb9eefe2e585483e7e19"
+    },
+    {
+      "file": "docs/hud-r4.md",
+      "bytes": 4980,
+      "sha256": "e080a58bd1cd6ceb707a5c941fb9b55fae7db80901a8d43df381c7d3d53cff39",
+      "normalizedTextSha256": "e080a58bd1cd6ceb707a5c941fb9b55fae7db80901a8d43df381c7d3d53cff39"
+    },
+    {
+      "file": "evidence/r4/check.log",
+      "bytes": 7061,
+      "sha256": "80383857cc1183663309633c0dfacf3f4381321a788e3e390f29f004a27430a9",
+      "normalizedTextSha256": "1926eb4c95add59dbfb10f1f93e77c86f17ac3360fdff553421da94decf2fbdd"
+    },
+    {
+      "file": "evidence/r4/chop-cancelled.json",
+      "bytes": 2037,
+      "sha256": "c3ae05f9956721d51398357e72cfe3d13a93f1ece208dbcd1f40a907f73cfee3",
+      "normalizedTextSha256": "c3ae05f9956721d51398357e72cfe3d13a93f1ece208dbcd1f40a907f73cfee3"
+    },
+    {
+      "file": "evidence/r4/chop-paused.json",
+      "bytes": 2263,
+      "sha256": "a19a08863a48582379ed08b720439b53ba66a6bc34d4d7a74683212225d62312",
+      "normalizedTextSha256": "a19a08863a48582379ed08b720439b53ba66a6bc34d4d7a74683212225d62312"
+    },
+    {
+      "file": "evidence/r4/console-audit.json",
+      "bytes": 220,
+      "sha256": "f8c563801c3807f5e468b4aa07183d6e930f1174d5ad6449dd700f3c9c0854c9",
+      "normalizedTextSha256": "f8c563801c3807f5e468b4aa07183d6e930f1174d5ad6449dd700f3c9c0854c9"
+    },
+    {
+      "file": "evidence/r4/creek-arrival.json",
+      "bytes": 1719,
+      "sha256": "1a130e68b6b2d35500f7ab3ec0d6c2729cb9aa67a4d714975a5d6bd1ed00844d",
+      "normalizedTextSha256": "1a130e68b6b2d35500f7ab3ec0d6c2729cb9aa67a4d714975a5d6bd1ed00844d"
+    },
+    {
+      "file": "evidence/r4/desktop-character.png",
+      "bytes": 84271,
+      "sha256": "f8f4a20b6cc09a0adbd86e4606c7697cc060bc92d649a81bf7f500b06009d92b"
+    },
+    {
+      "file": "evidence/r4/desktop-chopping.png",
+      "bytes": 756810,
+      "sha256": "530b1bfa5765a4d69a575af47c4d62a3889d021ca65404d73cf66989ee6466b7"
+    },
+    {
+      "file": "evidence/r4/desktop-felling.png",
+      "bytes": 744692,
+      "sha256": "b8466790f17dea3cd5b258784040c5c6931bca926574487fffaee9c717f2118f"
+    },
+    {
+      "file": "evidence/r4/desktop-home.png",
+      "bytes": 121721,
+      "sha256": "d3e2fa55aa70579c9e15f6fc0ef4b8738474f14744c23cfb0d3744211a077700"
+    },
+    {
+      "file": "evidence/r4/desktop-lookout.png",
+      "bytes": 119191,
+      "sha256": "855e9217d101f728244f70869d366e2d1710ad678addabdc42350beb48935ade"
+    },
+    {
+      "file": "evidence/r4/desktop-selection.png",
+      "bytes": 123468,
+      "sha256": "d27f9c408e8917840adf8510a577ca0cc61e609915e39954d17fd01f3ecc8989"
+    },
+    {
+      "file": "evidence/r4/desktop-stump-ui.png",
+      "bytes": 79230,
+      "sha256": "4baac875262764ec3dc3130e15d3ace2199027547da83e2d50fc4db9cf751dda"
+    },
+    {
+      "file": "evidence/r4/desktop-stump.png",
+      "bytes": 665071,
+      "sha256": "8ef2469a8b6964335460d412a0c5c077b17da9005149bbd4a537a37644f3915a"
+    },
+    {
+      "file": "evidence/r4/desktop-valley.png",
+      "bytes": 127328,
+      "sha256": "d0702d6c6561a1c35937957567ea9011bddc2a2bc5d422dd2df31f6accabc75b"
+    },
+    {
+      "file": "evidence/r4/evidence-audit.json",
+      "bytes": 1136,
+      "sha256": "0b165c8888867ea93d4837f2ebe756aad6753efb7895bfa23177f79c1cbe0e29",
+      "normalizedTextSha256": "0b165c8888867ea93d4837f2ebe756aad6753efb7895bfa23177f79c1cbe0e29"
+    },
+    {
+      "file": "evidence/r4/forestry-decode.log",
+      "bytes": 1025,
+      "sha256": "f714f9edeaac5ae275c0b59f22dccbf85d8f4628ec636f2a25fde109df3ff9f6",
+      "normalizedTextSha256": "cd7edd89690bf99888ed7bb81b1bbd8e9a36240d189ddab70eadadda7ff2a1e0"
+    },
+    {
+      "file": "evidence/r4/forestry-fall-contact-sheet.png",
+      "bytes": 1288204,
+      "sha256": "3d555f756f8398f7b7b4d13d56454d7a28201a8b22d363669dba34c3eb8f5bf8"
+    },
+    {
+      "file": "evidence/r4/forestry-result.json",
+      "bytes": 2087,
+      "sha256": "c1860726d554a436b01c677cfdac9e6003cde205511fdaa23fd683bc50058b77",
+      "normalizedTextSha256": "c1860726d554a436b01c677cfdac9e6003cde205511fdaa23fd683bc50058b77"
+    },
+    {
+      "file": "evidence/r4/forestry.webm",
+      "bytes": 1653112,
+      "sha256": "48d96d096203ea3689ebc7f4b8f0a852f26e9c587202c89710959b6a6b1c1b51"
+    },
+    {
+      "file": "evidence/r4/input-and-camera.json",
+      "bytes": 41823,
+      "sha256": "63d22e502eafda9c6623857e672c07ef2411102264ccc0c44353e8f74b823bb6",
+      "normalizedTextSha256": "63d22e502eafda9c6623857e672c07ef2411102264ccc0c44353e8f74b823bb6"
+    },
+    {
+      "file": "evidence/r4/keyboard-pause.json",
+      "bytes": 3778,
+      "sha256": "2a8ae320c2bdd48f2100626b7dab10f63ea06c66b975de1c72bc8c4dbd379f40",
+      "normalizedTextSha256": "2a8ae320c2bdd48f2100626b7dab10f63ea06c66b975de1c72bc8c4dbd379f40"
+    },
+    {
+      "file": "evidence/r4/lifecycle-cycles.json",
+      "bytes": 53376,
+      "sha256": "f9b9eb61b6bca02741cd849dcaaf1515ae2d27fa9b5f7e6bfd58145231ad6c01",
+      "normalizedTextSha256": "f9b9eb61b6bca02741cd849dcaaf1515ae2d27fa9b5f7e6bfd58145231ad6c01"
+    },
+    {
+      "file": "evidence/r4/lookout-arrival.json",
+      "bytes": 12879,
+      "sha256": "922379217da5658c99b0af7b3c7911543dd599a12229de32ef1b14d351486502",
+      "normalizedTextSha256": "922379217da5658c99b0af7b3c7911543dd599a12229de32ef1b14d351486502"
+    },
+    {
+      "file": "evidence/r4/media.json",
+      "bytes": 1505,
+      "sha256": "3b9377c9bcae3339e15d6ff17c4a034718c46e6e543fe7ac948aebc3488437bd",
+      "normalizedTextSha256": "3b9377c9bcae3339e15d6ff17c4a034718c46e6e543fe7ac948aebc3488437bd"
+    },
+    {
+      "file": "evidence/r4/mobile-help.png",
+      "bytes": 48400,
+      "sha256": "31e68c27f3d4979596e00bb88cefc8b329eecb08ada1220c370070f5ecfce27d"
+    },
+    {
+      "file": "evidence/r4/mobile-home.png",
+      "bytes": 41680,
+      "sha256": "a69b7478d81a13d10c022155b1a5b5231dc23e75f46d752454a08d965c360ab1"
+    },
+    {
+      "file": "evidence/r4/mobile-input.json",
+      "bytes": 6873,
+      "sha256": "fd3a239caebd67575f7881ec644bf09f4f9506e34a95a393123c6444e5c6bd8f",
+      "normalizedTextSha256": "fd3a239caebd67575f7881ec644bf09f4f9506e34a95a393123c6444e5c6bd8f"
+    },
+    {
+      "file": "evidence/r4/mobile-landscape-input.json",
+      "bytes": 6848,
+      "sha256": "41841fcc7697c7317c3e98d391812efd9f18aa6e6e7f59fcb69a639355659c1c",
+      "normalizedTextSha256": "41841fcc7697c7317c3e98d391812efd9f18aa6e6e7f59fcb69a639355659c1c"
+    },
+    {
+      "file": "evidence/r4/mobile-landscape.png",
+      "bytes": 52810,
+      "sha256": "249a7432cb1606983b7e4ad87777fff59426346f5b189668547732a9ffc2244c"
+    },
+    {
+      "file": "evidence/r4/production-pick.txt",
+      "bytes": 1176,
+      "sha256": "350cefaa4b2715f2142a9e4fc30c7448f796713cbd828d02ca5d511254fe6795",
+      "normalizedTextSha256": "350cefaa4b2715f2142a9e4fc30c7448f796713cbd828d02ca5d511254fe6795"
+    },
+    {
+      "file": "evidence/r4/protected-landmark.json",
+      "bytes": 2099,
+      "sha256": "74121072c60554f3c94bb7ed5c103d1fecf4686b1065f099add825710cc753ce",
+      "normalizedTextSha256": "74121072c60554f3c94bb7ed5c103d1fecf4686b1065f099add825710cc753ce"
+    },
+    {
+      "file": "evidence/r4/reduced-motion.json",
+      "bytes": 3749,
+      "sha256": "7647275efd056109fe3b23ba14fabbcdd8035f863cbe0c4868f0e3f96fbfda58",
+      "normalizedTextSha256": "7647275efd056109fe3b23ba14fabbcdd8035f863cbe0c4868f0e3f96fbfda58"
+    },
+    {
+      "file": "evidence/r4/resolved-layout.json",
+      "bytes": 198415,
+      "sha256": "d9219c7973aeaa1d59e4a3bd098ce6240ecfaab88c3f77c3a1e429a01b9105e1",
+      "normalizedTextSha256": "d9219c7973aeaa1d59e4a3bd098ce6240ecfaab88c3f77c3a1e429a01b9105e1"
+    },
+    {
+      "file": "evidence/r4/source-freeze.json",
+      "bytes": 5847,
+      "sha256": "988025807956f0a3c049f646d4fb046b39dd4d3e586f2a31a2f5bf2f37233d8b",
+      "normalizedTextSha256": "988025807956f0a3c049f646d4fb046b39dd4d3e586f2a31a2f5bf2f37233d8b"
+    },
+    {
+      "file": "evidence/r4/walk-and-camera.webm",
+      "bytes": 3113472,
+      "sha256": "eff7e5a3f02fc64864d5b56dbcef97ac7fa8de9fa3a434825afa9e6fae2d583a"
+    },
+    {
+      "file": "evidence/r4/walk-decode.log",
+      "bytes": 1114,
+      "sha256": "2967177f04f12a12ea3508bd810bc33f351aff92592f34b75bc40de872a42401",
+      "normalizedTextSha256": "a18965833c0101c64a4cc4d5b76bf98942d8e3340ffdc011fa28a148533823e9"
+    },
+    {
+      "file": "index.html",
+      "bytes": 443,
+      "sha256": "00ea3ca038e44c70a9fd7aca627797094144c40c73f0977ef8a8d8bf4c65d5b5",
+      "normalizedTextSha256": "00ea3ca038e44c70a9fd7aca627797094144c40c73f0977ef8a8d8bf4c65d5b5"
+    },
+    {
+      "file": "package-lock.json",
+      "bytes": 31530,
+      "sha256": "6494c051320d6e18c01e8b0a84391c50943cd0014f15a2319e6b16b6b8606c03",
+      "normalizedTextSha256": "6494c051320d6e18c01e8b0a84391c50943cd0014f15a2319e6b16b6b8606c03"
+    },
+    {
+      "file": "package.json",
+      "bytes": 727,
+      "sha256": "aacd5a76c51836d31e1ce41b5dc7c90428a03c8fdbeb662298dbc9b28487729a",
+      "normalizedTextSha256": "aacd5a76c51836d31e1ce41b5dc7c90428a03c8fdbeb662298dbc9b28487729a"
+    },
+    {
+      "file": "public/assets/licenses/Kenney-Nature-Kit-CC0.txt",
+      "bytes": 611,
+      "sha256": "cb96b75e3560ac78d7a53ce6f083f4cdb5c53faea6141b62d63458dcfe1e4b9d",
+      "normalizedTextSha256": "43ea674a3d6a859df1cbe997d72eac2b154cd03ac79b68f107166b201867ccfd"
+    },
+    {
+      "file": "public/assets/m0/broadleaf.glb",
+      "bytes": 56516,
+      "sha256": "e38f4f9f4c508fbb7ac2c9e713723c2d92561c13b2976823809934c311fb74f3"
+    },
+    {
+      "file": "public/assets/m0/cabin.glb",
+      "bytes": 360284,
+      "sha256": "d052c9c644c0a897d596e529f9d91a6e576d50be6d40443468f7c322ec702471"
+    },
+    {
+      "file": "public/assets/m0/pine.glb",
+      "bytes": 86536,
+      "sha256": "7ee8448870b8b0d5fdc570ad489b2721f1c64d31f3328123b51f59056cfc9008"
+    },
+    {
+      "file": "public/assets/m0/ranger.glb",
+      "bytes": 122776,
+      "sha256": "337909639f918add22a930f0ed2c8b0cf2f5000bdedc09579a9966c3b3ff9e97"
+    },
+    {
+      "file": "public/assets/m0/tent.glb",
+      "bytes": 78128,
+      "sha256": "d5979b1dce150d6fae86d3af9476ecc53f6ac6a68dddb90a428dde4359e02ebc"
+    },
+    {
+      "file": "public/assets/manifest.json",
+      "bytes": 8820,
+      "sha256": "6ef488fcfa24d3b2b5af5b25be38756fc6656ac307f3b91ed6318b06281dc285",
+      "normalizedTextSha256": "6ef488fcfa24d3b2b5af5b25be38756fc6656ac307f3b91ed6318b06281dc285"
+    },
+    {
+      "file": "src/app/recorder.ts",
+      "bytes": 1099,
+      "sha256": "f5e4ba588c780bb88ddf9583ff1f118d9639d095d8d57c0aaca49161117dbd59",
+      "normalizedTextSha256": "f5e4ba588c780bb88ddf9583ff1f118d9639d095d8d57c0aaca49161117dbd59"
+    },
+    {
+      "file": "src/app/runtime-loop.ts",
+      "bytes": 1572,
+      "sha256": "324d0cf1af62f77480365ab3abcee496f578210d3b505be9eacbc078af81c291",
+      "normalizedTextSha256": "324d0cf1af62f77480365ab3abcee496f578210d3b505be9eacbc078af81c291"
+    },
+    {
+      "file": "src/app/runtime.ts",
+      "bytes": 11208,
+      "sha256": "13a4cf783687ed20c9a6ff83f485318a0d7ecf51a2c7296addb278e0481c02bc",
+      "normalizedTextSha256": "13a4cf783687ed20c9a6ff83f485318a0d7ecf51a2c7296addb278e0481c02bc"
+    },
+    {
+      "file": "src/content/biomes.ts",
+      "bytes": 855,
+      "sha256": "bbe8ff501f2a3f0fd2a7612b58123161638471ba38abdbd206d900da202a0566",
+      "normalizedTextSha256": "bbe8ff501f2a3f0fd2a7612b58123161638471ba38abdbd206d900da202a0566"
+    },
+    {
+      "file": "src/content/environment.ts",
+      "bytes": 3309,
+      "sha256": "476c9ea83400200a58759b4cb9482840c45249565abce9bc05ea0635cf0c215d",
+      "normalizedTextSha256": "476c9ea83400200a58759b4cb9482840c45249565abce9bc05ea0635cf0c215d"
+    },
+    {
+      "file": "src/content/forestry.ts",
+      "bytes": 261,
+      "sha256": "0b32b7ac62c6ff98abcefec5f0b9d99db771ddb61dee6bc9b7b1173642b76717",
+      "normalizedTextSha256": "0b32b7ac62c6ff98abcefec5f0b9d99db771ddb61dee6bc9b7b1173642b76717"
+    },
+    {
+      "file": "src/content/valley-r3.json",
+      "bytes": 154825,
+      "sha256": "9c273840effff74647f950e3ef914a1f46129bafe42fe1b9f8979fa67ee3913f",
+      "normalizedTextSha256": "9c273840effff74647f950e3ef914a1f46129bafe42fe1b9f8979fa67ee3913f"
+    },
+    {
+      "file": "src/content/world.ts",
+      "bytes": 2188,
+      "sha256": "34061ec3fb80f1f50a77326aa1414fe57ce7b75826d8fa73badb2a39b78f5b2d",
+      "normalizedTextSha256": "34061ec3fb80f1f50a77326aa1414fe57ce7b75826d8fa73badb2a39b78f5b2d"
+    },
+    {
+      "file": "src/domain/forestry.ts",
+      "bytes": 8523,
+      "sha256": "9e1ac9eae64df4b590909843c7df388be39891e49cd05725d44846fdf6dff975",
+      "normalizedTextSha256": "9e1ac9eae64df4b590909843c7df388be39891e49cd05725d44846fdf6dff975"
+    },
+    {
+      "file": "src/domain/navigation.ts",
+      "bytes": 3342,
+      "sha256": "4473b50c18432f644ea9feed6523572e4c8aecd985a7a26f6872a3d9d39b07cd",
+      "normalizedTextSha256": "4473b50c18432f644ea9feed6523572e4c8aecd985a7a26f6872a3d9d39b07cd"
+    },
+    {
+      "file": "src/domain/state.ts",
+      "bytes": 767,
+      "sha256": "e6d537d332bee8160e541c68ca1061a22a47e2dd881bbc63d5d95c08ecad38e1",
+      "normalizedTextSha256": "e6d537d332bee8160e541c68ca1061a22a47e2dd881bbc63d5d95c08ecad38e1"
+    },
+    {
+      "file": "src/main.tsx",
+      "bytes": 170,
+      "sha256": "bc67f0e06e6d8bee392fc08687f5de93de19adead7174045088073f7c3bc485b",
+      "normalizedTextSha256": "bc67f0e06e6d8bee392fc08687f5de93de19adead7174045088073f7c3bc485b"
+    },
+    {
+      "file": "src/scene/create-scene.ts",
+      "bytes": 19485,
+      "sha256": "28127bf4eef4cc479de02e374a1b0c9cd356a916a7be380b1bccf2ae18d0f0de",
+      "normalizedTextSha256": "28127bf4eef4cc479de02e374a1b0c9cd356a916a7be380b1bccf2ae18d0f0de"
+    },
+    {
+      "file": "src/scene/environment.ts",
+      "bytes": 15730,
+      "sha256": "2e935e66e91034da05ef19e9f963a528b00649fabbdaf2619d450f7fbfd45ab0",
+      "normalizedTextSha256": "2e935e66e91034da05ef19e9f963a528b00649fabbdaf2619d450f7fbfd45ab0"
+    },
+    {
+      "file": "src/scene/forestry-presentation.ts",
+      "bytes": 9097,
+      "sha256": "3ab242b64d7d66ea26e94571f2cc2a2bd4f464e4b155d6116e29f807c6d59d85",
+      "normalizedTextSha256": "3ab242b64d7d66ea26e94571f2cc2a2bd4f464e4b155d6116e29f807c6d59d85"
+    },
+    {
+      "file": "src/scene/ground-material.ts",
+      "bytes": 3706,
+      "sha256": "86b46b1e45ef6a3b76b1bad95574873f1b0bc143a9119a231bfe20dd515f5398",
+      "normalizedTextSha256": "86b46b1e45ef6a3b76b1bad95574873f1b0bc143a9119a231bfe20dd515f5398"
+    },
+    {
+      "file": "src/scene/models.ts",
+      "bytes": 7536,
+      "sha256": "a31c4a05d17d93c65ce4b80b31aac4a74c856da7a72a777ca14a648a1bf34a80",
+      "normalizedTextSha256": "a31c4a05d17d93c65ce4b80b31aac4a74c856da7a72a777ca14a648a1bf34a80"
+    },
+    {
+      "file": "src/scene/resources.ts",
+      "bytes": 1593,
+      "sha256": "1ec902aa064652b4e638632bb31e424c53532e0dc9d0f1fc95e9a6de66e86dd3",
+      "normalizedTextSha256": "1ec902aa064652b4e638632bb31e424c53532e0dc9d0f1fc95e9a6de66e86dd3"
+    },
+    {
+      "file": "src/scene/terrain.ts",
+      "bytes": 3786,
+      "sha256": "d30edcd651f1388634e0f5ec630e8e1d1bd1fe73753c591dd1d9b64e7b28de18",
+      "normalizedTextSha256": "d30edcd651f1388634e0f5ec630e8e1d1bd1fe73753c591dd1d9b64e7b28de18"
+    },
+    {
+      "file": "src/ui/App.tsx",
+      "bytes": 24184,
+      "sha256": "6099ea7afd72c5b35fa466f4b66c968e8a2cd69c93e0f0a400679631c0deeb24",
+      "normalizedTextSha256": "6099ea7afd72c5b35fa466f4b66c968e8a2cd69c93e0f0a400679631c0deeb24"
+    },
+    {
+      "file": "src/ui/style.css",
+      "bytes": 15248,
+      "sha256": "02c5628bebc130141b43a51fca4730130f8076a5fc7f3cc870246afdd83da9bf",
+      "normalizedTextSha256": "cdd260b79eff5e870f3af373d484819daaf65c51dd6e61f186ca1c7382eefa2c"
+    },
+    {
+      "file": "src/vite-env.d.ts",
+      "bytes": 38,
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+      "normalizedTextSha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5"
+    },
+    {
+      "file": "src/world/layout.ts",
+      "bytes": 3448,
+      "sha256": "726530ca74f283a6bcd76b1c05a1eb93d5ae132117886858f0e92644ac1d26ae",
+      "normalizedTextSha256": "726530ca74f283a6bcd76b1c05a1eb93d5ae132117886858f0e92644ac1d26ae"
+    },
+    {
+      "file": "src/world/surface.ts",
+      "bytes": 3161,
+      "sha256": "ffcff185baab03768d2c9715b03999a465cffd76f665ec25b1f52a4a6bbfa2a9",
+      "normalizedTextSha256": "ffcff185baab03768d2c9715b03999a465cffd76f665ec25b1f52a4a6bbfa2a9"
+    },
+    {
+      "file": "tests/environment.test.ts",
+      "bytes": 5011,
+      "sha256": "ea35d31969988c117fa099f028306244ce9c5958b6908b1f248b7d1c88b8da27",
+      "normalizedTextSha256": "ea35d31969988c117fa099f028306244ce9c5958b6908b1f248b7d1c88b8da27"
+    },
+    {
+      "file": "tests/forestry-presentation.test.ts",
+      "bytes": 6655,
+      "sha256": "bf0d8f95a8915c84aa7b5e174339aceb3fb83c1845a0650bacee84cdaca93b94",
+      "normalizedTextSha256": "bf0d8f95a8915c84aa7b5e174339aceb3fb83c1845a0650bacee84cdaca93b94"
+    },
+    {
+      "file": "tests/forestry.test.ts",
+      "bytes": 4649,
+      "sha256": "1b5478694ffe33c0eea4689a1bb7d3433ad329652a173fc84df04b3cb4ac8061",
+      "normalizedTextSha256": "1b5478694ffe33c0eea4689a1bb7d3433ad329652a173fc84df04b3cb4ac8061"
+    },
+    {
+      "file": "tests/lifecycle.test.ts",
+      "bytes": 2268,
+      "sha256": "e4395d5f1a23c5278cf2714e2e0bf954941b9af64a3179ef4e50f2972920d929",
+      "normalizedTextSha256": "e4395d5f1a23c5278cf2714e2e0bf954941b9af64a3179ef4e50f2972920d929"
+    },
+    {
+      "file": "tests/models.test.ts",
+      "bytes": 3889,
+      "sha256": "fa7ba24d298de4dafc878f33ec1643a52ab38ba217c20dc8c43719d3d2d83ab6",
+      "normalizedTextSha256": "fa7ba24d298de4dafc878f33ec1643a52ab38ba217c20dc8c43719d3d2d83ab6"
+    },
+    {
+      "file": "tests/terrain.test.ts",
+      "bytes": 879,
+      "sha256": "81bbe72e627c16b2a6dcdc0fc0bc1feed5f1a782003d6bbeb766fff8950047ea",
+      "normalizedTextSha256": "81bbe72e627c16b2a6dcdc0fc0bc1feed5f1a782003d6bbeb766fff8950047ea"
+    },
+    {
+      "file": "tests/world.test.ts",
+      "bytes": 3494,
+      "sha256": "d6a0b727283f277a0003d5c2de9196afb128b5ce35ddc072412da641a8a93ba4",
+      "normalizedTextSha256": "d6a0b727283f277a0003d5c2de9196afb128b5ce35ddc072412da641a8a93ba4"
+    },
+    {
+      "file": "tools/audit-evidence.mjs",
+      "bytes": 6681,
+      "sha256": "cd2fddd09889709bbfeaacf20baf222e671a99fa5f7f51aa4c975fcb52f76016",
+      "normalizedTextSha256": "cd2fddd09889709bbfeaacf20baf222e671a99fa5f7f51aa4c975fcb52f76016"
+    },
+    {
+      "file": "tools/build-assets.py",
+      "bytes": 13036,
+      "sha256": "86f0012c25a98fe3418140a3e39867ba154b16fca1094c25d9ebeccae2a66141",
+      "normalizedTextSha256": "86f0012c25a98fe3418140a3e39867ba154b16fca1094c25d9ebeccae2a66141"
+    },
+    {
+      "file": "tools/build-r3-surface.mjs",
+      "bytes": 2721,
+      "sha256": "7e1e6977172398db084096e26b99335e927ca527f109f63c8e211451bc3cbd51",
+      "normalizedTextSha256": "7e1e6977172398db084096e26b99335e927ca527f109f63c8e211451bc3cbd51"
+    },
+    {
+      "file": "tools/verify-assets.mjs",
+      "bytes": 3118,
+      "sha256": "6c68de5169bfa30ef34261a92baab2bd01dee5f84200a8a845fad79890b104f8",
+      "normalizedTextSha256": "6c68de5169bfa30ef34261a92baab2bd01dee5f84200a8a845fad79890b104f8"
+    },
+    {
+      "file": "tsconfig.json",
+      "bytes": 376,
+      "sha256": "e1d59ebd9c14171a4bd91cb58a4c08e3371b0b65efa53c5ad77c25a4c55e70e6",
+      "normalizedTextSha256": "e1d59ebd9c14171a4bd91cb58a4c08e3371b0b65efa53c5ad77c25a4c55e70e6"
+    },
+    {
+      "file": "vite.config.ts",
+      "bytes": 1699,
+      "sha256": "f6d993fd85cf067cc0e1d71b68cb7159174df80fe1e33a83002a8ba58045d4c6",
+      "normalizedTextSha256": "f6d993fd85cf067cc0e1d71b68cb7159174df80fe1e33a83002a8ba58045d4c6"
+    }
+  ]
+}

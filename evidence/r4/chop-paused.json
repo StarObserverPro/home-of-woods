@@ -1,0 +1,96 @@
+{
+  "current": {
+    "resources": {
+      "geometries": 33,
+      "materials": 9,
+      "extras": 169,
+      "disposed": false
+    },
+    "drawCalls": 284,
+    "triangles": 348300,
+    "gpu": {
+      "geometries": 51,
+      "textures": 8
+    },
+    "zoom": 0.76,
+    "yaw": -0.13,
+    "elevation": 0.24,
+    "canvas": {
+      "width": 1528,
+      "height": 686
+    },
+    "treeCount": 580,
+    "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "managedTrees": 151,
+    "environment": {
+      "meshes": 7,
+      "geometryTriangles": 10260,
+      "geometries": 7,
+      "materials": 2,
+      "environmentMap": true,
+      "pmremSize": 128,
+      "visualTime": 51.856200000000406,
+      "disposed": false
+    },
+    "river": {
+      "materials": 1,
+      "additionalGeometry": 0,
+      "additionalTextures": 0,
+      "visualTime": 51.856200000000406,
+      "disposed": false
+    },
+    "destroyed": false,
+    "contextLost": false,
+    "loop": {
+      "paused": true,
+      "destroyed": false,
+      "scheduled": false,
+      "executing": false,
+      "running": false,
+      "frames": 1774
+    },
+    "samples": 360,
+    "frameMsP50": 16.69999999999709,
+    "frameMsP95": 17,
+    "seed": 104729,
+    "routeNodes": 0,
+    "player": {
+      "x": -21.509035376898424,
+      "z": 28.27542668814668,
+      "facing": 2.2724932644838196,
+      "moving": false,
+      "y": 17.620555667508835
+    },
+    "gameTime": 51.84999999999834,
+    "forestry": {
+      "wood": 0,
+      "points": {
+        "year": 1,
+        "available": 19,
+        "used": 0,
+        "reserved": 5
+      },
+      "active": {
+        "treeId": "tree-slot-r3-hero-0",
+        "phase": "chopping",
+        "progress": 0.10648148148147543,
+        "hits": 0,
+        "totalHits": 4
+      },
+      "selectedTree": {
+        "id": "tree-slot-r3-hero-0",
+        "individualId": "tree-slot-r3-hero-0:g0",
+        "status": "chopping",
+        "statusLabel": "正在挥斧",
+        "distance": 1.9758291944314872,
+        "canChop": false,
+        "canApproach": false,
+        "cost": 5,
+        "yield": 5,
+        "reason": "正在挥斧，可取消或移动离开。",
+        "progress": 0.10648148148147543
+      }
+    }
+  },
+  "audit": []
+}

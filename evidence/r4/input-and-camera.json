@@ -1,0 +1,1544 @@
+{
+  "before": {
+    "current": {
+      "resources": {
+        "geometries": 33,
+        "materials": 9,
+        "extras": 169,
+        "disposed": false
+      },
+      "drawCalls": 295,
+      "triangles": 369624,
+      "gpu": {
+        "geometries": 49,
+        "textures": 8
+      },
+      "zoom": 0.76,
+      "yaw": -0.13,
+      "elevation": 0.24,
+      "canvas": {
+        "width": 1528,
+        "height": 686
+      },
+      "treeCount": 580,
+      "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "managedTrees": 151,
+      "environment": {
+        "meshes": 7,
+        "geometryTriangles": 10260,
+        "geometries": 7,
+        "materials": 2,
+        "environmentMap": true,
+        "pmremSize": 128,
+        "visualTime": 257.0319500000304,
+        "disposed": false
+      },
+      "river": {
+        "materials": 1,
+        "additionalGeometry": 0,
+        "additionalTextures": 0,
+        "visualTime": 257.0319500000304,
+        "disposed": false
+      },
+      "destroyed": false,
+      "contextLost": false,
+      "loop": {
+        "paused": false,
+        "destroyed": false,
+        "scheduled": false,
+        "executing": true,
+        "running": true,
+        "frames": 11247
+      },
+      "samples": 360,
+      "frameMsP50": 33.09999999997672,
+      "frameMsP95": 50,
+      "seed": 104729,
+      "routeNodes": 0,
+      "player": {
+        "x": -26.999785073093722,
+        "z": -70.14609680020492,
+        "facing": -0.0014711256572744252,
+        "moving": false,
+        "y": 37.99654781145497
+      },
+      "gameTime": 626.4166666664256,
+      "forestry": {
+        "wood": 5,
+        "points": {
+          "year": 1,
+          "available": 19,
+          "used": 5,
+          "reserved": 0
+        },
+        "active": null,
+        "selectedTree": null
+      }
+    },
+    "audit": [
+      {
+        "resources": {
+          "geometries": 0,
+          "materials": 0,
+          "extras": 0,
+          "disposed": true
+        },
+        "drawCalls": 270,
+        "triangles": 335292,
+        "gpu": {
+          "geometries": 0,
+          "textures": 1
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1528,
+          "height": 686
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "environment": {
+          "meshes": 0,
+          "geometryTriangles": 0,
+          "geometries": 0,
+          "materials": 0,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 351.73500000006453,
+          "disposed": true
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 351.73500000006453,
+          "disposed": true
+        },
+        "destroyed": true,
+        "contextLost": true,
+        "loop": {
+          "paused": true,
+          "destroyed": true,
+          "scheduled": false,
+          "executing": false,
+          "running": false,
+          "frames": 18405
+        },
+        "samples": 360,
+        "frameMsP50": 16.699999999953434,
+        "frameMsP95": 33.20000000001164,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": 3.113097102882056,
+          "z": 47.873591837942875,
+          "facing": -0.7298779672615084,
+          "moving": false,
+          "y": 1.622505659960341
+        },
+        "gameTime": 351.71666666667545,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": {
+            "id": "landmark-elder",
+            "individualId": "landmark-elder",
+            "status": "standing",
+            "statusLabel": "永久保护地标",
+            "distance": 6.377261573794835,
+            "canChop": false,
+            "canApproach": false,
+            "cost": 24,
+            "yield": 24,
+            "reason": "巨木是永久保护的地标，不能砍伐。",
+            "progress": 0
+          }
+        }
+      },
+      {
+        "resources": {
+          "geometries": 0,
+          "materials": 0,
+          "extras": 0,
+          "disposed": true
+        },
+        "drawCalls": 270,
+        "triangles": 335292,
+        "gpu": {
+          "geometries": 0,
+          "textures": 1
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1528,
+          "height": 686
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "environment": {
+          "meshes": 0,
+          "geometryTriangles": 0,
+          "geometries": 0,
+          "materials": 0,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 11.040253999999978,
+          "disposed": true
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 11.040253999999978,
+          "disposed": true
+        },
+        "destroyed": true,
+        "contextLost": true,
+        "loop": {
+          "paused": true,
+          "destroyed": true,
+          "scheduled": false,
+          "executing": false,
+          "running": false,
+          "frames": 615
+        },
+        "samples": 360,
+        "frameMsP50": 16.699999999953434,
+        "frameMsP95": 33.29999999998836,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": 3.113097102882056,
+          "z": 47.873591837942875,
+          "facing": -0.7298779672615084,
+          "moving": false,
+          "y": 1.622505659960341
+        },
+        "gameTime": 362.74999999999875,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": {
+            "id": "landmark-elder",
+            "individualId": "landmark-elder",
+            "status": "standing",
+            "statusLabel": "永久保护地标",
+            "distance": 6.377261573794835,
+            "canChop": false,
+            "canApproach": false,
+            "cost": 24,
+            "yield": 24,
+            "reason": "巨木是永久保护的地标，不能砍伐。",
+            "progress": 0
+          }
+        }
+      },
+      {
+        "resources": {
+          "geometries": 0,
+          "materials": 0,
+          "extras": 0,
+          "disposed": true
+        },
+        "drawCalls": 270,
+        "triangles": 335292,
+        "gpu": {
+          "geometries": 0,
+          "textures": 1
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1528,
+          "height": 686
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "environment": {
+          "meshes": 0,
+          "geometryTriangles": 0,
+          "geometries": 0,
+          "materials": 0,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 1.8645860000000114,
+          "disposed": true
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 1.8645860000000114,
+          "disposed": true
+        },
+        "destroyed": true,
+        "contextLost": true,
+        "loop": {
+          "paused": true,
+          "destroyed": true,
+          "scheduled": false,
+          "executing": false,
+          "running": false,
+          "frames": 105
+        },
+        "samples": 104,
+        "frameMsP50": 16.699999999953434,
+        "frameMsP95": 33.20000000001164,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": 3.113097102882056,
+          "z": 47.873591837942875,
+          "facing": -0.7298779672615084,
+          "moving": false,
+          "y": 1.622505659960341
+        },
+        "gameTime": 364.59999999999707,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": {
+            "id": "landmark-elder",
+            "individualId": "landmark-elder",
+            "status": "standing",
+            "statusLabel": "永久保护地标",
+            "distance": 6.377261573794835,
+            "canChop": false,
+            "canApproach": false,
+            "cost": 24,
+            "yield": 24,
+            "reason": "巨木是永久保护的地标，不能砍伐。",
+            "progress": 0
+          }
+        }
+      },
+      {
+        "resources": {
+          "geometries": 0,
+          "materials": 0,
+          "extras": 0,
+          "disposed": true
+        },
+        "drawCalls": 270,
+        "triangles": 335292,
+        "gpu": {
+          "geometries": 0,
+          "textures": 1
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1528,
+          "height": 686
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "environment": {
+          "meshes": 0,
+          "geometryTriangles": 0,
+          "geometries": 0,
+          "materials": 0,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 2.5308519999999572,
+          "disposed": true
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 2.5308519999999572,
+          "disposed": true
+        },
+        "destroyed": true,
+        "contextLost": true,
+        "loop": {
+          "paused": true,
+          "destroyed": true,
+          "scheduled": false,
+          "executing": false,
+          "running": false,
+          "frames": 110
+        },
+        "samples": 109,
+        "frameMsP50": 16.70000000001164,
+        "frameMsP95": 33.40000000002328,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": 3.113097102882056,
+          "z": 47.873591837942875,
+          "facing": -0.7298779672615084,
+          "moving": false,
+          "y": 1.622505659960341
+        },
+        "gameTime": 367.11666666666144,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": {
+            "id": "landmark-elder",
+            "individualId": "landmark-elder",
+            "status": "standing",
+            "statusLabel": "永久保护地标",
+            "distance": 6.377261573794835,
+            "canChop": false,
+            "canApproach": false,
+            "cost": 24,
+            "yield": 24,
+            "reason": "巨木是永久保护的地标，不能砍伐。",
+            "progress": 0
+          }
+        }
+      },
+      {
+        "resources": {
+          "geometries": 0,
+          "materials": 0,
+          "extras": 0,
+          "disposed": true
+        },
+        "drawCalls": 270,
+        "triangles": 335292,
+        "gpu": {
+          "geometries": 0,
+          "textures": 1
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1528,
+          "height": 686
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "environment": {
+          "meshes": 0,
+          "geometryTriangles": 0,
+          "geometries": 0,
+          "materials": 0,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 2.2975899999999694,
+          "disposed": true
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 2.2975899999999694,
+          "disposed": true
+        },
+        "destroyed": true,
+        "contextLost": true,
+        "loop": {
+          "paused": true,
+          "destroyed": true,
+          "scheduled": false,
+          "executing": false,
+          "running": false,
+          "frames": 118
+        },
+        "samples": 117,
+        "frameMsP50": 16.70000000001164,
+        "frameMsP95": 33.399999999965075,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": 3.113097102882056,
+          "z": 47.873591837942875,
+          "facing": -0.7298779672615084,
+          "moving": false,
+          "y": 1.622505659960341
+        },
+        "gameTime": 369.3999999999927,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": {
+            "id": "landmark-elder",
+            "individualId": "landmark-elder",
+            "status": "standing",
+            "statusLabel": "永久保护地标",
+            "distance": 6.377261573794835,
+            "canChop": false,
+            "canApproach": false,
+            "cost": 24,
+            "yield": 24,
+            "reason": "巨木是永久保护的地标，不能砍伐。",
+            "progress": 0
+          }
+        }
+      }
+    ]
+  },
+  "afterDragAndZoom": {
+    "current": {
+      "resources": {
+        "geometries": 33,
+        "materials": 9,
+        "extras": 169,
+        "disposed": false
+      },
+      "drawCalls": 276,
+      "triangles": 350446,
+      "gpu": {
+        "geometries": 49,
+        "textures": 8
+      },
+      "zoom": 0.8967999999999999,
+      "yaw": -0.48999999999999994,
+      "elevation": 0.30000000000000004,
+      "canvas": {
+        "width": 1528,
+        "height": 686
+      },
+      "treeCount": 580,
+      "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "managedTrees": 151,
+      "environment": {
+        "meshes": 7,
+        "geometryTriangles": 10260,
+        "geometries": 7,
+        "materials": 2,
+        "environmentMap": true,
+        "pmremSize": 128,
+        "visualTime": 258.74715000003073,
+        "disposed": false
+      },
+      "river": {
+        "materials": 1,
+        "additionalGeometry": 0,
+        "additionalTextures": 0,
+        "visualTime": 258.74715000003073,
+        "disposed": false
+      },
+      "destroyed": false,
+      "contextLost": false,
+      "loop": {
+        "paused": false,
+        "destroyed": false,
+        "scheduled": false,
+        "executing": true,
+        "running": true,
+        "frames": 11310
+      },
+      "samples": 360,
+      "frameMsP50": 33.199999999953434,
+      "frameMsP95": 50,
+      "seed": 104729,
+      "routeNodes": 0,
+      "player": {
+        "x": -26.999785073093722,
+        "z": -70.14609680020492,
+        "facing": -0.0014711256572744252,
+        "moving": false,
+        "y": 37.99654781145497
+      },
+      "gameTime": 628.1333333330907,
+      "forestry": {
+        "wood": 5,
+        "points": {
+          "year": 1,
+          "available": 19,
+          "used": 5,
+          "reserved": 0
+        },
+        "active": null,
+        "selectedTree": null
+      }
+    },
+    "audit": [
+      {
+        "resources": {
+          "geometries": 0,
+          "materials": 0,
+          "extras": 0,
+          "disposed": true
+        },
+        "drawCalls": 270,
+        "triangles": 335292,
+        "gpu": {
+          "geometries": 0,
+          "textures": 1
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1528,
+          "height": 686
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "environment": {
+          "meshes": 0,
+          "geometryTriangles": 0,
+          "geometries": 0,
+          "materials": 0,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 351.73500000006453,
+          "disposed": true
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 351.73500000006453,
+          "disposed": true
+        },
+        "destroyed": true,
+        "contextLost": true,
+        "loop": {
+          "paused": true,
+          "destroyed": true,
+          "scheduled": false,
+          "executing": false,
+          "running": false,
+          "frames": 18405
+        },
+        "samples": 360,
+        "frameMsP50": 16.699999999953434,
+        "frameMsP95": 33.20000000001164,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": 3.113097102882056,
+          "z": 47.873591837942875,
+          "facing": -0.7298779672615084,
+          "moving": false,
+          "y": 1.622505659960341
+        },
+        "gameTime": 351.71666666667545,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": {
+            "id": "landmark-elder",
+            "individualId": "landmark-elder",
+            "status": "standing",
+            "statusLabel": "永久保护地标",
+            "distance": 6.377261573794835,
+            "canChop": false,
+            "canApproach": false,
+            "cost": 24,
+            "yield": 24,
+            "reason": "巨木是永久保护的地标，不能砍伐。",
+            "progress": 0
+          }
+        }
+      },
+      {
+        "resources": {
+          "geometries": 0,
+          "materials": 0,
+          "extras": 0,
+          "disposed": true
+        },
+        "drawCalls": 270,
+        "triangles": 335292,
+        "gpu": {
+          "geometries": 0,
+          "textures": 1
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1528,
+          "height": 686
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "environment": {
+          "meshes": 0,
+          "geometryTriangles": 0,
+          "geometries": 0,
+          "materials": 0,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 11.040253999999978,
+          "disposed": true
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 11.040253999999978,
+          "disposed": true
+        },
+        "destroyed": true,
+        "contextLost": true,
+        "loop": {
+          "paused": true,
+          "destroyed": true,
+          "scheduled": false,
+          "executing": false,
+          "running": false,
+          "frames": 615
+        },
+        "samples": 360,
+        "frameMsP50": 16.699999999953434,
+        "frameMsP95": 33.29999999998836,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": 3.113097102882056,
+          "z": 47.873591837942875,
+          "facing": -0.7298779672615084,
+          "moving": false,
+          "y": 1.622505659960341
+        },
+        "gameTime": 362.74999999999875,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": {
+            "id": "landmark-elder",
+            "individualId": "landmark-elder",
+            "status": "standing",
+            "statusLabel": "永久保护地标",
+            "distance": 6.377261573794835,
+            "canChop": false,
+            "canApproach": false,
+            "cost": 24,
+            "yield": 24,
+            "reason": "巨木是永久保护的地标，不能砍伐。",
+            "progress": 0
+          }
+        }
+      },
+      {
+        "resources": {
+          "geometries": 0,
+          "materials": 0,
+          "extras": 0,
+          "disposed": true
+        },
+        "drawCalls": 270,
+        "triangles": 335292,
+        "gpu": {
+          "geometries": 0,
+          "textures": 1
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1528,
+          "height": 686
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "environment": {
+          "meshes": 0,
+          "geometryTriangles": 0,
+          "geometries": 0,
+          "materials": 0,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 1.8645860000000114,
+          "disposed": true
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 1.8645860000000114,
+          "disposed": true
+        },
+        "destroyed": true,
+        "contextLost": true,
+        "loop": {
+          "paused": true,
+          "destroyed": true,
+          "scheduled": false,
+          "executing": false,
+          "running": false,
+          "frames": 105
+        },
+        "samples": 104,
+        "frameMsP50": 16.699999999953434,
+        "frameMsP95": 33.20000000001164,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": 3.113097102882056,
+          "z": 47.873591837942875,
+          "facing": -0.7298779672615084,
+          "moving": false,
+          "y": 1.622505659960341
+        },
+        "gameTime": 364.59999999999707,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": {
+            "id": "landmark-elder",
+            "individualId": "landmark-elder",
+            "status": "standing",
+            "statusLabel": "永久保护地标",
+            "distance": 6.377261573794835,
+            "canChop": false,
+            "canApproach": false,
+            "cost": 24,
+            "yield": 24,
+            "reason": "巨木是永久保护的地标，不能砍伐。",
+            "progress": 0
+          }
+        }
+      },
+      {
+        "resources": {
+          "geometries": 0,
+          "materials": 0,
+          "extras": 0,
+          "disposed": true
+        },
+        "drawCalls": 270,
+        "triangles": 335292,
+        "gpu": {
+          "geometries": 0,
+          "textures": 1
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1528,
+          "height": 686
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "environment": {
+          "meshes": 0,
+          "geometryTriangles": 0,
+          "geometries": 0,
+          "materials": 0,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 2.5308519999999572,
+          "disposed": true
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 2.5308519999999572,
+          "disposed": true
+        },
+        "destroyed": true,
+        "contextLost": true,
+        "loop": {
+          "paused": true,
+          "destroyed": true,
+          "scheduled": false,
+          "executing": false,
+          "running": false,
+          "frames": 110
+        },
+        "samples": 109,
+        "frameMsP50": 16.70000000001164,
+        "frameMsP95": 33.40000000002328,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": 3.113097102882056,
+          "z": 47.873591837942875,
+          "facing": -0.7298779672615084,
+          "moving": false,
+          "y": 1.622505659960341
+        },
+        "gameTime": 367.11666666666144,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": {
+            "id": "landmark-elder",
+            "individualId": "landmark-elder",
+            "status": "standing",
+            "statusLabel": "永久保护地标",
+            "distance": 6.377261573794835,
+            "canChop": false,
+            "canApproach": false,
+            "cost": 24,
+            "yield": 24,
+            "reason": "巨木是永久保护的地标，不能砍伐。",
+            "progress": 0
+          }
+        }
+      },
+      {
+        "resources": {
+          "geometries": 0,
+          "materials": 0,
+          "extras": 0,
+          "disposed": true
+        },
+        "drawCalls": 270,
+        "triangles": 335292,
+        "gpu": {
+          "geometries": 0,
+          "textures": 1
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1528,
+          "height": 686
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "environment": {
+          "meshes": 0,
+          "geometryTriangles": 0,
+          "geometries": 0,
+          "materials": 0,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 2.2975899999999694,
+          "disposed": true
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 2.2975899999999694,
+          "disposed": true
+        },
+        "destroyed": true,
+        "contextLost": true,
+        "loop": {
+          "paused": true,
+          "destroyed": true,
+          "scheduled": false,
+          "executing": false,
+          "running": false,
+          "frames": 118
+        },
+        "samples": 117,
+        "frameMsP50": 16.70000000001164,
+        "frameMsP95": 33.399999999965075,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": 3.113097102882056,
+          "z": 47.873591837942875,
+          "facing": -0.7298779672615084,
+          "moving": false,
+          "y": 1.622505659960341
+        },
+        "gameTime": 369.3999999999927,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": {
+            "id": "landmark-elder",
+            "individualId": "landmark-elder",
+            "status": "standing",
+            "statusLabel": "永久保护地标",
+            "distance": 6.377261573794835,
+            "canChop": false,
+            "canApproach": false,
+            "cost": 24,
+            "yield": 24,
+            "reason": "巨木是永久保护的地标，不能砍伐。",
+            "progress": 0
+          }
+        }
+      }
+    ]
+  },
+  "afterReset": {
+    "current": {
+      "resources": {
+        "geometries": 33,
+        "materials": 9,
+        "extras": 169,
+        "disposed": false
+      },
+      "drawCalls": 290,
+      "triangles": 367238,
+      "gpu": {
+        "geometries": 49,
+        "textures": 8
+      },
+      "zoom": 0.76,
+      "yaw": -0.13,
+      "elevation": 0.24,
+      "canvas": {
+        "width": 1528,
+        "height": 686
+      },
+      "treeCount": 580,
+      "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "managedTrees": 151,
+      "environment": {
+        "meshes": 7,
+        "geometryTriangles": 10260,
+        "geometries": 7,
+        "materials": 2,
+        "environmentMap": true,
+        "pmremSize": 128,
+        "visualTime": 259.46345000003095,
+        "disposed": false
+      },
+      "river": {
+        "materials": 1,
+        "additionalGeometry": 0,
+        "additionalTextures": 0,
+        "visualTime": 259.46345000003095,
+        "disposed": false
+      },
+      "destroyed": false,
+      "contextLost": false,
+      "loop": {
+        "paused": false,
+        "destroyed": false,
+        "scheduled": false,
+        "executing": true,
+        "running": true,
+        "frames": 11335
+      },
+      "samples": 360,
+      "frameMsP50": 33.199999999953434,
+      "frameMsP95": 50,
+      "seed": 104729,
+      "routeNodes": 0,
+      "player": {
+        "x": -26.999785073093722,
+        "z": -70.14609680020492,
+        "facing": -0.0014711256572744252,
+        "moving": false,
+        "y": 37.99654781145497
+      },
+      "gameTime": 628.8499999997567,
+      "forestry": {
+        "wood": 5,
+        "points": {
+          "year": 1,
+          "available": 19,
+          "used": 5,
+          "reserved": 0
+        },
+        "active": null,
+        "selectedTree": null
+      }
+    },
+    "audit": [
+      {
+        "resources": {
+          "geometries": 0,
+          "materials": 0,
+          "extras": 0,
+          "disposed": true
+        },
+        "drawCalls": 270,
+        "triangles": 335292,
+        "gpu": {
+          "geometries": 0,
+          "textures": 1
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1528,
+          "height": 686
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "environment": {
+          "meshes": 0,
+          "geometryTriangles": 0,
+          "geometries": 0,
+          "materials": 0,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 351.73500000006453,
+          "disposed": true
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 351.73500000006453,
+          "disposed": true
+        },
+        "destroyed": true,
+        "contextLost": true,
+        "loop": {
+          "paused": true,
+          "destroyed": true,
+          "scheduled": false,
+          "executing": false,
+          "running": false,
+          "frames": 18405
+        },
+        "samples": 360,
+        "frameMsP50": 16.699999999953434,
+        "frameMsP95": 33.20000000001164,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": 3.113097102882056,
+          "z": 47.873591837942875,
+          "facing": -0.7298779672615084,
+          "moving": false,
+          "y": 1.622505659960341
+        },
+        "gameTime": 351.71666666667545,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": {
+            "id": "landmark-elder",
+            "individualId": "landmark-elder",
+            "status": "standing",
+            "statusLabel": "永久保护地标",
+            "distance": 6.377261573794835,
+            "canChop": false,
+            "canApproach": false,
+            "cost": 24,
+            "yield": 24,
+            "reason": "巨木是永久保护的地标，不能砍伐。",
+            "progress": 0
+          }
+        }
+      },
+      {
+        "resources": {
+          "geometries": 0,
+          "materials": 0,
+          "extras": 0,
+          "disposed": true
+        },
+        "drawCalls": 270,
+        "triangles": 335292,
+        "gpu": {
+          "geometries": 0,
+          "textures": 1
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1528,
+          "height": 686
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "environment": {
+          "meshes": 0,
+          "geometryTriangles": 0,
+          "geometries": 0,
+          "materials": 0,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 11.040253999999978,
+          "disposed": true
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 11.040253999999978,
+          "disposed": true
+        },
+        "destroyed": true,
+        "contextLost": true,
+        "loop": {
+          "paused": true,
+          "destroyed": true,
+          "scheduled": false,
+          "executing": false,
+          "running": false,
+          "frames": 615
+        },
+        "samples": 360,
+        "frameMsP50": 16.699999999953434,
+        "frameMsP95": 33.29999999998836,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": 3.113097102882056,
+          "z": 47.873591837942875,
+          "facing": -0.7298779672615084,
+          "moving": false,
+          "y": 1.622505659960341
+        },
+        "gameTime": 362.74999999999875,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": {
+            "id": "landmark-elder",
+            "individualId": "landmark-elder",
+            "status": "standing",
+            "statusLabel": "永久保护地标",
+            "distance": 6.377261573794835,
+            "canChop": false,
+            "canApproach": false,
+            "cost": 24,
+            "yield": 24,
+            "reason": "巨木是永久保护的地标，不能砍伐。",
+            "progress": 0
+          }
+        }
+      },
+      {
+        "resources": {
+          "geometries": 0,
+          "materials": 0,
+          "extras": 0,
+          "disposed": true
+        },
+        "drawCalls": 270,
+        "triangles": 335292,
+        "gpu": {
+          "geometries": 0,
+          "textures": 1
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1528,
+          "height": 686
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "environment": {
+          "meshes": 0,
+          "geometryTriangles": 0,
+          "geometries": 0,
+          "materials": 0,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 1.8645860000000114,
+          "disposed": true
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 1.8645860000000114,
+          "disposed": true
+        },
+        "destroyed": true,
+        "contextLost": true,
+        "loop": {
+          "paused": true,
+          "destroyed": true,
+          "scheduled": false,
+          "executing": false,
+          "running": false,
+          "frames": 105
+        },
+        "samples": 104,
+        "frameMsP50": 16.699999999953434,
+        "frameMsP95": 33.20000000001164,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": 3.113097102882056,
+          "z": 47.873591837942875,
+          "facing": -0.7298779672615084,
+          "moving": false,
+          "y": 1.622505659960341
+        },
+        "gameTime": 364.59999999999707,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": {
+            "id": "landmark-elder",
+            "individualId": "landmark-elder",
+            "status": "standing",
+            "statusLabel": "永久保护地标",
+            "distance": 6.377261573794835,
+            "canChop": false,
+            "canApproach": false,
+            "cost": 24,
+            "yield": 24,
+            "reason": "巨木是永久保护的地标，不能砍伐。",
+            "progress": 0
+          }
+        }
+      },
+      {
+        "resources": {
+          "geometries": 0,
+          "materials": 0,
+          "extras": 0,
+          "disposed": true
+        },
+        "drawCalls": 270,
+        "triangles": 335292,
+        "gpu": {
+          "geometries": 0,
+          "textures": 1
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1528,
+          "height": 686
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "environment": {
+          "meshes": 0,
+          "geometryTriangles": 0,
+          "geometries": 0,
+          "materials": 0,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 2.5308519999999572,
+          "disposed": true
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 2.5308519999999572,
+          "disposed": true
+        },
+        "destroyed": true,
+        "contextLost": true,
+        "loop": {
+          "paused": true,
+          "destroyed": true,
+          "scheduled": false,
+          "executing": false,
+          "running": false,
+          "frames": 110
+        },
+        "samples": 109,
+        "frameMsP50": 16.70000000001164,
+        "frameMsP95": 33.40000000002328,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": 3.113097102882056,
+          "z": 47.873591837942875,
+          "facing": -0.7298779672615084,
+          "moving": false,
+          "y": 1.622505659960341
+        },
+        "gameTime": 367.11666666666144,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": {
+            "id": "landmark-elder",
+            "individualId": "landmark-elder",
+            "status": "standing",
+            "statusLabel": "永久保护地标",
+            "distance": 6.377261573794835,
+            "canChop": false,
+            "canApproach": false,
+            "cost": 24,
+            "yield": 24,
+            "reason": "巨木是永久保护的地标，不能砍伐。",
+            "progress": 0
+          }
+        }
+      },
+      {
+        "resources": {
+          "geometries": 0,
+          "materials": 0,
+          "extras": 0,
+          "disposed": true
+        },
+        "drawCalls": 270,
+        "triangles": 335292,
+        "gpu": {
+          "geometries": 0,
+          "textures": 1
+        },
+        "zoom": 0.76,
+        "yaw": -0.13,
+        "elevation": 0.24,
+        "canvas": {
+          "width": 1528,
+          "height": 686
+        },
+        "treeCount": 580,
+        "graphicsBackend": "ANGLE (AMD, AMD Radeon (TM) Graphics (0x000015E7) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "managedTrees": 151,
+        "environment": {
+          "meshes": 0,
+          "geometryTriangles": 0,
+          "geometries": 0,
+          "materials": 0,
+          "environmentMap": true,
+          "pmremSize": 128,
+          "visualTime": 2.2975899999999694,
+          "disposed": true
+        },
+        "river": {
+          "materials": 1,
+          "additionalGeometry": 0,
+          "additionalTextures": 0,
+          "visualTime": 2.2975899999999694,
+          "disposed": true
+        },
+        "destroyed": true,
+        "contextLost": true,
+        "loop": {
+          "paused": true,
+          "destroyed": true,
+          "scheduled": false,
+          "executing": false,
+          "running": false,
+          "frames": 118
+        },
+        "samples": 117,
+        "frameMsP50": 16.70000000001164,
+        "frameMsP95": 33.399999999965075,
+        "seed": 104729,
+        "routeNodes": 0,
+        "player": {
+          "x": 3.113097102882056,
+          "z": 47.873591837942875,
+          "facing": -0.7298779672615084,
+          "moving": false,
+          "y": 1.622505659960341
+        },
+        "gameTime": 369.3999999999927,
+        "forestry": {
+          "wood": 5,
+          "points": {
+            "year": 1,
+            "available": 19,
+            "used": 5,
+            "reserved": 0
+          },
+          "active": null,
+          "selectedTree": {
+            "id": "landmark-elder",
+            "individualId": "landmark-elder",
+            "status": "standing",
+            "statusLabel": "永久保护地标",
+            "distance": 6.377261573794835,
+            "canChop": false,
+            "canApproach": false,
+            "cost": 24,
+            "yield": 24,
+            "reason": "巨木是永久保护的地标，不能砍伐。",
+            "progress": 0
+          }
+        }
+      }
+    ]
+  }
+}
