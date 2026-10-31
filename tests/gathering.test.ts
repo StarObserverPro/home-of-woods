@@ -19,7 +19,8 @@ function ready(source=branch,customRegistry=registry){
   const state=createState();state.selected=source.sourceId;state.player={x:source.x-1,z:source.z,facing:0,moving:false};
   assert.ok(beginGather(state,source.sourceId,customRegistry,blockers).ok);return state;
 }
-function collect(state:ReturnType<typeof createState>,r=registry){const candidate=advanceGather(state,r,blockers);assert.ok(candidate);assert.ok(commitGather(state,candidate,r,blockers));return candidate;}
+function due(state:ReturnType<typeof createState>,r=registry){advanceGather(state,r,blockers);state.time=state.gathering.action!.startedAt!+state.gathering.action!.durationSeconds;return advanceGather(state,r,blockers);}
+function collect(state:ReturnType<typeof createState>,r=registry){const candidate=due(state,r);assert.ok(candidate);assert.ok(commitGather(state,candidate,r,blockers));return candidate;}
 
 test('registry rejects duplicate identities, bad references/strategies/numbers/anchors and unreachable sources',()=>{
   assert.throws(()=>createGatheringRegistry({assetIds:assets,items:[...ITEMS,ITEMS[0]]}),/Duplicate/);
@@ -47,7 +48,7 @@ test('both kinds use the same reachable route, action, inventory candidate and a
   }
 });
 test('candidate creation does not mutate balances, stale inventory/source/action and replay are rejected',()=>{
-  const state=ready(),candidate=advanceGather(state,registry,blockers)!;
+  const state=ready(),candidate=due(state)!;
   assert.equal(state.inventory.revision,0);assert.equal(state.gathering.sources[branch.sourceId].remaining,1);
   const original=structuredClone(state);state.inventory.revision++;
   assert.equal(commitGather(state,candidate,registry,blockers),false);assert.equal(state.gathering.sources[branch.sourceId].remaining,1);
@@ -68,7 +69,7 @@ test('movement, target change, cancellation, changed source and obstacles before
   ]){const state=ready();change(state);assert.equal(advancePlayerGather(state,registry,blockers),null);assert.deepEqual(state.inventory.stacks,[]);}
   const barrier={id:'test-wall',x:branch.x-.5,z:branch.z,halfX:.1,halfZ:1};
   assert.equal(canInteract({x:branch.x-1,z:branch.z},branch,[barrier]),false);
-  const state=ready(),candidate=advanceGather(state,registry,blockers)!;
+  const state=ready(),candidate=due(state)!;
   assert.equal(commitGather(state,candidate,registry,[...blockers,barrier]),false);assert.deepEqual(state.inventory.stacks,[]);
 });
 test('one player action owner prevents simultaneous chopping/gathering',()=>{
@@ -88,7 +89,7 @@ test('action receiver can observe approaching, performing/progress, completed an
   assert.deepEqual(state.inventory.stacks,[]);state.time=2;collect(state,delayed);
   observed.push(gatheringSnapshot(state,delayed,blockers).action!);
   assert.deepEqual(observed.map(a=>a.phase),['approaching','performing','completed']);
-  assert.ok(observed.every(a=>a.actionId===observed[0].actionId&&a.motionTag==='gather.pickup'&&Number.isFinite(a.targetAnchor.y)));
+  assert.ok(observed.every(a=>a.actionId===observed[0].actionId&&a.motionTag==='gather.climb'&&Number.isFinite(a.targetAnchor.y)));
   const cancelled=ready(mushroom);cancelGather(cancelled);
   assert.equal(gatheringSnapshot(cancelled,registry,blockers).action?.phase,'cancelled');
   assert.equal(gatheringSnapshot(cancelled,registry,blockers).action?.motionTag,'gather.pluck');
@@ -118,11 +119,11 @@ test('depletion waits from the final unit, each point has an independent deadlin
   const state=ready(mushroom);state.gathering.sources[mushroom.sourceId].remaining=2;state.time=2;collect(state);
   assert.equal(state.gathering.sources[mushroom.sourceId].depletedAt,null);
   state.time=8;assert.ok(beginGather(state,mushroom.sourceId,registry,blockers).ok);collect(state);
-  assert.equal(state.gathering.sources[mushroom.sourceId].depletedAt,8);
-  const other=makeGatheringSources()[3];state.gathering.sources[other.sourceId]={remaining:0,version:1,lastPeriod:null,depletedAt:12};
-  assert.equal(regenerationCandidate(state.gathering,registry,{now:17},configs),state.gathering);
-  const due=regenerationCandidate(state.gathering,registry,{now:18},configs);
+  assert.equal(state.gathering.sources[mushroom.sourceId].depletedAt,13);
+  const other=makeGatheringSources()[3];state.gathering.sources[other.sourceId]={remaining:0,version:1,lastPeriod:null,depletedAt:17};
+  assert.equal(regenerationCandidate(state.gathering,registry,{now:22},configs),state.gathering);
+  const due=regenerationCandidate(state.gathering,registry,{now:23},configs);
   assert.equal(due.sources[mushroom.sourceId].remaining,2);assert.equal(due.sources[mushroom.sourceId].depletedAt,null);
-  assert.equal(due.sources[other.sourceId].remaining,0);assert.equal(regenerationCandidate(due,registry,{now:18},configs),due);
-  assert.equal(regenerationCandidate(due,registry,{now:22},configs).sources[other.sourceId].remaining,2);
+  assert.equal(due.sources[other.sourceId].remaining,0);assert.equal(regenerationCandidate(due,registry,{now:23},configs),due);
+  assert.equal(regenerationCandidate(due,registry,{now:27},configs).sources[other.sourceId].remaining,2);
 });

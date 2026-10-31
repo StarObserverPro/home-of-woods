@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import {createTree} from "./actions/tree.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
@@ -51,6 +52,9 @@ export class Models {
     return object;
   }
   trunkContact(tree:Tree,root:THREE.Object3D){
+    const dynamic=root.userData.actionTree as ReturnType<typeof createTree>|undefined;
+    const collar=dynamic?.root.getObjectByName('cut-collar') as THREE.Mesh|undefined;
+    if(collar){collar.updateWorldMatrix(true,false);return geometryContactTarget(collar.geometry,collar.matrixWorld);}
     const source=this.templates.get(tree.kind)!;
     source.updateMatrixWorld(true);root.updateWorldMatrix(true,false);
     const name=tree.kind==='pine'?'chunky_pine_trunk':'broadleaf_flared_trunk';
@@ -71,7 +75,7 @@ export class Models {
         const material = o.material as THREE.Material;
         if (!groups.has(material))
           groups.set(material, { material, parts: [] });
-        const g = o.geometry.clone().applyMatrix4(o.matrixWorld);
+        const g = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()).applyMatrix4(o.matrixWorld);
         g.deleteAttribute("uv");
         groups.get(material)!.parts.push(g);
       }
@@ -93,14 +97,15 @@ export class Models {
     });
     return root;
   }
-  treeGeometry(kind: "pine" | "broadleaf") {
-    return this.r.geometry(`merged-${kind}`, () => {
-      const tree = this.templates.get(kind)!;
-      tree.updateMatrixWorld(true);
+  treeGeometry(kind: "pine" | "broadleaf", medium=true) {
+    return this.r.geometry(`merged-${kind}-${medium}`, () => {
+      const composed=medium?createTree(this.templates.get(kind)!,kind):null;composed?.update(0,'climb',true,false);
+      const tree=composed?.root??this.templates.get(kind)!;tree.updateMatrixWorld(true);
       const parts: THREE.BufferGeometry[] = [];
       tree.traverse((o) => {
-        if (o instanceof THREE.Mesh) {
-          const g = o.geometry.clone().applyMatrix4(o.matrixWorld);
+        let shown=true;for(let parent:THREE.Object3D|null=o;parent;parent=parent.parent)shown=shown&&parent.visible;
+        if (shown && o instanceof THREE.Mesh) {
+          const g = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()).applyMatrix4(o.matrixWorld);
           g.deleteAttribute("uv");
           const color = new THREE.Color(
             (o.material as THREE.MeshStandardMaterial).color,
@@ -113,7 +118,7 @@ export class Models {
         }
       });
       const merged = mergeGeometries(parts, false);
-      parts.forEach((g) => g.dispose());
+      parts.forEach((g) => g.dispose());composed?.dispose();
       if (!merged) throw new Error("Tree geometry merge failed");
       return merged;
     });
@@ -175,7 +180,7 @@ export class Models {
       group.add(instances);
       const near = trees.filter((t) => t.kind === kind && t.role !== "scenery");
       near.forEach((t) => {
-        const mesh = new THREE.Mesh(this.treeGeometry(kind), material);
+        const mesh = new THREE.Mesh(this.treeGeometry(kind,t.role!=='landmark'), material);
         mesh.name = t.id;
         mesh.position.set(t.x, 0, t.z);
         mesh.rotation.y = t.variant * Math.PI * 2;

@@ -1,3 +1,4 @@
+import { BRANCH_HARVEST_SPEC } from '../content/wood-uses.ts';
 import type { Point } from '../content/world.ts';
 import type { GatherMotionTag, RegenerationConfig } from '../content/gatherables.ts';
 import { REGENERATION_CONFIG } from '../content/gatherables.ts';
@@ -6,8 +7,8 @@ import type { Collider } from '../world/layout.ts';
 import { heightAt } from '../world/surface.ts';
 import { canStand, findPath } from './navigation.ts';
 import type { ForestryState } from './forestry.ts';
-import { inventoryCandidate } from './inventory.ts';
-import type { InventoryState } from './inventory.ts';
+import { inventoryTransaction, woodBatch } from './inventory.ts';
+import type { InventoryState, WoodBatch } from './inventory.ts';
 import type { GatheringRegistry } from './gathering-registry.ts';
 
 export type GatherActionView = {
@@ -19,7 +20,7 @@ export type GatheringSourceState = {
   remaining: number; version: number; lastPeriod: number | null; depletedAt: number | null;
   hostIndividualId?: string; hostAvailable?: boolean;
 };
-export type GatherAction = GatherActionView & { sourceVersion: number; startedAt: number | null; durationSeconds: number; reward: { itemId: string; qualityId: string; quantity: number } };
+export type GatherAction = GatherActionView & { sourceVersion: number; startedAt: number | null; durationSeconds: number; reward: { itemId: string; qualityId: string; quantity: number; wood?: WoodBatch } };
 export type GatheringState = {
   sources: Record<string, GatheringSourceState>; action: GatherAction | null;
   nextAction: number; settled: Record<string, true>;
@@ -98,7 +99,7 @@ export function beginGather(host: GatheringHost, sourceId: string, registry: Gat
     actionId: `gather-${host.gathering.nextAction++}`, actorId: 'player', sourceId,
     motionTag: d.motionTag, targetAnchor: { ...source.targetAnchor }, phase: 'approaching', progress: 0,
     sourceVersion: host.gathering.sources[sourceId].version, startedAt: null,
-    durationSeconds: d.durationSeconds, reward: { itemId: d.itemId, qualityId: d.qualityId, quantity: d.yieldPerUnit },
+    durationSeconds: d.durationSeconds, reward: { itemId: d.itemId, qualityId: d.qualityId, quantity: d.yieldPerUnit, ...(d.itemId==='branch'?{wood:woodBatch({...BRANCH_HARVEST_SPEC})}:{}) },
   };
   host.route = path.route;
   return { ok: true, message: path.route.length ? `走近${d.name}后采集。` : `准备采集${d.name}。` };
@@ -124,7 +125,7 @@ export function gatherCandidate(host: GatheringHost, registry: GatheringRegistry
   const remaining = life.remaining - 1;
   return { actionId: a.actionId, sourceId: s.sourceId, sourceVersion: life.version, inventoryRevision: host.inventory.revision,
     source: { ...life, remaining, version: life.version + 1, depletedAt: remaining === 0 ? host.time : life.depletedAt },
-    inventory: inventoryCandidate(host.inventory, a.reward.itemId, a.reward.quantity, a.reward.qualityId, registry.catalog),
+    inventory: inventoryTransaction(host.inventory, [{...a.reward, delta:a.reward.quantity}],registry.catalog),
     action: { ...a, phase: 'completed', progress: 1 }, message: `收获 ${a.reward.quantity} 份${registry.items.get(a.reward.itemId)!.name}。` };
 }
 /** App calls this synchronously; stale candidates and replays cannot write either half. */

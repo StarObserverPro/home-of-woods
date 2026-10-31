@@ -120,7 +120,7 @@ test('safe normalization writes once and reloads as restored; legacy grades are 
 test('future structures, unknown fields, broken identities and invalid numbers retain the exact raw save', () => {
   const stack = { itemId: 'mushroom', qualityId: 'ordinary', quantity: 2 };
   const payloads: unknown[] = [
-    { schemaVersion: 2, stacks: [stack] },
+    { schemaVersion: 3, stacks: [stack] },
     { schemaVersion: 1, stacks: [stack], future: true },
     { schemaVersion: 1, stacks: [{ ...stack, future: 'metadata' }] },
     { schemaVersion: 1, stacks: [stack, stack] },
@@ -198,7 +198,7 @@ test('felling awards only ordinary stock once; inventory failure cannot partiall
     state.time = FORESTRY.chopSeconds;
     const before = JSON.stringify(state);
     if (overflow) {
-      assert.throws(() => advanceForestry(state, byId), /quantity/);
+      assert.throws(() => advanceForestry(state, byId), /quantity|overflow/);
       assert.equal(JSON.stringify(state), before);
     } else {
       advanceForestry(state, byId);

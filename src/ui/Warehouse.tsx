@@ -28,7 +28,7 @@ export function Warehouse({ open, view, onClose }: { open: boolean; view: Wareho
       {selected && <section className="warehouse-detail" aria-label="物品详情">
         <div className="warehouse-detail-title"><ItemSymbol symbol={selected.symbol}/><div><h3>{selected.name}</h3><span>{selected.qualityName} · 库存 {selected.quantity} 份</span></div></div>
         {!selected.recognized && <p className="warehouse-identity">物品：{selected.itemId}<br/>品质：{selected.qualityId}</p>}
-        <p>{selected.description}</p><div className="warehouse-tags">{selected.tags.map(tag=><span key={tag}>{tag}</span>)}</div>
+        <p>{selected.description}</p>{selected.specification && <p>{selected.specification}</p>}<div className="warehouse-tags">{selected.tags.map(tag=><span key={tag}>{tag}</span>)}</div>
         <h4>来源</h4><p>{selected.source}</p>
         {selected.recognized && <><h4>类型与通用去处</h4><p>{selected.typeName} · {selected.materialName}</p><p>{selected.uses.join('、') || '用途待登记'}</p><small>相关经营用途后续开放。</small></>}
         {selected.processing.length>0 && <><h4>加工方向</h4>{selected.processing.map(p=><div className="warehouse-processing" key={p.id}><div><strong>{p.name}</strong><span>{p.status}</span></div><p>可制成{p.outputs.join('、')} · {p.station}</p><small>{p.parametersReady ? '加工条件已登记。' : '配比与耗时待定。'}</small></div>)}</>}

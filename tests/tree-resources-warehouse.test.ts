@@ -16,9 +16,10 @@ import { synchronizeGatheringHosts, beginGather, advanceGather, commitGather, re
 
 const trees=makeTrees(),blockers=makeColliders(trees),registry=createGatheringRegistry({assetIds:RUNTIME_MODELS.map(a=>a.assetId)});
 test('resource identities resolve to fixed hosts and species-specific circles grounded on the shared surface',()=>{
-  const sources=makeGatheringSources();assert.equal(sources.length,10);
+  const sources=makeGatheringSources();assert.equal(sources.length,15);
   assert.deepEqual(sources,makeGatheringSources([...trees].reverse()),'loading order cannot change identities or circle placement');
   for(const s of sources){
+    if(!s.hostRef){assert.equal(s.definitionId,'forage.scrap-pile');assert.ok(interactionRoute({player:{x:-35,z:2,facing:0,moving:false}},s,registry,blockers).reachable);continue;}
     const host=trees.find(t=>t.id===s.hostRef!.slotId)!;assert.ok(host);assert.equal(s.hostRef!.id,host.individualId);
     assert.equal(s.hostKind,host.kind);assert.equal(s.hostRef!.kind,host.role==='landmark'?'landmark':'tree-individual');
     assert.ok(interactionRoute({player:{x:-35,z:2,facing:0,moving:false}},s,registry,blockers).reachable);
@@ -35,7 +36,7 @@ test('felling invalidates hosted resources and stale candidates; cancellation do
   host.status='chopping';synchronizeGatheringHosts(state,registry);assert.equal(state.gathering.sources[source.sourceId].remaining,1);
   host.status='standing';synchronizeGatheringHosts(state,registry);assert.equal(state.gathering.sources[source.sourceId].remaining,1);
   state.selected=source.sourceId;const path=interactionRoute(state,source,registry,blockers);state.player={...state.player,...path.route.at(-1)!};
-  assert.ok(beginGather(state,source.sourceId,registry,blockers).ok);state.route=[];const candidate=advanceGather(state,registry,blockers)!;assert.ok(candidate);
+  assert.ok(beginGather(state,source.sourceId,registry,blockers).ok);state.route=[];advanceGather(state,registry,blockers);state.time+=state.gathering.action!.durationSeconds;const candidate=advanceGather(state,registry,blockers)!;assert.ok(candidate);
   host.status='falling';assert.equal(commitGather(state,candidate,registry,blockers),false,'live host is rechecked even before synchronization');
   synchronizeGatheringHosts(state,registry);assert.equal(state.gathering.sources[source.sourceId].remaining,0);assert.equal(state.gathering.sources[source.sourceId].hostAvailable,false);
   assert.deepEqual(state.inventory.stacks,[]);assert.equal(beginGather(state,source.sourceId,registry,blockers).ok,false);

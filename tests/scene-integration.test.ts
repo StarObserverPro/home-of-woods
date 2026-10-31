@@ -18,7 +18,7 @@ test('accepted terrain keeps every previous fixed tree, individual, coordinate a
   const oldTrees=JSON.parse(await readFile(new URL('../evidence/scene-r5/before-trees.json',import.meta.url),'utf8'));
   assert.deepEqual(makeTrees(),oldTrees);
   const context=createSaveContext(),loaded=await prepareWorldSave(await readFile(new URL('../evidence/scene-r5/before-save.json',import.meta.url),'utf8'),context);
-  assert.equal(loaded.decision,'restored');if(loaded.decision!=='restored')return;
+  assert.equal(loaded.decision,'migrated');if(loaded.decision!=='migrated')return;
   assert.equal(loaded.value.selected,'tree-slot-5-26');assert.equal(loaded.value.inventory.stacks.find(s=>s.itemId==='wood')?.quantity,6);
   for(const selected of [...Object.values(CAMP_PROPS).map(p=>p.id),ALTAR_LAYOUT.oracle.id]){
     loaded.value.selected=selected;assert.equal((await prepareWorldSave(await serializeWorldSave(loaded.value,context,{sequence:2,savedAt:1}),context)).decision,'restored');

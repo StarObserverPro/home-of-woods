@@ -8,6 +8,7 @@ import { validateWorldState } from '../domain/world-save.ts';
 /** Only the actual pre-save in-memory shapes are upgraded, before one root commit. */
 export function upgradeWorldSession(state: GameState, context: SaveContext) {
   const candidate = structuredClone(state);
+  if(!Object.hasOwn(candidate,'ritual'))candidate.ritual=null;
   const inventory = upgradeSessionInventory(candidate);
   requireValue(inventory.decision !== 'protected', 'session.inventory', inventory.diagnostics.join('；'));
   const chop = candidate.forestry.active;

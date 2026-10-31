@@ -10,7 +10,7 @@
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "verify:assets": "node tools/verify-assets.mjs",
     "check": "npm run verify:assets && npm test && npm run build",
-    "verify:evidence": "node tools/audit-evidence.mjs && node tools/audit-gathering-evidence.mjs && node tools/audit-warehouse-evidence.mjs && node tools/audit-character-evidence.mjs && node tools/audit-item-evidence.mjs && node tools/audit-world-save-evidence.mjs && node tools/audit-scene-r5-evidence.mjs",
+    "verify:evidence": "node tools/audit-evidence.mjs && node tools/audit-gathering-evidence.mjs && node tools/audit-warehouse-evidence.mjs && node tools/audit-character-evidence.mjs && node tools/audit-item-evidence.mjs && node tools/audit-world-save-evidence.mjs && node tools/audit-scene-r5-evidence.mjs && node tools/audit-action-wood-evidence.mjs",
     "freeze:runtime": "node tools/freeze-runtime.mjs"
   },
   "dependencies": {

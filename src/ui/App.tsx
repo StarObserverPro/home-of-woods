@@ -464,7 +464,7 @@ export function App() {
         {snapshot.message}
       </div>}
       {selected && (
-        <aside className="target-card">
+        <aside className={`target-card${gatherAction?.sourceId === gatherTarget?.id && gatherAction?.motionTag === 'gather.pickup' && ['approaching','performing'].includes(gatherAction.phase) ? ' target-card--pickup-active' : ''}`}>
           <div className="target-top">
             <span className="eyebrow">{selected.tag}</span>
             <button
@@ -475,13 +475,15 @@ export function App() {
             </button>
           </div>
           <h2>{selected.title}</h2>
+          {['grove-altar','grove-altar:oracle'].includes(snapshot.selected??'') && <div className="tree-actions"><button className="context-button" onClick={()=>runtime.current?.ritual('prayer')}>合掌祈祷</button><button className="context-button" disabled title="供品与回应规则待配置">祭祀待开放</button><button className="context-button" onClick={()=>runtime.current?.cancelAction()}>取消动作</button></div>}
+          {selectedTree && ['tree-slot-r3-hero-0','tree-slot-16-9','tree-slot-13-6','tree-slot-17-11','landmark-elder'].includes(selectedTree.id) && <button className="context-button" onClick={()=>runtime.current?.selectTreeBranches()}>上树采枝</button>}
           <p>{selected.detail}</p>
           {gatherTarget && <div className="tree-work">
             <div className="tree-facts"><span>{gatherTarget.status}</span><span>距你 {gatherTarget.distance.toFixed(1)}</span></div>
             {gatherTarget.status === '可以采集' && <p className="tree-cost">可得 {gatherTarget.reward}</p>}
             {gatherTarget.reason && <p className="action-reason">{gatherTarget.reason}</p>}
             <p className="action-message" role="status" aria-live="polite">{snapshot.message}</p>
-            {gatherAction?.sourceId === gatherTarget.id && ['approaching','performing'].includes(gatherAction.phase) && <p>{gatherAction.phase === 'approaching' ? '正在走近…' : '正在采集…'}</p>}
+            {gatherAction?.sourceId === gatherTarget.id && ['approaching','performing'].includes(gatherAction.phase) && <p className="gather-progress">{gatherAction.phase === 'approaching' ? '正在走近…' : '正在采集…'}</p>}
             <div className="tree-actions">{gatherTarget.actions.map(action => <button key={action.id} className="context-button" disabled={!action.enabled} onClick={()=>runtime.current?.targetAction(action.id)}>{action.label}</button>)}</div>
           </div>}
           {treeAction && (
@@ -690,8 +692,11 @@ export function App() {
           <button onClick={() => runtime.current?.select("cabin")}>
             选择木屋
           </button>
-          <button onClick={() => runtime.current?.selectGathering('branch')}>选择落枝堆</button>
+          <button onClick={() => runtime.current?.select('grove-altar')}>选择祭坛</button>
+          <button onClick={() => runtime.current?.selectGathering('branch')}>选择树上枝杈</button><button onClick={()=>runtime.current?.selectGathering('scrap')}>选择地面碎柴</button>
           <button onClick={() => runtime.current?.selectGathering('mushroom')}>选择蘑菇簇</button>
+          <label>动作停帧秒数 <input aria-label="动作停帧秒数" type="number" min="0" step="0.05" defaultValue="1.15" onChange={e=>runtime.current?.captureActionAt(Number(e.target.value))}/></label>
+          <button onClick={()=>runtime.current?.captureActionAt(1.15)}>下一动作接触停帧</button>
           <button onClick={()=>runtime.current?.inspectCharacter('horizontal')}>检视横砍止点</button>
           <button onClick={()=>runtime.current?.inspectCharacter('vertical')}>检视竖劈止点</button>
           <button onClick={()=>runtime.current?.inspectCharacter(null)}>结束动作检视</button>

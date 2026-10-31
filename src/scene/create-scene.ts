@@ -15,6 +15,7 @@ import {sceneAppearanceAt,daylightAt} from '../domain/scene-props.ts';
 import {createForestryPresentation} from './forestry-presentation.ts';
 import { createGatheringPresentation } from './gathering-presentation.ts';
 import type { GatheringRegistry } from '../domain/gathering-registry.ts';
+import {ramp} from './actions/motion.js';
 import {createCharacters} from './characters.ts';
 import type {CharacterInspection} from './characters.ts';
 
@@ -99,6 +100,7 @@ export async function createScene(
   const { ground, water } = createTerrain(r);
   const river=createCreek(r,water),camp=createCampProps(r);
   scene.add(river.group,camp.group);
+  const auditParams=new URLSearchParams(window.location.search),auditHour=auditParams.has('inspect')&&auditParams.has('hour')?Number(auditParams.get('hour')):NaN;
   let appearance=sceneAppearanceAt(0),scenePreset:SceneViewPreset|null=null,sceneOverrides:Partial<SceneAppearance>={};
   let sceneCamera:{yaw:number;elevation:number;zoom:number;target:THREE.Vector3}|null=null;
   scene.add(ground, water);
@@ -173,7 +175,7 @@ export async function createScene(
   const characters=createCharacters(r,models,trees,forest.selections),player=characters.player;
   scene.add(player,characters.visitor);
   let inspectionCamera:{yaw:number;elevation:number;zoom:number;target:THREE.Vector3}|null=null;
-  const forestry=createForestryPresentation({resources:r,forestGroup:forest.group,trees,selections:forest.selections});
+  const forestry=createForestryPresentation({models,resources:r,forestGroup:forest.group,trees,selections:forest.selections});
   const gathering = createGatheringPresentation(r, models, gatheringRegistry);
   scene.add(gathering.group);
   const signs = [
@@ -281,6 +283,8 @@ export async function createScene(
     if (terrainHit)
       intent({ kind: "move", x: terrainHit.point.x, z: terrainHit.point.z });
   };
+  let cameraAction='',cameraOverride='';
+  const manualCamera=()=>{cameraOverride=cameraAction;};
   const pointers = new Map<
     number,
     { x: number; y: number; sx: number; sy: number; drag: boolean }
@@ -318,9 +322,9 @@ export async function createScene(
       if (lastPinch > 0)
         zoom = clamp((zoom * dist) / lastPinch, CAMERA.minZoom, CAMERA.maxZoom);
       lastPinch = dist;
-      yaw -= dx * 0.003;
+      manualCamera();yaw -= dx * 0.003;
     } else if (p.drag) {
-      yaw -= dx * 0.006;
+      manualCamera();yaw -= dx * 0.006;
       elevation = clamp(elevation + dy * 0.003, CAMERA.minElevation, 1.15);
     }
   };
@@ -338,7 +342,7 @@ export async function createScene(
       canvas.releasePointerCapture(e.pointerId);
   };
   const wheel = (e: WheelEvent) => {
-    e.preventDefault();
+    e.preventDefault();manualCamera();
     zoom = clamp(
       zoom * Math.exp(-e.deltaY * 0.001),
       CAMERA.minZoom,
@@ -383,10 +387,10 @@ export async function createScene(
       elevation = CAMERA.elevation;
       zoom = CAMERA.zoom;
     },
-    rotate(amount: number) {
+    rotate(amount: number) {manualCamera();
       yaw += amount;
     },
-    zoomBy(amount: number) {
+    zoomBy(amount: number) {manualCamera();
       zoom = clamp(zoom * amount, CAMERA.minZoom, CAMERA.maxZoom);
     },
     setReducedMotion(value: boolean) {
@@ -400,8 +404,9 @@ export async function createScene(
     render(state: GameState, dt: number) {
       if (destroyed) return;
       elapsed = state.time;
-      appearance={...sceneAppearanceAt(state.time),...sceneOverrides};
-      if(sceneOverrides.hour!==undefined&&sceneOverrides.fire===undefined)appearance.fire=daylightAt(appearance.hour).night>.5;
+      appearance={...sceneAppearanceAt(state.time),...(Number.isFinite(auditHour)&&auditHour>=0&&auditHour<=24?{hour:auditHour}:{}),...sceneOverrides};
+      if(state.ritual?.startedAt!=null&&state.time-state.ritual.startedAt<8){if(state.ritual.phase==='completed')appearance.altar='resting';else if(state.ritual.phase==='performing'&&state.time-state.ritual.startedAt>3.5)appearance.altar='answering';}
+      if((sceneOverrides.hour!==undefined||Number.isFinite(auditHour))&&sceneOverrides.fire===undefined)appearance.fire=daylightAt(appearance.hour).night>.5;
       const sky=environment.setHour(appearance.hour);
       hemi.color.copy(light.skyColor);hemi.groundColor.copy(light.groundColor);hemi.intensity=light.ambientIntensity;
       sun.color.copy(light.sunColor);sun.intensity=light.sunIntensity;sun.position.copy(sun.target.position).addScaledVector(light.sunDirection,135);
@@ -413,22 +418,35 @@ export async function createScene(
       characters.update(state,reducedMotion);
       forestry.alignContact(characters.getImpact());
       gathering.update(state.gathering);
+      const action=state.gathering.action,ritual=state.ritual;
+      cameraAction=action?.phase==='performing'?action.actionId:ritual?.phase==='performing'?`prayer-${ritual.startedAt}`:'';
+      const framed=!!cameraAction && cameraOverride!==cameraAction && !reducedMotion && !scenePreset;
+      const actionTime=action?.phase==='performing'?state.time-action.startedAt!:ritual?.phase==='performing'?state.time-ritual.startedAt!:0;
+      const actionLength=action?.phase==='performing'?action.durationSeconds:5.5;
+      const blend=framed?ramp(actionTime,0,.65)*(1-ramp(actionTime,actionLength-.75,actionLength)):0;
+      const climbing=action?.phase==='performing'&&action.motionTag==='gather.climb';
+      const rear=action?.phase==='performing'&&action.motionTag==='gather.pluck';
+      const actionYaw=player.rotation.y+Math.PI+(rear?0:-.8);
+      const viewYaw=yaw+Math.atan2(Math.sin(actionYaw-yaw),Math.cos(actionYaw-yaw))*blend;
+      const viewElevation=THREE.MathUtils.lerp(elevation,climbing?THREE.MathUtils.lerp(.10,.28,ramp(actionTime,2,3.2)):.28,blend);
+      const actionDistance=climbing?THREE.MathUtils.lerp(9,22,ramp(actionTime,2,3.2)):10;
       const framing = Math.min(1, (CAMERA.zoom / zoom) ** 2);
       const inspecting=characters.getInspection()!==null;
       desired.set(x,y+(inspecting?1.25:1.5),z).lerp(overview,inspecting?0:(mobile ? .12 : .75)*framing);
       if(inspecting)target.copy(desired);else if(scenePreset){target.fromArray(VIEWS[scenePreset].target);if(scenePreset==='altar')target.y=camp.foundation.levelY+1.9;if(scenePreset==='ritual')target.y=camp.foundation.levelY+2.5;}else target.lerp(desired, reducedMotion ? 1 : 1 - Math.exp(-dt * 5));
+      desired.copy(player.position).add(new THREE.Vector3(0,climbing?THREE.MathUtils.lerp(.85,2.3,ramp(actionTime,2,3.2)):1,0));target.lerp(desired,blend);if(mobile)target.y-=1.1*blend;
       offset
         .set(
-          Math.sin(yaw) * Math.cos(elevation),
-          Math.sin(elevation),
-          Math.cos(yaw) * Math.cos(elevation),
+          Math.sin(viewYaw) * Math.cos(viewElevation),
+          Math.sin(viewElevation),
+          Math.cos(viewYaw) * Math.cos(viewElevation),
         )
-        .multiplyScalar(inspecting?11:scenePreset?VIEWS[scenePreset].distance:110);
+        .multiplyScalar(inspecting?11:scenePreset?VIEWS[scenePreset].distance:THREE.MathUtils.lerp(110,actionDistance,blend));
       camera.position.copy(target).add(offset);
-      if(camera.position.x>WORLD.minX&&camera.position.x<WORLD.maxX&&camera.position.z>WORLD.minZ&&camera.position.z<WORLD.maxZ)camera.position.y=Math.max(camera.position.y,heightAt(camera.position.x,camera.position.z)+3);
+      if(camera.position.x>WORLD.minX&&camera.position.x<WORLD.maxX&&camera.position.z>WORLD.minZ&&camera.position.z<WORLD.maxZ)camera.position.y=Math.max(camera.position.y,heightAt(camera.position.x,camera.position.z)+THREE.MathUtils.lerp(3,.4,blend));
       if(scenePreset)for(const tree of trees)if(Math.hypot(camera.position.x-tree.x,camera.position.z-tree.z)<3*tree.scale)camera.position.y=Math.max(camera.position.y,heightAt(tree.x,tree.z)+9*tree.scale);
       camera.lookAt(target);
-      camera.zoom = zoom * (mobile ? scenePreset?.8:1.45 : 1);
+      camera.zoom = THREE.MathUtils.lerp(zoom,1,blend) * (mobile ? scenePreset?.8:THREE.MathUtils.lerp(1.45,.9,blend) : 1);
       camera.updateProjectionMatrix();
       environment.update(elapsed,dt,camera.position,reducedMotion);
       scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);

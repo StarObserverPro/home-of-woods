@@ -10,7 +10,9 @@ import { createGathering } from './gathering.ts';
 import type { GatheringState } from './gathering.ts';
 import { createGatheringRegistry } from './gathering-registry.ts';
 import { RUNTIME_MODELS } from '../content/assets.ts';
+import type {RitualAction} from './ritual.ts';
 export type GameState = {
+  ritual: RitualAction | null;
   seed: number;
   time:number;
   forestry:ForestryState;
@@ -23,6 +25,7 @@ export type GameState = {
 };
 export function createState(trees:Tree[]=makeTrees()): GameState {
   return {
+    ritual: null,
     seed: WORLD_SEED,
     time:0,
     forestry:createForestry(trees),

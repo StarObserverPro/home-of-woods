@@ -1,3 +1,4 @@
+import {beginRitual,advanceRitual,ritualBusy} from '../domain/ritual.ts';
 import { MOVEMENT, WAYPOINTS } from "../content/world.ts";
 import {FORESTRY} from '../content/forestry.ts';
 import type { Point } from "../content/world.ts";
@@ -69,6 +70,7 @@ export async function createRuntime(
     destroyed = false,
     accumulator = 0,
     reportTime = 0;
+  let captureAt:number|null=null;
   const keys = new Set<string>(),
     stick = { x: 0, z: 0 };
   const activeColliders=()=>forestryColliders(colliders,treeById,state.forestry,state.time);
@@ -141,6 +143,7 @@ export async function createRuntime(
         facing: travelled > 0.001 ? Math.atan2(dx, dz) : old.facing,
         moving: travelled > 0.001,
       };
+      const ritualMessage=advanceRitual(state);if(ritualMessage)message=ritualMessage;
       const forestryMessage=advanceForestry(state,treeById);if(forestryMessage)message=forestryMessage;
       synchronizeGatheringHosts(state, registry);
       const gatheringMessage=advancePlayerGather(state,registry,activeColliders());if(gatheringMessage)message=gatheringMessage;
@@ -153,6 +156,10 @@ export async function createRuntime(
           message = `发现了${wp.name}。`;
         }
       accumulator -= MOVEMENT.fixedStep;
+      if(captureAt!==null){
+        const started=state.gathering.action?.phase==='performing'?state.gathering.action.startedAt:state.forestry.active?.startedAt??(state.ritual?.phase==='performing'?state.ritual.startedAt:null);
+        if(started!==null && started!==undefined && state.time-started>=captureAt){captureAt=null;inspectionOpen=true;loop.setPaused(true);accumulator=0;message='动作已停帧；结束动作检视后继续。';publishSnapshot();break;}
+      }
     }
     view.render(state, dt);
     if (lastSampleAt!==null && dt > 0) {
@@ -332,19 +339,34 @@ export async function createRuntime(
     },
     chopSelected(){
       if(destroyed||manualPause||interfaceOpen||inspectionOpen||contextLost||document.hidden)return;
-      const result=startPlayerChop(state,state.selected?treeById.get(state.selected):undefined);message=result.message;publishSnapshot();
+      const result=startPlayerChop(state,state.selected?treeById.get(state.selected):undefined,activeColliders());message=result.message;publishSnapshot();
     },
     cancelChop(){
       if(destroyed)return;const result=cancelChop(state);if(result.message)message=result.message;publishSnapshot();
     },
-    targetAction(id: 'gather' | 'cancel-gather') {
+    captureActionAt(age:number){
+      if(!new URLSearchParams(window.location.search).has('inspect')||!Number.isFinite(age)||age<0)return;
+      captureAt=age;message=`下一动作在 ${age} 秒停帧；结束动作检视后继续。`;publishSnapshot();
+    },
+    ritual(kind:'prayer'|'offering'){
       if(destroyed||manualPause||interfaceOpen||inspectionOpen||contextLost||document.hidden)return;
-      if(id==='cancel-gather') { const cancelled=cancelPlayerAction(state);if(cancelled)message=cancelled; }
-      else if(state.selected) { const result=startPlayerGather(state,state.selected,registry,activeColliders());message=result.message; }
+      message=beginRitual(state,activeColliders(),kind).message;publishSnapshot();
+    },
+    cancelAction(){const result=cancelPlayerAction(state);if(result)message=result;publishSnapshot();},
+    selectTreeBranches(){
+      if(!state.selected)return;
+      const source=registry.sources.get(`gather.${state.selected}.branches`);
+      if(source){cancelPlayerAction(state);state.selected=source.sourceId;message=startPlayerGather(state,source.sourceId,registry,activeColliders()).message;publishSnapshot();}
+    },
+    targetAction(id: 'gather' | 'cancel-gather') {
+      if(destroyed)return;
+      if(id==='cancel-gather'){const cancelled=cancelPlayerAction(state);if(cancelled)message=cancelled;inspectionOpen=false;captureAt=null;syncPause();view.render(state,0);publishSnapshot();return;}
+      if(manualPause||interfaceOpen||inspectionOpen||contextLost||document.hidden)return;
+      if(state.selected) { const result=startPlayerGather(state,state.selected,registry,activeColliders());message=result.message; }
       publishSnapshot();
     },
-    selectGathering(kind: 'branch' | 'mushroom') {
-      const source=[...registry.sources.values()].find(s=>registry.items.get(registry.definitions.get(s.definitionId)!.itemId)?.typeId===({branch:'wood.branch',mushroom:'fungus.fresh'} as const)[kind] && state.gathering.sources[s.sourceId].remaining>0);
+    selectGathering(kind: 'branch' | 'mushroom' | 'scrap') {
+      const source=[...registry.sources.values()].find(s=>registry.items.get(registry.definitions.get(s.definitionId)!.itemId)?.typeId===({branch:'wood.branch',mushroom:'fungus.fresh',scrap:'wood.scrap'} as const)[kind] && state.gathering.sources[s.sourceId].remaining>0);
       if(source){cancelPlayerAction(state);state.selected=source.sourceId;state.route=[];publishSnapshot();}
     },
     getState:()=>state,
@@ -364,12 +386,12 @@ export async function createRuntime(
     },
     inspectCharacter(kind:'horizontal'|'vertical'|null){
       if(destroyed||contextLost||interfaceOpen)return;
-      if(kind&&(state.forestry.active||gatheringBusy(state.gathering))){message='先完成或取消当前动作，再检视角色。';publishSnapshot();return;}
+      if(kind&&(state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))){message='先完成或取消当前动作，再检视角色。';publishSnapshot();return;}
       view.inspectScene(null);inspectionOpen=kind!==null;view.inspectCharacter(kind);syncPause();view.render(state,0);publishSnapshot();
     },
     inspectScene(preset:SceneViewPreset|null,overrides:Partial<SceneAppearance>={}){
       if(destroyed||contextLost||interfaceOpen)return;
-      if(preset&&(state.forestry.active||gatheringBusy(state.gathering))){message='先完成或取消当前动作，再检视场景。';publishSnapshot();return;}
+      if(preset&&(state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))){message='先完成或取消当前动作，再检视场景。';publishSnapshot();return;}
       view.inspectCharacter(null);inspectionOpen=preset!==null;view.inspectScene(preset,overrides);syncPause();view.render(state,0);publishSnapshot();
     },
     captureScene(){const image=view.capture(state),data=stats();const {worldState,...sceneStats}=data;void worldState;return {image,stats:sceneStats};},

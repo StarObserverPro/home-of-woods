@@ -1,0 +1,14 @@
+import fs from 'node:fs';import path from 'node:path';import crypto from 'node:crypto';
+const dir=import.meta.dirname,dist=path.join(dir,'dist');let html=fs.readFileSync(path.join(dist,'index.html'),'utf8');
+const js=html.match(/<script type="module" crossorigin src="([^"]+)"><\/script>/),css=html.match(/<link rel="stylesheet" crossorigin href="([^"]+)">/);
+if(!js||!css)throw new Error('Unexpected Vite output');
+const assets=Object.fromEntries(['player','motions','pine','broadleaf','mushrooms'].map(k=>[k,'data:model/gltf-binary;base64,'+fs.readFileSync(path.join(dir,'public/assets',k+'.glb')).toString('base64')]));
+const code=fs.readFileSync(path.join(dist,js[1]),'utf8').replaceAll('</script','<\\/script');
+html=html.replace(js[0],'').replace(css[0],()=>'<style>'+fs.readFileSync(path.join(dist,css[1]),'utf8')+'</style>');
+html=html.replace('</body>',()=>'<script>globalThis.__LAB_ASSETS__='+JSON.stringify(assets)+'</script><script type="module">'+code+'</script></body>');
+const notice=fs.readdirSync(path.join(dir,'public/assets/licenses')).map(f=>f+'\n'+fs.readFileSync(path.join(dir,'public/assets/licenses',f),'utf8')).join('\n\n');
+html=html.replace('<a href="./assets/licenses/Three-MIT.txt" target="_blank">许可</a>','<a href="#licenses">许可</a>').replace('</footer>','<details id="licenses"><summary>资源来源与许可</summary><p>KayKit Adventurers 2.0 / Character Animations 1.1、Kenney Nature Kit 2.1：CC0。项目树模型与本轮程序几何、动作独立登记，不冒标 CC0。Three.js：MIT。</p><pre style="white-space:pre-wrap;font-size:10px">'+notice.replaceAll('&','&amp;').replaceAll('<','&lt;')+'</pre></details></footer>');
+fs.writeFileSync(path.join(dir,'review.html'),html);fs.writeFileSync(path.join(dist,'review.html'),html);
+const files=['index.html','src/main.js','src/tree.js','src/actor.js','src/world.js','src/motion.js','src/style.css','review.html'];
+fs.writeFileSync(path.join(dir,'evidence/source-snapshot.json'),JSON.stringify({files:files.map(f=>({file:f,sha256:crypto.createHash('sha256').update(fs.readFileSync(path.join(dir,f))).digest('hex')}))},null,2)+'\n');
+console.log('Standalone review.html:',Buffer.byteLength(html),'bytes; embedded assets and licenses.');

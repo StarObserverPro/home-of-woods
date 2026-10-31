@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import {createTree} from './actions/tree.js';
+import {CUT} from './actions/motion.js';
+import type {Models} from './models.ts';
 import {FORESTRY} from '../content/forestry.ts';
 import {PALETTE} from '../content/world.ts';
 import type {GameState} from '../domain/state.ts';
@@ -8,14 +11,15 @@ import {heightAt} from '../world/surface.ts';
 import type {Resources} from './resources.ts';
 
 type ForestryPresentationOptions={
-  resources:Resources; forestGroup:THREE.Group; trees:Tree[];
+  models:Models; resources:Resources; forestGroup:THREE.Group; trees:Tree[];
   selections:Map<string,THREE.Object3D>;
 };
 // The domain has already settled the tree; this short rest only makes its landing legible.
 const FALLEN_HOLD_SECONDS=1.8;
 /** Presentation only: consumes committed world state; no timers, rewards or gameplay writes. */
-export function createForestryPresentation({resources:r,forestGroup,trees,selections}:ForestryPresentationOptions){
+export function createForestryPresentation({models,resources:r,forestGroup,trees,selections}:ForestryPresentationOptions){
   let disposed=false;
+  const dynamic=new Map<string,ReturnType<typeof createTree>>();
   const treeById=new Map(trees.map(t=>[t.id,t])),stumps=new Map<string,THREE.Group>();
   const baseRotations=new Map<string,THREE.Quaternion>();
   selections.forEach((o,id)=>baseRotations.set(id,o.quaternion.clone()));
@@ -48,6 +52,19 @@ export function createForestryPresentation({resources:r,forestGroup,trees,select
       if(resting&&landingAge<.58&&landingAge<impactAge){impactTree=tree;impactAge=landingAge;}
       object.visible=status!=='stump'||resting;object.userData.forestrySelectable=status!=='falling'&&status!=='stump';
       object.position.set(tree.x,ground,tree.z);object.quaternion.copy(baseRotations.get(id)!);object.scale.setScalar(tree.scale*factor);
+      const gather=state.gathering.action,climbing=gather?.phase==='performing'&&gather.motionTag==='gather.climb'&&gather.sourceId===`gather.${id}.branches`;
+      if(tree.role==='managed' && (climbing||status==='chopping'||status==='falling'||status==='stump')){
+        let parts=dynamic.get(id);
+        if(!parts){parts=createTree(models.templates.get(tree.kind)!,tree.kind);dynamic.set(id,parts);forestGroup.add(parts.root);object.userData.actionTree=parts;
+          parts.root.name=id;parts.root.position.set(tree.x,ground,tree.z);parts.root.scale.setScalar(tree.scale);
+          const dir=life.fallDirection,yaw=Math.atan2(-dir.z,dir.x);parts.root.rotation.y=yaw;
+          parts.setGround((x,z)=>{const wx=tree.x+tree.scale*(x*Math.cos(yaw)+z*Math.sin(yaw)),wz=tree.z+tree.scale*(-x*Math.sin(yaw)+z*Math.cos(yaw));return (heightAt(wx,wz)-ground)/tree.scale;});
+        }
+        const elapsed=climbing?state.time-gather!.startedAt!:status==='chopping'?Math.min(2.14,(state.time-state.forestry.active!.startedAt)/FORESTRY.chopSeconds*2.14):CUT.fallStart+(state.time-life.felledAt!)/FORESTRY.fallSeconds*(CUT.impact-CUT.fallStart);
+        parts.root.visible=true;parts.update(elapsed,climbing?'climb':'fell',reducedMotion,false);parts.upper.visible=status!=='stump'||resting;
+        object.visible=false;object.userData.forestrySelectable=false;parts.root.userData.forestryRole=status==='stump'?'stump':'tree';if(status!=='falling')pickTargets.push(parts.root);
+        continue;
+      }else if(dynamic.has(id)){dynamic.get(id)!.dispose();dynamic.delete(id);delete object.userData.actionTree;}
       if((status==='falling'||resting)&&life?.felledAt!==null&&life?.felledAt!==undefined){
         const p=THREE.MathUtils.clamp((state.time-life.felledAt)/FORESTRY.fallSeconds,0,1),dir=life.fallDirection;
         const length=(tree.kind==='pine'?6.6:6.4)*tree.scale;
@@ -106,6 +123,7 @@ export function createForestryPresentation({resources:r,forestGroup,trees,select
     getPickTargets:()=>pickTargets,
     dispose(){
       if(disposed)return;disposed=true;chips.removeFromParent();chips.dispose();
+      dynamic.forEach(o=>o.dispose());dynamic.clear();
       stumps.forEach(o=>o.removeFromParent());stumps.clear();pickTargets.length=0;baseRotations.clear();treeById.clear();
       // Geometry and materials belong to the scene's Resources owner, not this adapter.
     },

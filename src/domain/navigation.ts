@@ -108,7 +108,7 @@ export function findPath(
       }
     });
     if (current === target) {
-      const route: Point[] = [to];
+      const route: Point[] = [{x:to.x,z:to.z}];
       let cursor = current;
       while (cursor !== start) {
         const [x, z] = cursor.split(",").map(Number);

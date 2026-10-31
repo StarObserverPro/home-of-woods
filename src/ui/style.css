@@ -140,7 +140,7 @@ button:not(:disabled):hover { color: #fff3bd; }
 .tree-cost { color: #fff2c8; }
 .tree-cost span { display: block; font-size: 10px; opacity: .85; }
 .target-card .action-reason { font-size: 11px; opacity: .9; }
-.tree-actions { display: flex; gap: 9px; margin-top: 12px; }
+.tree-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 12px; }
 .tree-actions:empty { display: none; }
 .context-button { display: inline-flex; justify-content: center; align-items: center; gap: 8px; min-width: 98px; min-height: 46px; padding: 8px 14px; border: 1px solid #fff9; border-radius: 10px; background: #c0d7a412; font-size: 12px; }
 .context-button:disabled { border-color: #fff5; }
@@ -281,3 +281,22 @@ button:not(:disabled):hover { color: #fff3bd; }
 .save-indicator { position: absolute; right: 22px; top: 66px; z-index: 5; font-size: 11px; color: #f8efd6; text-shadow: var(--hud-shadow); min-height: 44px; padding: 4px 8px; }
 .save-warning { position: absolute; left: 50%; top: 95px; transform: translateX(-50%); z-index: 6; width: min(420px,calc(100vw - 32px)); padding: 10px 14px; border-radius: 8px; background: #483d27eb; color: #fff1cb; font-size: 12px; }
 @media (max-width:600px) { .save-indicator { right: 14px; top: 64px; max-width: 58px; font-size: 10px; } .save-label { display: none; } .save-warning { top: 112px; } }
+
+/* Keep the pickup contact area visible while retaining an accessible cancel action. */
+@media (max-width: 700px) and (min-height: 501px), (max-width: 980px) and (max-height: 500px) {
+  .target-card--pickup-active { padding: 10px 14px; }
+  .target-card--pickup-active .target-top { float: right; }
+  .target-card--pickup-active .eyebrow,
+  .target-card--pickup-active > p,
+  .target-card--pickup-active .tree-facts,
+  .target-card--pickup-active .tree-work > p:not(.gather-progress),
+  .target-card--pickup-active .tree-actions button:disabled { display: none; }
+  .target-card--pickup-active h2 { margin: 0; font-size: 17px; }
+  .target-card--pickup-active .tree-work { border: 0; margin: 0; padding: 0; }
+  .target-card--pickup-active .gather-progress { margin: 4px 0; }
+  .target-card--pickup-active .tree-actions { clear: both; margin-top: 5px; }
+}
+
+@media (max-width: 359px) and (min-height: 501px) {
+  .target-card--pickup-active { bottom: calc(167px + env(safe-area-inset-bottom)); }
+}

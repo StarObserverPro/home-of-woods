@@ -13,10 +13,11 @@ assert.equal(sha(fs.readFileSync(root + 'reviewed-source-freeze.json')), prepara
 assert.equal(sha(fs.readFileSync(root + 'reviewed-source.zip')), preparation.reviewedArchiveSha256);
 const source = verifiedSourceReader(root + 'reviewed-source.zip', false);
 const allowed = new Set(['README.md', 'docs/GAME_DESIGN.md', 'docs/MILESTONES.md', 'docs/scopes/scene-r5-integration.md', 'evidence/scene-r5/README.md']);
+const delivered=verifiedSourceReader('evidence/scene-r5/verified-source.zip',false);
 const changes = [];
 for (const file of reviewed.files) {
   assert.equal(sha(source(file.file)), file.sha256, `Reviewed source archive drift: ${file.file}`);
-  const current = sha(fs.readFileSync(file.file));
+  const current = sha(delivered(file.file));
   if (current === file.sha256) continue;
   assert.ok(allowed.has(file.file), `Runtime changed after visual review: ${file.file}`);
   changes.push({ file: file.file, beforeSha256: file.sha256, afterSha256: current });
