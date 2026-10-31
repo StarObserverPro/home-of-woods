@@ -92,7 +92,7 @@
     },
     {
       "file": "src/content/scene-props.ts",
-      "sha256": "2aee296bba309e8f153fd196a5b7fc6253547e416e10e0f65133038ef1718e06"
+      "sha256": "869edd85507981af1470f2b465ae2131dfd694457c1ef5af5cc9f5e6d5b247c2"
     },
     {
       "file": "src/content/tree-resources.ts",
@@ -447,6 +447,10 @@
     {
       "file": "understory-final.png",
       "sha256": "c95be40fa72c83b778bc628fed784de506a91e4665267131fdb14738d4a21b2a"
+    },
+    {
+      "file": "final-build.txt",
+      "sha256": "49dcfa9e7d5a3985564f17a6315760cb3f3abf8d6c68bf321455edf0b9860012"
     }
   ]
 }
