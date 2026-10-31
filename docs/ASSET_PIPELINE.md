@@ -79,3 +79,6 @@ HOW-GATHERING-1 对旧本地 Kenney Nature Kit 2.1 包重新核对官方页和�
 ## 五动作与木料用途接入（2026-10-30）
 
 前置 PR #3/#4 已合并；本次新增上树采枝、蹲采蘑菇、拾取燃料碎柴、定向断口伐倒与坛前祈祷，以及按总量/单件规格选择同一库存批次。旧落枝入口迁移为树上枝杈，地面碎柴独立为燃料。规格、存档迁移、尚未配置的稀有掉落与祭祀规则、验证范围统一见 [接入说明](ACTION_WOOD_INTEGRATION.md)。本批通过 [PR #5](https://github.com/StarObserverPro/home-of-woods/pull/5) 合并至 main，未部署；不代表完整 M1/M2 完成。
+
+## 树形与林下准入补充
+经本轮明确回接授权，采用两套独立沙盒的原创网格/规则到生产适配模块。准入来源、变更、缓存释放与验证归 [资产登记](ASSET_REGISTER.md)及[回接核对](FOREST_INTEGRATION.md)，不整包导入沙盒 runtime。

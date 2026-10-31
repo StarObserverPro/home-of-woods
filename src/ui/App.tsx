@@ -1,3 +1,4 @@
+import {treeVisual} from '../world/tree-appearance.ts';
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { createRuntime } from "../app/runtime.ts";
@@ -251,9 +252,7 @@ export function App() {
               title: (treeAction?.status === "stump" ? "树桩 · " : "") + (
                 selectedTree.role === "landmark"
                   ? "守林巨木"
-                  : selectedTree.kind === "pine"
-                    ? "青松"
-                    : "山地栎树"),
+                  : treeVisual(selectedTree).name),
               tag:
                 selectedTree.role === "landmark"
                   ? "古老地标 · 永久保护"
@@ -266,7 +265,7 @@ export function App() {
                     : treeAction?.status === "sapling"
                       ? "新树正在这片林地里生长，先让它慢慢长大。"
                       : selectedTree.kind === "pine"
-                    ? "一层层圆润的针叶树冠，在山坡上为新家挡风。"
+                    ? "针叶枝冠随树形舒展，在山坡上为新家挡风。"
                     : "枝叶在春光里铺展开。沿小路走近，看看它粗壮的树干。",
             }
           : null);

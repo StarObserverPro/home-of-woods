@@ -55,9 +55,9 @@ export function createForestryPresentation({models,resources:r,forestGroup,trees
       const gather=state.gathering.action,climbing=gather?.phase==='performing'&&gather.motionTag==='gather.climb'&&gather.sourceId===`gather.${id}.branches`;
       if(tree.role==='managed' && (climbing||status==='chopping'||status==='falling'||status==='stump')){
         let parts=dynamic.get(id);
-        if(!parts){parts=createTree(models.templates.get(tree.kind)!,tree.kind);dynamic.set(id,parts);forestGroup.add(parts.root);object.userData.actionTree=parts;
+        if(!parts){const yaw=Math.atan2(-life.fallDirection.z,life.fallDirection.x);const source=models.sourceForTree(tree).clone(true);source.rotation.y=tree.variant*Math.PI*2-yaw;parts=createTree(source,tree.kind);dynamic.set(id,parts);forestGroup.add(parts.root);object.userData.actionTree=parts;
           parts.root.name=id;parts.root.position.set(tree.x,ground,tree.z);parts.root.scale.setScalar(tree.scale);
-          const dir=life.fallDirection,yaw=Math.atan2(-dir.z,dir.x);parts.root.rotation.y=yaw;
+          parts.root.rotation.y=yaw;
           parts.setGround((x,z)=>{const wx=tree.x+tree.scale*(x*Math.cos(yaw)+z*Math.sin(yaw)),wz=tree.z+tree.scale*(-x*Math.sin(yaw)+z*Math.cos(yaw));return (heightAt(wx,wz)-ground)/tree.scale;});
         }
         const elapsed=climbing?state.time-gather!.startedAt!:status==='chopping'?Math.min(2.14,(state.time-state.forestry.active!.startedAt)/FORESTRY.chopSeconds*2.14):CUT.fallStart+(state.time-life.felledAt!)/FORESTRY.fallSeconds*(CUT.impact-CUT.fallStart);

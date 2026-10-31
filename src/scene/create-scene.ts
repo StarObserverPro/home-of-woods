@@ -1,3 +1,5 @@
+import {createUnderstory} from './understory.js';
+import {treeVisual} from '../world/tree-appearance.ts';
 import * as THREE from "three";
 import { CABIN, CAMERA, GIANT, HOME, TENT, WORLD } from "../content/world.ts";
 import type { GameState } from "../domain/state.ts";
@@ -111,23 +113,7 @@ export async function createScene(
   // Ground every near and instanced distant tree using the same surface facts.
   for (const t of trees)
     forest.selections.get(t.id)?.position.set(t.x, heightAt(t.x, t.z), t.z);
-  const dummy = new THREE.Object3D();
-  for (const kind of ["pine", "broadleaf"] as const) {
-    const inst = forest.group.getObjectByName(
-      `scenic-${kind}`,
-    ) as THREE.InstancedMesh;
-    trees
-      .filter((t) => t.kind === kind && t.role === "scenery")
-      .forEach((t, i) => {
-        dummy.position.set(t.x, heightAt(t.x, t.z), t.z);
-        dummy.rotation.set(0, t.variant * 6.283, 0);
-        dummy.scale.setScalar(t.scale);
-        dummy.updateMatrix();
-        inst.setMatrixAt(i, dummy.matrix);
-      });
-    inst.instanceMatrix.needsUpdate = true;
-    inst.computeBoundingSphere();
-  }
+  const understory=createUnderstory(r,trees,forest.selections);scene.add(understory.group);
   const props = new Map<string, THREE.Object3D>();
   for (const [name, p] of [
     ["cabin", CABIN],
@@ -414,7 +400,7 @@ export async function createScene(
       camp.update(elapsed,appearance,state.inventory,sky.night,reducedMotion);
       const { x, z, facing, moving } = state.player,
         y = heightAt(x, z);
-      forestry.update(state,reducedMotion);
+      forestry.update(state,reducedMotion);understory.update(state);
       characters.update(state,reducedMotion);
       forestry.alignContact(characters.getImpact());
       gathering.update(state.gathering);
@@ -521,7 +507,7 @@ export async function createScene(
     },
     stats() {
       return {
-        appearance:{...appearance},scenePreset,camp:camp.stats(),terrain:ground.geometry.userData,shaderErrors,
+        understory:understory.stats(),treeShapes:trees.reduce((counts,t)=>{const name=treeVisual(t).name;counts[name]=(counts[name]??0)+1;return counts;},{} as Record<string,number>),appearance:{...appearance},scenePreset,camp:camp.stats(),terrain:ground.geometry.userData,shaderErrors,
         resources: r.stats(),
         drawCalls: renderer.info.render.calls,
         triangles: renderer.info.render.triangles,

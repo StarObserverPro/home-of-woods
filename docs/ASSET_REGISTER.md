@@ -115,3 +115,6 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 ## 五动作接入
 
 继续使用已登记 KayKit、项目树、枝束与蘑菇原始 GLB，未新增第三方素材。src/scene/actions 从已接受沙盒抽取原创程序动作和下部树干/断面网格，不标为 CC0。主资源 SHA 不变；中等树静态合批与动态断口共用构造，原始共享资产不被修改或由动作适配器释放。来源详情见原登记；本轮行为与画面见 [集成证据](../evidence/action-wood/README.md)。
+
+## 树形与林下生产资产
+本批为项目原创程序网格，来源为本仓库树形/林下沙盒的已认可版本，不标记为第三方 CC0。生产入口 `scene/forest-shapes.js`、`scene/understory-geometry.js`、`scene/understory.js`；适配包含枝干合并、低段裁切、远景细分、共享缓存、地表与遮罩筛选。无外部下载或新增贴图。树实例身份仍为 world 固定树位，地被为不可采集装饰。几何/材质/实例释放归 Resources；动作临时对象归既有 forestry owner。旧 GLB 留作历史许可与验证材料，新树入口不消费其轮廓。预算与证据见 [回接记录](FOREST_INTEGRATION.md)。
