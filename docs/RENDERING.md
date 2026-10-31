@@ -144,3 +144,6 @@ content/tree-resources、world/gathering-layout 管理按树种的圈形挂点�
 ## 五动作与木料用途接入（2026-10-30）
 
 前置 PR #3/#4 已合并；本次新增上树采枝、蹲采蘑菇、拾取燃料碎柴、定向断口伐倒与坛前祈祷，以及按总量/单件规格选择同一库存批次。旧落枝入口迁移为树上枝杈，地面碎柴独立为燃料。规格、存档迁移、尚未配置的稀有掉落与祭祀规则、验证范围统一见 [接入说明](ACTION_WOOD_INTEGRATION.md)。本批通过 [PR #5](https://github.com/StarObserverPro/home-of-woods/pull/5) 合并至 main，未部署；不代表完整 M1/M2 完成。
+
+## 八树形与林下回接
+Models 的固定树形缓存同时提供静态合并与动作 source，远景按形态/变体实例绘制；物种视觉映射只读 world，不改 Tree.kind 与存档。createUnderstory 的装饰数据只在建场时生成，唯一 render 消费宿主生长/伐倒状态，Resources 统一回收。不新增 RAF 或写入者。详见 [回接](FOREST_INTEGRATION.md)。

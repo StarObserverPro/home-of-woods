@@ -4,11 +4,20 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import {geometryContactTarget} from './axe-contact.ts';
+import {heightAt} from '../world/surface.ts';
 import { PALETTE } from "../content/world.ts";
 import { RUNTIME_MODELS } from '../content/assets.ts';
 import type { Tree } from "../world/layout.ts";
 import type { Resources } from "./resources.ts";
+import {makeTree} from './forest-shapes.js';
+import {treeVisual} from '../world/tree-appearance.ts';
 export class Models {
+  shapeTemplates=new Map<string,THREE.Group>();
+  sourceForTree(tree:Tree,distant=false){
+    const visual=treeVisual(tree),key=`${visual.key}-${distant}`;let source=this.shapeTemplates.get(key);
+    if(!source){source=makeTree(visual.species,visual.seed,distant?1:2);source.traverse(o=>{if(o instanceof THREE.Mesh){this.r.own(o.geometry);const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>this.r.own(m));}});this.shapeTemplates.set(key,source);}
+    return source;
+  }
   templates = new Map<string, THREE.Group>();
   animations = new Map<string, THREE.AnimationClip[]>();
   private r: Resources;
@@ -55,14 +64,14 @@ export class Models {
     const dynamic=root.userData.actionTree as ReturnType<typeof createTree>|undefined;
     const collar=dynamic?.root.getObjectByName('cut-collar') as THREE.Mesh|undefined;
     if(collar){collar.updateWorldMatrix(true,false);return geometryContactTarget(collar.geometry,collar.matrixWorld);}
-    const source=this.templates.get(tree.kind)!;
-    source.updateMatrixWorld(true);root.updateWorldMatrix(true,false);
-    const name=tree.kind==='pine'?'chunky_pine_trunk':'broadleaf_flared_trunk';
-    let trunk:THREE.Mesh|undefined;source.traverse(o=>{if(o instanceof THREE.Mesh&&o.name.startsWith(name))trunk=o;});
-    if(!trunk)throw new Error(`Missing actual trunk: ${tree.kind}`);
-    return geometryContactTarget(trunk.geometry,root.matrixWorld.clone().multiply(trunk.matrixWorld));
+    const geometry=this.r.geometry(`contact-${treeVisual(tree).key}`,()=>{
+      const parts=createTree(this.sourceForTree(tree),tree.kind);parts.root.updateMatrixWorld(true);
+      const collar=parts.root.getObjectByName('cut-collar') as THREE.Mesh;
+      const g=collar.geometry.clone().applyMatrix4(collar.matrixWorld);parts.dispose();return g;
+    });root.updateWorldMatrix(true,false);return geometryContactTarget(geometry,root.matrixWorld);
   }
-  clear(){this.templates.clear();this.animations.clear();}
+
+  clear(){this.shapeTemplates.clear();this.templates.clear();this.animations.clear();}
   staticClone(name: string) {
     const source = this.templates.get(name)!;
     source.updateMatrixWorld(true);
@@ -97,12 +106,13 @@ export class Models {
     });
     return root;
   }
-  treeGeometry(kind: "pine" | "broadleaf", medium=true) {
-    return this.r.geometry(`merged-${kind}-${medium}`, () => {
-      const composed=medium?createTree(this.templates.get(kind)!,kind):null;composed?.update(0,'climb',true,false);
-      const tree=composed?.root??this.templates.get(kind)!;tree.updateMatrixWorld(true);
+  treeGeometry(kind: "pine" | "broadleaf", medium=true, tree?:Tree,distant=false) {
+    return this.r.geometry(`merged-${kind}-${medium}-${tree?treeVisual(tree).key:"legacy"}-${distant}`, () => {
+      const source=tree?this.sourceForTree(tree,distant):this.templates.get(kind)!;
+      const composed=medium?createTree(source,kind):null;composed?.update(0,'climb',true,false);
+      const treeRoot=composed?.root??source;treeRoot.updateMatrixWorld(true);
       const parts: THREE.BufferGeometry[] = [];
-      tree.traverse((o) => {
+      treeRoot.traverse((o) => {
         let shown=true;for(let parent:THREE.Object3D|null=o;parent;parent=parent.parent)shown=shown&&parent.visible;
         if (shown && o instanceof THREE.Mesh) {
           const g = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()).applyMatrix4(o.matrixWorld);
@@ -121,26 +131,6 @@ export class Models {
       parts.forEach((g) => g.dispose());composed?.dispose();
       if (!merged) throw new Error("Tree geometry merge failed");
       return merged;
-    });
-  }
-  distantTreeGeometry(kind:'pine'|'broadleaf'){
-    return this.r.geometry(`distant-${kind}-r3`,()=>{
-      const parts:THREE.BufferGeometry[]=[];
-      const add=(g:THREE.BufferGeometry,color:string)=>{
-        const c=new THREE.Color(color),v=new Float32Array(g.getAttribute('position').count*3);
-        for(let i=0;i<v.length/3;i++)c.toArray(v,i*3);
-        g.setAttribute('color',new THREE.BufferAttribute(v,3));g.deleteAttribute('uv');parts.push(g);
-      };
-      add(new THREE.CylinderGeometry(.29,.42,2.4,7).translate(0,1.2,0),PALETTE.wood);
-      if(kind==='pine'){
-        for(const [y,r,h] of [[2.9,2,2.5],[4.3,1.62,2.35],[5.65,1.2,2.35]])
-          add(new THREE.ConeGeometry(r,h,7).translate(0,y,0),PALETTE.pine);
-      }else{
-        for(const [x,y,z,s] of [[-1.1,4,-.3,1.55],[1.1,4.1,0,1.5],[0,5,0,1.9],[0,5.5,.6,1.6]])
-          add(new THREE.SphereGeometry(s,7,5).translate(x,y,z),PALETTE.leaf);
-      }
-      const merged=mergeGeometries(parts,false);parts.forEach(g=>g.dispose());
-      if(!merged)throw new Error('Distant tree merge failed');return merged;
     });
   }
   createForest(trees: Tree[]) {
@@ -162,25 +152,16 @@ export class Models {
     );
     const mappings = new Map<THREE.Object3D, string[]>();
     for (const kind of ["pine", "broadleaf"] as const) {
-      const far = trees.filter((t) => t.kind === kind && t.role === "scenery");
-      const instances = new THREE.InstancedMesh(
-        this.distantTreeGeometry(kind),
-        sceneryMaterial,
-        far.length,
-      );
-      const dummy = new THREE.Object3D();
-      far.forEach((t, i) => {
-        dummy.position.set(t.x, 0, t.z);
-        dummy.rotation.y = t.variant * Math.PI * 2;
-        dummy.scale.setScalar(t.scale);
-        dummy.updateMatrix();
-        instances.setMatrixAt(i, dummy.matrix);
-      });
-      instances.name = `scenic-${kind}`;
-      group.add(instances);
+      const far = trees.filter(t=>t.kind===kind&&t.role==='scenery');
+      const keys=[...new Set(far.map(t=>treeVisual(t).key))];
+      for(const key of keys){const members=far.filter(t=>treeVisual(t).key===key);
+        const instances=this.r.own(new THREE.InstancedMesh(this.treeGeometry(kind,true,members[0],true),sceneryMaterial,members.length));
+        const dummy=new THREE.Object3D();members.forEach((t,i)=>{dummy.position.set(t.x,heightAt(t.x,t.z),t.z);dummy.rotation.y=t.variant*Math.PI*2;dummy.scale.setScalar(t.scale);dummy.updateMatrix();instances.setMatrixAt(i,dummy.matrix);});
+        instances.name=`scenic-shape-${key}`;instances.computeBoundingSphere();group.add(instances);
+      }
       const near = trees.filter((t) => t.kind === kind && t.role !== "scenery");
       near.forEach((t) => {
-        const mesh = new THREE.Mesh(this.treeGeometry(kind,t.role!=='landmark'), material);
+        const mesh = new THREE.Mesh(this.treeGeometry(kind,true,t), material);
         mesh.name = t.id;
         mesh.position.set(t.x, 0, t.z);
         mesh.rotation.y = t.variant * Math.PI * 2;

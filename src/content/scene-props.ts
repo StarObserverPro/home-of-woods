@@ -10,6 +10,7 @@ export type SceneAppearance = {hour:number;fire:boolean;altar:AltarState;offerin
 /** Visual candidate only; the M2 calendar and resource renewal use their own explicit rules. */
 export const VISUAL_DAY_SECONDS=1200;
 export const VIEWS = {
+  understory:{label:'树形与林下',target:[-67,28,10],yaw:-.65,elevation:.36,distance:17,zoom:1},
   overview:{label:'山谷全景',target:[-5,24,15],yaw:-.13,elevation:.28,distance:120,zoom:.76},
   creek:{label:'溪流反光',target:[12,3,48],yaw:2.3,elevation:.36,distance:48,zoom:1},
   camp:{label:'营地篝火',target:[-35,22,3],yaw:-.75,elevation:.38,distance:38,zoom:1},

@@ -1,3 +1,4 @@
+import {verifiedSourceReader} from './read-verified-source.mjs';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import assert from 'node:assert/strict';
@@ -5,12 +6,13 @@ const root='evidence/action-wood/';
 const read=name=>JSON.parse(fs.readFileSync(root+name,'utf8'));
 const sha=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
 const freeze=read('source-freeze.json');
+const source=verifiedSourceReader(root+'verified-source.zip',false);
 const mobile=read('mobile-fix/verification.json');
 assert.deepEqual(mobile.changes.map(c=>c.file).sort(),['src/ui/App.tsx','src/ui/style.css']);
 for(const f of freeze.files){
  const change=mobile.changes.find(c=>c.file===f.file);
  if(change)assert.equal(change.beforeSha256,f.sha256);
- assert.equal(sha(fs.readFileSync(f.file,'utf8').replaceAll('\r\n','\n')),change?.afterSha256??f.sha256,`Action source changed: ${f.file}`);
+ assert.equal(sha(source(f.file).toString('utf8').replaceAll('\r\n','\n')),change?.afterSha256??f.sha256,`Action source changed: ${f.file}`);
 }
 for(const f of mobile.evidenceFiles)assert.equal(sha(fs.readFileSync(root+'mobile-fix/'+f.file)),f.sha256);
 const completed=read('mobile-fix/completed.json').current;

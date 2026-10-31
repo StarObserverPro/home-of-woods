@@ -54,7 +54,7 @@ export function createTerrain(r: Resources) {
 export function createScenery(r: Resources) {
   const group = new THREE.Group(),
     rng = random(20261029);
-  const rock = r.geometry("rock", () => new THREE.IcosahedronGeometry(1, 1));
+  const rock = r.geometry("rock", () => new THREE.IcosahedronGeometry(1, 0));
   const rockMat = r.material(PALETTE.rock, 0.8);
   const dummy = new THREE.Object3D();
   const rocks = makeRocks();
