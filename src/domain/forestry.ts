@@ -1,10 +1,12 @@
+import {LOG_HARVEST_LENGTH_MM} from '../content/wood-uses.ts';
+import {canStand} from './navigation.ts';
 import {FORESTRY} from '../content/forestry.ts';
 import type {Point} from '../content/world.ts';
 import type {Tree,Collider} from '../world/layout.ts';
-import { inventoryCandidate, inventoryTypeCount } from './inventory.ts';
+import { inventoryTransaction, woodBatch, inventoryTypeCount } from './inventory.ts';
 import { ITEM_CATALOG } from './item-catalog.ts';
 import type { ItemCatalog } from './item-catalog.ts';
-import type { InventoryState } from './inventory.ts';
+import type { InventoryState, WoodBatch } from './inventory.ts';
 
 export type TreeStatus='standing'|'chopping'|'falling'|'stump'|'sapling';
 export type TreeLife={
@@ -12,7 +14,7 @@ export type TreeLife={
   felledAt:number|null; regrowAt:number|null; bornAt:number|null; maturesAt:number|null;
   fallDirection:Point; actionId:string|null;
 };
-export type ChopAction={id:string;treeId:string;individualId:string;year:number;cost:number;yield:number;reward:{itemId:string;qualityId:string};startedAt:number;committedAt:number|null;phase:'chopping'|'falling'};
+export type ChopAction={id:string;treeId:string;individualId:string;year:number;cost:number;yield:number;reward:{itemId:string;qualityId:string;wood?:WoodBatch};startedAt:number;committedAt:number|null;phase:'chopping'|'falling'};
 export type ForestryState={
   ledger:{year:number;base:number;used:number;reserved:number};
   slots:Record<string,TreeLife>; active:ChopAction|null; nextAction:number; completedActions:string[];
@@ -50,12 +52,19 @@ export function chopReason(host:ForestryHost,tree:Tree|undefined):string{
   if(availablePoints(host.forestry)<volumePoints(tree))return '本年度可用体量点数不足。';
   return '';
 }
-export function startChop(host:ForestryHost,tree:Tree|undefined):{ok:boolean;message:string}{
+export function startChop(host:ForestryHost,tree:Tree|undefined,blockers?:Collider[]):{ok:boolean;message:string}{
   const reason=chopReason(host,tree);if(reason||!tree)return{ok:false,message:reason};
   const state=host.forestry,life=state.slots[tree.id],cost=volumePoints(tree);
   const id=`chop-${state.nextAction++}-${life.individualId}`;
   const dx=tree.x-host.player.x,dz=tree.z-host.player.z,length=Math.hypot(dx,dz)||1;
-  state.active={id,treeId:tree.id,individualId:life.individualId,year:state.ledger.year,cost,yield:cost,reward:{itemId:FORESTRY.harvestItemId,qualityId:FORESTRY.harvestQualityId},startedAt:host.time,committedAt:null,phase:'chopping'};
+  if(blockers){
+    const others=blockers.filter(c=>c.id!==tree.id),width=.65*tree.scale;
+    for(let distance=.6;distance<=5.5*tree.scale;distance+=.4)for(const side of [-width,0,width]){
+      const point={x:tree.x+dx/length*distance-dz/length*side,z:tree.z+dz/length*distance+dx/length*side};
+      if(!canStand(point,others)){state.nextAction--;return {ok:false,message:'这个倒向靠近障碍或水岸，请换一侧站稳再砍。'};}
+    }
+  }
+  state.active={id,treeId:tree.id,individualId:life.individualId,year:state.ledger.year,cost,yield:cost,reward:{itemId:FORESTRY.harvestItemId,qualityId:FORESTRY.harvestQualityId,wood:woodBatch({lengthMm:LOG_HARVEST_LENGTH_MM,thicknessMm:Math.round((tree.kind==='pine'?500:560)*tree.scale),straightness:'straight'})},startedAt:host.time,committedAt:null,phase:'chopping'};
   state.ledger.reserved+=cost;life.status='chopping';life.actionId=id;life.fallDirection={x:dx/length,z:dz/length};
   host.route=[];host.player.moving=false;host.player.facing=Math.atan2(dx,dz);
   return{ok:true,message:'握稳斧头，沿着同一处切口挥斧。'};
@@ -77,7 +86,7 @@ export function advanceForestry(host:ForestryHost,trees:ReadonlyMap<string,Tree>
     if(!valid)return cancelChop(host,'目标或距离已经变化，采伐已取消并释放预留。').message;
     if(!state.completedActions.includes(a.id)){
       // Validate inventory first. No point/tree changes survive a failed award.
-      const inventory = inventoryCandidate(host.inventory, a.reward.itemId, a.yield, a.reward.qualityId);
+      const inventory = inventoryTransaction(host.inventory, [{...a.reward, delta:a.yield}]);
       host.inventory = inventory;
       state.ledger.reserved-=a.cost;state.ledger.used+=a.cost;state.completedActions.push(a.id);
       life.status='falling';life.felledAt=a.startedAt+FORESTRY.chopSeconds;life.regrowAt=life.felledAt+FORESTRY.fallSeconds+FORESTRY.regrowDelay;

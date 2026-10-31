@@ -14,7 +14,7 @@
 | scene/gathering-presentation、interaction-registry | 模型、非阻挡命中代理、稳定来源映射、显隐和注销；不写业务资源 |
 | ui/App | 展示名称/原因/产物/数量/动作列表，按钮或 E 发送同一种明确采集意图 |
 
-落枝堆使用 `branch` / `forage.branch-pile` / `gather.pickup`；蘑菇簇使用 `mushroom` / `forage.mushroom-cluster` / `gather.pluck`。两类共用上述流程，同一蘑菇圈的多个簇共用一个来源池。落枝已改为对应树木的独立物产池，正式季度恢复调度尚未接入。
+树上枝杈使用 `branch` / `forage.branch-pile`（保留定义 ID）/ `gather.climb`；蘑菇簇使用 `mushroom` / `forage.mushroom-cluster` / `gather.pluck`。两类共用上述流程，同一蘑菇圈的多个簇共用一个来源池。落枝已改为对应树木的独立物产池，正式季度恢复调度尚未接入。
 
 ## 状态与一次结算
 
@@ -48,3 +48,5 @@ content/tree-resources 提供当前虚构松/栎树的玩法与美术配置：�
 普通来源保留稳定 sourceId 和 slotId，当前个体身份保存在来源状态。采伐倒伏使其关联物产失效；取消采伐不清空物产；树木换代清空旧代次资源并更新身份，幼树不会获得成熟树库存。正式恢复仍未启用，场景重建不补货。巨木资源绑定永久地标，保护状态不因采集改变。
 
 content/processing 与 domain/processing 登记并查询整理枝料、晾制蘑菇两条加工方向；输入/输出引用、工作条件、数量和耗时有校验。当前配比/耗时为明确未配置值，仓库展示后续方向，未执行制作。注册拒绝重复/悬空物品、无效参数及小型木料直接生成结构木。后续加工执行继续使用唯一库存和整笔事务。
+
+当前动作时长、独立碎柴池、木料规格与旧存档迁移以 [五动作接入说明](ACTION_WOOD_INTEGRATION.md) 为准。

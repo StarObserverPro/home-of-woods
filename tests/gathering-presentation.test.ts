@@ -31,7 +31,7 @@ test('actual admitted GLBs share resources, keep source identities through deple
     assert.equal(p.hits.resolve(hit.object),source.sourceId,'all circle patches share the source while adjacent trees keep their own IDs');
   }
   const batches=p.group.children.filter((o):o is THREE.InstancedMesh=>o instanceof THREE.InstancedMesh);
-  assert.equal(batches.length,4,'two parts per admitted GLB; circles do not multiply draw batches');
+  assert.equal(batches.length,6,'two parts per definition; circles do not multiply draw batches');
   assert.ok(batches.every(mesh=>watched.has(mesh.geometry)),'batches borrow the cache-owned geometry');
   const firstBranch=batches[0],matrix=new THREE.Matrix4();
   firstBranch.getMatrixAt(0,matrix);assert.ok(Math.abs(matrix.determinant())>0);

@@ -14,6 +14,7 @@ export const ITEM_TAXONOMY: ItemTaxonomy = {
     { materialId: 'fungus.unspecified', name: '未细分菌类', categoryIds: ['forest-produce'] },
   ],
   useGroups: [
+    { useGroupId: 'fuel', name: '生火燃料', resourceLines: ['small-wood'], status: 'planned' },
     { useGroupId: 'light-repair', name: '轻型修缮', resourceLines: ['small-wood'], status: 'planned' },
     { useGroupId: 'small-woodwork', name: '小木作', resourceLines: ['small-wood'], status: 'planned' },
     { useGroupId: 'structure-woodwork', name: '结构木作', resourceLines: ['structure-wood'], status: 'planned' },
@@ -21,6 +22,7 @@ export const ITEM_TAXONOMY: ItemTaxonomy = {
     { useGroupId: 'forest-goods', name: '林产交换', resourceLines: ['forest-produce'], status: 'planned' },
   ],
   types: [
+    { typeId: 'wood.scrap', categoryId: 'wood', name: '碎柴', formId: 'scrap', resourceLine: 'small-wood', useGroupIds: ['fuel'] },
     { typeId: 'wood.branch', categoryId: 'wood', name: '枝料', formId: 'branch', resourceLine: 'small-wood', useGroupIds: ['light-repair', 'small-woodwork'] },
     { typeId: 'wood.log', categoryId: 'wood', name: '原木', formId: 'log', resourceLine: 'structure-wood', useGroupIds: ['structure-woodwork'] },
     { typeId: 'wood.small-piece', categoryId: 'wood', name: '小木料', formId: 'small-piece', resourceLine: 'small-wood', useGroupIds: ['light-repair', 'small-woodwork'] },

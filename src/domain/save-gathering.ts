@@ -1,3 +1,4 @@
+import {validateWood} from './inventory.ts';
 import type { GatheringState } from './gathering.ts';
 import type { ForestryState } from './forestry.ts';
 import type { SaveContext } from './save-context.ts';
@@ -32,14 +33,15 @@ export function validateSavedGathering(raw: unknown, context: SaveContext, fores
     fields(a, ['actionId', 'actorId', 'sourceId', 'motionTag', 'targetAnchor', 'phase', 'progress', 'sourceVersion', 'startedAt', 'durationSeconds', 'reward'], 'gathering.action');
     const actionId = id(a.actionId, 'gathering.action.actionId'); actionSequence(actionId, 'gather', next, 'gathering.action.actionId');
     const source = context.registry.sources.get(id(a.sourceId, 'gathering.action.sourceId'));
-    requireValue(source && a.actorId === 'player' && ['gather.pickup', 'gather.pluck'].includes(a.motionTag as string), 'gathering.action', '动作来源或角色无效');
+    requireValue(source && a.actorId === 'player' && ['gather.pickup', 'gather.pluck', 'gather.climb'].includes(a.motionTag as string), 'gathering.action', '动作来源或角色无效');
     const anchor = object(a.targetAnchor, 'gathering.action.targetAnchor'); fields(anchor, ['x', 'y', 'z'], 'gathering.action.targetAnchor');
     requireValue(['x', 'y', 'z'].every(axis => typeof anchor[axis] === 'number' && Math.abs((anchor[axis] as number) - source.targetAnchor[axis as 'x' | 'y' | 'z']) < 1e-7), 'gathering.action', '挂点与布局冲突');
     requireValue(['approaching', 'performing', 'completed', 'cancelled'].includes(a.phase as string), 'gathering.action', '未知阶段');
     const progress = finite(a.progress, 'gathering.action.progress'); requireValue(progress <= 1, 'gathering.action', '进度越界');
     const version = integer(a.sourceVersion, 'gathering.action.sourceVersion'); finite(a.durationSeconds, 'gathering.action.durationSeconds');
     timestamp(a.startedAt, 'gathering.action.startedAt', time);
-    const reward = object(a.reward, 'gathering.action.reward'); fields(reward, ['itemId', 'qualityId', 'quantity'], 'gathering.action.reward');
+    const reward = object(a.reward, 'gathering.action.reward'); fields(reward, ['itemId', 'qualityId', 'quantity', ...(Object.hasOwn(reward,'wood')?['wood']:[])], 'gathering.action.reward');
+    if(Object.hasOwn(reward,'wood'))validateWood(reward.wood);
     id(reward.itemId, 'gathering.action.reward.itemId'); id(reward.qualityId, 'gathering.action.reward.qualityId'); integer(reward.quantity, 'gathering.action.reward.quantity', 1);
     if (a.phase === 'completed') {
       requireValue(settled[actionId] === true && progress === 1 && a.startedAt !== null && (sources[source.sourceId] as Record<string, number>).version > version, 'gathering.action', '已完成动作缺少结算');

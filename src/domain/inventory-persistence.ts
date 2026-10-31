@@ -1,3 +1,4 @@
+import {canonicalJson} from './save-digest.ts';
 import { canonicalStacks, createInventory, exactKeys, isRecord, validateInventory } from './inventory.ts';
 import type { InventoryState } from './inventory.ts';
 import { isStableId } from './item-catalog.ts';
@@ -12,9 +13,9 @@ export function prepareInventoryData(raw: unknown): InventoryLoadResult {
     if (!isRecord(raw)) throw new Error('Invalid inventory object');
     if (Object.hasOwn(raw, 'schemaVersion')) {
       exactKeys(raw, ['schemaVersion', 'stacks']);
-      if (raw.schemaVersion !== 1) throw new Error('Unsupported inventory schema');
+      if (raw.schemaVersion !== 1 && raw.schemaVersion !== 2) throw new Error('Unsupported inventory schema');
       const stacks = canonicalStacks(raw.stacks);
-      const migrated = JSON.stringify(stacks) !== JSON.stringify(raw.stacks);
+      const migrated = canonicalJson(stacks) !== canonicalJson(raw.stacks);
       return { decision: migrated ? 'migrated' : 'restored', value: { schemaVersion: 1, revision: 0, stacks }, diagnostics: migrated ? ['Inventory safely canonicalized'] : [] };
     }
     // Actual pre-stack session shape; absent grades remain explicitly ungraded.
@@ -43,5 +44,5 @@ export function prepareInventoryPersistence(raw: string | null): InventoryLoadRe
 /** This is a slice codec, not a second localStorage writer. */
 export function serializeInventory(state: InventoryState): string {
   const stacks = validateInventory(state);
-  return JSON.stringify({ schemaVersion: 1, stacks });
+  return JSON.stringify({ schemaVersion: 2, stacks });
 }

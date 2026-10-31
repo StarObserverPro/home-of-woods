@@ -43,3 +43,9 @@ sandbox/scene-r5/public/assets/licenses/** whitespace=-trailing-space,-blank-at-
 sandbox/scene-r5/public/third-party-notices.txt whitespace=-blank-at-eof
 sandbox/scene-r5/src/scene/gathering-presentation.ts whitespace=cr-at-eol
 docs/ASSET_PIPELINE.md -text whitespace=cr-at-eol
+
+# Accepted action sandbox archives and upstream notices preserve their bytes.
+sandbox/action-lab-r1/review.html -text -diff linguist-generated=true whitespace=-trailing-space,-space-before-tab,-blank-at-eof
+sandbox/action-lab-r1/archive/*.html -text -diff linguist-generated=true whitespace=-trailing-space,-space-before-tab,-blank-at-eof
+sandbox/action-lab-r1/public/assets/licenses/** -text whitespace=-trailing-space,-blank-at-eof
+sandbox/action-lab-r1/evidence/** -text whitespace=-trailing-space,-blank-at-eof

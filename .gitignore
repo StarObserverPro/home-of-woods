@@ -32,3 +32,5 @@ test-results/
 !evidence/scene-r5/tests.log
 !evidence/scene-r5/history-evidence.log
 !evidence/delivery/sandbox-tests.log
+
+!evidence/action-wood/*.log

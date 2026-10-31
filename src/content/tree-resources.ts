@@ -6,7 +6,8 @@ export const TREE_RESOURCE_PROFILES = {
 } as const;
 // Future resources resolve through the same host, not free-floating world refresh points.
 export const TREE_RESOURCE_ANCHORS = {
-  branch: { kind: 'under-canopy', hosts: ['pine', 'broadleaf'], attachment: 'ground' },
+  branch: { kind: 'trunk', hosts: ['pine', 'broadleaf'], attachment: 'trunk' },
+  scrap: { kind: 'under-canopy', hosts: ['pine', 'broadleaf'], attachment: 'ground' },
   mushroom: { kind: 'mushroom-circle', hosts: ['pine', 'broadleaf'], attachment: 'ground' },
   resin: { kind: 'trunk', hosts: ['pine'], attachment: 'trunk', status: 'reserved' },
 } as const;

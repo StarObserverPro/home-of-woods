@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {makeTrees} from '../world/layout.ts';
+import {heightAt} from '../world/surface.ts';
 import type { Resources } from './resources.ts';
 import type { Models } from './models.ts';
 import type { GatheringRegistry } from '../domain/gathering-registry.ts';
@@ -7,6 +9,7 @@ import { RUNTIME_MODELS } from '../content/assets.ts';
 import { InteractionRegistry } from './interaction-registry.ts';
 
 export function createGatheringPresentation(r: Resources, models: Models, registry: GatheringRegistry) {
+  const trees=new Map(makeTrees().map(t=>[t.id,t]));
   const group = new THREE.Group(), hits = new InteractionRegistry();
   const proxyMaterial = r.own(new THREE.MeshBasicMaterial({ visible: false }));
   const batches: { mesh: THREE.InstancedMesh; records: { sourceId: string; matrix: THREE.Matrix4 }[]; local: THREE.Matrix4 }[] = [];
@@ -22,7 +25,9 @@ export function createGatheringPresentation(r: Resources, models: Models, regist
       const root = new THREE.Group(); root.position.set(source.x,source.targetAnchor.y,source.z);
       const patches = source.patches ?? [{ ...source.targetAnchor, scale: 1, rotation: 0 }];
       for (const patch of patches) {
-        const dummy = new THREE.Object3D(); dummy.position.set(patch.x,patch.y,patch.z);
+        const host=source.hostRef&&trees.get(source.hostRef.slotId),climb=definition.motionTag==='gather.climb'&&host;
+        const visual=climb?{x:host.x,y:heightAt(host.x,host.z)+3*host.scale,z:host.z}:patch;
+        const dummy = new THREE.Object3D(); dummy.position.set(visual.x,visual.y,visual.z);
         dummy.rotation.y = patch.rotation; dummy.scale.setScalar(patch.scale); dummy.updateMatrix();
         records.push({ sourceId: source.sourceId, matrix: dummy.matrix.clone() });
         const proxy = new THREE.Mesh(r.geometry(`gather-hit-${definition.definitionId}`,()=>new THREE.SphereGeometry(definition.hitRadius,10,6)),proxyMaterial);
@@ -51,7 +56,7 @@ export function createGatheringPresentation(r: Resources, models: Models, regist
       if(disposed)return;
       const changed=new Set<string>();
       for(const source of registry.sources.values()){
-        const life=state.sources[source.sourceId],visible=(life?.remaining??0)>0&&life.hostAvailable!==false;
+        const life=state.sources[source.sourceId],a=state.action,held=a?.sourceId===source.sourceId&&a.phase==='performing'&&a.motionTag==='gather.pickup'&&a.progress*a.durationSeconds>=1.15,visible=(life?.remaining??0)>0&&life.hostAvailable!==false&&!held;
         if(visibility.get(source.sourceId)!==visible){visibility.set(source.sourceId,visible);changed.add(source.sourceId);}
       }
       if(!changed.size)return;

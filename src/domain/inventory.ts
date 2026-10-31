@@ -1,11 +1,28 @@
 import { ITEM_CATALOG, isStableId } from './item-catalog.ts';
 import type { ItemCatalog } from './item-catalog.ts';
 
-export type StackIdentity = { itemId: string; qualityId: string };
+export type WoodSpec = { lengthMm: number; thicknessMm: number; straightness: 'straight' | 'curved' | 'crooked' };
+export type WoodBatch = { spec: WoodSpec | null; measureId: 'piece'; amountPerPiece: number; reserved: boolean };
+export type StackIdentity = { itemId: string; qualityId: string; wood?: WoodBatch };
+export function validateWood(raw: unknown): WoodBatch {
+  if (!isRecord(raw)) throw new Error('Invalid wood batch');
+  exactKeys(raw, ['spec', 'measureId', 'amountPerPiece', 'reserved']);
+  if (raw.measureId !== 'piece' || raw.amountPerPiece !== 1 || typeof raw.reserved !== 'boolean') throw new Error('Invalid wood measurement');
+  let spec: WoodSpec | null = null;
+  if (raw.spec !== null) {
+    if (!isRecord(raw.spec)) throw new Error('Invalid wood spec');
+    exactKeys(raw.spec, ['lengthMm', 'thicknessMm', 'straightness']);
+    const v = raw.spec;
+    if (![v.lengthMm, v.thicknessMm].every(n => Number.isSafeInteger(n) && (n as number) > 0) || !['straight', 'curved', 'crooked'].includes(v.straightness as string)) throw new Error('Invalid wood dimensions');
+    spec = { lengthMm: v.lengthMm as number, thicknessMm: v.thicknessMm as number, straightness: v.straightness as WoodSpec['straightness'] };
+  }
+  return { spec, measureId: 'piece', amountPerPiece: 1, reserved: raw.reserved };
+}
+export const woodBatch = (spec: WoodSpec | null): WoodBatch => ({ spec, measureId: 'piece', amountPerPiece: 1, reserved: false });
 export type InventoryStack = StackIdentity & { quantity: number };
 export type InventoryState = { schemaVersion: 1; revision: number; stacks: InventoryStack[] };
 export type InventoryDelta = StackIdentity & { delta: number };
-export const stackKey = (stack: StackIdentity) => JSON.stringify([stack.itemId, stack.qualityId]);
+export const stackKey = (stack: StackIdentity) => JSON.stringify([stack.itemId, stack.qualityId, ...(stack.wood ? [validateWood(stack.wood)] : [])]);
 export const createInventory = (): InventoryState => ({ schemaVersion: 1, revision: 0, stacks: [] });
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -20,9 +37,9 @@ export function canonicalStacks(value: unknown): InventoryStack[] {
   const stacks: InventoryStack[] = [];
   for (const raw of value) {
     if (!isRecord(raw)) throw new Error('Invalid inventory stack');
-    exactKeys(raw, ['itemId', 'qualityId', 'quantity']);
+    exactKeys(raw, ['itemId', 'qualityId', 'quantity', ...(Object.hasOwn(raw, 'wood') ? ['wood'] : [])]);
     if (!isStableId(raw.itemId) || !isStableId(raw.qualityId) || !Number.isSafeInteger(raw.quantity) || (raw.quantity as number) < 0) throw new Error('Invalid inventory identity or quantity');
-    const stack = { itemId: raw.itemId, qualityId: raw.qualityId, quantity: raw.quantity as number };
+    const stack = { itemId: raw.itemId, qualityId: raw.qualityId, quantity: raw.quantity as number, ...(Object.hasOwn(raw, 'wood') ? { wood: validateWood(raw.wood) } : {}) };
     const key = stackKey(stack);
     if (seen.has(key)) throw new Error('Duplicate inventory stack identity');
     seen.add(key);
@@ -55,6 +72,7 @@ export function inventoryTransaction(state: InventoryState, deltas: readonly Inv
   const debits = new Map<string, number>();
   for (const line of deltas) {
     if (!isStableId(line.itemId) || !isStableId(line.qualityId) || !Number.isSafeInteger(line.delta) || !recognizedStack(line, catalog)) throw new Error('Unrecognized inventory transaction');
+    if (line.wood && catalog.items.get(line.itemId)?.category!=='wood')throw new Error('Wood metadata on non-wood item');
     if (line.delta > 0 && catalog.items.get(line.itemId)!.status !== 'active') throw new Error('Inactive item cannot be awarded');
     const key = stackKey(line), delta = (changes.get(key)?.delta ?? 0) + line.delta;
     if (!Number.isSafeInteger(delta)) throw new Error('Inventory delta overflow');
@@ -70,7 +88,7 @@ export function inventoryTransaction(state: InventoryState, deltas: readonly Inv
   for (const [key, line] of changes) {
     const quantity = (next.get(key)?.quantity ?? 0) + line.delta;
     if (!Number.isSafeInteger(quantity) || quantity < 0) throw new Error('Insufficient or invalid inventory quantity');
-    next.set(key, { itemId: line.itemId, qualityId: line.qualityId, quantity });
+    next.set(key, { itemId: line.itemId, qualityId: line.qualityId, quantity, ...(line.wood ? { wood: validateWood(line.wood) } : {}) });
   }
   return { schemaVersion: 1, revision: state.revision + 1, stacks: canonicalStacks([...next.values()]) };
 }

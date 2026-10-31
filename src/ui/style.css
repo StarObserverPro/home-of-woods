@@ -140,7 +140,7 @@ button:not(:disabled):hover { color: #fff3bd; }
 .tree-cost { color: #fff2c8; }
 .tree-cost span { display: block; font-size: 10px; opacity: .85; }
 .target-card .action-reason { font-size: 11px; opacity: .9; }
-.tree-actions { display: flex; gap: 9px; margin-top: 12px; }
+.tree-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 12px; }
 .tree-actions:empty { display: none; }
 .context-button { display: inline-flex; justify-content: center; align-items: center; gap: 8px; min-width: 98px; min-height: 46px; padding: 8px 14px; border: 1px solid #fff9; border-radius: 10px; background: #c0d7a412; font-size: 12px; }
 .context-button:disabled { border-color: #fff5; }

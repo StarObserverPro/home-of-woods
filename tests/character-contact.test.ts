@@ -15,7 +15,7 @@ import {CAMP_VISITOR} from '../src/content/characters.ts';
 
 test('actual skinned character stops at real tree solids, keeps two palms on the handle, and cancels without gameplay writes',async()=>{
   const {resources,models}=await characterModels(),trees=makeTrees(),forest=models.createForest(trees);
-  const presenter=createForestryPresentation({resources,forestGroup:forest.group,trees,selections:forest.selections});
+  const presenter=createForestryPresentation({models,resources,forestGroup:forest.group,trees,selections:forest.selections});
   const characters=createCharacters(resources,models,trees,forest.selections),colliders=makeColliders(trees);
   const cases=['pine','broadleaf'].flatMap(kind=>trees.filter(t=>t.role==='managed'&&t.kind===kind).filter((_,i)=>i%9===0).slice(0,4));
   assert.equal(new Set(cases.map(t=>t.kind)).size,2,'test both trunk shapes');

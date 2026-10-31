@@ -111,3 +111,7 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 ## 仓库与树种物产的表现复用
 
 本轮继续使用 how-gathering-branches / how-gathering-mushrooms 原始规范字节及已核验许可，未新增第三方素材。树种配置只改变按宿主的地面位置、圈半径、簇数、缩放和朝向；10 个资源池通过 38 个挂点、4 个实例绘制批次呈现。批次借用缓存几何/材质，由同一 Resources owner 释放。仓库图标由 ui/Warehouse.tsx 内原生 SVG 绘制，不含新字体、图标包或生成图片。来源变化、命中、卸载和画面证据见 [本轮验证](../evidence/warehouse-tree-resources/README.md)。
+
+## 五动作接入
+
+继续使用已登记 KayKit、项目树、枝束与蘑菇原始 GLB，未新增第三方素材。src/scene/actions 从已接受沙盒抽取原创程序动作和下部树干/断面网格，不标为 CC0。主资源 SHA 不变；中等树静态合批与动态断口共用构造，原始共享资产不被修改或由动作适配器释放。来源详情见原登记；本轮行为与画面见 [集成证据](../evidence/action-wood/README.md)。

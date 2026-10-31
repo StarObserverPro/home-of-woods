@@ -32,7 +32,7 @@ export function createGatheringRegistry(options: {
   for (const d of definitions.values()) {
     if (items.get(d.itemId)?.status !== 'active' || !catalog.qualities.has(d.qualityId) || !options.assetIds.includes(d.assetId)) throw new Error(`Unresolved reference: ${d.definitionId}`);
     if (!['period-refill', 'after-depletion'].includes(d.regeneration.kind) || !d.regeneration.configKey) throw new Error(`Unknown regeneration: ${d.definitionId}`);
-    if (!['gather.pickup', 'gather.pluck'].includes(d.motionTag)) throw new Error(`Unknown motion: ${d.definitionId}`);
+    if (!['gather.pickup', 'gather.pluck', 'gather.climb'].includes(d.motionTag)) throw new Error(`Unknown motion: ${d.definitionId}`);
     if (![d.capacity, d.yieldPerUnit].every(v => Number.isSafeInteger(v) && v > 0) || ![d.range, d.hitRadius].every(v => Number.isFinite(v) && v > 0) || !Number.isFinite(d.durationSeconds) || d.durationSeconds < 0) throw new Error(`Invalid configuration: ${d.definitionId}`);
   }
   for (const s of sources.values()) {

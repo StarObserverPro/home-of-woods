@@ -9,11 +9,11 @@ const freeze=read('source-freeze.json');
 assert.equal(sha(JSON.stringify(freeze.files)),freeze.runtimeFingerprint);
 const source=verifiedSourceReader(root+'verified-source.zip',false);
 for(const f of freeze.files)assert.equal(sha(source(f.file)),f.sha256,`frozen character source mismatch: ${f.file}`);
-// Inventory compatibility is progressing concurrently. Verify this delivery's live scene entry points,
-// while binding its complete flow receipts to the exact tested source archive.
+// Verify historical character-to-R5 integration against archived source; assets remain live.
+const delivered=verifiedSourceReader('evidence/scene-r5/verified-source.zip',false);
 const liveEntries=['src/scene/characters.ts','src/scene/character-grip.ts','src/scene/axe-contact.ts','src/scene/create-scene.ts','src/content/characters.ts','src/content/assets.ts'];
 for(const f of freeze.files.filter(f=>liveEntries.includes(f.file)||f.file.startsWith('public/assets/characters/')||f.file.startsWith('public/assets/licenses/KayKit-'))){
-  const current=sha(fs.readFileSync(f.file));
+  const current=sha(f.file.startsWith('public/')?fs.readFileSync(f.file):delivered(f.file));
   if(f.file==='src/scene/create-scene.ts'&&current!==f.sha256){
     // Scene integration intentionally adapts the composition root. Keep the original
     // receipt immutable and bind its successor to the full current scene evidence.
@@ -58,4 +58,4 @@ assert.equal(build.runtimeFingerprint,freeze.runtimeFingerprint);
 for(const f of build.files)assert.equal(sha(bundle(f.file)),f.sha256,`frozen build mismatch: ${f.file}`);
 assert.equal(sha(fs.readFileSync(root+'verified-source.zip')),build.sourceArchiveSha256);
 assert.equal(sha(fs.readFileSync(root+'verified-build.zip')),build.buildArchiveSha256);
-console.log(JSON.stringify({version:freeze.version,runtimeFingerprint:freeze.runtimeFingerprint,cycles:3,tests:41,mediaBytes:video.length,result:'passed',sourceMode:'frozen complete runtime plus live character entries; concurrent inventory changes excluded'}));
+console.log(JSON.stringify({version:freeze.version,runtimeFingerprint:freeze.runtimeFingerprint,cycles:3,tests:41,mediaBytes:video.length,result:'passed',sourceMode:'frozen character runtime and archived R5 integration entries; current asset bytes checked'}));

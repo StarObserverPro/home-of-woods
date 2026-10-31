@@ -1,3 +1,4 @@
+import {validateWood} from './inventory.ts';
 import type { ForestryState } from './forestry.ts';
 import type { SaveContext } from './save-context.ts';
 import { actionSequence, fields, finite, id, integer, object, point, requireValue, timestamp, uniqueStrings } from './save-validation.ts';
@@ -55,7 +56,8 @@ export function validateSavedForestry(raw: unknown, context: SaveContext, time: 
     requireValue(a.id === `chop-${String(a.id).split('-')[1]}-${String(a.individualId)}` && a.year === year, 'forestry.active', '动作个体或年度冲突');
     const cost = integer(a.cost, 'forestry.active.cost', 1); requireValue(integer(a.yield, 'forestry.active.yield', 1) === cost, 'forestry.active', '当前规则的产出与体量冲突');
     timestamp(a.startedAt, 'forestry.active.startedAt', time); requireValue(a.startedAt !== null, 'forestry.active', '缺少开始时间');
-    const reward = object(a.reward, 'forestry.active.reward'); fields(reward, ['itemId', 'qualityId'], 'forestry.active.reward');
+    const reward = object(a.reward, 'forestry.active.reward'); fields(reward, ['itemId', 'qualityId', ...(Object.hasOwn(reward,'wood')?['wood']:[])], 'forestry.active.reward');
+    if(Object.hasOwn(reward,'wood'))validateWood(reward.wood);
     id(reward.itemId, 'forestry.active.reward.itemId'); id(reward.qualityId, 'forestry.active.reward.qualityId');
     requireValue(working.length === 1 && working[0] === treeId && life.status === a.phase, 'forestry.active', '动作阶段冲突');
     if (a.phase === 'chopping') {

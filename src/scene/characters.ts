@@ -1,4 +1,8 @@
 import * as THREE from 'three';
+import {ramp} from './actions/motion.js';
+import {canStand} from '../domain/navigation.ts';
+import {makeColliders} from '../world/layout.ts';
+import {createActor} from './actions/actor.js';
 import { CHARACTER, CAMP_VISITOR } from '../content/characters.ts';
 import { FORESTRY } from '../content/forestry.ts';
 import type { GameState } from '../domain/state.ts';
@@ -16,6 +20,7 @@ export type CharacterImpact={treeId:string;point:THREE.Vector3};
 
 /** One scene adapter; samples the app's game time and never schedules frames or settles actions. */
 export function createCharacters(r:Resources,models:Models,trees:Tree[],selections:Map<string,THREE.Object3D>){
+  const blockers=makeColliders(trees);
   const player=new THREE.Group(),visitor=new THREE.Group();player.name='player';visitor.name=CAMP_VISITOR.id;
   player.scale.setScalar(CHARACTER.worldScale);visitor.scale.setScalar(CHARACTER.worldScale);
   visitor.position.set(CAMP_VISITOR.x,heightAt(CAMP_VISITOR.x,CAMP_VISITOR.z),CAMP_VISITOR.z);visitor.rotation.y=.5;
@@ -36,6 +41,8 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   const waving=need('Waving');
   const partial=new THREE.AnimationClip('Visitor_ArmsAndHead',waving.duration,waving.tracks.filter(t=>/^(upperarm|lowerarm|wrist|hand|head)/.test(t.name)).map(t=>t.clone()));
   const wave=npcMixer.clipAction(partial);wave.play();
+  const procedural=createActor(models.templates.get('ranger')!,models.animations.get('motions')!);procedural.root.scale.setScalar(1);player.add(procedural.root);procedural.root.visible=false;
+  const pickedScrap=new THREE.Mesh(r.geometry('held-scrap',()=>new THREE.CylinderGeometry(.025,.04,.38,5)),r.material('#92704a',.9));pickedScrap.rotation.z=Math.PI/2;pickedScrap.visible=false;player.add(pickedScrap);
   const blade=axeHeadSamples(tool),byId=new Map(trees.map(t=>[t.id,t]));
   // Inspector-only solids demonstrate both constraints without inventing a crafting transaction.
   const inspectionProps=new THREE.Group();inspectionProps.name='character-inspection-solids';inspectionProps.visible=false;player.add(inspectionProps);
@@ -49,9 +56,16 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     if(mode===next)return;
     mixer.stopAllAction();mode=next;actions[mode].reset().play();
   }
+  let cutHeight:number|null=null;const chest=body.getObjectByName('chest')!,chestY=chest.position.y;
   function sample(fraction:number){
+    chest.position.y=chestY;
     actions[mode].time=sourceClips[mode].duration*fraction;mixer.update(0);
     grip=syncTwoHandedAxe(player,body,tool);
+    if(cutHeight!==null){
+      const center=new THREE.Box3().setFromObject(blade.head).getCenter(new THREE.Vector3());
+      chest.position.y+=(cutHeight-center.y)/CHARACTER.worldScale;
+      grip=syncTwoHandedAxe(player,body,tool);
+    }
   }
   function cut(kind:'horizontal'|'vertical',target:AxeTarget,phase:number,key:string,reducedMotion:boolean){
     setMode(kind);tool.visible=true;
@@ -71,7 +85,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   function update(state:GameState,reducedMotion=false){
     if(disposed)return;
     player.position.set(state.player.x,heightAt(state.player.x,state.player.z),state.player.z);player.rotation.y=state.player.facing;
-    inspectionProps.visible=inspection!==null;impact=null;
+    inspectionProps.visible=inspection!==null;impact=null;body.visible=true;pickedScrap.visible=false;cutHeight=null;chest.position.y=chestY;procedural.root.visible=false;
     if(inspection){
       trunk.visible=inspection==='horizontal';stump.visible=block.visible=inspection==='vertical';player.updateMatrixWorld(true);
       let target:AxeTarget;
@@ -83,6 +97,9 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
       cut(inspection,target,CHARACTER.strikePhase,'inspection-'+inspection,reducedMotion);
     }else if(state.forestry.active?.phase==='chopping'){
       const a=state.forestry.active,tree=byId.get(a.treeId)!,root=selections.get(a.treeId)!;
+      const dx=state.player.x-tree.x,dz=state.player.z-tree.z,len=Math.hypot(dx,dz)||1,radius=(tree.kind==='pine'?.25:.28)*tree.scale;
+      player.position.set(tree.x+dx/len*(radius+1),heightAt(state.player.x,state.player.z),tree.z+dz/len*(radius+1));
+      cutHeight=heightAt(tree.x,tree.z)+.88*tree.scale;
       const cycle=FORESTRY.chopSeconds/FORESTRY.hits,phase=((state.time-a.startedAt)/cycle)%1;
       cut('horizontal',models.trunkContact(tree,root),phase,a.id,reducedMotion);
       if(stop?.found&&stop.point)impact={treeId:tree.id,point:stop.point.clone()};
@@ -93,6 +110,34 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
       const clip=sourceClips[mode];
       actions[mode].time=mode==='gather'?Math.min(.999,gather!.progress)*clip.duration:reducedMotion?.01:(state.time*(mode==='walk'?1.6:1))%clip.duration;
       mixer.update(0);
+      if(state.ritual?.phase==='performing'){
+        procedural.update('pray',state.time-state.ritual.startedAt!);procedural.root.position.set(0,0,0);procedural.root.rotation.set(0,0,0);body.visible=false;procedural.root.visible=true;
+      }
+      if(gather?.phase==='performing'){
+        const action=gather.motionTag==='gather.climb'?'climb':gather.motionTag==='gather.pluck'?'gather':'pickup';
+        const t=gather.progress*gather.durationSeconds;
+        const approach=ramp(t,0,.65)*(1-ramp(t,gather.durationSeconds-.65,gather.durationSeconds));
+        if(action!=='climb'){
+          const targetX=gather.targetAnchor.x-Math.sin(player.rotation.y)*1.05,targetZ=gather.targetAnchor.z-Math.cos(player.rotation.y)*1.05;
+          const px=THREE.MathUtils.lerp(state.player.x,targetX,approach),pz=THREE.MathUtils.lerp(state.player.z,targetZ,approach);
+          if(canStand({x:px,z:pz},blockers))player.position.set(px,heightAt(px,pz),pz);
+        }
+        procedural.update(action,t,{radius:.3});const lift=procedural.root.position.y;
+        procedural.root.position.set(0,lift/CHARACTER.worldScale,0);procedural.root.rotation.set(0,0,0);
+        if(action==='pickup'&&t>=1.15&&t<2.85){player.updateMatrixWorld(true);pickedScrap.position.copy(player.worldToLocal(procedural.bones.handslotr.getWorldPosition(new THREE.Vector3())));pickedScrap.visible=true;}
+        body.visible=false;procedural.root.visible=true;
+        if(action==='climb'){
+          const hostId=gather.sourceId.replace(/^gather\./,'').replace(/\.branches$/,'');const tree=byId.get(hostId);
+          if(tree){const radius=(tree.role==='landmark'?1.2:tree.kind==='pine'?.25:.28)*tree.scale,dx=state.player.x-tree.x,dz=state.player.z-tree.z,len=Math.hypot(dx,dz)||1;
+            const px=THREE.MathUtils.lerp(state.player.x,tree.x+dx/len*(radius+.48),approach),pz=THREE.MathUtils.lerp(state.player.z,tree.z+dz/len*(radius+.48),approach);player.position.set(px,heightAt(px,pz),pz);player.rotation.y=Math.atan2(-dx,-dz);
+          }
+        }
+      }
+    }
+    if(state.forestry.active?.phase==='falling'){
+      const a=state.forestry.active,dir=state.forestry.slots[a.treeId].fallDirection,step=.7*ramp(state.time-a.committedAt!,0,.75);
+      const x=state.player.x-dir.x*step,z=state.player.z-dir.z*step;
+      if(canStand({x,z},blockers))player.position.set(x,heightAt(x,z),z);
     }
     const near=Math.hypot(state.player.x-CAMP_VISITOR.x,state.player.z-CAMP_VISITOR.z)<CAMP_VISITOR.waveRange;
     const localTime=state.time%CAMP_VISITOR.waveInterval;
@@ -107,6 +152,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     dispose(){
       if(disposed)return;disposed=true;
       for(const m of [mixer,npcMixer]){m.stopAllAction();m.uncacheRoot(m.getRoot());}
+      procedural.dispose();
       player.removeFromParent();visitor.removeFromParent();player.clear();visitor.clear();byId.clear();
       // Shared geometry, textures/materials and each cloned skeleton belong to Resources.
     },

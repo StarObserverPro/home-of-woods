@@ -117,3 +117,7 @@ type InventorySaveV1 = {
 7. 库存、树木代次、资源池、额度和动作记录跨切片校验；读档、卸载重入与目录升级均不刷新采集来源。
 
 本轮实际检查与边界见 [物品兼容证据](../evidence/item-stack-compatibility/README.md)。`tests/item-compatibility.test.ts` 检查品质、未知目录、旧会话转移、保护、整笔失败与库存 JSON 往返；当前世界存读档已验证；加工恢复及建筑切片仍待后续功能接入。旧仓库截图与回执保留其原始版本，不作为本轮实现证明。
+
+## 木料规格版本更新
+
+本次世界 ruleset 升为 2，库存持久化切片 schema 升为 2；同规格批次、未知规格保留、旧来源迁移与原子选材约束见 [五动作与木料用途接入](ACTION_WOOD_INTEGRATION.md)。原历史证据不改写，新验证单独记录。
