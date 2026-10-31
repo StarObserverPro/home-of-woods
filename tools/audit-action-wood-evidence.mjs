@@ -5,7 +5,18 @@ const root='evidence/action-wood/';
 const read=name=>JSON.parse(fs.readFileSync(root+name,'utf8'));
 const sha=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
 const freeze=read('source-freeze.json');
-for(const f of freeze.files)assert.equal(sha(fs.readFileSync(f.file,'utf8').replaceAll('\r\n','\n')),f.sha256,`Action source changed: ${f.file}`);
+const mobile=read('mobile-fix/verification.json');
+assert.deepEqual(mobile.changes.map(c=>c.file).sort(),['src/ui/App.tsx','src/ui/style.css']);
+for(const f of freeze.files){
+ const change=mobile.changes.find(c=>c.file===f.file);
+ if(change)assert.equal(change.beforeSha256,f.sha256);
+ assert.equal(sha(fs.readFileSync(f.file,'utf8').replaceAll('\r\n','\n')),change?.afterSha256??f.sha256,`Action source changed: ${f.file}`);
+}
+for(const f of mobile.evidenceFiles)assert.equal(sha(fs.readFileSync(root+'mobile-fix/'+f.file)),f.sha256);
+const completed=read('mobile-fix/completed.json').current;
+assert.equal(completed.gathering.action.phase,'completed');
+assert.equal(completed.gathering.inventory.find(i=>i.typeId==='wood.scrap').quantity,3);
+assert.equal(completed.gatheringSources[completed.gathering.action.sourceId].remaining,0);
 for(const f of freeze.evidenceFiles)assert.equal(sha(fs.readFileSync(root+f.file)),f.sha256,`Action evidence changed: ${f.file}`);
 assert.match(fs.readFileSync(root+'check.log','utf8'),/# pass 88\s+# fail 0/);
 const pickup=read('pickup-mobile.json').current,cancelled=read('pickup-cancelled.json').current;

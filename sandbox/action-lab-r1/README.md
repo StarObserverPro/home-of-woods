@@ -1,4 +1,4 @@
-> 归档状态：R3 表现已获用户接受并授权接入主体、开 PR。此独立审看包保留为设计记录；生产接线见 [统一说明](../../docs/ACTION_WOOD_INTEGRATION.md)。
+> 归档状态：R3 表现已通过 PR #5 接入主体。此独立审看包在 Git 仓库中归档，本地日常检出排除 sandbox；生产接线见 [统一说明](../../docs/ACTION_WOOD_INTEGRATION.md)。
 
 # 林间动作室 R2
 

@@ -464,7 +464,7 @@ export function App() {
         {snapshot.message}
       </div>}
       {selected && (
-        <aside className="target-card">
+        <aside className={`target-card${gatherAction?.sourceId === gatherTarget?.id && gatherAction?.motionTag === 'gather.pickup' && ['approaching','performing'].includes(gatherAction.phase) ? ' target-card--pickup-active' : ''}`}>
           <div className="target-top">
             <span className="eyebrow">{selected.tag}</span>
             <button
@@ -483,7 +483,7 @@ export function App() {
             {gatherTarget.status === '可以采集' && <p className="tree-cost">可得 {gatherTarget.reward}</p>}
             {gatherTarget.reason && <p className="action-reason">{gatherTarget.reason}</p>}
             <p className="action-message" role="status" aria-live="polite">{snapshot.message}</p>
-            {gatherAction?.sourceId === gatherTarget.id && ['approaching','performing'].includes(gatherAction.phase) && <p>{gatherAction.phase === 'approaching' ? '正在走近…' : '正在采集…'}</p>}
+            {gatherAction?.sourceId === gatherTarget.id && ['approaching','performing'].includes(gatherAction.phase) && <p className="gather-progress">{gatherAction.phase === 'approaching' ? '正在走近…' : '正在采集…'}</p>}
             <div className="tree-actions">{gatherTarget.actions.map(action => <button key={action.id} className="context-button" disabled={!action.enabled} onClick={()=>runtime.current?.targetAction(action.id)}>{action.label}</button>)}</div>
           </div>}
           {treeAction && (
