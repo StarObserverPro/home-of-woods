@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><title>HOW · Original mountain goat rig review</title>
+<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#aabac0}
+#view{display:block;width:100%;height:100%}</style></head>
+<body><canvas id="view"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const canvas=document.querySelector('#view');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(1);renderer.setSize(960,660,false);renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.45;
+renderer.shadowMap.enabled=false;
+const scene=new THREE.Scene();scene.background=new THREE.Color('#aabac0');
+scene.add(new THREE.HemisphereLight('#f8fbff','#65716c',2.0));
+const sunlight=new THREE.DirectionalLight('#fff8ea',2.7);
+sunlight.position.set(-3,9,8);scene.add(sunlight);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(16,16),new THREE.MeshStandardMaterial({color:'#768780',roughness:1}));
+floor.rotation.x=-Math.PI/2;floor.position.y=-.05;scene.add(floor);
+const camera=new THREE.PerspectiveCamera(39,960/660,.1,100);
+const preview={source:'original-mountain-goat',ready:false};
+window.goatReview=preview;
+try{
+  const gltf=await new GLTFLoader().loadAsync('/assets/wildlife/mountain-goat.glb');
+  const root=gltf.scene;scene.add(root);
+  const mixer=new THREE.AnimationMixer(root);
+  root.traverse(o=>{if(o instanceof THREE.SkinnedMesh)o.frustumCulled=false;});
+  const neck=root.getObjectByName('goat_neck'),head=root.getObjectByName('goat_head'),
+  hoof=root.getObjectByName('left_front_hoof');
+  let lastClip='';
+  function pose(clip='idle',time=0,angle='threequarter'){
+    if(!gltf.animations.some(a=>a.name===clip))throw Error('Missing clip: '+clip);
+    mixer.stopAllAction();
+    const action=mixer.clipAction(gltf.animations.find(c=>c.name===clip));
+    action.reset().play();mixer.setTime(time);
+    if(angle==='side')camera.position.set(7.2,2.45,0);
+    else if(angle==='front')camera.position.set(0,2.4,7.6);
+    else camera.position.set(5.4,3.3,6.3);
+    camera.lookAt(0,1.15,0);
+    root.updateMatrixWorld(true);renderer.render(scene,camera);
+    lastClip=clip;
+    const out=new THREE.Vector3();hoof.getWorldPosition(out);
+    return {clip,time,angle,joints:root.getObjectByName('goat_torso')?.children?.length,
+      leftForehoofY:out.y,headRot:head.rotation.toArray().slice(0,3),neckRot:neck.rotation.toArray().slice(0,3),
+      png:renderer.domElement.toDataURL('image/png')};
+  }
+  preview.pose=pose;
+  preview.clips=gltf.animations.map(a=>a.name);
+  preview.ready=true;
+  pose('idle',0,'threequarter');
+}catch(e){preview.error=String(e.stack||e);console.error(e);}
+</script></body></html>
