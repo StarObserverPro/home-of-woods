@@ -437,6 +437,8 @@ export async function createScene(
       if(scenePreset)for(const tree of trees)if(Math.hypot(camera.position.x-tree.x,camera.position.z-tree.z)<3*tree.scale)camera.position.y=Math.max(camera.position.y,heightAt(tree.x,tree.z)+9*tree.scale);
       camera.lookAt(target);
       camera.zoom = THREE.MathUtils.lerp(zoom,1,blend) * (mobile ? scenePreset?.8:THREE.MathUtils.lerp(1.45,.9,blend) : 1);
+      // Keep both fixed animal anchors inside the narrow portrait inspection frame.
+      if (scenePreset === 'wildlife' && camera.aspect < 1) camera.zoom *= camera.aspect;
       camera.updateProjectionMatrix();
       environment.update(elapsed,dt,camera.position,reducedMotion);
       scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);

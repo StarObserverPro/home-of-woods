@@ -27,6 +27,8 @@ async function capture(page, name, view, night = false) {
   const data = (await stats(page)).current;
   assert.equal(data.shaderErrors, 0); assert.equal(data.wildlife.active, 2);
   assert.equal(data.wildlife.visible, night ? 0 : 2);
+  if (view === 'wildlife') assert.equal(data.wildlife.inFrame, night ? 0 : 2, 'Pair must fit inside the actual camera, not merely have visible=true');
+  else assert.ok(data.wildlife.inFrame >= 1, 'Close-up animal must be in frame');
   const before = JSON.stringify(data.wildlifeViews), time = data.gameTime;
   await page.waitForTimeout(250);
   const frozen = (await stats(page)).current;
@@ -61,7 +63,7 @@ try {
   const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const phone = await mobile.newPage(); phone.on('pageerror', e => report.errors.push(e.message));
   await phone.goto('http://127.0.0.1:5173/?inspect=1'); await ready(phone);
-  await capture(phone, 'mobile-pair', 'wildlife'); await capture(phone, 'mobile-hare', 'hare'); await mobile.close();
+  await capture(phone, 'mobile-pair', 'wildlife'); await capture(phone, 'mobile-squirrel', 'squirrel'); await capture(phone, 'mobile-hare', 'hare'); await mobile.close();
   const offline = await browser.newContext({ viewport: { width: 1000, height: 700 } });
   await offline.route('**/assets/wildlife/*.glb', route => route.abort('failed'));
   const fallback = await offline.newPage(); fallback.on('pageerror', e => report.errors.push(e.message));

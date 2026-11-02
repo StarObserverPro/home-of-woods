@@ -17,6 +17,8 @@ export function createWildlifePresentation(resources: Resources, models: Models)
   const instances = new Map<string, Instance>();
   const available = WILDLIFE_DEFINITIONS.filter(d => models.templates.has(d.model) &&
     ['idle', 'walk'].every(name => models.animations.get(d.model)?.some(a => a.name === name))).map(d => d.id);
+  const projected = new THREE.Vector3();
+  let inFrame = 0;
   let destroyed = false, lastTime: number | null = null, created = 0, released = 0;
   function remove(id: string) {
     const instance = instances.get(id); if (!instance) return;
@@ -54,6 +56,7 @@ export function createWildlifePresentation(resources: Resources, models: Models)
     update(views: readonly WildlifeView[], time: number, hour: number, camera: THREE.Camera, reducedMotion: boolean) {
       if (destroyed) return;
       const dt = lastTime === null ? 0 : Math.max(0, Math.min(.1, time - lastTime)); lastTime = time;
+      inFrame = 0;
       const ids = new Set(views.map(v => v.id));
       for (const id of instances.keys()) if (!ids.has(id)) remove(id);
       for (const view of views) {
@@ -64,6 +67,8 @@ export function createWildlifePresentation(resources: Resources, models: Models)
         instance.root.rotation.y = view.facing;
         // Inspection-hour overrides are visual only; they must not mutate the game clock.
         instance.root.visible = wildlifeDay(hour) && view.opacity > .001 && instance.root.position.distanceTo(camera.position) < 210;
+        projected.set(view.x, view.y + .55, view.z).project(camera);
+        if (instance.root.visible && Math.abs(projected.x) < .9 && Math.abs(projected.y) < .9 && projected.z > -1 && projected.z < 1) inFrame++;
         const clip = view.motionTag === 'wildlife.move' ? 'walk' : 'idle';
         if (clip !== instance.clip) {
           instance.actions[instance.clip].fadeOut(.12);
@@ -81,11 +86,11 @@ export function createWildlifePresentation(resources: Resources, models: Models)
         for (const mesh of instance.meshes) mesh.castShadow = !fading && instance.root.position.distanceTo(camera.position) < 60;
       }
     },
-    stats: () => ({ active: instances.size, visible: [...instances.values()].filter(i => i.root.visible).length,
+    stats: () => ({ active: instances.size, inFrame, visible: [...instances.values()].filter(i => i.root.visible).length,
       created, released, available: [...available], bones: instances.size * 16,
       ids: [...instances.keys()], destroyed }),
     dispose() {
-      if (destroyed) return; destroyed = true;
+      if (destroyed) return; destroyed = true; inFrame = 0;
       for (const id of [...instances.keys()]) remove(id);
       group.clear(); group.removeFromParent();
     },
