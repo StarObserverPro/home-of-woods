@@ -289,7 +289,8 @@ for i,b in enumerate(bones):
     else:
         parent=new_abs[name_to_joint[b['parent']]]
         b['translation']=tuple(new_abs[i][h]-parent[h] for h in range(3))
-TORSO_HEIGHT=compact_height(1.46)
+TORSO_LOCAL_HEIGHT=bones[name_to_joint["goat_torso"]]["translation"][1]
+# Torso animation translation is relative to goat_root; world height would lift the hooves.
 # Encode one mesh's shared binary buffers and all 21 skin matrices / animation channels.
 # Use tightly packed bufferViews for GLTF 2 and embed directly in GLB.
 blob=bytearray()
@@ -371,7 +372,7 @@ def animation(name,duration,fps,pose):
 
 base=dict((b['name'],b['translation']) for b in bones)
 def idle_pose(n,t,d):
-    if n=='goat_torso':return (0.024*math.sin(2*math.pi*t/d),TORSO_HEIGHT+.017*math.sin(4*math.pi*t/d),0)
+    if n=='goat_torso':return (0.024*math.sin(2*math.pi*t/d),TORSO_LOCAL_HEIGHT+.017*math.sin(4*math.pi*t/d),0)
     if n=='goat_neck':return quat_euler(.032*math.sin(math.tau*t/d),.06*math.sin(math.tau*t/d))
     if n=='goat_head':return quat_euler(-.075*math.sin(math.tau*t/d),.065*math.sin(math.tau*t/d+.9))
     if n=='left_front_upper':return quat_euler(-.33*holdpulse(t,2.1,2.65,3.1,3.65))
@@ -380,14 +381,14 @@ def idle_pose(n,t,d):
     return quat_euler()
 
 def survey_pose(n,t,d):
-    if n=='goat_torso':return (0,TORSO_HEIGHT+.012*math.sin(math.tau*t/d),0)
+    if n=='goat_torso':return (0,TORSO_LOCAL_HEIGHT+.012*math.sin(math.tau*t/d),0)
     if n=='goat_neck':return quat_euler(-.12*math.sin(math.pi*t/d),.16*math.sin(math.tau*t/d))
     if n=='goat_head':return quat_euler(-.14*math.sin(math.pi*t/d),-.20*math.sin(math.tau*t/d))
     return quat_euler()
 
 def lift_pose(n,t,d):
     p=holdpulse(t,.24,.90,1.55,2.44)
-    if n=='goat_torso':return (0.035*p,TORSO_HEIGHT+.015*p,-.012*p)
+    if n=='goat_torso':return (0.035*p,TORSO_LOCAL_HEIGHT+.015*p,-.012*p)
     if n=='goat_neck':return quat_euler(-.06*p,0.,0.)
     if n=='left_front_upper':return quat_euler(-.44*p)
     if n=='left_front_lower':return quat_euler(.67*p)
@@ -397,7 +398,7 @@ def lift_pose(n,t,d):
 
 def walk_pose(n,t,d):
     wave=math.tau*t/d*2.0 # two deliberate step cycles in place
-    if n=='goat_torso':return (0.018*math.sin(wave),TORSO_HEIGHT+.024*math.sin(wave*2-.3),0)
+    if n=='goat_torso':return (0.018*math.sin(wave),TORSO_LOCAL_HEIGHT+.024*math.sin(wave*2-.3),0)
     if n=='goat_neck':return quat_euler(.045*math.sin(wave-.4))
     if n=='goat_head':return quat_euler(-.045*math.sin(wave-.4),.02*math.sin(wave*.5))
     for side in ('left','right'):
