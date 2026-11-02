@@ -57,18 +57,18 @@ test('place, overlap rejection, relocate and pack retain one instance, including
  assert.match(packFurniture(s,a.instanceId),/收回/);assert.equal(s.inventory.instances!.length,2);assert.deepEqual(s.inventory.instances!.find(i=>i.instanceId===a.instanceId),a);
  assert.match(placeFurniture(s,a.instanceId,p,0,blockers),/摆好/);assert.equal(s.inventory.instances!.length,2);
 });
-test('inventory schema 3 preserves instances and unknown catalog IDs; protects invalid structures',()=>{
+test('current inventory core preserves instances and unknown catalog IDs; protects invalid structures',()=>{
  const s=stocked();craft(s);s.inventory.instances!.push({...structuredClone(s.inventory.instances![0]),instanceId:'future-own-1',definitionId:'future.furniture',blueprintId:'future.recipe',traits:[{id:'future.affix',value:17}]});
  const restored=prepareInventoryPersistence(serializeInventory(s.inventory));assert.notEqual(restored.decision,'protected');if(restored.decision==='protected')throw Error('unexpected');assert.deepEqual(restored.value.instances,canonicalInstances(s.inventory.instances));
- assert.equal(prepareInventoryPersistence(JSON.stringify({schemaVersion:3,stacks:[]})).decision,'protected');assert.equal(prepareInventoryPersistence(JSON.stringify({schemaVersion:4,stacks:[],instances:[]})).decision,'protected');
+ assert.equal(prepareInventoryPersistence(JSON.stringify({schemaVersion:3,stacks:[]})).decision,'protected');assert.equal(prepareInventoryPersistence(JSON.stringify({schemaVersion:99,stacks:[],instances:[]})).decision,'protected');
  const bad=structuredClone(s.inventory.instances!);bad.push(bad[0]);assert.throws(()=>canonicalInstances(bad));bad.pop();bad[0].location={kind:'world',x:NaN,z:0,rotation:0};assert.throws(()=>canonicalInstances(bad));
 });
-test('world save persists job, clock, learned plans and instances; genuine ruleset 2 migrates',async()=>{
+test('world save persists job, clock, learned plans and instances; old rules are no longer imported',async()=>{
  const s=stocked();craft(s);s.clock.speed=12;beginWorkshop(s,'craft',[],BLUEPRINTS[0].id);advanceWorkshop(s);s.time+=1;
  const raw=await serializeWorldSave(s,context,{sequence:1,savedAt:100});const restored=await prepareWorldSave(raw,context);assert.equal(restored.decision,'restored');if(restored.decision!=='restored')throw Error('unexpected');
  assert.deepEqual(restored.value.workshop,s.workshop);assert.deepEqual(restored.value.inventory.instances,s.inventory.instances);assert.equal(restored.value.clock.speed,12);
  const loaded=restored.value;loaded.time+=3;advanceWorkshop(loaded);assert.equal(loaded.inventory.instances!.length,2);advanceWorkshop(loaded);assert.equal(loaded.inventory.instances!.length,2);
- const old=createState();const oldRaw=await change(await serializeWorldSave(old,context,{sequence:1,savedAt:100}),o=>{o.rulesetVersion=2;delete o.world.workshop;delete o.world.clock;});const migrated=await prepareWorldSave(oldRaw,context);assert.equal(migrated.decision,'migrated');if(migrated.decision!=='migrated')throw Error('unexpected');assert.equal(migrated.value.clock.speed,1);assert.deepEqual(migrated.value.inventory.stacks,old.inventory.stacks);
+ const oldRaw=await change(raw,o=>{o.rulesetVersion=2;});assert.equal((await prepareWorldSave(oldRaw,context)).decision,'protected');
  for(const mutate of [(o:any)=>{o.world.workshop.nextInstance=1;},(o:any)=>{o.world.clock.speed=99;},(o:any)=>{o.world.workshop.future=true;},(o:any)=>{o.world.inventory.instances[0].createdAt=999999;}])assert.equal((await prepareWorldSave(await change(raw,mutate),context)).decision,'protected');
 });
 test('local clock scales only simulated time, crosses midnight/seasons, rejects invalid inputs',()=>{

@@ -4,7 +4,7 @@ import type {Collider} from '../world/layout.ts';
 import {WORKSHOP_RULES,WORKBENCH,WORKBENCH_STOOL,SEAT_DEFINITION} from '../content/workshop.ts';
 import {canStand} from './navigation.ts';
 import {heightAt,slopeAt} from '../world/surface.ts';
-import {canonicalInstances} from './owned-items.ts';
+import {canonicalInstances,withItemLocation} from './owned-items.ts';
 import {inventoryTransaction} from './inventory.ts';
 export type PlacementDraft={instanceId:string;point:Point|null;rotation:number;reason:string};
 export const workstationColliders=():Collider[]=>[
@@ -31,13 +31,13 @@ export function placeFurniture(state:GameState,id:string,p:Point,rotation:number
   const reason=placementReason(state,id,p,blockers);if(reason)return reason;
   if(!Number.isFinite(rotation))return '朝向无效。';
   const inventory=inventoryTransaction(state.inventory,[]);
-  inventory.instances=canonicalInstances((inventory.instances??[]).map(i=>i.instanceId===id?{...i,location:{kind:'world',x:p.x,z:p.z,rotation:((rotation%(Math.PI*2))+Math.PI*2)%(Math.PI*2)}}:i));
+  inventory.instances=canonicalInstances((inventory.instances??[]).map(i=>i.instanceId===id?withItemLocation(i,{kind:'world',x:p.x,z:p.z,rotation:((rotation%(Math.PI*2))+Math.PI*2)%(Math.PI*2)}):i));
   state.inventory=inventory;state.route=[];return '木墩已经摆好。';
 }
 export function packFurniture(state:GameState,id:string){
   const item=state.inventory.instances?.find(i=>i.instanceId===id);
   if(!item||item.definitionId!==SEAT_DEFINITION||item.location.kind!=='world')return '这件物品不在场景中。';
   const inventory=inventoryTransaction(state.inventory,[]);
-  inventory.instances=canonicalInstances((inventory.instances??[]).map(i=>i.instanceId===id?{...i,location:{kind:'inventory'}}:i));
+  inventory.instances=canonicalInstances((inventory.instances??[]).map(i=>i.instanceId===id?withItemLocation(i,{kind:'inventory'}):i));
   state.inventory=inventory;if(state.selected===id)state.selected=null;state.route=[];return '已收回仓库，原来的词条和身份都保留了。';
 }

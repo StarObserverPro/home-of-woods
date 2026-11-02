@@ -30,7 +30,7 @@ import type { GatheringSnapshot } from '../domain/gathering-view.ts';
 import { cancelPlayerAction, startPlayerChop, startPlayerGather, advancePlayerGather } from './player-actions.ts';
 import { warehouseSnapshot } from '../domain/warehouse-view.ts';
 import type { WarehouseView } from '../domain/warehouse-view.ts';
-import { upgradeWorldSession } from './session-upgrade.ts';
+import { validateWorldSession } from './session-upgrade.ts';
 import { createSaveContext } from '../domain/save-context.ts';
 import { createBrowserWorldSaveStore } from './world-save-store.ts';
 import { createSaveController } from './save-controller.ts';
@@ -72,7 +72,7 @@ export async function createRuntime(
   const persistence = saveOwner ?? createSaveController(createBrowserWorldSaveStore(), saveContext);
   const savedState = await persistence.load();
   const state = initialState ?? savedState ?? createState(trees);
-  upgradeWorldSession(state, saveContext);
+  validateWorldSession(state, saveContext);
   for (const source of registry.sources.values()) if (!interactionRoute({ player: { ...START, facing: 0, moving: false } }, source, registry, colliders).reachable) throw new Error(`Unreachable source: ${source.sourceId}`);
   synchronizeGatheringHosts(state, registry);
   let message = "沿着小路，认识你的新家。",

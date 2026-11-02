@@ -1,3 +1,5 @@
+import {rarityStyle} from './rarity.ts';
+import {itemProperties,itemRarity} from '../domain/item-properties.ts';
 import {BLUEPRINTS,WORKBENCH,WORKBENCH_STOOL,SEAT_DEFINITION,findBlueprint,traitLabel} from '../content/workshop.ts';
 import {CAMP_VISITOR} from '../content/characters.ts';
 import type {WorkshopSnapshot} from '../domain/workshop.ts';
@@ -10,7 +12,7 @@ export function workshopDetails(selected:string|null,view:WorkshopSnapshot){
   if(selected===WORKBENCH_STOOL.id)return {title:'工作台小凳',tag:'营地家具 · 一级',detail:'几块粗木搭成的小凳，先陪着工作台使用。升级和坐下动作以后开放。'};
   if(selected===CAMP_VISITOR.id)return {title:'林间行商',tag:'图纸交换',detail:'暖木墩图纸常备；另外一份图纸，有时会随当天的货物一起带来。每张先用一份木料交换。'};
   const item=view.items.find(i=>i.instanceId===selected&&i.location.kind==='world');
-  return item?{title:findBlueprint(item.blueprintId)?.name??'待识别家具',tag:'已摆放的木作',detail:item.traits.map(t=>`${traitLabel(t.id)} ${t.value}`).join(' · ')}:null;
+  return item?{title:findBlueprint(item.blueprintId)?.name??'待识别家具',tag:`${itemRarity(item).name} · 已摆放的木作`,detail:itemProperties(item).traits.map(t=>`${traitLabel(t.id)} ${t.value}`).join(' · ')}:null;
 }
 export function Hourglass({view,onSpeed,disabled}:{view:WorkshopSnapshot;onSpeed:(s:ClockSpeed)=>void;disabled:boolean}){
   return <div className="hourglass" role="group" aria-label="本地沙漏"><span aria-hidden="true">⌛</span>{CLOCK_SPEEDS.map(s=><button key={s} disabled={disabled} aria-pressed={view.speed===s} aria-label={`沙漏 ${s} 倍速`} onClick={()=>onSpeed(s)}>{s}×</button>)}</div>;
@@ -29,8 +31,20 @@ export function WorkshopControls({selected,view,message,disabled,onOffer,onCraft
   </section>;
 }
 export function OwnedFurniture({view,onPlace,onPack}:{view:WorkshopSnapshot;onPlace:(id:string)=>void;onPack:(id:string)=>void}){
-  return <section className="owned-furniture" aria-label="木作家具"><h3>木作家具 <small>{view.items.filter(i=>i.location.kind==='inventory').length} 件在库 · {view.items.filter(i=>i.location.kind==='world').length} 件已摆放</small></h3><p>每件家具单独保管；摆放、移动和收回不会改变它的词条。当前词条用于区分物品，还不提供制作加速等增益。</p>
-    <div className="owned-grid">{view.items.map(item=><article className="owned-card" key={item.instanceId}><div className="stump-icon" aria-hidden="true">▰</div><strong>{findBlueprint(item.blueprintId)?.name??item.definitionId}</strong><p>{item.traits.map(t=>`${traitLabel(t.id)} ${t.value}`).join(' · ')}</p><small>{item.location.kind==='inventory'?'在仓库':`已摆放 (${item.location.x.toFixed(1)}, ${item.location.z.toFixed(1)})`} · 编号 {item.instanceId.split('-').at(-1)}</small><div><button className="context-button" disabled={!!view.job||item.definitionId!==SEAT_DEFINITION} onClick={()=>onPlace(item.instanceId)}>{item.location.kind==='inventory'?'摆放到地上':'移动位置'}</button>{item.location.kind==='world'&&<button className="context-button" disabled={!!view.job||item.definitionId!==SEAT_DEFINITION} onClick={()=>onPack(item.instanceId)}>收回</button>}</div></article>)}</div>
+  return <section className="owned-furniture" aria-label="木作家具">
+    <h3>木作家具 <small>{view.items.filter(i=>i.location.kind==='inventory').length} 件在库 · {view.items.filter(i=>i.location.kind==='world').length} 件已摆放</small></h3>
+    <p>每件木作都有自己的等级与词条，移动和收回不会改变它们。等级带来不同的颜色与光泽，暂不增加制作收益。</p>
+    <div className="owned-grid">{view.items.map(item=>{
+      const rarity=itemRarity(item),traits=itemProperties(item).traits;
+      return <article className="owned-card" key={item.instanceId} data-rarity={rarity.id} style={rarityStyle(item)}>
+        <div className="rarity-icon-row"><span className="stump-icon" aria-hidden="true">▰</span><span className="rarity-label">{rarity.name}</span></div>
+        <strong className="rarity-name">{findBlueprint(item.blueprintId)?.name??item.definitionId}</strong>
+        <p>{traits.length?traits.map(t=>`${traitLabel(t.id)} ${t.value}`).join(' · '):'暂无额外词条'}</p>
+        <small>{item.location.kind==='inventory'?'在仓库':`已摆放 (${item.location.x.toFixed(1)}, ${item.location.z.toFixed(1)})`} · 编号 {item.instanceId.split('-').at(-1)}</small>
+        <div><button className="context-button" disabled={!!view.job||item.definitionId!==SEAT_DEFINITION} onClick={()=>onPlace(item.instanceId)}>{item.location.kind==='inventory'?'摆放到地上':'移动位置'}</button>
+          {item.location.kind==='world'&&<button className="context-button" disabled={!!view.job||item.definitionId!==SEAT_DEFINITION} onClick={()=>onPack(item.instanceId)}>收回</button>}</div>
+      </article>;
+    })}</div>
     {!view.items.length&&<p>还没有木作。拿到图纸后，去帐篷前的工作台做第一件。</p>}
   </section>;
 }

@@ -1,3 +1,5 @@
+import {craftedRarity} from './item-creation.ts';
+import {rarityDefinition} from '../content/rarities.ts';
 import type {GameState} from './state.ts';
 import type {Collider} from '../world/layout.ts';
 import {random} from '../world/layout.ts';
@@ -71,8 +73,9 @@ export function advanceWorkshop(host:GameState):string|null{
     const plan=findBlueprint(job.blueprintId!);if(!plan||!nextWorkshop.blueprints.includes(plan.id)){cancelWorkshop(host);return '图纸不可用，未扣料。';}
     if(!Number.isSafeInteger(nextWorkshop.nextInstance+1)){cancelWorkshop(host);return '物品编号已用尽，未扣料。';}
     const instanceId=`crafted-${host.seed}-${nextWorkshop.nextInstance}`;
-    nextInventory.instances=canonicalInstances([...(nextInventory.instances??[]),{instanceId,definitionId:SEAT_DEFINITION,blueprintId:plan.id,createdAt:host.time,traits:[{id:plan.traitId,value:plan.value}],location:{kind:'inventory'}}]);
-    nextWorkshop.nextInstance++;result=`做好了「${plan.name}」，已放入仓库。`;
+    const rarityId=craftedRarity(host.seed,nextWorkshop.nextInstance);
+    nextInventory.instances=canonicalInstances([...(nextInventory.instances??[]),{instanceId,definitionId:SEAT_DEFINITION,blueprintId:plan.id,createdAt:host.time,rarityId,traits:[{id:plan.traitId,value:plan.value}],location:{kind:'inventory'}}]);
+    nextWorkshop.nextInstance++;result=`做好了「${rarityDefinition(rarityId).name} · ${plan.name}」，已放入仓库。`;
   }
   nextWorkshop.lastResponse=result;Object.assign(host,{inventory:nextInventory,workshop:nextWorkshop});return result;
 }

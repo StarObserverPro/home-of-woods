@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Rarity surface verification</title><style>html,body,#scene{margin:0;width:100%;height:100%;overflow:hidden}#caption{position:fixed;bottom:8px;left:10px;color:white;background:#152c29cc;font:13px system-ui;padding:8px 12px;border-radius:6px;pointer-events:none}</style></head><body><div id="scene"></div><div id="caption">Common / Uncommon / Rare / Epic / Legendary — production scene and materials</div><script type="module">
+import {createScene} from '/src/scene/create-scene.ts';
+import {createState} from '/src/domain/state.ts';
+import {makeTrees} from '/src/world/layout.ts';
+import {createSaveContext} from '/src/domain/save-context.ts';
+import {heightAt} from '/src/world/surface.ts';
+import {RARITIES} from '/src/content/rarities.ts';
+import {VIEWS} from '/src/content/scene-props.ts';
+import {BLUEPRINTS,SEAT_DEFINITION} from '/src/content/workshop.ts';
+const trees=makeTrees(),state=createState(trees),ctx=createSaveContext(trees);
+const center={x:-40,z:15},yaw=-.75;
+state.inventory.instances=RARITIES.map((r,i)=>({instanceId:`visual-${r.id}`,definitionId:SEAT_DEFINITION,blueprintId:BLUEPRINTS[0].id,createdAt:0,rarityId:r.id,traits:[{id:'comfort',value:2}],location:{kind:'world',x:center.x+(i-2)*1.5*Math.cos(yaw),z:center.z-(i-2)*1.5*Math.sin(yaw),rotation:0}}));
+Object.assign(VIEWS.fire,{target:[center.x,heightAt(center.x,center.z)+.45,center.z],yaw,elevation:.34,distance:10,zoom:1});
+const view=await createScene(document.querySelector('#scene'),trees,()=>{},ctx.registry);
+view.setReducedMotion(true);
+window.rarityHarness={state,view,set(hour=14,angle=yaw,elevation=.34){Object.assign(VIEWS.fire,{yaw:angle,elevation});view.inspectScene('fire',{hour,fire:false,reflections:false});view.render(state,0);return view.stats();},capture(){return view.capture(state);}};
+window.rarityHarness.set();window.rarityReady=true;
+</script></body></html>

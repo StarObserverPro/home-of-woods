@@ -1,3 +1,5 @@
+import {rarityStyle} from './rarity.ts';
+import {itemRarity} from '../domain/item-properties.ts';
 import {woodcraftDetails,WoodcraftControls,WoodDropControls} from './Woodcraft.tsx';
 import {emptyWoodcraftSnapshot} from '../app/woodcraft-session.ts';
 import {workshopDetails,Hourglass,WorkshopControls,OwnedFurniture,PlacementControls} from './Workshop.tsx';
@@ -241,6 +243,7 @@ export function App() {
   const activeAction = forest.active;
   const gatherTarget = snapshot.gathering.selectedTarget;
   const gatherAction = snapshot.gathering.action;
+  const selectedOwnedItem=snapshot.workshop.items.find(item=>item.instanceId===snapshot.selected);
   const selected = woodcraftDetails(snapshot.selected,snapshot.woodcraft) ?? workshopDetails(snapshot.selected,snapshot.workshop) ?? gatherTarget ?? scenePropDetails(snapshot.selected,snapshot.appearance,forest.wood) ?? (
     snapshot.selected === "cabin"
       ? {
@@ -489,7 +492,7 @@ export function App() {
               ×
             </button>
           </div>
-          <h2>{selected.title}</h2>
+          <h2 className={selectedOwnedItem?'rarity-name':undefined} data-rarity={selectedOwnedItem?itemRarity(selectedOwnedItem).id:undefined} style={selectedOwnedItem?rarityStyle(selectedOwnedItem):undefined}>{selected.title}</h2>
           {['grove-altar','grove-altar:oracle'].includes(snapshot.selected??'') && <div className="tree-actions"><button className="context-button" onClick={()=>runtime.current?.ritual('prayer')}>合掌祈祷</button><button className="context-button" onClick={()=>runtime.current?.cancelAction()}>取消动作</button></div>}
           {selectedTree && ['tree-slot-r3-hero-0','tree-slot-16-9','tree-slot-13-6','tree-slot-17-11','landmark-elder'].includes(selectedTree.id) && <button className="context-button" onClick={()=>runtime.current?.selectTreeBranches()}>上树采枝</button>}
           <p>{selected.detail}</p>

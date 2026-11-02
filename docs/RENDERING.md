@@ -147,3 +147,11 @@ content/tree-resources、world/gathering-layout 管理按树种的圈形挂点�
 
 ## 八树形与林下回接
 Models 的固定树形缓存同时提供静态合并与动作 source，远景按形态/变体实例绘制；物种视觉映射只读 world，不改 Tree.kind 与存档。createUnderstory 的装饰数据只在建场时生成，唯一 render 消费宿主生长/伐倒状态，Resources 统一回收。不新增 RAF 或写入者。详见 [回接](FOREST_INTEGRATION.md)。
+
+## 物品等级：全表面柔光
+
+`item-surface.ts` 在标准材质上增加弱表面发光项，使用物体世界法线和原有漫反射亮度温和调制，避免夜间成为无明暗的纯色块。覆盖所有材质槽；端面/侧面、原有贴图、粗糙度、深度和阴影行为保留。不是 Fresnel 轮廓线，也不添加光柱、粒子、透明外壳、额外点光源或全屏 bloom。
+
+变体按“原材质 UUID × 稀有度”缓存，模型绑定按实例保存。普通/优秀/稀有用原材质；史诗/传说各有木色与端面变体，五件样品合计 4 个额外材质，无额外模型 draw call。禁止原地修改工作台和木墩共用的材质；切回非发光等级恢复原材质。所有变体由既有 Resources 统一释放，材质模块不另建循环。
+
+当前 Three.js WebGL 标准 shader 在 `emissivemap_fragment` 后叠加该项，独立 uniform 与 program cache key 保证缓存正确；浏览器验收需检查 shaderErrors。测试覆盖日间/黄昏/夜间与转镜头，证据及强度调整说明见 [ITEM_RARITY_VERIFICATION.md](ITEM_RARITY_VERIFICATION.md)。

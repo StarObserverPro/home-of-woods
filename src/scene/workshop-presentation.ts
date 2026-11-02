@@ -1,3 +1,4 @@
+import {createItemSurface} from './item-surface.ts';
 import * as THREE from 'three';
 import type {Resources} from './resources.ts';
 import type {Models} from './models.ts';
@@ -9,6 +10,7 @@ import type {PlacementDraft} from '../domain/furniture-placement.ts';
 
 /** CC0 Kenney log cribs support authored rough planks. Meshes never settle gameplay. */
 export function createWorkshopPresentation(r:Resources,models:Models){
+  const surfaces=createItemSurface(r);
   const group=new THREE.Group(),hits=new InteractionRegistry();group.name='workshop';
   const wood=r.material('#855739'),endgrain=r.material('#d6b47a');
   const seatGeometry=r.geometry('workshop-seat',()=>new THREE.CylinderGeometry(.52,.6,.7,9));
@@ -39,6 +41,7 @@ export function createWorkshopPresentation(r:Resources,models:Models){
         if(item.definitionId!==SEAT_DEFINITION||item.location.kind!=='world')continue;
         current.add(item.instanceId);let owned=placed.get(item.instanceId);
         if(!owned){const root=seat();root.name=item.instanceId;group.add(root);owned={root,unregister:hits.register(root,item.instanceId)};placed.set(item.instanceId,owned);}
+        surfaces.apply(owned.root,item);
         owned.root.position.set(item.location.x,heightAt(item.location.x,item.location.z)-.06,item.location.z);owned.root.rotation.y=item.location.rotation;
       }
       for(const [id,item] of placed)if(!current.has(id)){item.unregister();group.remove(item.root);placed.delete(id);}
@@ -47,7 +50,7 @@ export function createWorkshopPresentation(r:Resources,models:Models){
       if(job?.phase==='working'){const p=Math.min(1,(state.time-job.startedAt!)/job.durationSeconds);progress.position.set(state.player.x,heightAt(state.player.x,state.player.z)+2.4,state.player.z);progress.quaternion.copy(camera.quaternion);fill.scale.x=1.8*p;fill.position.x=-.9+.9*p;}
     },
     point(id:string){if(id===WORKBENCH.id)return WORKBENCH;if(id===WORKBENCH_STOOL.id)return WORKBENCH_STOOL;const root=placed.get(id)?.root;return root?{x:root.position.x,z:root.position.z}:null;},
-    stats(){return {placed:placed.size,hits:hits.size,preview:!!preview};},
-    dispose(){placed.forEach(p=>p.unregister());placed.clear();hits.clear();group.clear();preview=null;},
+    stats(){return {placed:placed.size,hits:hits.size,preview:!!preview,surfaces:surfaces.stats()};},
+    dispose(){surfaces.dispose();placed.forEach(p=>p.unregister());placed.clear();hits.clear();group.clear();preview=null;},
   };
 }
