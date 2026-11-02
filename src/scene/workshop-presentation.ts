@@ -35,7 +35,8 @@ export function createWorkshopPresentation(r:Resources,models:Models){
   back.scale.x=1.8;fill.scale.x=1.8;fill.position.z=.01;back.renderOrder=fill.renderOrder=20;progress.add(back,fill);progress.visible=false;group.add(progress);
   let preview:PlacementDraft|null=null;
   return {group,hits,setPreview(value:PlacementDraft|null){preview=value;},
-    update(state:GameState,camera:THREE.Camera){
+    update(state:GameState,camera:THREE.Camera,dt=0,reducedMotion=false,night=0){
+      surfaces.update(dt,reducedMotion,night);
       const current=new Set<string>();
       for(const item of state.inventory.instances??[]){
         if(item.definitionId!==SEAT_DEFINITION||item.location.kind!=='world')continue;
@@ -44,7 +45,7 @@ export function createWorkshopPresentation(r:Resources,models:Models){
         surfaces.apply(owned.root,item);
         owned.root.position.set(item.location.x,heightAt(item.location.x,item.location.z)-.06,item.location.z);owned.root.rotation.y=item.location.rotation;
       }
-      for(const [id,item] of placed)if(!current.has(id)){item.unregister();group.remove(item.root);placed.delete(id);}
+      for(const [id,item] of placed)if(!current.has(id)){item.unregister();surfaces.release(item.root);group.remove(item.root);placed.delete(id);}
       ghost.visible=!!preview?.point;if(preview?.point){ghost.position.set(preview.point.x,heightAt(preview.point.x,preview.point.z)-.06,preview.point.z);ghost.rotation.y=preview.rotation;ghostMaterial.color.set(preview.reason?'#d97563':'#d4edab');ringMaterial.color.copy(ghostMaterial.color);}
       const job=state.workshop.job;progress.visible=job?.phase==='working';
       if(job?.phase==='working'){const p=Math.min(1,(state.time-job.startedAt!)/job.durationSeconds);progress.position.set(state.player.x,heightAt(state.player.x,state.player.z)+2.4,state.player.z);progress.quaternion.copy(camera.quaternion);fill.scale.x=1.8*p;fill.position.x=-.9+.9*p;}

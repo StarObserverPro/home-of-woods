@@ -450,7 +450,7 @@ export async function createScene(
       if(camera.position.x>WORLD.minX&&camera.position.x<WORLD.maxX&&camera.position.z>WORLD.minZ&&camera.position.z<WORLD.maxZ)camera.position.y=Math.max(camera.position.y,heightAt(camera.position.x,camera.position.z)+THREE.MathUtils.lerp(3,.4,blend));
       if(scenePreset)for(const tree of trees)if(Math.hypot(camera.position.x-tree.x,camera.position.z-tree.z)<3*tree.scale)camera.position.y=Math.max(camera.position.y,heightAt(tree.x,tree.z)+9*tree.scale);
       camera.lookAt(target);
-      workshop.update(state,camera);woodcraft.update(state.woodcraft);
+      workshop.update(state,camera,dt,reducedMotion,sky.night);woodcraft.update(state.woodcraft);
       camera.zoom = THREE.MathUtils.lerp(zoom,1,blend) * (mobile ? scenePreset?.8:THREE.MathUtils.lerp(1.45,.9,blend) : 1);
       camera.updateProjectionMatrix();
       environment.update(elapsed,dt,camera.position,reducedMotion);

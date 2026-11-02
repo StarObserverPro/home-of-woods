@@ -1,5 +1,6 @@
 # Item extension contract and rarity
 
+> 本范围中的“无粒子/弱静态表面光”约束已由用户后续反馈修正，当前规则见 [R2](../RARITY_VFX_R2.md)。数据层不变。
 Authorized 2026-11-02: discard historical-save compatibility; refactor item IO before adding rarity. Based on PR #8 so wood transfers are covered. No merge or deployment.
 
 Goal: strict identity/count/ownership core; open JSON attributes with centrally registered typed defaults. Unknown attributes and unsupported values survive read/edit/write. Quantity changes and physical transfers preserve complete batch identities. New optional attributes do not require format migrations. Real semantic changes still require a new core version.

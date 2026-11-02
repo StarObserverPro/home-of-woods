@@ -31,8 +31,8 @@ test('surface variants retain base appearance, cover every material slot and nev
     const materials=root.material as THREE.MeshStandardMaterial[];
     for(const [index,material] of materials.entries()) {
       const original=index===0?wood:end;assert.notEqual(material,original);assert.equal(material.emissive.getHex(),original.emissive.getHex());
-      const shader:any={uniforms:{},fragmentShader:'#include <common>\n#include <emissivemap_fragment>'};material.onBeforeCompile(shader,{} as any);
-      assert.ok(shader.uniforms.raritySurfaceTint.value.getHex()>0);assert.match(shader.fragmentShader,/rarityFacet/);assert.match(shader.fragmentShader,/rarityAlbedo/);
+      const shader:any={uniforms:{},vertexShader:'#include <common>\n#include <begin_vertex>',fragmentShader:'#include <common>\n#include <emissivemap_fragment>'};material.onBeforeCompile(shader,{} as any);
+      assert.ok(shader.uniforms.raritySurfaceTint.value.getHex()>0);assert.match(shader.fragmentShader,/float sheen/);assert.match(shader.fragmentShader,/rarityAlbedo/);
       assert.equal(material.color.getHex(),original.color.getHex());assert.equal(material.roughness,original.roughness);
       assert.equal(material.depthTest,true);assert.equal(material.depthWrite,true);assert.equal(material.transparent,false);assert.equal(material.opacity,1);
       assert.match(material.name,new RegExp(id));
