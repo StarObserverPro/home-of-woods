@@ -1,0 +1,60 @@
+name: Verify screenshot-free game branch
+on:
+  push:
+    branches: [feat/wildlife-mountain-goat]
+    paths: [.github/workflows/verify-evidence-cleanup-once.yml]
+permissions:
+  contents: write
+jobs:
+  verify-and-clean:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+      - run: npm ci
+      - name: Production source, asset, unit tests and build
+        run: npm run check
+      - name: Historical receipts (temporary archived screenshots only)
+        run: npm run verify:evidence
+      - name: Immutable delivery audit
+        run: node tools/audit-delivery-evidence.mjs
+      - name: Scene sandbox source, tests, build and linked historical receipts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd sandbox/scene-r5
+          npm ci
+          npm test
+          npm run build
+          node verify-review.mjs
+      - name: Verify no screenshot assets are in the working tree or committed tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {execFileSync} from 'node:child_process';
+          import {existsSync} from 'node:fs';
+          import assert from 'node:assert/strict';
+          const paths=execFileSync('git',['ls-files','-z']).toString().split('\0').filter(Boolean);
+          const image=/\.(png|jpe?g|webp|gif)$/i,evidence=/^(evidence\/|sandbox\/[^/]+\/evidence\/)/;
+          const tracked=paths.filter(p=>evidence.test(p)&&image.test(p));
+          assert.equal(tracked.length,0,'Evidence screenshots must not be tracked');
+          for(const p of paths.filter(p=>evidence.test(p)&&image.test(p)))assert.equal(existsSync(p),false);
+          for(const p of ['art-direction-r3/valley-master-r3.jpg','art/characters/forest-npc-atlas.png','art/characters/forest-player-atlas.png','sources/kaykit/adventurers/rogue_texture.png','public/assets/wildlife/stag.glb','public/assets/wildlife/goat.glb'])assert.ok(paths.includes(p),'Game asset must remain: '+p);
+          console.log('PASS: no tracked screenshots; reference imagery, runtime textures and models remain');
+          NODE
+      - name: Drop one-time CI file; retain established project verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/verify-evidence-cleanup-once.yml
+          git commit -m 'chore(evidence): retire one-time cleanup verification workflow'
+          git push origin HEAD:feat/wildlife-mountain-goat
