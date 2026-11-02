@@ -1,0 +1,34 @@
+name: CC0 mountain goat candidate review
+on:
+  push:
+    branches: [art/cc0-mountain-goat-review]
+    paths: [.github/workflows/goat-candidate-review.yml]
+permissions:
+  contents: read
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch exact published CC0 candidates for shape inspection
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/goat-candidates
+          curl --fail -L --retry 2 --max-time 80 -sS "https://files.innerscene.com/library/horned-goat-171680de/51ee1da9c314a54d38b7/horned-goat.glb" -o /tmp/goat-candidates/innerscene-horned-goat.glb || echo 'Innerscene download unavailable'
+          curl --fail -L --retry 2 --max-time 80 -sS "https://opengameart.org/sites/default/files/goatlowrez.obj" -o /tmp/goat-candidates/opengameart-goatlowrez.obj || echo 'OpenGameArt download unavailable'
+          curl --fail -L --retry 2 --max-time 80 -sS "https://cdn.3dassets.dev/assets/6063/v1/model.glb" -o /tmp/goat-candidates/alpine-ibex.glb || echo 'Ibex CDN download unavailable'
+          for query in "mountain goat" "goat" "ibex"; do
+            echo "$query" >> /tmp/goat-candidates/search-queries.txt
+            curl -G --data-urlencode "q=$query" -L --max-time 30 -sS "https://3dassets.dev/api/v1/assets" >> /tmp/goat-candidates/search-results.jsonl || true
+            echo >> /tmp/goat-candidates/search-results.jsonl
+          done
+          file /tmp/goat-candidates/* || true
+          sha256sum /tmp/goat-candidates/* > /tmp/goat-candidates/SHA256SUMS.txt
+          ls -lah /tmp/goat-candidates
+      - uses: actions/upload-artifact@v4
+        with:
+          name: actual-cc0-goat-candidates
+          path: /tmp/goat-candidates/
+          retention-days: 1
