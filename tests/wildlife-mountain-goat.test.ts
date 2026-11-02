@@ -49,6 +49,7 @@ test('lift-front, lookout and slow two-step walk move distinct bones without roo
   const mixer=new THREE.AnimationMixer(scene),bones=new Map<string,THREE.Bone>();
   scene.traverse(o=>{if(o instanceof THREE.Bone)bones.set(o.name,o);});
   const front=bones.get('left_front_upper')!, lower=bones.get('left_front_lower')!,hind=bones.get('right_hind_upper')!,head=bones.get('goat_head')!,root=bones.get('goat_root')!;
+  const torso=bones.get('goat_torso')!, torsoBindY=torso.position.y;
   const resting=front.quaternion.clone(),rootRest=root.position.clone();
   const clip=(name:string,t:number)=>{
     mixer.stopAllAction();
@@ -56,12 +57,16 @@ test('lift-front, lookout and slow two-step walk move distinct bones without roo
     mixer.clipAction(animations.find(a=>a.name===name)!).reset().play();
     mixer.setTime(t);
   };
+  clip('idle',0);
+  assert.ok(Math.abs(torso.position.y-torsoBindY)<.01,'standing animation keeps feet near bind-pose ground');
   clip('lift_front',1.1);
   assert.ok(resting.angleTo(front.quaternion)>.23,'foreleg lifts at upper joint');
   assert.ok(lower.rotation.x>.3,'knee folds to clear the hoof');
+  assert.ok(Math.abs(torso.position.y-torsoBindY)<.04,'one hoof lifts without raising all four hooves');
   assert.ok(root.position.distanceTo(rootRest)<.0001,'no root teleport');
   clip('survey',1.5);assert.ok(Math.abs(head.rotation.y)>.07,'neck and head look naturally');
   clip('walk',.48);
+  assert.ok(Math.abs(torso.position.y-torsoBindY)<.04,'two-step walk remains grounded');
   assert.ok(Math.abs(front.rotation.x)>.12 && Math.abs(hind.rotation.x)>.12,'opposing legs step');
   assert.ok(root.position.distanceTo(rootRest)<.0001);
 });
