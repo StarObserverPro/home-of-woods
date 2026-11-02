@@ -1,29 +1,42 @@
+import { assertItemJson, withoutFields } from './item-data.ts';
+import type { ExtensibleRecord } from './item-data.ts';
+import { canonicalJson } from './save-digest.ts';
+export const INVENTORY_SCHEMA_VERSION = 4 as const;
+import {canonicalInstances} from './owned-items.ts';
+import type {OwnedItem} from './owned-items.ts';
 import { ITEM_CATALOG, isStableId } from './item-catalog.ts';
 import type { ItemCatalog } from './item-catalog.ts';
 
-export type WoodSpec = { lengthMm: number; thicknessMm: number; straightness: 'straight' | 'curved' | 'crooked' };
-export type WoodBatch = { spec: WoodSpec | null; measureId: 'piece'; amountPerPiece: number; reserved: boolean };
-export type StackIdentity = { itemId: string; qualityId: string; wood?: WoodBatch };
+export type WoodSpec = ExtensibleRecord & { lengthMm: number; thicknessMm: number; straightness: 'straight' | 'curved' | 'crooked' };
+export type WoodBatch = ExtensibleRecord & { spec: WoodSpec | null; measureId: 'piece'; amountPerPiece: number; reserved: boolean };
+export type StackIdentity = ExtensibleRecord & { itemId: string; qualityId: string; wood?: WoodBatch };
 export function validateWood(raw: unknown): WoodBatch {
   if (!isRecord(raw)) throw new Error('Invalid wood batch');
-  exactKeys(raw, ['spec', 'measureId', 'amountPerPiece', 'reserved']);
+  assertItemJson(raw);
   if (raw.measureId !== 'piece' || raw.amountPerPiece !== 1 || typeof raw.reserved !== 'boolean') throw new Error('Invalid wood measurement');
   let spec: WoodSpec | null = null;
   if (raw.spec !== null) {
     if (!isRecord(raw.spec)) throw new Error('Invalid wood spec');
-    exactKeys(raw.spec, ['lengthMm', 'thicknessMm', 'straightness']);
+
     const v = raw.spec;
     if (![v.lengthMm, v.thicknessMm].every(n => Number.isSafeInteger(n) && (n as number) > 0) || !['straight', 'curved', 'crooked'].includes(v.straightness as string)) throw new Error('Invalid wood dimensions');
-    spec = { lengthMm: v.lengthMm as number, thicknessMm: v.thicknessMm as number, straightness: v.straightness as WoodSpec['straightness'] };
+    spec = { ...structuredClone(v), lengthMm: v.lengthMm as number, thicknessMm: v.thicknessMm as number, straightness: v.straightness as WoodSpec['straightness'] };
   }
-  return { spec, measureId: 'piece', amountPerPiece: 1, reserved: raw.reserved };
+  return { ...structuredClone(raw), spec, measureId: 'piece', amountPerPiece: 1, reserved: raw.reserved };
 }
 export const woodBatch = (spec: WoodSpec | null): WoodBatch => ({ spec, measureId: 'piece', amountPerPiece: 1, reserved: false });
 export type InventoryStack = StackIdentity & { quantity: number };
-export type InventoryState = { schemaVersion: 1; revision: number; stacks: InventoryStack[] };
+export type InventoryState = ExtensibleRecord & { schemaVersion: typeof INVENTORY_SCHEMA_VERSION; revision: number; stacks: InventoryStack[]; instances?: OwnedItem[] };
 export type InventoryDelta = StackIdentity & { delta: number };
-export const stackKey = (stack: StackIdentity) => JSON.stringify([stack.itemId, stack.qualityId, ...(stack.wood ? [validateWood(stack.wood)] : [])]);
-export const createInventory = (): InventoryState => ({ schemaVersion: 1, revision: 0, stacks: [] });
+/** Quantity and command delta are not batch identity; all other JSON fields are. */
+export function stackIdentity(stack: StackIdentity): StackIdentity {
+  const identity = withoutFields(stack, ['quantity', 'delta']);
+  if (Object.hasOwn(stack, 'wood')) identity.wood = validateWood(stack.wood);
+  assertItemJson(identity);
+  return structuredClone(identity) as StackIdentity;
+}
+export const stackKey = (stack: StackIdentity) => canonicalJson(stackIdentity(stack));
+export const createInventory = (): InventoryState => ({ schemaVersion: INVENTORY_SCHEMA_VERSION, revision: 0, stacks: [] });
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
 export function exactKeys(value: Record<string, unknown>, keys: readonly string[]) {
@@ -37,9 +50,10 @@ export function canonicalStacks(value: unknown): InventoryStack[] {
   const stacks: InventoryStack[] = [];
   for (const raw of value) {
     if (!isRecord(raw)) throw new Error('Invalid inventory stack');
-    exactKeys(raw, ['itemId', 'qualityId', 'quantity', ...(Object.hasOwn(raw, 'wood') ? ['wood'] : [])]);
+    assertItemJson(raw);
+    if (Object.hasOwn(raw, 'delta')) throw new Error('Transaction delta is not stored item data');
     if (!isStableId(raw.itemId) || !isStableId(raw.qualityId) || !Number.isSafeInteger(raw.quantity) || (raw.quantity as number) < 0) throw new Error('Invalid inventory identity or quantity');
-    const stack = { itemId: raw.itemId, qualityId: raw.qualityId, quantity: raw.quantity as number, ...(Object.hasOwn(raw, 'wood') ? { wood: validateWood(raw.wood) } : {}) };
+    const stack: InventoryStack = { ...stackIdentity(raw as StackIdentity), quantity: raw.quantity as number };
     const key = stackKey(stack);
     if (seen.has(key)) throw new Error('Duplicate inventory stack identity');
     seen.add(key);
@@ -51,8 +65,9 @@ export function canonicalStacks(value: unknown): InventoryStack[] {
 }
 export function validateInventory(state: InventoryState) {
   if (!isRecord(state)) throw new Error('Invalid inventory state');
-  exactKeys(state, ['schemaVersion', 'revision', 'stacks']);
-  if (state.schemaVersion !== 1 || !Number.isSafeInteger(state.revision) || state.revision < 0) throw new Error('Unsupported inventory state');
+  assertItemJson(state);
+  if(Object.hasOwn(state,'instances'))canonicalInstances(state.instances);
+  if (state.schemaVersion !== INVENTORY_SCHEMA_VERSION || !Number.isSafeInteger(state.revision) || state.revision < 0) throw new Error('Unsupported inventory state');
   return canonicalStacks(state.stacks);
 }
 export function inventoryCount(state: InventoryState, itemId: string, qualityId?: string) {
@@ -88,10 +103,11 @@ export function inventoryTransaction(state: InventoryState, deltas: readonly Inv
   for (const [key, line] of changes) {
     const quantity = (next.get(key)?.quantity ?? 0) + line.delta;
     if (!Number.isSafeInteger(quantity) || quantity < 0) throw new Error('Insufficient or invalid inventory quantity');
-    next.set(key, { itemId: line.itemId, qualityId: line.qualityId, quantity, ...(line.wood ? { wood: validateWood(line.wood) } : {}) });
+    next.set(key, { ...stackIdentity(line), quantity });
   }
-  return { schemaVersion: 1, revision: state.revision + 1, stacks: canonicalStacks([...next.values()]) };
+  return { ...structuredClone(state), schemaVersion: INVENTORY_SCHEMA_VERSION, revision: state.revision + 1, stacks: canonicalStacks([...next.values()]), ...(state.instances?{instances:canonicalInstances(state.instances)}:{}) };
 }
 export function inventoryCandidate(state: InventoryState, itemId: string, delta: number, qualityId: string, catalog: ItemCatalog = ITEM_CATALOG) {
   return inventoryTransaction(state, [{ itemId, qualityId, delta }], catalog);
 }
+

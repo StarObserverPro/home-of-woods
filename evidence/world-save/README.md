@@ -22,11 +22,11 @@ Vite 仍提示既有的大包警告；没有调整预算或跳过检查。完整
 
 继续后同一动作只获得 5 份原木，已用额度变为 5、预留回到 0。树桩阶段连续刷新两次，完整世界保持一致：枝料 3、原木 5、已结算采伐 ID 一条，宿主蘑菇池为 0，未补满。协议状态见：
 
-- [挥斧保存前](chop-before-reload.json)、[挥斧恢复后](chop-after-reload.json)、[截图](chop-restored.jpg)。
+- [挥斧保存前](chop-before-reload.json)、[挥斧恢复后](chop-after-reload.json)、[截图](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/world-save/chop-restored.jpg)。
 - [树桩保存前](felled-before-reload.json)、[第一次刷新](felled-reload-1.json)、[第二次刷新](felled-reload-2.json)。
 - [最终生产切换前](final-before-production.json)、[冻结生产包读取结果](production-smoke.json)：同一来源切换后，游戏时间 `459.0999999999111` 与所有世界字段仍一致，原木 5、枝料 3、已用额度 5，控制台无新错误，脚本仅来自编译后的 `/assets/`。
 
-最终界面另记录 [生产菜单](production-menu.jpg)、[HUD](game-hud.jpg)与[类型用途](warehouse-types.jpg)。原木详情显示“原木 / 未细分木材 / 结构木作”，用途明确为后续开放。
+最终界面另记录 [生产菜单](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/world-save/production-menu.jpg)、[HUD](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/world-save/game-hud.jpg)与[类型用途](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/world-save/warehouse-types.jpg)。原木详情显示“原木 / 未细分木材 / 结构木作”，用途明确为后续开放。
 
 ## 真实 IndexedDB 检查
 
@@ -37,9 +37,9 @@ Vite 仍提示既有的大包警告；没有调整预算或跳过检查。完整
 3. 损坏主档与有效备份并存时，普通保存禁用，自动/手动保存不改原记录；导出返回原始损坏文本。
 4. 明确点击有效副本恢复后，回到备份中的零时刻世界，保存重新可用，未夹带临时世界的资源。
 
-结果见 [保护](database-protection.json)、[恢复](database-recovery.json)、[保护截图](protected-save.jpg)与[恢复截图](recovered-save.jpg)。实际点击“导出主档”所得文件已核对为原文 `{broken-world-save`，检查副本为 [exported-corrupt.json](exported-corrupt.json)；这是有意损坏的测试文件。
+结果见 [保护](database-protection.json)、[恢复](database-recovery.json)、[保护截图](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/world-save/protected-save.jpg)与[恢复截图](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/world-save/recovered-save.jpg)。实际点击“导出主档”所得文件已核对为原文 `{broken-world-save`，检查副本为 [exported-corrupt.json](exported-corrupt.json)；这是有意损坏的测试文件。
 
-额外布局检查页曾真实触发游戏主页面的竞争保护：保存被禁用，重新读取后恢复正常，见 [跨页面保护](real-page-conflict.json)及[截图](real-page-conflict.jpg)。
+额外布局检查页曾真实触发游戏主页面的竞争保护：保存被禁用，重新读取后恢复正常，见 [跨页面保护](real-page-conflict.json)及[截图](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/world-save/real-page-conflict.jpg)。
 
 开发复核入口：运行 `npm.cmd run dev` 后访问 `http://127.0.0.1:5173/evidence/world-save/review.html`。检查页不包含在生产包中。
 

@@ -16,7 +16,6 @@ import { makeTrees, makeColliders } from '../src/world/layout.ts';
 import { RUNTIME_MODELS } from '../src/content/assets.ts';
 import { GATHERABLES } from '../src/content/gatherables.ts';
 import { FORESTRY } from '../src/content/forestry.ts';
-import { upgradeWorldSession } from '../src/app/session-upgrade.ts';
 
 const context = createSaveContext(), trees = makeTrees(), blockers = makeColliders(trees);
 const meta = { sequence: 1, savedAt: 123.5 };
@@ -141,27 +140,6 @@ test('committed and uncommitted action markers cannot be interchanged to replay 
     (s: any) => { s.world.forestry.nextAction = 1; },
     (s: any) => { s.world.forestry.ledger.reserved = s.world.forestry.active.cost; },
   ]) assert.equal((await prepareWorldSave(await changed(falling, change), context)).decision, 'protected');
-});
-
-test('safe inventory migration stays writable in the whole-world envelope', async () => {
-  const original = await serializeWorldSave(createState(), context, meta);
-  const raw = await changed(original, saved => { saved.world.inventory = { version: 5, quantities: { mushroom: 4, branch: 0 } }; });
-  const first = await prepareWorldSave(raw, context); assert.equal(first.decision, 'migrated');
-  if ('value' in first) {
-    assert.equal(inventoryCount(first.value.inventory, 'mushroom', 'ungraded'), 4);
-    assert.equal((await prepareWorldSave(await serializeWorldSave(first.value, context, meta), context)).decision, 'restored');
-  }
-});
-
-test('legacy in-memory session upgrades inventory and frozen actions in one root commit', () => {
-  const { state, tree } = nearTree(); startChop(state, tree);
-  delete (state.forestry.active as any).reward;
-  (state as any).inventory = { version: 2, quantities: { mushroom: 3 } }; (state.forestry as any).wood = 5;
-  upgradeWorldSession(state, context);
-  assert.equal(inventoryCount(state.inventory, 'wood', 'ungraded'), 5);
-  assert.deepEqual(state.forestry.active!.reward, { itemId: 'wood', qualityId: 'ordinary' });
-  const invalid = structuredClone(state); (invalid as any).future = true;
-  const before = JSON.stringify(invalid); assert.throws(() => upgradeWorldSession(invalid, context)); assert.equal(JSON.stringify(invalid), before);
 });
 
 test('automatic and manual saving preserve corrupt primary or backup until explicit valid-copy recovery', async () => {

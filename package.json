@@ -10,18 +10,20 @@
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "verify:assets": "node tools/verify-assets.mjs",
     "check": "npm run verify:assets && npm test && npm run build",
-    "verify:evidence": "node tools/audit-evidence.mjs && node tools/audit-gathering-evidence.mjs && node tools/audit-warehouse-evidence.mjs && node tools/audit-character-evidence.mjs && node tools/audit-item-evidence.mjs && node tools/audit-world-save-evidence.mjs && node tools/audit-scene-r5-evidence.mjs && node tools/audit-action-wood-evidence.mjs && node tools/audit-forest-intake.mjs",
-    "freeze:runtime": "node tools/freeze-runtime.mjs"
+    "verify:evidence": "node tools/run-archived-evidence-audits.mjs",
+    "freeze:runtime": "node tools/freeze-runtime.mjs",
+    "verify:evidence:raw": "node tools/audit-evidence.mjs && node tools/audit-gathering-evidence.mjs && node tools/audit-warehouse-evidence.mjs && node tools/audit-character-evidence.mjs && node tools/audit-item-evidence.mjs && node tools/audit-world-save-evidence.mjs && node tools/audit-scene-r5-evidence.mjs && node tools/audit-action-wood-evidence.mjs && node tools/audit-forest-intake.mjs"
   },
   "dependencies": {
-    "three": "0.186.1",
+    "@dimforge/rapier3d-compat": "0.21.0",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "three": "0.186.1"
   },
   "devDependencies": {
-    "@types/three": "0.185.0",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
+    "@types/three": "0.185.0",
     "@vitejs/plugin-react": "6.1.2",
     "typescript": "5.9.3",
     "vite": "8.3.5"

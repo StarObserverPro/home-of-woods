@@ -1,3 +1,15 @@
+import { createWildlife, advanceWildlife, validateWildlifeRegistry, wildlifeViews } from '../domain/wildlife.ts';
+import type {RarityVfxMode} from '../content/item-vfx.ts';
+import {createWoodcraftSession} from './woodcraft-session.ts';
+import type {WoodcraftSnapshot} from './woodcraft-session.ts';
+import {WOODCRAFT} from '../content/woodcraft.ts';
+import {beginWorkshop,advanceWorkshop,workshopSnapshot,tradeBlueprint,workshopBusy} from '../domain/workshop.ts';
+import type {WorkshopSnapshot} from '../domain/workshop.ts';
+import {advanceLocalClock,CLOCK_SPEEDS} from '../domain/local-clock.ts';
+import type {ClockSpeed} from '../domain/local-clock.ts';
+import {workstationColliders,furnitureColliders,placementReason,placeFurniture,packFurniture} from '../domain/furniture-placement.ts';
+import type {PlacementDraft} from '../domain/furniture-placement.ts';
+import {CAMP_VISITOR} from '../content/characters.ts';
 import {beginRitual,advanceRitual,ritualBusy} from '../domain/ritual.ts';
 import { MOVEMENT, WAYPOINTS } from "../content/world.ts";
 import {FORESTRY} from '../content/forestry.ts';
@@ -20,7 +32,7 @@ import type { GatheringSnapshot } from '../domain/gathering-view.ts';
 import { cancelPlayerAction, startPlayerChop, startPlayerGather, advancePlayerGather } from './player-actions.ts';
 import { warehouseSnapshot } from '../domain/warehouse-view.ts';
 import type { WarehouseView } from '../domain/warehouse-view.ts';
-import { upgradeWorldSession } from './session-upgrade.ts';
+import { validateWorldSession } from './session-upgrade.ts';
 import { createSaveContext } from '../domain/save-context.ts';
 import { createBrowserWorldSaveStore } from './world-save-store.ts';
 import { createSaveController } from './save-controller.ts';
@@ -29,6 +41,9 @@ import type {SceneAppearance,SceneViewPreset} from '../content/scene-props.ts';
 import {CAMP_PROPS} from '../content/scene-props.ts';
 import {ALTAR_LAYOUT} from '../content/altar.ts';
 export type Snapshot = {
+  woodcraft:WoodcraftSnapshot;
+  workshop:WorkshopSnapshot;
+  placement:PlacementDraft|null;
   zone: string;
   x: number;
   z: number;
@@ -50,6 +65,7 @@ export async function createRuntime(
   publish: (value: Snapshot) => void,
   initialState?:GameState,
   saveOwner?: SaveController,
+  initialRarityVfxMode:RarityVfxMode = 'full',
 ) {
   const trees = makeTrees(),
     treeById=new Map(trees.map(t=>[t.id,t])),
@@ -59,9 +75,10 @@ export async function createRuntime(
   const persistence = saveOwner ?? createSaveController(createBrowserWorldSaveStore(), saveContext);
   const savedState = await persistence.load();
   const state = initialState ?? savedState ?? createState(trees);
-  upgradeWorldSession(state, saveContext);
+  validateWorldSession(state, saveContext);
   for (const source of registry.sources.values()) if (!interactionRoute({ player: { ...START, facing: 0, moving: false } }, source, registry, colliders).reachable) throw new Error(`Unreachable source: ${source.sourceId}`);
   synchronizeGatheringHosts(state, registry);
+  validateWildlifeRegistry(RUNTIME_MODELS.map(a => a.assetId));
   let message = "沿着小路，认识你的新家。",
     manualPause = !initialState && savedState !== null || !persistence.status().canSave,
     interfaceOpen = false,
@@ -70,11 +87,14 @@ export async function createRuntime(
     destroyed = false,
     accumulator = 0,
     reportTime = 0;
+  let placement:PlacementDraft|null=null;
   let captureAt:number|null=null;
   const keys = new Set<string>(),
     stick = { x: 0, z: 0 };
-  const activeColliders=()=>forestryColliders(colliders,treeById,state.forestry,state.time);
+  const woodcraft=createWoodcraftSession(state,m=>{message=m;});
+  const activeColliders=()=>[{id:WOODCRAFT.id,x:WOODCRAFT.x,z:WOODCRAFT.z,halfX:WOODCRAFT.halfX+.2,halfZ:WOODCRAFT.halfZ+.2},...forestryColliders(colliders,treeById,state.forestry,state.time),...workstationColliders(),...furnitureColliders(state)];
   const navigate = (p: Point) => {
+    woodcraft.cancelDrop();view.setWoodcraftDrop(false);view.inspectScene(null);
     const cancelled=cancelPlayerAction(state);if(cancelled)message=cancelled;
     const route = findPath(state.player, p, activeColliders());
     state.route = route;
@@ -85,6 +105,8 @@ export async function createRuntime(
   const view = await createScene(host, trees, (event) => {
     const propSelection=inspectionOpen&&event.kind==='select'&&(Object.values(CAMP_PROPS).some(p=>p.id===event.id)||event.id===ALTAR_LAYOUT.oracle.id);
     if ((manualPause || inspectionOpen)&&!propSelection || interfaceOpen || contextLost || destroyed) return;
+    if(event.kind==='wood-drop'){woodcraft.drop(event);view.setWoodcraftDrop(woodcraft.isDropping());publishSnapshot();return;}
+    if(placement){if(event.kind==='move'){const point={x:event.x,z:event.z};placement={...placement,point,reason:placementReason(state,placement.instanceId,point,activeColliders())};view.setPlacement(placement);publishSnapshot();}return;}
     if (event.kind === "select") {
       const cancelled=cancelPlayerAction(state);if(cancelled)message=cancelled;
       state.selected = event.id;
@@ -95,12 +117,18 @@ export async function createRuntime(
       navigate(event);
     }
   }, registry);
+  view.setRarityVfxMode(initialRarityVfxMode);
+  const synchronizeWildlife = () => {
+    state.wildlife ??= createWildlife(state.time);
+    advanceWildlife(state.wildlife, state.time, state.seed, state.player, activeColliders(), view.wildlifeAvailable(), view.wildlifeObserved());
+  };
+  synchronizeWildlife();
   const frameTimes: number[] = [];
   let lastSampleAt:number|null=null;
   const tick = (dt: number, now:number) => {
     accumulator += dt;
     while (accumulator >= MOVEMENT.fixedStep) {
-      state.time+=MOVEMENT.fixedStep;
+      advanceLocalClock(state,MOVEMENT.fixedStep);
       let sx =
           stick.x +
           (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) -
@@ -111,7 +139,9 @@ export async function createRuntime(
           (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0);
       let dx = 0,
         dz = 0;
+      if(placement||woodcraft.isDropping()){sx=sz=0;state.route=[];}
       if (sx || sz) {
+        view.inspectScene(null);
         const cancelled=cancelPlayerAction(state);if(cancelled)message=cancelled;
         state.route = [];
         const length = Math.max(1, Math.hypot(sx, sz));
@@ -143,6 +173,7 @@ export async function createRuntime(
         facing: travelled > 0.001 ? Math.atan2(dx, dz) : old.facing,
         moving: travelled > 0.001,
       };
+      const workshopMessage=advanceWorkshop(state);if(workshopMessage)message=workshopMessage;
       const ritualMessage=advanceRitual(state);if(ritualMessage)message=ritualMessage;
       const forestryMessage=advanceForestry(state,treeById);if(forestryMessage)message=forestryMessage;
       synchronizeGatheringHosts(state, registry);
@@ -155,6 +186,8 @@ export async function createRuntime(
           state.visited.push(wp.id);
           message = `发现了${wp.name}。`;
         }
+      synchronizeWildlife();
+      woodcraft.step(MOVEMENT.fixedStep);
       accumulator -= MOVEMENT.fixedStep;
       if(captureAt!==null){
         const started=state.gathering.action?.phase==='performing'?state.gathering.action.startedAt:state.forestry.active?.startedAt??(state.ritual?.phase==='performing'?state.ritual.startedAt:null);
@@ -188,8 +221,11 @@ export async function createRuntime(
   );
   const stats = () => {
     const sorted = [...frameTimes].sort((a, b) => a - b);
+    const sceneStats=view.stats();
     return {
-      ...view.stats(),
+      ...sceneStats,
+      rarityVfx:sceneStats.workshop.surfaces,
+      physics:woodcraft.stats(),
       loop: loop.stats(),
       samples: sorted.length,
       frameMsP50: sorted[Math.floor(sorted.length * 0.5)] ?? 0,
@@ -198,10 +234,14 @@ export async function createRuntime(
       routeNodes: state.route.length,
       player: { ...state.player, y: heightAt(state.player.x, state.player.z) },
       gameTime:state.time,
+      wildlifeState: state.wildlife,
+      wildlifeViews: wildlifeViews(state.wildlife, state.time),
       forestry:forestrySnapshot(state,treeById,registry.catalog),
       gathering: gatheringSnapshot(state,registry,activeColliders()),
       gatheringSources: state.gathering.sources,
       warehouse: warehouseSnapshot(state, registry),
+      workshop:workshopSnapshot(state),
+      placement:placement?structuredClone(placement):null,
       save: persistence.status(),
       appearance:view.getAppearance(),
       worldState: new URLSearchParams(window.location.search).has('inspect') ? structuredClone(state) : undefined,
@@ -210,6 +250,7 @@ export async function createRuntime(
   function publishSnapshot() {
     persistence.observe(state);
     publish({
+      woodcraft:woodcraft.snapshot(),
       zone: zoneName(state.player.x, state.player.z),
       x: state.player.x,
       z: state.player.z,
@@ -223,6 +264,8 @@ export async function createRuntime(
       forestry:forestrySnapshot(state,treeById,registry.catalog),
       gathering: gatheringSnapshot(state,registry,activeColliders()),
       warehouse: warehouseSnapshot(state, registry),
+      workshop:workshopSnapshot(state),
+      placement:placement?structuredClone(placement):null,
       save: persistence.status(),
       appearance:view.getAppearance(),
     });
@@ -243,6 +286,8 @@ export async function createRuntime(
       if(e.code==='Escape'){e.preventDefault();inspectionOpen=false;view.inspectCharacter(null);view.inspectScene(null);syncPause();view.render(state,0);}
       return;
     }
+    if(e.code==='Escape'&&woodcraft.isDropping()){e.preventDefault();woodcraft.cancelDrop();view.setWoodcraftDrop(false);publishSnapshot();return;}
+    if(e.code==='Escape'&&placement){e.preventDefault();placement=null;view.setPlacement(null);publishSnapshot();return;}
     if (e.code === "Escape") {
       e.preventDefault();
       manualPause = !manualPause;
@@ -304,11 +349,40 @@ export async function createRuntime(
   view.canvas.addEventListener("webglcontextlost", lost);
   view.canvas.addEventListener("webglcontextrestored", restored);
   view.render(state, 0);
+  const blocked=()=>destroyed||manualPause||interfaceOpen||inspectionOpen||contextLost||document.hidden;
+  const clearPlacement=()=>{placement=null;view.setPlacement(null);};
   loop.setPaused(manualPause || document.hidden);
   publishSnapshot();
   return {
+    openWoodcraft(){if(blocked()||placement||workshopBusy(state)||state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))return;
+      cancelPlayerAction(state);state.selected=WOODCRAFT.id;state.route=findPath(state.player,WOODCRAFT.stand,activeColliders());
+      view.inspectScene('woodcraft');woodcraft.activate();if(!state.woodcraft.prepared)woodcraft.requestPrepare();
+      message='到木料堆旁看看；首次进入会搬入可用木料，并留一根给你。';publishSnapshot();},
+    prepareWoodcraft(){if(blocked()||placement||workshopBusy(state)||state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))return;woodcraft.requestPrepare();publishSnapshot();},
+    beginWoodDrop(){if(blocked()||placement||workshopBusy(state)||state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))return;if(woodcraft.beginDrop()){state.route=[];view.setWoodcraftDrop(true);view.inspectScene('woodcraft');}publishSnapshot();},
+    cancelWoodDrop(){woodcraft.cancelDrop();view.setWoodcraftDrop(false);publishSnapshot();},
+    collectWood(id:string){if(blocked()||placement||workshopBusy(state)||state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))return;woodcraft.collect(id);publishSnapshot();},
+    closeWoodcraft(){woodcraft.cancelRequest();view.setWoodcraftDrop(false);view.inspectScene(null);state.selected=null;publishSnapshot();},
+    setClockSpeed(speed:ClockSpeed){if(blocked()||!CLOCK_SPEEDS.includes(speed))return;state.clock={speed};publishSnapshot();},
+    offer(){if(blocked()||placement)return;message=beginWorkshop(state,'offering',activeColliders());publishSnapshot();},
+    craft(id:string){if(blocked()||placement)return;message=beginWorkshop(state,'craft',activeColliders(),id);publishSnapshot();},
+    trade(id:string){if(blocked()||placement)return;message=tradeBlueprint(state,id);publishSnapshot();},
+    approachMerchant(){if(blocked()||placement)return;cancelPlayerAction(state);state.selected=CAMP_VISITOR.id;
+      const target={x:CAMP_VISITOR.x+2,z:CAMP_VISITOR.z+1};
+      if(Math.hypot(state.player.x-CAMP_VISITOR.x,state.player.z-CAMP_VISITOR.z)<=3)message='已经在行商身边，可以交换图纸。';
+      else{state.route=findPath(state.player,target,activeColliders());message=state.route.length?'走到行商身边。':'暂时无法走到行商身边。';}publishSnapshot();},
+    beginPlacement(id:string){if(blocked()||workshopBusy(state)||state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))return;
+      const item=state.inventory.instances?.find(i=>i.instanceId===id);if(!item)return;
+      state.selected=null;state.route=[];keys.clear();stick.x=stick.z=0;placement={instanceId:id,point:null,rotation:item.location.kind==='world'?item.location.rotation:0,reason:''};view.setPlacement(placement);publishSnapshot();},
+    rotatePlacement(){if(blocked()||!placement)return;placement={...placement,rotation:placement.rotation+Math.PI/4};view.setPlacement(placement);publishSnapshot();},
+    cancelPlacement(){clearPlacement();publishSnapshot();},
+    confirmPlacement(){if(blocked()||!placement?.point)return;const reason=placementReason(state,placement.instanceId,placement.point,activeColliders());
+      if(reason){placement={...placement,reason};view.setPlacement(placement);publishSnapshot();return;}
+      message=placeFurniture(state,placement.instanceId,placement.point,placement.rotation,activeColliders());clearPlacement();publishSnapshot();},
+    packFurniture(id:string){if(blocked()||workshopBusy(state)||state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))return;message=packFurniture(state,id);clearPlacement();publishSnapshot();},
     navigate(id: string) {
       if (destroyed||manualPause||interfaceOpen||inspectionOpen||contextLost||document.hidden) return;
+      clearPlacement();
       const wp = WAYPOINTS.find((p) => p.id === id);
       if (wp) {
         state.selected = null;
@@ -318,7 +392,9 @@ export async function createRuntime(
     },
     select(id: string | null) {
       if(destroyed)return;
+      clearPlacement();
       const cancelled=cancelPlayerAction(state);if(cancelled)message=cancelled;
+      woodcraft.cancelRequest();view.setWoodcraftDrop(false);if(id===null)view.inspectScene(null);
       state.selected = id;
       state.route = [];
       publishSnapshot();
@@ -350,7 +426,8 @@ export async function createRuntime(
     },
     ritual(kind:'prayer'|'offering'){
       if(destroyed||manualPause||interfaceOpen||inspectionOpen||contextLost||document.hidden)return;
-      message=beginRitual(state,activeColliders(),kind).message;publishSnapshot();
+      if(placement)return;
+      message=kind==='offering'?beginWorkshop(state,'offering',activeColliders()):beginRitual(state,activeColliders(),kind).message;publishSnapshot();
     },
     cancelAction(){const result=cancelPlayerAction(state);if(result)message=result;publishSnapshot();},
     selectTreeBranches(){
@@ -375,13 +452,13 @@ export async function createRuntime(
     async reloadWorld() {
       const loaded = await persistence.reload();
       if (!loaded || destroyed) return false;
-      Object.assign(state, loaded); accumulator = 0; lastSampleAt = null;
+      woodcraft.reset();view.setWoodcraftDrop(false);clearPlacement();delete state.wildlife;Object.assign(state, loaded);synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
       manualPause = true; keys.clear(); stick.x = stick.z = 0; syncPause(); view.render(state, 0); return true;
     },
     async restoreWorldCopy() {
       const loaded = await persistence.restoreValidCopy();
       if (!loaded || destroyed) return false;
-      Object.assign(state, loaded); accumulator = 0; lastSampleAt = null;
+      woodcraft.reset();view.setWoodcraftDrop(false);clearPlacement();delete state.wildlife;Object.assign(state, loaded);synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
       manualPause = true; keys.clear(); stick.x = stick.z = 0; syncPause(); view.render(state, 0); return true;
     },
     inspectCharacter(kind:'horizontal'|'vertical'|null){
@@ -410,7 +487,7 @@ export async function createRuntime(
     },
     camera(action: "reset" | "left" | "right" | "in" | "out") {
       if(destroyed)return;
-      if (action === "reset") {if(inspectionOpen){inspectionOpen=false;view.inspectCharacter(null);view.inspectScene(null);syncPause();}view.resetCamera();}
+      if (action === "reset") {view.inspectScene(null);if(inspectionOpen){inspectionOpen=false;view.inspectCharacter(null);view.inspectScene(null);syncPause();}view.resetCamera();}
       else if (action === "left" || action === "right")
         view.rotate(action === "left" ? -0.35 : 0.35);
       else view.zoomBy(action === "in" ? 1.18 : 1 / 1.18);
@@ -421,6 +498,11 @@ export async function createRuntime(
       if(destroyed||manualPause||interfaceOpen||inspectionOpen||contextLost||document.hidden)return;
       stick.x = x;
       stick.z = z;
+    },
+    setRarityVfxMode(mode:RarityVfxMode){
+      if(destroyed)return;
+      view.setRarityVfxMode(mode);
+      if(!contextLost){view.render(state,0);publishSnapshot();}
     },
     setReducedMotion(value: boolean) {
       if(destroyed)return;
@@ -441,6 +523,7 @@ export async function createRuntime(
       view.canvas.removeEventListener("webglcontextlost", lost);
       view.canvas.removeEventListener("webglcontextrestored", restored);
       keys.clear();
+      woodcraft.dispose();
       view.destroy();
     },
   };

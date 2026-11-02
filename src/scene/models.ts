@@ -6,7 +6,7 @@ import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import {geometryContactTarget} from './axe-contact.ts';
 import {heightAt} from '../world/surface.ts';
 import { PALETTE } from "../content/world.ts";
-import { RUNTIME_MODELS } from '../content/assets.ts';
+import { ENABLED_RUNTIME_MODELS } from '../content/assets.ts';
 import type { Tree } from "../world/layout.ts";
 import type { Resources } from "./resources.ts";
 import {makeTree} from './forest-shapes.js';
@@ -29,9 +29,15 @@ export class Models {
     let failed = false;
     try {
       await Promise.all(
-        RUNTIME_MODELS.map(async ({name, url}) => {
-          const gltf = await loader.loadAsync(url);
+        ENABLED_RUNTIME_MODELS.map(async (spec) => {
+          const {name, url} = spec;
+          const gltf = await loader.loadAsync(url).catch(error => {
+            if ('optional' in spec && spec.optional) { console.warn(`Optional wildlife unavailable: ${name}`, error); return null; }
+            throw error;
+          });
+          if (!gltf) return;
           gltf.scene.traverse((o) => {
+            if (o instanceof THREE.SkinnedMesh) this.r.own(o.skeleton);
             if (o instanceof THREE.Mesh) {
               this.r.own(o.geometry);
               const mats = Array.isArray(o.material) ? o.material : [o.material];

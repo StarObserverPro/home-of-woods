@@ -48,21 +48,10 @@ test('mixed requirements reserve once; stale/replayed/edited candidates and fail
 test('spec batches roundtrip losslessly; corrupt metadata is protected, legacy stock keeps unknown sizes',()=>{
  const original=stock(),loaded=prepareInventoryPersistence(serializeInventory(original));assert.equal(loaded.decision,'restored');
  if('value'in loaded)assert.deepEqual(loaded.value.stacks,original.stacks);
- const old=prepareInventoryPersistence(JSON.stringify({schemaVersion:1,stacks:[{itemId:'wood',qualityId:'ordinary',quantity:3}]}));
+ const old=prepareInventoryPersistence(JSON.stringify({schemaVersion:4,stacks:[{itemId:'wood',qualityId:'ordinary',quantity:3}]}));
  if('value'in old){assert.equal(old.value.stacks[0].wood,undefined);assert.throws(()=>selectWood(old.value,[primary]),/Insufficient/);}
  const corrupt=JSON.parse(serializeInventory(original));corrupt.stacks.find((s:any)=>s.wood).wood.spec.lengthMm=-1;
  assert.equal(prepareInventoryPersistence(JSON.stringify(corrupt)).decision,'protected');
-});
-test('ruleset-1 migration preserves old pools, stock and tree generations; second load does not refill',async()=>{
- const ctx=createSaveContext(),raw=await readFile(new URL('../evidence/scene-r5/before-save.json',import.meta.url),'utf8'),legacy=JSON.parse(raw);
- const loaded=await prepareWorldSave(raw,ctx);assert.equal(loaded.decision,'migrated');if(!('value'in loaded))return;
- assert.deepEqual(loaded.value.forestry,legacy.world.forestry);
- for(const [id,life] of Object.entries(legacy.world.gathering.sources))assert.deepEqual(loaded.value.gathering.sources[id],life);
- assert.equal(loaded.value.inventory.stacks.find(s=>s.itemId==='wood')!.wood,undefined);
- const id=Object.keys(loaded.value.gathering.sources).find(id=>id.endsWith('.scraps'))!;
- loaded.value.gathering.sources[id]={remaining:0,version:1,lastPeriod:null,depletedAt:loaded.value.time};
- const again=await prepareWorldSave(await serializeWorldSave(loaded.value,ctx,{sequence:2,savedAt:123}),ctx);
- assert.equal(again.decision,'restored');if('value'in again)assert.equal(again.value.gathering.sources[id].remaining,0);
 });
 test('prayer has one action owner, pauses with game time, cancels cleanly and awards no inventory',async()=>{
  const state=createState(),ctx=createSaveContext(),blockers=makeColliders(makeTrees());state.selected='grove-altar';state.player={x:-10,z:50,facing:0,moving:false};

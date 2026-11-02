@@ -147,3 +147,23 @@ content/tree-resources、world/gathering-layout 管理按树种的圈形挂点�
 
 ## 八树形与林下回接
 Models 的固定树形缓存同时提供静态合并与动作 source，远景按形态/变体实例绘制；物种视觉映射只读 world，不改 Tree.kind 与存档。createUnderstory 的装饰数据只在建场时生成，唯一 render 消费宿主生长/伐倒状态，Resources 统一回收。不新增 RAF 或写入者。详见 [回接](FOREST_INTEGRATION.md)。
+
+## 物品等级：全表面柔光
+
+`item-surface.ts` 在标准材质上增加弱表面发光项，使用物体世界法线和原有漫反射亮度温和调制，避免夜间成为无明暗的纯色块。覆盖所有材质槽；端面/侧面、原有贴图、粗糙度、深度和阴影行为保留。不是 Fresnel 轮廓线，也不添加光柱、粒子、透明外壳、额外点光源或全屏 bloom。
+
+变体按“原材质 UUID × 稀有度”缓存，模型绑定按实例保存。普通/优秀/稀有用原材质；史诗/传说各有木色与端面变体，五件样品合计 4 个额外材质，无额外模型 draw call。禁止原地修改工作台和木墩共用的材质；切回非发光等级恢复原材质。所有变体由既有 Resources 统一释放，材质模块不另建循环。
+
+当前 Three.js WebGL 标准 shader 在 `emissivemap_fragment` 后叠加该项，独立 uniform 与 program cache key 保证缓存正确；浏览器验收需检查 shaderErrors。测试覆盖日间/黄昏/夜间与转镜头，证据及强度调整说明见 [ITEM_RARITY_VERIFICATION.md](ITEM_RARITY_VERIFICATION.md)。
+
+### 稀有物品表面特效 R2
+
+初版静态提亮/染色已被用户否决。当前史诗/传说改为全表面流光、亮核及贴面四角星芒，柔边而不隐藏特效。每个发光网格增加一个点精灵批次；材质隔离、深度遮挡、暂停和减少动态效果沿用既有生命周期。数据层和 UI 不变。当前实现与实机动图见 [R2](RARITY_VFX_R2.md)；本节替代旧段落的“无粒子、零额外绘制”视觉实现描述。
+
+## 稀有特效 R3（三档显示）
+
+在 R2 上增加完整／简化／关闭。完整档仅降低传说强度，史诗不变；简化档恢复原材质并附加一枚实际表面投影贴花；关闭档撤下所有稀有特效。`item-emblem.ts` 复用现有 DecalGeometry 与 Resources，不新增主循环。显示偏好由 `app/display-preferences.ts` 独立管理，不改变世界状态；渲染统计通过 `rarityVfx` 暴露，避免被业务 workshop 快照覆盖。当前规范和复现见 [RARITY_VFX_R3](RARITY_VFX_R3.md)，本段优先于此前弱自发光阶段的已废弃表现约束。
+
+## 最终动物表现
+
+`domain/wildlife` 决定会话内出入场；`scene/wildlife-presentation` 只消费视图、现有相机和时钟。最终四种模型由 Models 可选加载；私有骨架／材质退出时释放，共享模型归 Resources。主循环、物理岛固定步长、三档稀有特效和原存档写入者均不另建副本。当前范围与组合验证见 [最终动物接入](WILDLIFE_GUIDE.md)。

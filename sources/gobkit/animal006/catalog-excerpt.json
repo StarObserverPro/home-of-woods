@@ -1,0 +1,18 @@
+{
+  "source": "https://gobkit.com/api/free",
+  "retrieved": "2026-11-01",
+  "pack": {
+    "id": "gobkit-animal006-pack",
+    "name": "Gobkit Free Animal Pack Vol.4",
+    "kind": "characters",
+    "format": "glb",
+    "rigged": true,
+    "fps": 24,
+    "license": "CC0 1.0 (public domain) — free for any use, commercial or personal, no attribution required.",
+    "animations": ["idle", "attack", "dead", "walk"],
+    "models": [
+      {"id":"hare","name":"Hare","format":"glb","url":"https://gobkit.com/freebies/animal006/Hare.glb","rigged":true,"lowPoly":true,"fps":24,"license":"CC0 1.0 (public domain) — free for any use, commercial or personal, no attribution required."},
+      {"id":"squirrel","name":"Squirrel","format":"glb","url":"https://gobkit.com/freebies/animal006/Squirrel.glb","rigged":true,"lowPoly":true,"fps":24,"license":"CC0 1.0 (public domain) — free for any use, commercial or personal, no attribution required."}
+    ]
+  }
+}

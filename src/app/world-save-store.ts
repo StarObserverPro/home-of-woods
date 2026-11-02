@@ -1,4 +1,4 @@
-export const WORLD_SAVE_DATABASE = 'home-of-woods-save-v1';
+export const WORLD_SAVE_DATABASE = 'home-of-woods-save-v2';
 const STORE = 'world';
 export type SaveRecords = { primary: string | null; backup: string | null };
 export interface WorldSaveStore {

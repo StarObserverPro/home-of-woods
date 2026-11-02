@@ -22,7 +22,7 @@
 - [三轮重入](lifecycle-cycles.json)：每轮缓存 36 几何/10 材质/165 附属资源、GPU 纹理 12；旧缓存全零、角色已释放、旧循环停止、命中清空，旧 GPU 几何归零。GPU 几何因实际可见物为 33–35，旧驱动保留 1 个内部纹理计数；未将其写成零。木材及已用额度始终为 5。
 - [390×844](mobile-portrait.json)、[844×390](mobile-landscape.json)：无横向溢出；仓库触控框至少 44px。[生产回执](production-smoke.json)确认静态构建脚本，无 JavaScript 错误。
 
-截图：[主体角色与垫桩](production-vertical.jpg)、[横砍](horizontal-stop.jpg)、[手机角色](mobile-character.jpg)、[仓库](warehouse.jpg)。出生点近景另见 production-home-inspection.json；其刷新为独立新会话，不与此前采伐余额混写。仓库刚打开时的同帧快照与暂停 effect 后的快照均保留于 warehouse.json，后者明确引用 mobile-portrait.json。
+截图：[主体角色与垫桩](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/characters/production-vertical.jpg)、[横砍](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/characters/horizontal-stop.jpg)、[手机角色](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/characters/mobile-character.jpg)、[仓库](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/characters/warehouse.jpg)。出生点近景另见 production-home-inspection.json；其刷新为独立新会话，不与此前采伐余额混写。仓库刚打开时的同帧快照与暂停 effect 后的快照均保留于 warehouse.json，后者明确引用 mobile-portrait.json。
 
 本轮为 Windows / AMD Radeon / ANGLE D3D11 桌面浏览器，seed 104729。手机项是桌面视口仿真，真实手机性能与多指操作未验证。约 1.12MB 主包的构建提示保留，没有提高预算或宣称 60fps；当前会话不是持久存档。
 

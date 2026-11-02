@@ -1,3 +1,6 @@
+import type {WildlifeState} from './wildlife.ts';
+import {createWoodcraft} from './woodcraft.ts';
+import type {WoodcraftState} from './woodcraft.ts';
 import { START, WORLD_SEED } from "../content/world.ts";
 import type { Point } from "../content/world.ts";
 import {makeTrees} from '../world/layout.ts';
@@ -11,7 +14,16 @@ import type { GatheringState } from './gathering.ts';
 import { createGatheringRegistry } from './gathering-registry.ts';
 import { RUNTIME_MODELS } from '../content/assets.ts';
 import type {RitualAction} from './ritual.ts';
+import {createWorkshop} from './workshop.ts';
+import type {WorkshopState} from './workshop.ts';
+import {createLocalClock} from './local-clock.ts';
+import type {LocalClock} from './local-clock.ts';
 export type GameState = {
+  /** Decorative encounter state is session-local, not an inventory or save slice. */
+  wildlife?: WildlifeState;
+  woodcraft:WoodcraftState;
+  workshop:WorkshopState;
+  clock:LocalClock;
   ritual: RitualAction | null;
   seed: number;
   time:number;
@@ -25,7 +37,10 @@ export type GameState = {
 };
 export function createState(trees:Tree[]=makeTrees()): GameState {
   return {
+    woodcraft:createWoodcraft(),
     ritual: null,
+    workshop:createWorkshop(),
+    clock:createLocalClock(),
     seed: WORLD_SEED,
     time:0,
     forestry:createForestry(trees),

@@ -1,0 +1,91 @@
+{
+  "browser": "156.0.8078.4",
+  "palette": [
+    {
+      "grade": "common",
+      "label": "普通",
+      "color": "rgb(211, 216, 212)",
+      "border": "color(srgb 0.827451 0.847059 0.831372 / 0.58)"
+    },
+    {
+      "grade": "epic",
+      "label": "史诗",
+      "color": "rgb(209, 165, 243)",
+      "border": "color(srgb 0.819608 0.647059 0.952941 / 0.58)"
+    },
+    {
+      "grade": "legendary",
+      "label": "传说",
+      "color": "rgb(244, 207, 124)",
+      "border": "color(srgb 0.956863 0.811765 0.486274 / 0.58)"
+    },
+    {
+      "grade": "rare",
+      "label": "稀有",
+      "color": "rgb(136, 196, 245)",
+      "border": "color(srgb 0.533333 0.768627 0.960784 / 0.58)"
+    },
+    {
+      "grade": "uncommon",
+      "label": "优秀",
+      "color": "rgb(141, 214, 154)",
+      "border": "color(srgb 0.552941 0.839216 0.603922 / 0.58)"
+    }
+  ],
+  "placedItem": {
+    "blueprintId": "blueprint.stump-cozy",
+    "createdAt": 0,
+    "definitionId": "furniture.stump-seat",
+    "futureFinish": {
+      "decal": "fern",
+      "version": 7
+    },
+    "instanceId": "visual-legendary",
+    "location": {
+      "kind": "world",
+      "x": -24.991926161642567,
+      "z": 3.6782115226446876,
+      "rotation": 0.7853981633974483
+    },
+    "rarityId": "legendary",
+    "traits": [
+      {
+        "id": "comfort",
+        "value": 2
+      }
+    ]
+  },
+  "restoredItem": {
+    "blueprintId": "blueprint.stump-cozy",
+    "createdAt": 0,
+    "definitionId": "furniture.stump-seat",
+    "futureFinish": {
+      "decal": "fern",
+      "version": 7
+    },
+    "instanceId": "visual-legendary",
+    "location": {
+      "kind": "inventory"
+    },
+    "rarityId": "legendary",
+    "traits": [
+      {
+        "id": "comfort",
+        "value": 2
+      }
+    ]
+  },
+  "dimensions": {
+    "width": 390,
+    "scroll": 390,
+    "buttons": [
+      44,
+      44,
+      44,
+      44,
+      44
+    ]
+  },
+  "shaderErrors": 0,
+  "errors": []
+}

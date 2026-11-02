@@ -12,7 +12,7 @@ export function cancelRitual(state: GameState) {
 }
 export function beginRitual(state: GameState, blockers: Collider[], kind: 'prayer' | 'offering') {
   if (kind === 'offering') return {ok:false,message:'祭祀供品与回应规则尚未配置，暂不收取供品。'};
-  if (state.forestry.active || gatheringBusy(state.gathering) || ritualBusy(state)) return {ok:false,message:'先完成或取消当前动作。'};
+  if (state.workshop.job || state.forestry.active || gatheringBusy(state.gathering) || ritualBusy(state)) return {ok:false,message:'先完成或取消当前动作。'};
   if (![CAMP_PROPS.altar.id, ALTAR_LAYOUT.oracle.id].includes(state.selected as typeof CAMP_PROPS.altar.id)) return {ok:false,message:'先选中林间祭坛。'};
   const target={x:CAMP_PROPS.altar.x,z:CAMP_PROPS.altar.z+5};
   const near=Math.hypot(state.player.x-target.x,state.player.z-target.z)<.6;

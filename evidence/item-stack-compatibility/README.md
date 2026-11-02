@@ -15,16 +15,16 @@
 
 `npm.cmd run check` 通过：11 个注册 GLB 与地表资源检查、52 项行为/几何/生命周期测试、TypeScript 和 Vite 生产构建。新增 11 项物品兼容测试在 [item-compatibility.test.ts](../../tests/item-compatibility.test.ts)，其余采集、采伐与角色测试保留原语义并改查唯一库存。[check.log](check.log) 保留实际输出；Vite 的大包提示仍存在，未调整预算。
 
-实机开发构建用正常入口采得 2 份普通蘑菇，卸载重入一次后仍为 2 份；Esc 关闭、B 打开和无控制台错误已检查。冻结的生产构建另用正常入口采得 3 份普通枝杈，仓库与 HUD 一致，脚本均来自编译后的 `/assets/`，无开发客户端或控制台错误，见 [生产检查](production-smoke.json)与[生产截图](production-desktop.jpg)。
+实机开发构建用正常入口采得 2 份普通蘑菇，卸载重入一次后仍为 2 份；Esc 关闭、B 打开和无控制台错误已检查。冻结的生产构建另用正常入口采得 3 份普通枝杈，仓库与 HUD 一致，脚本均来自编译后的 `/assets/`，无开发客户端或控制台错误，见 [生产检查](production-smoke.json)与[生产截图](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/item-stack-compatibility/production-desktop.jpg)。
 
 [独立检查页](review.html) 使用同一库存加载器、目录、仓库投影和 UI，展示示例库存：普通蘑菇 6、精品 2、未分级 4、原木 5、未知物品 7、未知品质枝杈 3，共 27 份。JSON 往返后恢复示例定义，仍为 27 份；示例数据不进入游戏进度。通过开发服务器打开 `http://127.0.0.1:4202/evidence/item-stack-compatibility/review.html`，可重复操作。该页面不属于生产构建。
 
 | 实际视口 | 检查内容 | 截图 |
 | --- | --- | --- |
-| 1280×720 | 独立品质堆叠、详情、滚动 | [桌面](quality-desktop.jpg) |
-| 390×844 | 普通/精品/未分级分别显示 | [手机竖屏](quality-mobile.jpg)、[待识别](unknown-mobile.jpg) |
-| 320×844 | 品质与数量不重叠，分类不换行 | [窄屏](quality-narrow.jpg)、[实机仓库](game-mobile.jpg) |
-| 844×390 | 横屏仓库与纵向滚动 | [横屏](quality-landscape.jpg) |
+| 1280×720 | 独立品质堆叠、详情、滚动 | [桌面](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/item-stack-compatibility/quality-desktop.jpg) |
+| 390×844 | 普通/精品/未分级分别显示 | [手机竖屏](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/item-stack-compatibility/quality-mobile.jpg)、[待识别](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/item-stack-compatibility/unknown-mobile.jpg) |
+| 320×844 | 品质与数量不重叠，分类不换行 | [窄屏](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/item-stack-compatibility/quality-narrow.jpg)、[实机仓库](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/item-stack-compatibility/game-mobile.jpg) |
+| 844×390 | 横屏仓库与纵向滚动 | [横屏](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/item-stack-compatibility/quality-landscape.jpg) |
 
 四种视口均无横向溢出，仓库按钮触控框不小于 44×44；实际 DOM 尺寸与操作结果见 [ui-checks.json](ui-checks.json)。手机为桌面浏览器视口验证，未替代真实手机设备检查。
 

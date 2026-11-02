@@ -1,6 +1,6 @@
 import {useRef,useState} from 'react';
 import type {Runtime} from '../app/runtime.ts';
-import {VIEWS,ALTAR_STATES} from '../content/scene-props.ts';
+import {INSPECTABLE_VIEWS,ALTAR_STATES} from '../content/scene-props.ts';
 import type {SceneViewPreset,SceneAppearance} from '../content/scene-props.ts';
 import {OFFERING_MODES,OFFERING_NAMES} from '../content/altar.ts';
 const altarNames={dormant:'沉寂',ready:'待供奉',answering:'回应',resting:'休眠'};
@@ -17,7 +17,7 @@ export function SceneInspector({runtime,active,audits}:Props){
     }catch(error){setNotice(error instanceof Error?error.message:'画面未保存');}
   }
   return <fieldset className="scene-inspector"><legend>场景检视</legend>
-    <label>观察位置<select aria-label="场景观察位置" value={view} onChange={e=>inspect(e.target.value as SceneViewPreset,preview)}>{Object.entries(VIEWS).map(([id,p])=><option key={id} value={id}>{p.label}</option>)}</select></label>
+    <label>观察位置<select aria-label="场景观察位置" value={view} onChange={e=>inspect(e.target.value as SceneViewPreset,preview)}>{INSPECTABLE_VIEWS.map(([id,p])=><option key={id} value={id}>{p.label}</option>)}</select></label>
     <div className="scene-options">{([['白昼',14],['黄昏',18],['夜晚',23]] as const).map(([label,hour])=><button key={hour} aria-pressed={active&&preview.hour===hour} onClick={()=>inspect(view,{...preview,hour})}>{label}</button>)}</div>
     <div className="scene-options">{ALTAR_STATES.map(altar=><button key={altar} aria-pressed={(preview.altar??'ready')===altar} onClick={()=>inspect(view,{...preview,altar})}>{altarNames[altar]}</button>)}</div>
     <div className="scene-options">{OFFERING_MODES.map(offering=><button key={offering} aria-pressed={(preview.offering??'empty')===offering} onClick={()=>inspect(view,{...preview,offering})}>{OFFERING_NAMES[offering]}</button>)}</div>

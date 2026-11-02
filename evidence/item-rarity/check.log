@@ -1,0 +1,782 @@
+
+> home-of-woods@0.1.0 check
+> npm run verify:assets && npm test && npm run build
+
+
+> home-of-woods@0.1.0 verify:assets
+> node tools/verify-assets.mjs
+
+Verified 11 registered GLBs and terrain data: hashes, source licenses, embedded resources, nonmetallic palette, legacy pivots, skinned characters and complete finite surface grid.
+
+> home-of-woods@0.1.0 test
+> node --experimental-strip-types --test tests/*.test.ts
+
+TAP version 13
+# Subtest: same quantity with different shapes stays separate; short pieces cannot become one long blank
+ok 1 - same quantity with different shapes stays separate; short pieces cannot become one long blank
+  ---
+  duration_ms: 8.060677
+  type: 'test'
+  ...
+# Subtest: scraps are fuel-only; unknown dimensions and incompatible units never satisfy piece recipes
+ok 2 - scraps are fuel-only; unknown dimensions and incompatible units never satisfy piece recipes
+  ---
+  duration_ms: 0.664306
+  type: 'test'
+  ...
+# Subtest: mixed requirements reserve once; stale/replayed/edited candidates and failed outputs leave inputs unchanged
+ok 3 - mixed requirements reserve once; stale/replayed/edited candidates and failed outputs leave inputs unchanged
+  ---
+  duration_ms: 6.36004
+  type: 'test'
+  ...
+# Subtest: spec batches roundtrip losslessly; corrupt metadata is protected, legacy stock keeps unknown sizes
+ok 4 - spec batches roundtrip losslessly; corrupt metadata is protected, legacy stock keeps unknown sizes
+  ---
+  duration_ms: 2.817227
+  type: 'test'
+  ...
+# Subtest: prayer has one action owner, pauses with game time, cancels cleanly and awards no inventory
+ok 5 - prayer has one action owner, pauses with game time, cancels cleanly and awards no inventory
+  ---
+  duration_ms: 49.928378
+  type: 'test'
+  ...
+# Subtest: scene click and waypoint metadata never leak into saved route points
+ok 6 - scene click and waypoint metadata never leak into saved route points
+  ---
+  duration_ms: 37.684449
+  type: 'test'
+  ...
+# Subtest: actual skinned character stops at real tree solids, keeps two palms on the handle, and cancels without gameplay writes
+ok 7 - actual skinned character stops at real tree solids, keeps two palms on the handle, and cancels without gameplay writes
+  ---
+  duration_ms: 2201.172918
+  type: 'test'
+  ...
+# Subtest: vertical inspector is bounded by the support top and NPC gestures leave legs fixed
+ok 8 - vertical inspector is bounded by the support top and NPC gestures leave legs fixed
+  ---
+  duration_ms: 342.703659
+  type: 'test'
+  ...
+# Subtest: character instances share buffers but have independent skeletons and bone textures release once
+ok 9 - character instances share buffers but have independent skeletons and bone textures release once
+  ---
+  duration_ms: 56.574074
+  type: 'test'
+  ...
+# Subtest: PNW environment instantiates bounded, distinct landforms with actual snow, exposed rock and glacier channels
+ok 10 - PNW environment instantiates bounded, distinct landforms with actual snow, exposed rock and glacier channels
+  ---
+  duration_ms: 70.090736
+  type: 'test'
+  ...
+# Subtest: environment generation is deterministic and all geometry/material allocations have one releasing owner
+ok 11 - environment generation is deterministic and all geometry/material allocations have one releasing owner
+  ---
+  duration_ms: 73.071086
+  type: 'test'
+  ...
+# Subtest: reflective creek keeps the authoritative river geometry and height, bounds its target, and releases its owned material
+ok 12 - reflective creek keeps the authoritative river geometry and height, bounds its target, and releases its owned material
+  ---
+  duration_ms: 475.913416
+  type: 'test'
+  ...
+# Subtest: all eight admitted tree shapes are used, finite and identical between static and action preparation
+ok 13 - all eight admitted tree shapes are used, finite and identical between static and action preparation
+  ---
+  duration_ms: 821.380332
+  type: 'test'
+  ...
+# Subtest: production understory has all admitted families, stays bounded and follows tree removal
+ok 14 - production understory has all admitted families, stays bounded and follows tree removal
+  ---
+  duration_ms: 562.978744
+  type: 'test'
+  ...
+# Subtest: production tree GLBs tip after commit, preserve a pickable stump and never settle state
+ok 15 - production tree GLBs tip after commit, preserve a pickable stump and never settle state
+  ---
+  duration_ms: 296.760873
+  type: 'test'
+  ...
+# Subtest: protected landmarks, remote trees and exhausted annual points cannot be felled
+ok 16 - protected landmarks, remote trees and exhausted annual points cannot be felled
+  ---
+  duration_ms: 27.7769
+  type: 'test'
+  ...
+# Subtest: four-hit action reserves once and commits tree, wood, used points and regrowth atomically once
+ok 17 - four-hit action reserves once and commits tree, wood, used points and regrowth atomically once
+  ---
+  duration_ms: 14.854902
+  type: 'test'
+  ...
+# Subtest: cancel, invalidated distance and changed year release reservations without rewards
+ok 18 - cancel, invalidated distance and changed year release reservations without rewards
+  ---
+  duration_ms: 5.0645
+  type: 'test'
+  ...
+# Subtest: original slot regrows a new protected immature individual and preserves quota/wood through growth
+ok 19 - original slot regrows a new protected immature individual and preserves quota/wood through growth
+  ---
+  duration_ms: 5.927154
+  type: 'test'
+  ...
+# Subtest: fixed-step simulation and a later due-time audit settle the same committed resource result
+ok 20 - fixed-step simulation and a later due-time audit settle the same committed resource result
+  ---
+  duration_ms: 22.812073
+  type: 'test'
+  ...
+# Subtest: actual admitted GLBs share resources, keep source identities through depletion and release hit mappings on unload
+ok 21 - actual admitted GLBs share resources, keep source identities through depletion and release hit mappings on unload
+  ---
+  duration_ms: 60.134103
+  type: 'test'
+  ...
+# Subtest: registry rejects duplicate identities, bad references/strategies/numbers/anchors and unreachable sources
+ok 22 - registry rejects duplicate identities, bad references/strategies/numbers/anchors and unreachable sources
+  ---
+  duration_ms: 25.287402
+  type: 'test'
+  ...
+# Subtest: both kinds use the same reachable route, action, inventory candidate and atomic commit
+ok 23 - both kinds use the same reachable route, action, inventory candidate and atomic commit
+  ---
+  duration_ms: 6152.236582
+  type: 'test'
+  ...
+# Subtest: candidate creation does not mutate balances, stale inventory/source/action and replay are rejected
+ok 24 - candidate creation does not mutate balances, stale inventory/source/action and replay are rejected
+  ---
+  duration_ms: 8.438636
+  type: 'test'
+  ...
+# Subtest: movement, target change, cancellation, changed source and obstacles before completion do not award inventory
+ok 25 - movement, target change, cancellation, changed source and obstacles before completion do not award inventory
+  ---
+  duration_ms: 19.780976
+  type: 'test'
+  ...
+# Subtest: one player action owner prevents simultaneous chopping/gathering
+ok 26 - one player action owner prevents simultaneous chopping/gathering
+  ---
+  duration_ms: 3.364065
+  type: 'test'
+  ...
+# Subtest: action receiver can observe approaching, performing/progress, completed and cancelled without writing rewards
+ok 27 - action receiver can observe approaching, performing/progress, completed and cancelled without writing rewards
+  ---
+  duration_ms: 12.333443
+  type: 'test'
+  ...
+# Subtest: unconfigured recovery, serialization and representation rebuild never replenish sources
+ok 28 - unconfigured recovery, serialization and representation rebuild never replenish sources
+  ---
+  duration_ms: 9.338005
+  type: 'test'
+  ...
+# Subtest: period refill is monotonic, idempotent, capacity capped and independent from depletion wait
+ok 29 - period refill is monotonic, idempotent, capacity capped and independent from depletion wait
+  ---
+  duration_ms: 4.636911
+  type: 'test'
+  ...
+# Subtest: depletion waits from the final unit, each point has an independent deadline, due restoration is once
+ok 30 - depletion waits from the final unit, each point has an independent deadline, due restoration is once
+  ---
+  duration_ms: 8.193859
+  type: 'test'
+  ...
+# Subtest: ordinary, fine and legacy ungraded stacks merge only within the same identity
+ok 31 - ordinary, fine and legacy ungraded stacks merge only within the same identity
+  ---
+  duration_ms: 5.506686
+  type: 'test'
+  ...
+# Subtest: multi-line debits are atomic, cannot use their own output to fund inputs, and reject stale revisions
+ok 32 - multi-line debits are atomic, cannot use their own output to fund inputs, and reject stale revisions
+  ---
+  duration_ms: 1.06517
+  type: 'test'
+  ...
+# Subtest: catalog additions, reorder and display edits neither migrate nor rewrite owned identities
+ok 33 - catalog additions, reorder and display edits neither migrate nor rewrite owned identities
+  ---
+  duration_ms: 0.714952
+  type: 'test'
+  ...
+# Subtest: unknown item and quality records survive normal transactions and JSON reload, but cannot be consumed
+ok 34 - unknown item and quality records survive normal transactions and JSON reload, but cannot be consumed
+  ---
+  duration_ms: 9.021361
+  type: 'test'
+  ...
+# Subtest: retired definitions preserve owned stock, allow explicit consumption and cannot be newly awarded
+ok 35 - retired definitions preserve owned stock, allow explicit consumption and cannot be newly awarded
+  ---
+  duration_ms: 0.601945
+  type: 'test'
+  ...
+# Subtest: felling awards only ordinary stock once; inventory failure cannot partially spend quota or fell a tree
+ok 36 - felling awards only ordinary stock once; inventory failure cannot partially spend quota or fell a tree
+  ---
+  duration_ms: 17.997756
+  type: 'test'
+  ...
+# Subtest: one clean format, no historical imports; old browser database is not reused
+ok 37 - one clean format, no historical imports; old browser database is not reused
+  ---
+  duration_ms: 39.149514
+  type: 'test'
+  ...
+# Subtest: missing optional item fields resolve to defaults without mutating or populating raw records
+ok 38 - missing optional item fields resolve to defaults without mutating or populating raw records
+  ---
+  duration_ms: 1.302515
+  type: 'test'
+  ...
+# Subtest: valid rarity, unknown grade and wrong types all roundtrip without washing out the raw value
+ok 39 - valid rarity, unknown grade and wrong types all roundtrip without washing out the raw value
+  ---
+  duration_ms: 147.421974
+  type: 'test'
+  ...
+# Subtest: malformed optional traits fall back locally; unknown valid traits and nested metadata are retained
+ok 40 - malformed optional traits fall back locally; unknown valid traits and nested metadata are retained
+  ---
+  duration_ms: 0.496015
+  type: 'test'
+  ...
+# Subtest: a new registered field requires only its validator and stable fallback, no codec edits
+ok 41 - a new registered field requires only its validator and stable fallback, no codec edits
+  ---
+  duration_ms: 0.436778
+  type: 'test'
+  ...
+# Subtest: stack identity covers unknown attributes and ignores object key order, quantity and command delta
+ok 42 - stack identity covers unknown attributes and ignores object key order, quantity and command delta
+  ---
+  duration_ms: 1.315545
+  type: 'test'
+  ...
+# Subtest: future material attributes survive physical-island transfer, save, reload and return
+ok 43 - future material attributes survive physical-island transfer, save, reload and return
+  ---
+  duration_ms: 13.561103
+  type: 'test'
+  ...
+# Subtest: location updates preserve unknown attachment metadata and item attributes without stale coordinates
+ok 44 - location updates preserve unknown attachment metadata and item attributes without stale coordinates
+  ---
+  duration_ms: 0.494458
+  type: 'test'
+  ...
+# Subtest: invalid core quantities, duplicate ownership and non-JSON data still fail atomically
+ok 45 - invalid core quantities, duplicate ownership and non-JSON data still fail atomically
+  ---
+  duration_ms: 4.381615
+  type: 'test'
+  ...
+# Subtest: unknown prototype-named JSON keys remain inert and lossless through transactions
+ok 46 - unknown prototype-named JSON keys remain inert and lossless through transactions
+  ---
+  duration_ms: 0.759233
+  type: 'test'
+  ...
+# Subtest: five grades share one palette; only epic and legendary emit
+ok 47 - five grades share one palette; only epic and legendary emit
+  ---
+  duration_ms: 1.501881
+  type: 'test'
+  ...
+# Subtest: surface variants retain base appearance, cover every material slot and never mutate shared bench materials
+ok 48 - surface variants retain base appearance, cover every material slot and never mutate shared bench materials
+  ---
+  duration_ms: 4.164438
+  type: 'test'
+  ...
+# Subtest: all grades are obtainable deterministically; roll depends on identity rather than time or reload
+ok 49 - all grades are obtainable deterministically; roll depends on identity rather than time or reload
+  ---
+  duration_ms: 2.162281
+  type: 'test'
+  ...
+# Subtest: real craft settles rarity once; cancellation and a mid-job world reload never reroll or change traits/costs
+ok 50 - real craft settles rarity once; cancellation and a mid-job world reload never reroll or change traits/costs
+  ---
+  duration_ms: 50.110997
+  type: 'test'
+  ...
+# Subtest: new items inherit their type uses without enumerating item IDs or changing a world save
+ok 51 - new items inherit their type uses without enumerating item IDs or changing a world save
+  ---
+  duration_ms: 118.508369
+  type: 'test'
+  ...
+# Subtest: category, type, form, material and common-use references reject mismatches and structural-wood leakage
+ok 52 - category, type, form, material and common-use references reject mismatches and structural-wood leakage
+  ---
+  duration_ms: 1.424756
+  type: 'test'
+  ...
+# Subtest: warehouse category navigation comes from the registry, not a fixed UI enum
+ok 53 - warehouse category navigation comes from the registry, not a fixed UI enum
+  ---
+  duration_ms: 9.541452
+  type: 'test'
+  ...
+# Subtest: one frame chain, bounded delta, pause/resume baseline and terminal destruction
+ok 54 - one frame chain, bounded delta, pause/resume baseline and terminal destruction
+  ---
+  duration_ms: 1.228784
+  type: 'test'
+  ...
+# Subtest: shared geometry/material cache disposes each allocation once and cannot resurrect
+ok 55 - shared geometry/material cache disposes each allocation once and cannot resurrect
+  ---
+  duration_ms: 2.437151
+  type: 'test'
+  ...
+# Subtest: one early GLB failure releases later shared production resources without reviving the owner or blocking a fresh retry
+ok 56 - one early GLB failure releases later shared production resources without reviving the owner or blocking a fresh retry
+  ---
+  duration_ms: 128.3306
+  type: 'test'
+  ...
+# Subtest: static model batching preserves distinct geometry for each material group
+ok 57 - static model batching preserves distinct geometry for each material group
+  ---
+  duration_ms: 4.588005
+  type: 'test'
+  ...
+# Subtest: collision footprints cover the actual scaled cabin steps and both exported tree trunks
+ok 58 - collision footprints cover the actual scaled cabin steps and both exported tree trunks
+  ---
+  duration_ms: 44.685549
+  type: 'test'
+  ...
+# Subtest: a player beside a regrown sapling can walk out after its authoritative trunk grows around them
+ok 59 - a player beside a regrown sapling can walk out after its authoritative trunk grows around them
+  ---
+  duration_ms: 33.562969
+  type: 'test'
+  ...
+# Subtest: retreat cannot deepen an existing overlap or enter another trunk or building
+ok 60 - retreat cannot deepen an existing overlap or enter another trunk or building
+  ---
+  duration_ms: 1.60767
+  type: 'test'
+  ...
+# Subtest: escape still obeys unopened land, river and slope facts
+ok 61 - escape still obeys unopened land, river and slope facts
+  ---
+  duration_ms: 4.046884
+  type: 'test'
+  ...
+# Subtest: accepted terrain keeps every previous fixed tree, individual, coordinate and current world save
+ok 62 - accepted terrain keeps every previous fixed tree, individual, coordinate and current world save
+  ---
+  duration_ms: 108.939804
+  type: 'test'
+  ...
+# Subtest: day hearth shows real charcoal heads and ash; night restores light and fire without changing game inventory
+ok 63 - day hearth shows real charcoal heads and ash; night restores light and fire without changing game inventory
+  ---
+  duration_ms: 52.09168
+  type: 'test'
+  ...
+# Subtest: randomized chips keep their accepted density, have varied triangle shapes and agree inside faces with the shared ground
+ok 64 - randomized chips keep their accepted density, have varied triangle shapes and agree inside faces with the shared ground
+  ---
+  duration_ms: 420.172672
+  type: 'test'
+  ...
+# Subtest: adaptive terrain is a closed consistently wound manifold, with fewer triangles and exact near-field ground
+ok 65 - adaptive terrain is a closed consistently wound manifold, with fewer triangles and exact near-field ground
+  ---
+  duration_ms: 559.620654
+  type: 'test'
+  ...
+# Subtest: the crest has a physical angular shoulder and rock/grass use separate normal domains
+ok 66 - the crest has a physical angular shoulder and rock/grass use separate normal domains
+  ---
+  duration_ms: 194.661841
+  type: 'test'
+  ...
+# Subtest: altar foundation has a horizontal top above the complete footprint and embeds every perimeter edge into the shared slope
+ok 67 - altar foundation has a horizontal top above the complete footprint and embeds every perimeter edge into the shared slope
+  ---
+  duration_ms: 1.319307
+  type: 'test'
+  ...
+# Subtest: volumetric flames have bounded real geometry, freeze their shared phase and switch off as a complete light effect
+ok 68 - volumetric flames have bounded real geometry, freeze their shared phase and switch off as a complete light effect
+  ---
+  duration_ms: 2.839052
+  type: 'test'
+  ...
+# Subtest: offering slots, floating oracle and ritual states are real bounded scene objects without inventory writes
+ok 69 - offering slots, floating oracle and ritual states are real bounded scene objects without inventory writes
+  ---
+  duration_ms: 18.136236
+  type: 'test'
+  ...
+# Subtest: log pile derives exact counts across quality stacks without mutating inventory, and releases all owned GPU allocations once
+ok 70 - log pile derives exact counts across quality stacks without mutating inventory, and releases all owned GPU allocations once
+  ---
+  duration_ms: 47.550663
+  type: 'test'
+  ...
+# Subtest: daylight has distinct day, twilight and night and all three stable prop identities block navigation
+ok 71 - daylight has distinct day, twilight and night and all three stable prop identities block navigation
+  ---
+  duration_ms: 2.156918
+  type: 'test'
+  ...
+# Subtest: every distant mountain has a sealed shell when welded by its actual vertex coordinates
+ok 72 - every distant mountain has a sealed shell when welded by its actual vertex coordinates
+  ---
+  duration_ms: 98.894228
+  type: 'test'
+  ...
+# Subtest: water stays within the stream corridor instead of flooding unrelated low terrain
+ok 73 - water stays within the stream corridor instead of flooding unrelated low terrain
+  ---
+  duration_ms: 444.801748
+  type: 'test'
+  ...
+# Subtest: resource identities resolve to fixed hosts and species-specific circles grounded on the shared surface
+ok 74 - resource identities resolve to fixed hosts and species-specific circles grounded on the shared surface
+  ---
+  duration_ms: 5286.308922
+  type: 'test'
+  ...
+# Subtest: felling invalidates hosted resources and stale candidates; cancellation does not deplete the host
+ok 75 - felling invalidates hosted resources and stale candidates; cancellation does not deplete the host
+  ---
+  duration_ms: 162.954135
+  type: 'test'
+  ...
+# Subtest: new tree generations have new host identity and no mature-resource windfall
+ok 76 - new tree generations have new host identity and no mature-resource windfall
+  ---
+  duration_ms: 11.926166
+  type: 'test'
+  ...
+# Subtest: warehouse derives wood and collected goods from their owning balances and exposes processing data without mutation
+ok 77 - warehouse derives wood and collected goods from their owning balances and exposes processing data without mutation
+  ---
+  duration_ms: 7.077674
+  type: 'test'
+  ...
+# Subtest: processing registry rejects dangling/duplicate data, invalid parameters and small-material structure-wood creation
+ok 78 - processing registry rejects dangling/duplicate data, invalid parameters and small-material structure-wood creation
+  ---
+  duration_ms: 0.880164
+  type: 'test'
+  ...
+# Subtest: batch transfer reserves one total piece and manual release uses the final slot
+ok 79 - batch transfer reserves one total piece and manual release uses the final slot
+  ---
+  duration_ms: 9.659866
+  type: 'test'
+  ...
+# Subtest: empty and single-piece inventories do not create materials
+ok 80 - empty and single-piece inventories do not create materials
+  ---
+  duration_ms: 8.888671
+  type: 'test'
+  ...
+# Subtest: capacity leaves excess in inventory and one free manual slot
+ok 81 - capacity leaves excess in inventory and one free manual slot
+  ---
+  duration_ms: 8.856725
+  type: 'test'
+  ...
+# Subtest: reserved wood, fuel and unknown catalog records are never moved
+ok 82 - reserved wood, fuel and unknown catalog records are never moved
+  ---
+  duration_ms: 7.686554
+  type: 'test'
+  ...
+# Subtest: pickup restores exact source batches and is idempotent
+ok 83 - pickup restores exact source batches and is idempotent
+  ---
+  duration_ms: 7.610757
+  type: 'test'
+  ...
+# Subtest: invalid click has no partial debit or identity allocation
+ok 84 - invalid click has no partial debit or identity allocation
+  ---
+  duration_ms: 4.958641
+  type: 'test'
+  ...
+# Subtest: loose source, poses and identities are strictly validated
+ok 85 - loose source, poses and identities are strictly validated
+  ---
+  duration_ms: 6.78774
+  type: 'test'
+  ...
+# Subtest: world save round trip includes queued material ownership and selected piece
+ok 86 - world save round trip includes queued material ownership and selected piece
+  ---
+  duration_ms: 45.296242
+  type: 'test'
+  ...
+# Subtest: damaged current and future saves are protected rather than reset
+ok 87 - damaged current and future saves are protected rather than reset
+  ---
+  duration_ms: 24.685737
+  type: 'test'
+  ...
+# Subtest: real Rapier gravity settles a mixed pile, reaches sleep and skips idle solver steps
+ok 88 - real Rapier gravity settles a mixed pile, reaches sleep and skips idle solver steps
+  ---
+  duration_ms: 633.947575
+  type: 'test'
+  ...
+# Subtest: removing a lower support wakes and resettles the upper log
+ok 89 - removing a lower support wakes and resettles the upper log
+  ---
+  duration_ms: 62.993427
+  type: 'test'
+  ...
+# Subtest: hourglass speed cannot change physical elapsed time or settling
+ok 90 - hourglass speed cannot change physical elapsed time or settling
+  ---
+  duration_ms: 28.280617
+  type: 'test'
+  ...
+# Subtest: airborne save restores velocity, then settles without duplicating a body
+ok 91 - airborne save restores velocity, then settles without duplicating a body
+  ---
+  duration_ms: 1023.441969
+  type: 'test'
+  ...
+# Subtest: 32-piece stress stays conserved and valid after real solver steps
+ok 92 - 32-piece stress stays conserved and valid after real solver steps
+  ---
+  duration_ms: 339.536723
+  type: 'test'
+  ...
+# Subtest: loader failure never charges inventory and late results are disposed
+ok 93 - loader failure never charges inventory and late results are disposed
+  ---
+  duration_ms: 6.512721
+  type: 'test'
+  ...
+# Subtest: far travel frees physics and revisiting restores the same saved pieces
+ok 94 - far travel frees physics and revisiting restores the same saved pieces
+  ---
+  duration_ms: 21.322607
+  type: 'test'
+  ...
+# Subtest: presentation follows solver poses and unregisters collected pieces
+ok 95 - presentation follows solver poses and unregisters collected pieces
+  ---
+  duration_ms: 11.071001
+  type: 'test'
+  ...
+# Subtest: two visually identical seats have different immutable identities and traits; settle once
+ok 96 - two visually identical seats have different immutable identities and traits; settle once
+  ---
+  duration_ms: 18.586093
+  type: 'test'
+  ...
+# Subtest: unlearned, insufficient, cancelled and interrupted jobs never debit resources
+ok 97 - unlearned, insufficient, cancelled and interrupted jobs never debit resources
+  ---
+  duration_ms: 13.487369
+  type: 'test'
+  ...
+# Subtest: fuel-only scraps cannot silently become crafting or barter material
+ok 98 - fuel-only scraps cannot silently become crafting or barter material
+  ---
+  duration_ms: 7.861
+  type: 'test'
+  ...
+# Subtest: one-mushroom offerings have deterministic varied responses, duplicates and no-plan outcomes
+ok 99 - one-mushroom offerings have deterministic varied responses, duplicates and no-plan outcomes
+  ---
+  duration_ms: 16.032165
+  type: 'test'
+  ...
+# Subtest: merchant fixed stock survives same-day remount; exchange requires proximity, stock and one debit
+ok 100 - merchant fixed stock survives same-day remount; exchange requires proximity, stock and one debit
+  ---
+  duration_ms: 4.913289
+  type: 'test'
+  ...
+# Subtest: place, overlap rejection, relocate and pack retain one instance, including its affix
+ok 101 - place, overlap rejection, relocate and pack retain one instance, including its affix
+  ---
+  duration_ms: 5.939538
+  type: 'test'
+  ...
+# Subtest: current inventory core preserves instances and unknown catalog IDs; protects invalid structures
+ok 102 - current inventory core preserves instances and unknown catalog IDs; protects invalid structures
+  ---
+  duration_ms: 6.817244
+  type: 'test'
+  ...
+# Subtest: world save persists job, clock, learned plans and instances; old rules are no longer imported
+ok 103 - world save persists job, clock, learned plans and instances; old rules are no longer imported
+  ---
+  duration_ms: 50.813091
+  type: 'test'
+  ...
+# Subtest: local clock scales only simulated time, crosses midnight/seasons, rejects invalid inputs
+ok 104 - local clock scales only simulated time, crosses midnight/seasons, rejects invalid inputs
+  ---
+  duration_ms: 25.430087
+  type: 'test'
+  ...
+# Subtest: workshop and legacy prayer cannot run concurrently
+ok 105 - workshop and legacy prayer cannot run concurrently
+  ---
+  duration_ms: 3.057611
+  type: 'test'
+  ...
+# Subtest: whole world roundtrip preserves paths, time, grades, quota and source identities
+ok 106 - whole world roundtrip preserves paths, time, grades, quota and source identities
+  ---
+  duration_ms: 44.445941
+  type: 'test'
+  ...
+# Subtest: world serialization captures before asynchronous hashing, never mixes two resource states
+ok 107 - world serialization captures before asynchronous hashing, never mixes two resource states
+  ---
+  duration_ms: 13.890972
+  type: 'test'
+  ...
+# Subtest: a pending collection resumes its frozen result and settles once through repeated reloads
+ok 108 - a pending collection resumes its frozen result and settles once through repeated reloads
+  ---
+  duration_ms: 40.824083
+  type: 'test'
+  ...
+# Subtest: approaching actions and routes resume without replenishing their resource pool
+ok 109 - approaching actions and routes resume without replenishing their resource pool
+  ---
+  duration_ms: 205.909648
+  type: 'test'
+  ...
+# Subtest: reserved chopping, committed falling, stump and new generation restore without another wood award
+ok 110 - reserved chopping, committed falling, stump and new generation restore without another wood award
+  ---
+  duration_ms: 31.345906
+  type: 'test'
+  ...
+# Subtest: invalid structures, checksums and cross-slice contradictions protect the exact raw data
+ok 111 - invalid structures, checksums and cross-slice contradictions protect the exact raw data
+  ---
+  duration_ms: 44.348947
+  type: 'test'
+  ...
+# Subtest: committed and uncommitted action markers cannot be interchanged to replay rewards
+ok 112 - committed and uncommitted action markers cannot be interchanged to replay rewards
+  ---
+  duration_ms: 29.956663
+  type: 'test'
+  ...
+# Subtest: automatic and manual saving preserve corrupt primary or backup until explicit valid-copy recovery
+ok 113 - automatic and manual saving preserve corrupt primary or backup until explicit valid-copy recovery
+  ---
+  duration_ms: 27.847901
+  type: 'test'
+  ...
+# Subtest: two writers compare both records atomically; the loser cannot overwrite the winner or its backup
+ok 114 - two writers compare both records atomically; the loser cannot overwrite the winner or its backup
+  ---
+  duration_ms: 20.291684
+  type: 'test'
+  ...
+# Subtest: storage failure preserves both records and read failure never becomes a writable new game
+ok 115 - storage failure preserves both records and read failure never becomes a writable new game
+  ---
+  duration_ms: 25.275506
+  type: 'test'
+  ...
+# Subtest: invalid live state cannot overwrite a valid checkpoint and backups are immutable snapshots
+ok 116 - invalid live state cannot overwrite a valid checkpoint and backups are immutable snapshots
+  ---
+  duration_ms: 12.900088
+  type: 'test'
+  ...
+# Subtest: sparse arrays and non-finite runtime values cannot serialize into a corrupt new checkpoint
+ok 117 - sparse arrays and non-finite runtime values cannot serialize into a corrupt new checkpoint
+  ---
+  duration_ms: 19.952525
+  type: 'test'
+  ...
+# Subtest: subsequent loads return independent copies of the latest committed checkpoint, including after a new world first saves
+ok 118 - subsequent loads return independent copies of the latest committed checkpoint, including after a new world first saves
+  ---
+  duration_ms: 29.812311
+  type: 'test'
+  ...
+# Subtest: fixed tree slots, generations and landmark identities survive reconstruction
+ok 119 - fixed tree slots, generations and landmark identities survive reconstruction
+  ---
+  duration_ms: 6.852614
+  type: 'test'
+  ...
+# Subtest: terrain vertices and uncut grass cells retain triangle interpolation; split cliff interiors use the geometry gate
+ok 120 - terrain vertices and uncut grass cells retain triangle interpolation; split cliff interiors use the geometry gate
+  ---
+  duration_ms: 107.654413
+  type: 'test'
+  ...
+# Subtest: spawn and all four scenic destinations are reachable with no collider corner cuts
+ok 121 - spawn and all four scenic destinations are reachable with no collider corner cuts
+  ---
+  duration_ms: 2889.610125
+  type: 'test'
+  ...
+# Subtest: walking from home descends into the valley; rear route rises above the home
+ok 122 - walking from home descends into the valley; rear route rises above the home
+  ---
+  duration_ms: 0.236313
+  type: 'test'
+  ...
+# Subtest: building, tree trunks, stream and unopened high mountain block movement
+ok 123 - building, tree trunks, stream and unopened high mountain block movement
+  ---
+  duration_ms: 3.011468
+  type: 'test'
+  ...
+1..123
+# tests 123
+# suites 0
+# pass 123
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 30064.728147
+
+> home-of-woods@0.1.0 build
+> tsc -b && vite build
+
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 127 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                        0.54 kB │ gzip:     0.42 kB
+dist/assets/index-DO3Ki9-V.css        23.18 kB │ gzip:     5.65 kB
+dist/assets/woodcraft-DvMj9z3z.js      3.31 kB │ gzip:     1.62 kB
+dist/assets/index-BFlFEdVy.js      1,307.22 kB │ gzip:   395.03 kB
+dist/assets/rapier-BcnL-M2-.js     4,335.10 kB │ gzip: 1,669.96 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 717ms

@@ -118,3 +118,7 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 
 ## 树形与林下生产资产
 本批为项目原创程序网格，来源为本仓库树形/林下沙盒的已认可版本，不标记为第三方 CC0。生产入口 `scene/forest-shapes.js`、`scene/understory-geometry.js`、`scene/understory.js`；适配包含枝干合并、低段裁切、远景细分、共享缓存、地表与遮罩筛选。无外部下载或新增贴图。树实例身份仍为 world 固定树位，地被为不可采集装饰。几何/材质/实例释放归 Resources；动作临时对象归既有 forestry owner。旧 GLB 留作历史许可与验证材料，新树入口不消费其轮廓。预算与证据见 [回接记录](FOREST_INTEGRATION.md)。
+
+## 最终动物素材
+
+四种运行模型及来源统一见 [最终动物接入](WILDLIFE_GUIDE.md) 与 `public/assets/manifest.json`：Gobkit CC0 松鼠／野兔、Quaternius CC0 雄鹿、项目原创 1908 三角形／21 关节北美山羊。来源原件、许可证、重建脚本保留，旧 Gobkit 羊和候选素材不进入当前树。四个最终 GLB 使用交付版本原始字节；仅将野兔营地锚点移出 Woodcraft 碰撞区。

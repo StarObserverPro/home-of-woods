@@ -1,0 +1,153 @@
+{
+  "browser": "156.0.8078.4",
+  "backend": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "viewport": {
+    "width": 800,
+    "height": 520
+  },
+  "frameCount": 36,
+  "sampleDelta": 0.1,
+  "playbackFPS": 10,
+  "frameHashes": [
+    "a38b635c6dffffc1644b90bbf55d9e255377abc44dc35aa924dec97a3512cb7e",
+    "9b926cbbf582c656ff0a9e084f5f5b1bb224e99eca538fc915b1e1fbd07e4087",
+    "9242663ee7edc95e0cd52a33954e6b54bc8aec18459cc114c6e3fd889a7d7ec2",
+    "6ac4811cb39924d5f46dc1ee0775b7191176a79815f64115ae6c282daf7bb1f5",
+    "e4063bf6a9ebf3616d187196e2790629d8c0db87977235968501f55a4ab76c3c",
+    "f894d6cebba0b2ef89139e41594e4c50ee3010de560a8bab5d2069cc829277ec",
+    "bde67a057a17f383458908b31387ef6bddadd0bf0d372dc9bef713478610dd83",
+    "92f090f3f7994cd5d005757fde5ceb581923edcc3de56ad570fc4bb11b7eceb3",
+    "beb5c6480f240eb3374714c72306ff80b9761b84467203135c587b2ca968d695",
+    "c47f55a8e0f62daac4103139595a2b4a36885e1c8775ea1fbab3d33713548d7d",
+    "08dc68564e1bbf392d2142d5fc32b35f774f5c1d1c9dfd0303349d225883565f",
+    "1419df7dea0a56dcda5e14f17c50dc6638cfd513b38d2ffa7ba6d6068bd0b8f2",
+    "46bdac3ac1e5d61d62ffa898bba1a383a945fe7035ceb2241bf3ec761ce83283",
+    "9d47b4c6d423f5bd9fee22b3440b3d36b44c0b9dbb68b980acfa19bce1704879",
+    "aeb2f75c83ed10f59be57b9c086a26988f0d96f2dc892373123b5e22c30150c5",
+    "dac3ca787dd226ba187b63574b64d7806518a9aa53f9634d23f3a93ac1a44d5e",
+    "81ec57904d1e388d9db770c0c0b7a127862a59b342f6ebf0e2d916f2c2d35df0",
+    "4df9572e654b1b362465503050d041f33bde0c56518ef6d0086af31c00f1fead",
+    "1cb46e68a9af596d52d91853c6021692a97dc4898b21ea2089ba0f533340b400",
+    "d05a31ee011c4e1f961a2848d5ce960886110636103ffbc7de230e4db575712c",
+    "d37645ea26b8806c28c4b03f417c8300f66452486c1383a112282a4515e9bf0e",
+    "2ff35a25ec5323a800660a0397311d44c883b95681df52ce11a7ad110be143a7",
+    "5a622d31ca5070cee80541c47e10c23bfc673dec8847aee57d591954940d538a",
+    "9ce926fc8d4ca9f1fb83fcf6f900560eb75c6806badbff296a7ca8916729918a",
+    "cb55673543168ab925d4d6262c035f40535a4f21d2ca99e943a89ca3ba2a39e0",
+    "1922e8f7fe654ca9fb692d5a9cf661553a2ebf5d30bfad40ed79473f6b4f99c5",
+    "76aede463107eed2d4fc14b2055d71c48bc824f3aa56ad820a84b7f9780380dc",
+    "c7954f5c7ce0bfd8728fdc0d7131dae16041519acf7a7b5bc93f00f93490d171",
+    "9097cf04c12a3f0990cc91ef83c301d6e34930b6c6cdd7f754d10a6b9b0202f6",
+    "14987156cadb1e2777069bf0ff4ad47af48651e63032481cc609452787e6bb6b",
+    "9e1e365aa76bd0347b679fa7fd66c352b9a3ae0f2eea7a6d469d27631ae3422e",
+    "e30ae52079a0c5faab79ed99a723edbee7f2793058b9486c95d2be7132d1dd16",
+    "30ea576cddbe943f16aa1468ec0c95d7ea7b1e2b46d7916a8307c0416d1f4834",
+    "72e8d54db1562ac92711e1d34acfa705fd1fd911cccafe4ce341a1e507c767cf",
+    "1c0e622d06359aff966af9998b67a619137c86805c31fc38e30c1e5776748b98",
+    "0688e5967c9674bcdf5a0fe57920a7467b279d8a0efa3f1b9cc0c0ae3f82c048"
+  ],
+  "occlusion": {
+    "identicalOpaqueFrames": true,
+    "visibleRarityDifference": true
+  },
+  "pause": {
+    "zeroDeltaIdentical": true,
+    "reducedMotionIdentical": true
+  },
+  "shots": [
+    {
+      "name": "dusk",
+      "hour": 18,
+      "angle": -0.75,
+      "elevation": 0.34,
+      "distance": 10,
+      "zoom": 1,
+      "drawCalls": 224,
+      "surfaces": {
+        "variants": 4,
+        "activeRoots": 5,
+        "glintDraws": 2,
+        "elapsed": 3.600000000000002,
+        "glintMaterials": 2
+      }
+    },
+    {
+      "name": "night",
+      "hour": 23,
+      "angle": -0.75,
+      "elevation": 0.34,
+      "distance": 10,
+      "zoom": 1,
+      "drawCalls": 224,
+      "surfaces": {
+        "variants": 4,
+        "activeRoots": 5,
+        "glintDraws": 2,
+        "elapsed": 3.600000000000002,
+        "glintMaterials": 2
+      }
+    },
+    {
+      "name": "orbit",
+      "hour": 14,
+      "angle": 0.1,
+      "elevation": 0.62,
+      "distance": 10,
+      "zoom": 1,
+      "drawCalls": 201,
+      "surfaces": {
+        "variants": 4,
+        "activeRoots": 5,
+        "glintDraws": 2,
+        "elapsed": 3.600000000000002,
+        "glintMaterials": 2
+      }
+    },
+    {
+      "name": "map",
+      "hour": 14,
+      "angle": -0.75,
+      "elevation": 0.34,
+      "distance": 38,
+      "zoom": 1.5,
+      "drawCalls": 226,
+      "surfaces": {
+        "variants": 4,
+        "activeRoots": 5,
+        "glintDraws": 2,
+        "elapsed": 3.600000000000002,
+        "glintMaterials": 2
+      }
+    },
+    {
+      "name": "default-distance",
+      "hour": 14,
+      "angle": -0.75,
+      "elevation": 0.24,
+      "distance": 110,
+      "zoom": 0.76,
+      "drawCalls": 426,
+      "surfaces": {
+        "variants": 4,
+        "activeRoots": 5,
+        "glintDraws": 2,
+        "elapsed": 3.600000000000002,
+        "glintMaterials": 2
+      }
+    }
+  ],
+  "mobile": {
+    "canvas": {
+      "width": 390,
+      "height": 844
+    },
+    "surfaces": {
+      "variants": 4,
+      "activeRoots": 5,
+      "glintDraws": 2,
+      "elapsed": 3.600000000000002,
+      "glintMaterials": 2
+    }
+  },
+  "errors": []
+}

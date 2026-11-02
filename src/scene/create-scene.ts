@@ -1,3 +1,11 @@
+import {createWildlifePresentation} from './wildlife-presentation.ts';
+import {wildlifeViews,landmarkInspectionView} from '../domain/wildlife.ts';
+import type {RarityVfxMode} from '../content/item-vfx.ts';
+import {createWoodcraftPresentation} from './woodcraft-presentation.ts';
+import {WOODCRAFT,insideWoodcraft} from '../content/woodcraft.ts';
+import {createWorkshopPresentation} from './workshop-presentation.ts';
+import type {PlacementDraft} from '../domain/furniture-placement.ts';
+import {CAMP_VISITOR} from '../content/characters.ts';
 import {createUnderstory} from './understory.js';
 import {treeVisual} from '../world/tree-appearance.ts';
 import * as THREE from "three";
@@ -22,6 +30,7 @@ import {createCharacters} from './characters.ts';
 import type {CharacterInspection} from './characters.ts';
 
 export type SceneIntent =
+  | { kind: "wood-drop"; x:number; y:number; z:number }
   | { kind: "select"; id: string }
   | { kind: "move"; x: number; z: number };
 export async function createScene(
@@ -160,6 +169,11 @@ export async function createScene(
   });
   const characters=createCharacters(r,models,trees,forest.selections),player=characters.player;
   scene.add(player,characters.visitor);
+  const wildlife=createWildlifePresentation(r,models);scene.add(wildlife.group);
+  const workshop=createWorkshopPresentation(r,models);scene.add(workshop.group);workshop.hits.register(characters.visitor,CAMP_VISITOR.id);
+  const woodcraft=createWoodcraftPresentation(r);scene.add(woodcraft.group);
+  let woodDropMode=false;
+  let placementMode=false;
   let inspectionCamera:{yaw:number;elevation:number;zoom:number;target:THREE.Vector3}|null=null;
   const forestry=createForestryPresentation({models,resources:r,forestGroup:forest.group,trees,selections:forest.selections});
   const gathering = createGatheringPresentation(r, models, gatheringRegistry);
@@ -247,9 +261,14 @@ export async function createScene(
       1 - ((clientY - rect.top) / rect.height) * 2,
     );
     ray.setFromCamera(pointer, camera);
-    const hit = ray.intersectObjects([...forestry.getPickTargets(),...props.values(),...gathering.hits.objects(),...camp.hits.filter(o=>o.userData.propActive!==false)], true)[0],
+    const hit = ray.intersectObjects([...woodcraft.hits.objects(),...workshop.hits.objects(),...forestry.getPickTargets(),...props.values(),...gathering.hits.objects(),...camp.hits.filter(o=>o.userData.propActive!==false)], true)[0],
       terrainHit = ray.intersectObject(ground)[0];
+    if(woodDropMode){const drop=ray.intersectObjects([...woodcraft.hits.objects(),ground],true)[0];if(drop)intent({kind:'wood-drop',x:drop.point.x,y:drop.point.y,z:drop.point.z});return;}
+    if(placementMode){if(terrainHit)intent({kind:'move',x:terrainHit.point.x,z:terrainHit.point.z});return;}
+    if(terrainHit&&insideWoodcraft(terrainHit.point,0)&&(!hit||hit.distance>terrainHit.distance+.2)){intent({kind:'select',id:WOODCRAFT.id});return;}
     if (hit && (!terrainHit || hit.distance < terrainHit.distance + 0.2)) {
+      const looseId=woodcraft.hits.resolve(hit.object);if(looseId){intent({kind:'select',id:looseId});return;}
+      const ownedId=workshop.hits.resolve(hit.object);if(ownedId){intent({kind:'select',id:ownedId});return;}
       if(hit.object.userData.propId){intent({kind:'select',id:hit.object.userData.propId});return;}
       const sourceId = gathering.hits.resolve(hit.object);
       if (sourceId) { intent({ kind: 'select', id: sourceId }); return; }
@@ -357,6 +376,8 @@ export async function createScene(
   resize();
   const view = {
     getAppearance:()=>({...appearance}),
+    wildlifeAvailable:()=>wildlife.available(),
+    wildlifeObserved:()=>wildlife.observedIds(),
     inspectScene(preset:SceneViewPreset|null,overrides:Partial<SceneAppearance>={}){
       if(preset&&!sceneCamera)sceneCamera={yaw,elevation,zoom,target:target.clone()};
       if(!preset&&sceneCamera){({yaw,elevation,zoom}=sceneCamera);target.copy(sceneCamera.target);sceneCamera=null;}
@@ -368,6 +389,8 @@ export async function createScene(
     camera,
     renderer,
     getYaw: () => yaw,
+    setWoodcraftDrop(value:boolean){woodDropMode=value;},
+    setPlacement(value:PlacementDraft|null){placementMode=!!value;workshop.setPreview(value);},
     resetCamera() {
       yaw = CAMERA.yaw;
       elevation = CAMERA.elevation;
@@ -379,6 +402,7 @@ export async function createScene(
     zoomBy(amount: number) {manualCamera();
       zoom = clamp(zoom * amount, CAMERA.minZoom, CAMERA.maxZoom);
     },
+    setRarityVfxMode(mode:RarityVfxMode){workshop.setRarityVfxMode(mode);},
     setReducedMotion(value: boolean) {
       reducedMotion = value;
     },
@@ -397,6 +421,7 @@ export async function createScene(
       hemi.color.copy(light.skyColor);hemi.groundColor.copy(light.groundColor);hemi.intensity=light.ambientIntensity;
       sun.color.copy(light.sunColor);sun.intensity=light.sunIntensity;sun.position.copy(sun.target.position).addScaledVector(light.sunDirection,135);
       scene.environmentIntensity=light.environmentIntensity;(scene.fog as THREE.Fog).color.copy(light.haze);
+      if(state.workshop.job?.kind==='offering'&&state.workshop.job.phase==='working')appearance.altar='answering';
       camp.update(elapsed,appearance,state.inventory,sky.night,reducedMotion);
       const { x, z, facing, moving } = state.player,
         y = heightAt(x, z);
@@ -404,11 +429,11 @@ export async function createScene(
       characters.update(state,reducedMotion);
       forestry.alignContact(characters.getImpact());
       gathering.update(state.gathering);
-      const action=state.gathering.action,ritual=state.ritual;
-      cameraAction=action?.phase==='performing'?action.actionId:ritual?.phase==='performing'?`prayer-${ritual.startedAt}`:'';
+      const action=state.gathering.action,ritual=state.ritual,craft=state.workshop.job;
+      cameraAction=craft?.phase==='working'?craft.id:action?.phase==='performing'?action.actionId:ritual?.phase==='performing'?`prayer-${ritual.startedAt}`:'';
       const framed=!!cameraAction && cameraOverride!==cameraAction && !reducedMotion && !scenePreset;
-      const actionTime=action?.phase==='performing'?state.time-action.startedAt!:ritual?.phase==='performing'?state.time-ritual.startedAt!:0;
-      const actionLength=action?.phase==='performing'?action.durationSeconds:5.5;
+      const actionTime=craft?.phase==='working'?state.time-craft.startedAt!:action?.phase==='performing'?state.time-action.startedAt!:ritual?.phase==='performing'?state.time-ritual.startedAt!:0;
+      const actionLength=craft?.phase==='working'?craft.durationSeconds:action?.phase==='performing'?action.durationSeconds:5.5;
       const blend=framed?ramp(actionTime,0,.65)*(1-ramp(actionTime,actionLength-.75,actionLength)):0;
       const climbing=action?.phase==='performing'&&action.motionTag==='gather.climb';
       const rear=action?.phase==='performing'&&action.motionTag==='gather.pluck';
@@ -432,13 +457,15 @@ export async function createScene(
       if(camera.position.x>WORLD.minX&&camera.position.x<WORLD.maxX&&camera.position.z>WORLD.minZ&&camera.position.z<WORLD.maxZ)camera.position.y=Math.max(camera.position.y,heightAt(camera.position.x,camera.position.z)+THREE.MathUtils.lerp(3,.4,blend));
       if(scenePreset)for(const tree of trees)if(Math.hypot(camera.position.x-tree.x,camera.position.z-tree.z)<3*tree.scale)camera.position.y=Math.max(camera.position.y,heightAt(tree.x,tree.z)+9*tree.scale);
       camera.lookAt(target);
+      workshop.update(state,camera,dt,reducedMotion,sky.night);woodcraft.update(state.woodcraft);
       camera.zoom = THREE.MathUtils.lerp(zoom,1,blend) * (mobile ? scenePreset?.8:THREE.MathUtils.lerp(1.45,.9,blend) : 1);
+      if(['wildlife','stagVista','goatVista'].includes(scenePreset??'')&&camera.aspect<1)camera.zoom*=camera.aspect;
       camera.updateProjectionMatrix();
       environment.update(elapsed,dt,camera.position,reducedMotion);
       scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);
       river.update(elapsed,sky.day,reducedMotion,appearance.reflections,host.clientWidth<600||host.clientHeight<500);
       const selected = state.selected
-        ? (gatheringRegistry.sources.get(state.selected) ?? treeById.get(state.selected) ??
+        ? (woodcraft.point(state.selected) ?? workshop.point(state.selected) ?? (state.selected===CAMP_VISITOR.id?CAMP_VISITOR:null) ?? gatheringRegistry.sources.get(state.selected) ?? treeById.get(state.selected) ??
           (state.selected === "cabin"
             ? CABIN
             : state.selected === "tent"
@@ -502,13 +529,18 @@ export async function createScene(
           mesh.material = overlap ? fade : opaque;
         });
       });
+      const wildlifeSeen=wildlifeViews(state.wildlife,state.time);
+      if(scenePreset==='stagVista')wildlifeSeen.push(landmarkInspectionView('wildlife.stag',state.time));
+      if(scenePreset==='goatVista')wildlifeSeen.push(landmarkInspectionView('wildlife.goat',state.time));
+      wildlife.update(wildlifeSeen,state.time,appearance.hour,camera,reducedMotion);
       renderer.info.reset();renderer.info.autoReset=false;
       renderer.render(scene, camera);
     },
     stats() {
       return {
-        understory:understory.stats(),treeShapes:trees.reduce((counts,t)=>{const name=treeVisual(t).name;counts[name]=(counts[name]??0)+1;return counts;},{} as Record<string,number>),appearance:{...appearance},scenePreset,camp:camp.stats(),terrain:ground.geometry.userData,shaderErrors,
+        woodcraft:woodcraft.stats(),workshop:workshop.stats(),understory:understory.stats(),treeShapes:trees.reduce((counts,t)=>{const name=treeVisual(t).name;counts[name]=(counts[name]??0)+1;return counts;},{} as Record<string,number>),appearance:{...appearance},scenePreset,camp:camp.stats(),terrain:ground.geometry.userData,shaderErrors,
         resources: r.stats(),
+        wildlife:wildlife.stats(),
         drawCalls: renderer.info.render.calls,
         triangles: renderer.info.render.triangles,
         gpu: { ...renderer.info.memory },
@@ -539,8 +571,11 @@ export async function createScene(
       canvas.removeEventListener("wheel", wheel);
       canvas.removeEventListener("contextmenu", contextMenu);
       pointers.clear();
+      woodcraft.dispose();
+      workshop.dispose();
       forestry.dispose();
       characters.dispose();
+      wildlife.dispose();
       gathering.dispose();
       river.dispose();
       camp.dispose();

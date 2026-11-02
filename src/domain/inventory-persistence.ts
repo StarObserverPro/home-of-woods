@@ -1,48 +1,42 @@
-import {canonicalJson} from './save-digest.ts';
-import { canonicalStacks, createInventory, exactKeys, isRecord, validateInventory } from './inventory.ts';
+import { canonicalInstances } from './owned-items.ts';
+import { canonicalJson } from './save-digest.ts';
+import { canonicalStacks, createInventory, isRecord, validateInventory, INVENTORY_SCHEMA_VERSION } from './inventory.ts';
 import type { InventoryState } from './inventory.ts';
-import { isStableId } from './item-catalog.ts';
+import { assertItemJson, withoutFields } from './item-data.ts';
+import { itemPropertyDiagnostics } from './item-properties.ts';
 
 export type InventoryLoadResult =
   | { decision: 'no-save' | 'restored' | 'migrated'; value: InventoryState; diagnostics: string[] }
   | { decision: 'protected'; raw: unknown; diagnostics: string[] };
 
-/** Catalog changes are not format changes. Unknown item/quality IDs pass through intact. */
+/** One current core format. New optional attributes do not change this version. */
 export function prepareInventoryData(raw: unknown): InventoryLoadResult {
   try {
-    if (!isRecord(raw)) throw new Error('Invalid inventory object');
-    if (Object.hasOwn(raw, 'schemaVersion')) {
-      exactKeys(raw, ['schemaVersion', 'stacks']);
-      if (raw.schemaVersion !== 1 && raw.schemaVersion !== 2) throw new Error('Unsupported inventory schema');
-      const stacks = canonicalStacks(raw.stacks);
-      const migrated = canonicalJson(stacks) !== canonicalJson(raw.stacks);
-      return { decision: migrated ? 'migrated' : 'restored', value: { schemaVersion: 1, revision: 0, stacks }, diagnostics: migrated ? ['Inventory safely canonicalized'] : [] };
-    }
-    // Actual pre-stack session shape; absent grades remain explicitly ungraded.
-    exactKeys(raw, ['version', 'quantities']);
-    if (!Number.isSafeInteger(raw.version) || (raw.version as number) < 0 || !isRecord(raw.quantities)) throw new Error('Invalid legacy inventory');
-    const stacks = Object.entries(raw.quantities).map(([itemId, quantity]) => {
-      if (!isStableId(itemId)) throw new Error('Invalid legacy item ID');
-      return { itemId, qualityId: 'ungraded', quantity };
-    });
-    return { decision: 'migrated', value: { schemaVersion: 1, revision: 0, stacks: canonicalStacks(stacks) }, diagnostics: ['Legacy quantities retained as ungraded'] };
+    if (!isRecord(raw) || raw.schemaVersion !== INVENTORY_SCHEMA_VERSION) throw new Error('Unsupported inventory core format');
+    assertItemJson(raw);
+    const stacks = canonicalStacks(raw.stacks);
+    const instances = Object.hasOwn(raw, 'instances') ? canonicalInstances(raw.instances) : undefined;
+    const diagnostics = [...stacks, ...(instances ?? [])].flatMap((item, i) =>
+      itemPropertyDiagnostics(item).map(message => `inventory[${i}].${message}`));
+    const normalized = canonicalJson(stacks) !== canonicalJson(raw.stacks);
+    return { decision: normalized ? 'migrated' : 'restored',
+      value: { ...structuredClone(raw), schemaVersion: INVENTORY_SCHEMA_VERSION, revision: 0, stacks, ...(instances ? { instances } : {}) },
+      diagnostics };
   } catch (error) {
     return { decision: 'protected', raw, diagnostics: [error instanceof Error ? error.message : 'Invalid inventory'] };
   }
 }
-
 export function prepareInventoryPersistence(raw: string | null): InventoryLoadResult {
   if (raw === null) return { decision: 'no-save', value: createInventory(), diagnostics: [] };
   try {
     const result = prepareInventoryData(JSON.parse(raw));
     return result.decision === 'protected' ? { ...result, raw } : result;
-  } catch {
-    return { decision: 'protected', raw, diagnostics: ['Invalid inventory JSON'] };
-  }
+  } catch { return { decision: 'protected', raw, diagnostics: ['Invalid inventory JSON'] }; }
 }
-
-/** This is a slice codec, not a second localStorage writer. */
-export function serializeInventory(state: InventoryState): string {
+/** Shared by standalone tests and the single whole-world writer. No shadow save format. */
+export function inventoryPersistenceData(state: InventoryState) {
   const stacks = validateInventory(state);
-  return JSON.stringify({ schemaVersion: 2, stacks });
+  return { ...withoutFields(structuredClone(state), ['revision']), schemaVersion: INVENTORY_SCHEMA_VERSION, stacks,
+    ...(state.instances ? { instances: canonicalInstances(state.instances) } : {}) };
 }
+export const serializeInventory = (state: InventoryState) => canonicalJson(inventoryPersistenceData(state));

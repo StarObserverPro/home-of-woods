@@ -17,8 +17,8 @@
 | --- | --- |
 | 树下落枝 0→3 | [branch-result](branch-result.json) |
 | 松圈 0→2、栎圈再到4，同圈仅结算一次 | [松圈](pine-circle-result.json)、[栎圈](oak-circle-result.json)、采前/采后 JPG |
-| 场景点中栎圈时解析到 tree-slot-17-11 的同一来源 | [oak-circle-before](oak-circle-before.jpg)、[oak-circle-result](oak-circle-result.json) |
-| 仓库分类及加工信息 | [桌面](warehouse-desktop.jpg)、[仓库文本](warehouse-view.txt)、[竖屏](warehouse-mobile.jpg) |
+| 场景点中栎圈时解析到 tree-slot-17-11 的同一来源 | [oak-circle-before](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/warehouse-tree-resources/oak-circle-before.jpg)、[oak-circle-result](oak-circle-result.json) |
+| 仓库分类及加工信息 | [桌面](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/warehouse-tree-resources/warehouse-desktop.jpg)、[仓库文本](warehouse-view.txt)、[竖屏](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/warehouse-tree-resources/warehouse-mobile.jpg) |
 | 移动采集中打开仓库，时间/位置/动作冻结；Esc 后继续完成 | [warehouse-pause](warehouse-pause.json)及栎圈结果 |
 | 390×844、320×844、844×390：无横向溢出，按钮至少44 CSS px | mobile-portrait.json、mobile-narrow.json、mobile-landscape.json |
 | 原木采伐同步进入仓库，枝杈/蘑菇不变 | forestry-result.json |

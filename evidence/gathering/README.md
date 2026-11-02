@@ -13,10 +13,10 @@
 
 ## 资产与画面
 
-两件源部件重新按具体 CC0 审查，源 hash、前后尺寸和加工过程见 [asset-normalization](asset-normalization.json)。运行资产约 24.8 KB，无新增纹理；共享模型和命中代理沿用 Resources owner。查看 [桌面采前近景](desktop-branches-before.jpg)、[桌面采后](desktop-mushrooms-after.jpg)、[竖屏](mobile-branches-after.jpg)、[横屏](mobile-landscape.jpg)。
+两件源部件重新按具体 CC0 审查，源 hash、前后尺寸和加工过程见 [asset-normalization](asset-normalization.json)。运行资产约 24.8 KB，无新增纹理；共享模型和命中代理沿用 Resources owner。查看 [桌面采前近景](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/gathering/desktop-branches-before.jpg)、[桌面采后](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/gathering/desktop-mushrooms-after.jpg)、[竖屏](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/gathering/mobile-branches-after.jpg)、[横屏](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/gathering/mobile-landscape.jpg)。
 
 ## 验证边界
 
 设备为本机 Windows / AMD Radeon 集显 / Edge（ANGLE D3D11），seed 104729。手机项是桌面浏览器视口与指针操作验证，没有真实手机性能、多指触控或强制图形上下文恢复证据。当前零耗时采集没有新增骨骼动作。完整存档、正式恢复调度、日历和用途尚未启用。构建保留约 1.1 MB 主包提示；本轮没有提高预算或声称 60fps。
 
-`npm.cmd run check`：33 项测试、7 个 GLB/地表来源与结构检查、类型及生产构建通过。`npm.cmd run verify:evidence` 的历史与本批审计均通过（evidence-check.txt）；生产包实测 E 键发起落枝、按钮采集蘑菇，库存 3 / 2，控制台错误 0，生产录像写入接口返回 404，见 [production-smoke](production-smoke.json)及[最终画面](production-result.jpg)。采集视频为 VP9 / 1528×682，289 帧，包时间跨度 19.903 秒，完整解码无错误，见 media.json。证据审计只读，核对当前冻结源和本轮回执，不改写旧截图/录像或伪造历史通过。
+`npm.cmd run check`：33 项测试、7 个 GLB/地表来源与结构检查、类型及生产构建通过。`npm.cmd run verify:evidence` 的历史与本批审计均通过（evidence-check.txt）；生产包实测 E 键发起落枝、按钮采集蘑菇，库存 3 / 2，控制台错误 0，生产录像写入接口返回 404，见 [production-smoke](production-smoke.json)及[最终画面](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/gathering/production-result.jpg)。采集视频为 VP9 / 1528×682，289 帧，包时间跨度 19.903 秒，完整解码无错误，见 media.json。证据审计只读，核对当前冻结源和本轮回执，不改写旧截图/录像或伪造历史通过。

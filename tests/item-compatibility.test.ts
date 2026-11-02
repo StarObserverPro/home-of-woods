@@ -6,7 +6,6 @@ import { createItemCatalog } from '../src/domain/item-catalog.ts';
 import { createInventory, inventoryCandidate, inventoryCount, inventoryTransaction, stackKey } from '../src/domain/inventory.ts';
 import type { InventoryState } from '../src/domain/inventory.ts';
 import { prepareInventoryPersistence, serializeInventory } from '../src/domain/inventory-persistence.ts';
-import { upgradeSessionInventory } from '../src/app/inventory-session.ts';
 import { createGatheringRegistry } from '../src/domain/gathering-registry.ts';
 import { RUNTIME_MODELS } from '../src/content/assets.ts';
 import { warehouseSnapshot } from '../src/domain/warehouse-view.ts';
@@ -24,7 +23,7 @@ function load(raw: string): InventoryState {
 const registry = createGatheringRegistry({ assetIds: RUNTIME_MODELS.map(asset => asset.assetId) });
 
 test('ordinary, fine and legacy ungraded stacks merge only within the same identity', () => {
-  let inventory = load(JSON.stringify({ version: 7, quantities: { mushroom: 4 } }));
+  let inventory = load(JSON.stringify({ schemaVersion: 4, stacks: [{itemId:'mushroom',qualityId:'ungraded',quantity:4}] }));
   inventory = inventoryTransaction(inventory, [
     { itemId: 'mushroom', qualityId: 'ordinary', delta: 3 },
     { itemId: 'mushroom', qualityId: 'fine', delta: 2 },
@@ -73,7 +72,7 @@ test('catalog additions, reorder and display edits neither migrate nor rewrite o
 });
 
 test('unknown item and quality records survive normal transactions and JSON reload, but cannot be consumed', () => {
-  const state = load(JSON.stringify({ schemaVersion: 1, stacks: [
+  const state = load(JSON.stringify({ schemaVersion: 4, stacks: [
     { itemId: 'future.material', qualityId: 'fine', quantity: 8 },
     { itemId: 'branch', qualityId: 'future-grade', quantity: 5 },
   ] }));
@@ -99,93 +98,6 @@ test('retired definitions preserve owned stock, allow explicit consumption and c
   assert.equal(inventoryCount(inventoryCandidate(state, 'mushroom', -1, 'ordinary', catalog), 'mushroom'), 2);
   assert.throws(() => inventoryCandidate(state, 'mushroom', 1, 'ordinary', catalog), /Inactive/);
   assert.equal(inventoryCount(load(serializeInventory(state)), 'mushroom'), 3);
-});
-
-test('safe normalization writes once and reloads as restored; legacy grades are never guessed', () => {
-  for (const raw of [
-    { version: 42, quantities: { branch: 3, mushroom: 2, 'future.material': 9, wood: 0 } },
-    { schemaVersion: 1, stacks: [{ itemId: 'mushroom', qualityId: 'fine', quantity: 2 }, { itemId: 'branch', qualityId: 'ordinary', quantity: 0 }] },
-  ]) {
-    const first = prepareInventoryPersistence(JSON.stringify(raw));
-    assert.equal(first.decision, 'migrated');
-    if (first.decision === 'protected') continue;
-    const serialized = serializeInventory(first.value);
-    assert.equal(prepareInventoryPersistence(serialized).decision, 'restored');
-    assert.equal(serializeInventory(load(serialized)), serialized);
-    if ('version' in raw) assert.ok(first.value.stacks.every(stack => stack.qualityId === 'ungraded'));
-  }
-  assert.equal(prepareInventoryPersistence(null).decision, 'no-save');
-});
-
-test('future structures, unknown fields, broken identities and invalid numbers retain the exact raw save', () => {
-  const stack = { itemId: 'mushroom', qualityId: 'ordinary', quantity: 2 };
-  const payloads: unknown[] = [
-    { schemaVersion: 3, stacks: [stack] },
-    { schemaVersion: 1, stacks: [stack], future: true },
-    { schemaVersion: 1, stacks: [{ ...stack, future: 'metadata' }] },
-    { schemaVersion: 1, stacks: [stack, stack] },
-    { schemaVersion: 1 },
-    { version: 1, quantities: { branch: 2 }, future: true },
-    { schemaVersion: 1, stacks: [{ ...stack, qualityId: '' }] },
-    ...[-1, .5, Number.MAX_SAFE_INTEGER + 1, null, '3'].map(quantity => ({ schemaVersion: 1, stacks: [{ ...stack, quantity }] })),
-  ];
-  for (const raw of ['{broken', ...payloads.map(value => JSON.stringify(value))]) {
-    const result = prepareInventoryPersistence(raw);
-    assert.equal(result.decision, 'protected');
-    if (result.decision === 'protected') assert.equal(result.raw, raw);
-    assert.equal(Object.hasOwn(result, 'value'), false);
-  }
-  const invalid = { ...createInventory(), future: 'keep me' };
-  assert.throws(() => serializeInventory(invalid), /fields/);
-});
-
-test('legacy session wood transfers once with no quota or world mutation and no reclassification', () => {
-  const state = createState();
-  const legacy = { ...state, inventory: { version: 4, quantities: { branch: 3, mushroom: 2 } } as unknown, forestry: { ...state.forestry, wood: 7 } };
-  const ledger = JSON.stringify(legacy.forestry.ledger), sources = JSON.stringify(legacy.gathering), slots = JSON.stringify(legacy.forestry.slots);
-  assert.equal(upgradeSessionInventory(legacy).decision, 'migrated');
-  const inventory = legacy.inventory as InventoryState;
-  assert.equal(inventoryCount(inventory, 'wood', 'ungraded'), 7);
-  assert.equal(inventoryCount(inventory, 'wood', 'ordinary'), 0);
-  assert.equal(Object.hasOwn(legacy.forestry, 'wood'), false);
-  assert.equal(JSON.stringify(legacy.forestry.ledger), ledger);
-  assert.equal(JSON.stringify(legacy.gathering), sources);
-  assert.equal(JSON.stringify(legacy.forestry.slots), slots);
-  const before = JSON.stringify(legacy);
-  assert.equal(upgradeSessionInventory(legacy).decision, 'restored');
-  assert.equal(JSON.stringify(legacy), before);
-});
-
-test('conflicting owners and invalid old balances protect the whole session before any assignment', () => {
-  const inventories = [
-    { version: 0, quantities: { wood: 999, branch: 3 } },
-    inventoryCandidate(createInventory(), 'wood', 2, 'ordinary'),
-    { version: 0, quantities: { branch: 3 }, future: 1 },
-  ];
-  for (const inventory of inventories) {
-    const state = { inventory, forestry: { wood: 5, ledger: { used: 2 } } };
-    const before = JSON.stringify(state);
-    assert.equal(upgradeSessionInventory(state).decision, 'protected');
-    assert.equal(JSON.stringify(state), before);
-    assert.equal(state.inventory, inventory);
-  }
-  const invalid = { inventory: createInventory(), forestry: { wood: -1 } };
-  assert.equal(upgradeSessionInventory(invalid).decision, 'protected');
-  assert.equal(invalid.forestry.wood, -1);
-  const shadow = { inventory: { version: 0, quantities: { wood: 9 } }, forestry: { wood: 0 } };
-  assert.equal(upgradeSessionInventory(shadow).decision, 'protected');
-});
-
-test('a current persisted slice hydrates runtime revision without changing stock and protects extra runtime fields', () => {
-  const raw = JSON.parse(serializeInventory(inventoryCandidate(createInventory(), 'mushroom', 4, 'fine')));
-  const host = { inventory: raw, forestry: { ledger: { used: 0 } } };
-  assert.equal(upgradeSessionInventory(host).decision, 'restored');
-  assert.equal(host.inventory.revision, 0);
-  assert.equal(inventoryCount(inventoryCandidate(host.inventory, 'branch', 2, 'ordinary'), 'mushroom', 'fine'), 4);
-  const invalid = { inventory: { ...host.inventory, future: true }, forestry: {} };
-  const before = JSON.stringify(invalid);
-  assert.equal(upgradeSessionInventory(invalid).decision, 'protected');
-  assert.equal(JSON.stringify(invalid), before);
 });
 
 test('felling awards only ordinary stock once; inventory failure cannot partially spend quota or fell a tree', () => {
