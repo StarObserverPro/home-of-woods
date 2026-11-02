@@ -555,6 +555,87 @@
         ]
       },
       "limitations": "Common decorative wildlife only; visual and performance acceptance tracked separately."
+    },
+    {
+      "assetId": "how-wildlife-stag",
+      "batchId": "HOW-WILDLIFE-PHASE2",
+      "role": "runtime",
+      "status": "integrated-on-branch",
+      "file": "public/assets/wildlife/stag.glb",
+      "bytes": 1947600,
+      "sha256": "c5b8cedcb2e8cb29cc88719f392bb13dc832e464cc821b952b981ccd502959ae",
+      "source": {
+        "author": "Quaternius",
+        "page": "https://quaternius.com/packs/ultimateanimatedanimals.html",
+        "files": [
+          {
+            "file": "sources/quaternius/ultimate-animated-animals/Stag.gltf",
+            "sha256": "170b964909d16d1ab4d428b1d714f25016913d32481acd9c3d62923192583be6"
+          }
+        ]
+      },
+      "license": {
+        "id": "CC0-1.0",
+        "evidence": "sources/quaternius/ultimate-animated-animals/License.txt"
+      },
+      "adaptation": "Repack embedded glTF as GLB; keep only 5 noncombat clips; brighten nonmetallic palette.",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/wildlife-presentation.ts",
+        "rules": "src/domain/wildlife.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "metrics": {
+        "triangles": 3670,
+        "joints": 38,
+        "clips": [
+          "bound",
+          "idle",
+          "survey",
+          "graze",
+          "walk"
+        ]
+      },
+      "limitations": "Decorative distant encounter: no collection, feeding, pet identity or economic consequences."
+    },
+    {
+      "assetId": "how-wildlife-goat",
+      "batchId": "HOW-WILDLIFE-PHASE2",
+      "role": "runtime",
+      "status": "integrated-on-branch",
+      "file": "public/assets/wildlife/goat.glb",
+      "bytes": 167440,
+      "sha256": "1e8f3f474945055fe5cd6ba7ef531a31578f69f4f7250d9853922e89cec9264a",
+      "source": {
+        "author": "Gobkit",
+        "page": "https://gobkit.com/freebies",
+        "files": [
+          {
+            "file": "sources/gobkit/animalB/Goat.glb",
+            "sha256": "51f7399bb76ea5175ac4d7c136c50b74f86250664c1f6b1acff48e5322f09ea0"
+          }
+        ]
+      },
+      "license": {
+        "id": "CC0-1.0",
+        "evidence": "public/assets/licenses/gobkit-CC0-1.0.txt"
+      },
+      "adaptation": "Recolor baked atlas as pale mountain goat, preserve dark hooves; keep idle/walk only.",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/wildlife-presentation.ts",
+        "rules": "src/domain/wildlife.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "metrics": {
+        "triangles": 396,
+        "joints": 16,
+        "clips": [
+          "idle",
+          "walk"
+        ]
+      },
+      "limitations": "Decorative distant encounter: no collection, feeding, pet identity or economic consequences."
     }
   ],
   "worldSource": {

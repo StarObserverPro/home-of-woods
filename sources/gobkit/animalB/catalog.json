@@ -1,0 +1,39 @@
+{
+  "model": {
+    "id": "goat",
+    "name": "Goat",
+    "format": "glb",
+    "url": "https://gobkit.com/freebies/animalB/Goat.glb",
+    "rigged": true,
+    "lowPoly": true,
+    "fps": 24,
+    "animations": [
+      {
+        "name": "idle",
+        "from": 0,
+        "to": 29,
+        "loop": true
+      },
+      {
+        "name": "attack",
+        "from": 30,
+        "to": 59,
+        "loop": true
+      },
+      {
+        "name": "dead",
+        "from": 60,
+        "to": 89,
+        "loop": false
+      },
+      {
+        "name": "walk",
+        "from": 90,
+        "to": 119,
+        "loop": true
+      }
+    ],
+    "license": "CC0 1.0 (public domain) — free for any use, commercial or personal, no attribution required."
+  },
+  "pack": "Gobkit Free Animal Pack Vol. 2"
+}\n

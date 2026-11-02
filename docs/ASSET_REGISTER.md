@@ -6,6 +6,9 @@
 
 ## R5d 场景回接（2026-10-30）
 
+**HOW-WILDLIFE-PHASE2（独立实施分支）**：Quaternius 2021 Stag 和 Gobkit Animal Pack Vol.2 Goat 均经独立 CC0 来源与原件 SHA 核对；Stag 3670 三角形/38 骨骼，Goat 396 三角形/16 骨骼。源文件、license、修整工具和产物 SHA 登记在 `sources/quaternius/ultimate-animated-animals/`、`sources/gobkit/animalB/` 及 `public/assets/manifest.json`，见 [第二阶段说明](WILDLIFE_PHASE2.md)。仅为分支接入，不算 main 已发布。
+
+
 沿用用户审看通过的 R5 程序网格/着色器与自绘神谕纹理，新增焦木端头、灰环和不规则碎面；均为本项目原创，不冒称第三方 CC0。没有新增下载、生成服务或付费资产。倒影使用已锁定 Three.js 0.186.1 的 MIT Reflector，通知继续随 public 分发；现有十个运行模型及许可不变。
 
 运行入口为 scene/creek、camp-props、fire、altar、stone-foundation，以及 world 的闭合网格、切边和碎面。倒影单目标 512²/256²，每 3/4 帧有界更新，不重复阴影；火焰 2,808 三角形，祭坛上部 2,910 三角形、一张 512×640 状态文字纹理。文字使用系统字体，不分发字体文件。地形 19,896 三角形、166 个碎面插点，崖顶边固定，背面实际封闭。道具有稳定身份、拾取与碰撞，资源归原 owner。准入指纹、旧合成存档、修整和验证见 [场景记录](../evidence/scene-r5/README.md)。

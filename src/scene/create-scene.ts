@@ -1,5 +1,5 @@
 import { createWildlifePresentation } from './wildlife-presentation.ts';
-import { wildlifeViews } from '../domain/wildlife.ts';
+import { wildlifeViews, landmarkInspectionView } from '../domain/wildlife.ts';
 import {createUnderstory} from './understory.js';
 import {treeVisual} from '../world/tree-appearance.ts';
 import * as THREE from "three";
@@ -361,6 +361,7 @@ export async function createScene(
   const view = {
     getAppearance:()=>({...appearance}),
     wildlifeAvailable: () => wildlife.available(),
+    wildlifeObserved: () => wildlife.observedIds(),
     inspectScene(preset:SceneViewPreset|null,overrides:Partial<SceneAppearance>={}){
       if(preset&&!sceneCamera)sceneCamera={yaw,elevation,zoom,target:target.clone()};
       if(!preset&&sceneCamera){({yaw,elevation,zoom}=sceneCamera);target.copy(sceneCamera.target);sceneCamera=null;}
@@ -438,7 +439,7 @@ export async function createScene(
       camera.lookAt(target);
       camera.zoom = THREE.MathUtils.lerp(zoom,1,blend) * (mobile ? scenePreset?.8:THREE.MathUtils.lerp(1.45,.9,blend) : 1);
       // Keep both fixed animal anchors inside the narrow portrait inspection frame.
-      if (scenePreset === 'wildlife' && camera.aspect < 1) camera.zoom *= camera.aspect;
+      if (['wildlife','stagVista','goatVista'].includes(scenePreset??'') && camera.aspect < 1) camera.zoom *= camera.aspect;
       camera.updateProjectionMatrix();
       environment.update(elapsed,dt,camera.position,reducedMotion);
       scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);
@@ -508,7 +509,10 @@ export async function createScene(
           mesh.material = overlap ? fade : opaque;
         });
       });
-      wildlife.update(wildlifeViews(state.wildlife, state.time), state.time, appearance.hour, camera, reducedMotion);
+      const wildlifeSeen=wildlifeViews(state.wildlife, state.time);
+      if(scenePreset==='stagVista')wildlifeSeen.push(landmarkInspectionView('wildlife.stag',state.time));
+      if(scenePreset==='goatVista')wildlifeSeen.push(landmarkInspectionView('wildlife.goat',state.time));
+      wildlife.update(wildlifeSeen, state.time, appearance.hour, camera, reducedMotion);
       renderer.info.reset();renderer.info.autoReset=false;
       renderer.render(scene, camera);
     },

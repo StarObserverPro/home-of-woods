@@ -6,7 +6,7 @@ import { START, WORLD_SEED } from '../src/content/world.ts';
 import { WILDLIFE_ANCHORS } from '../src/world/wildlife-layout.ts';
 import { makeTrees, makeColliders } from '../src/world/layout.ts';
 import { canStand } from '../src/domain/navigation.ts';
-import { createWildlife, advanceWildlife, wildlifeViews, wildlifeHasCapacity, wildlifeCapabilities, validateWildlifeRegistry } from '../src/domain/wildlife.ts';
+import { createWildlife, advanceWildlife, wildlifeViews, wildlifeHasCapacity, wildlifeCapabilities, validateWildlifeRegistry, landmarkRouteLegal } from '../src/domain/wildlife.ts';
 import { heightAt } from '../src/world/surface.ts';
 import { createState } from '../src/domain/state.ts';
 import { createSaveContext } from '../src/domain/save-context.ts';
@@ -20,7 +20,7 @@ function initial(time = 0) {
 test('wildlife registry uses admitted assets and all fixed anchors have legal shared-surface placement', () => {
   validateWildlifeRegistry(RUNTIME_MODELS.map(a => a.assetId));
   assert.throws(() => validateWildlifeRegistry([]), /definition/);
-  for (const a of WILDLIFE_ANCHORS) assert.ok(canStand(a, colliders), a.id);
+  for (const a of WILDLIFE_ANCHORS) {if(a.patrol) assert.ok(landmarkRouteLegal(a),a.id); else assert.ok(canStand(a,colliders),a.id);}
 });
 test('first window has matching common pair, typed stable identities and no fake interactions', () => {
   const state = initial(); assert.equal(state.encounters.length, 2);
@@ -43,9 +43,9 @@ test('long walk stays grounded, finite and within shared collision boundaries wi
   const state = initial(); const ids = new Set<string>();
   for (let step = 1; step <= 7200; step++) {
     const time = step / 30; advanceWildlife(state, time, WORLD_SEED, START, colliders, available);
-    assert.ok(state.encounters.length <= 2);
+    assert.ok(state.encounters.length <= WILDLIFE.maxMammals);
     assert.equal(new Set(state.encounters.map(e => e.definitionId)).size, state.encounters.length);
-    for (const e of state.encounters) { assert.ok(canStand(e, colliders)); assert.ok(Number.isFinite(e.x + e.z + e.facing)); ids.add(e.id); }
+    for (const e of state.encounters) { if(!e.id.includes('vista:') || e.definitionId==='wildlife.stag')assert.ok(canStand(e, colliders)); assert.ok(Number.isFinite(e.x + e.z + e.facing)); ids.add(e.id); }
   }
   assert.ok(ids.size >= 4, 'different windows use different stable encounter identities');
 });

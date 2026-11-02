@@ -11,4 +11,6 @@ export const RUNTIME_MODELS = [
   { name: 'mushrooms', assetId: 'how-gathering-mushrooms', url: '/assets/gathering/mushrooms.glb' },
   { name: 'squirrel', assetId: 'how-wildlife-squirrel', url: '/assets/wildlife/squirrel.glb', optional: true },
   { name: 'hare', assetId: 'how-wildlife-hare', url: '/assets/wildlife/hare.glb', optional: true },
+  { name: 'stag', assetId: 'how-wildlife-stag', url: '/assets/wildlife/stag.glb', optional: true },
+  { name: 'goat', assetId: 'how-wildlife-goat', url: '/assets/wildlife/goat.glb', optional: true },
 ] as const;

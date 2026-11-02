@@ -99,7 +99,7 @@ export async function createRuntime(
   }, registry);
   const synchronizeWildlife = () => {
     state.wildlife ??= createWildlife(state.time);
-    advanceWildlife(state.wildlife, state.time, state.seed, state.player, activeColliders(), view.wildlifeAvailable());
+    advanceWildlife(state.wildlife, state.time, state.seed, state.player, activeColliders(), view.wildlifeAvailable(), view.wildlifeObserved());
   };
   synchronizeWildlife();
   const frameTimes: number[] = [];

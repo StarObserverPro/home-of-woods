@@ -9,6 +9,7 @@ assert.equal(manifest.assets.filter(a=>a.batchId==='HOW-M0-R3').length, 5);
 assert.equal(manifest.assets.filter(a=>a.batchId==='HOW-GATHERING-1').length, 2);
 assert.equal(manifest.assets.filter(a=>a.batchId==='HOW-CHARACTERS-1').length, 4);
 assert.equal(manifest.assets.filter(a=>a.batchId==='HOW-WILDLIFE-PHASE1').length, 2);
+assert.equal(manifest.assets.filter(a=>a.batchId==='HOW-WILDLIFE-PHASE2').length, 2);
 assert.ok(manifest.worldSource,'Terrain provenance is required for this batch');
 const worldBytes=await readFile(new URL(manifest.worldSource.file,root));
 assert.equal(createHash('sha256').update(worldBytes).digest('hex'),manifest.worldSource.sha256,'terrain data hash');
@@ -59,6 +60,13 @@ for (const asset of manifest.assets) {
     assert.equal(gltf.materials.length, 1);
     const triangles=gltf.meshes.reduce((sum,m)=>sum+m.primitives.reduce((n,p)=>n+gltf.accessors[p.indices].count/3,0),0);
     assert.ok(triangles <= 650);
+  }
+  if(asset.batchId === 'HOW-WILDLIFE-PHASE2') {
+    assert.equal(gltf.skins.length,1);
+    const stag=asset.assetId==='how-wildlife-stag';
+    assert.equal(gltf.skins[0].joints.length,stag?38:16);
+    assert.deepEqual(gltf.animations.map(a=>a.name).sort(),stag?['bound','graze','idle','survey','walk']:['idle','walk']);
+    assert.ok(gltf.meshes.reduce((sum,m)=>sum+m.primitives.reduce((n,p)=>n+gltf.accessors[p.indices].count/3,0),0)<5000);
   }
   if(['how-character-player','how-character-visitor'].includes(asset.assetId)){
     assert.equal(gltf.skins.length,1);assert.equal(gltf.skins[0].joints.length,23);

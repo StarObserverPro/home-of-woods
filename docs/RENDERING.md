@@ -4,6 +4,9 @@
 
 ## 当前实现
 
+远景动物补充：`content/world/domain/scene/app` 仍按已有单一状态、单一时钟、单一场景资源 owner 运行；镜头仅返回上一帧的只读动物可见 ID，domain 决定短时退出，详见 [WILDLIFE_PHASE2](WILDLIFE_PHASE2.md)。
+
+
 采集支线新增 content/items、qualities、gatherables、assets，world/gathering-layout，domain/gathering-registry、gathering、gathering-view、inventory，app/player-actions 和 scene/gathering-presentation、interaction-registry。固定来源、库存、动作与恢复记录进入唯一 GameState；枝杈、蘑菇与原木统一由 inventory 按物品和品质持有，forestry 只持有林业额度与树木状态。app 同步复核并提交，场景不发物品。职责、动作契约和正式恢复未启用的边界见 [GATHERING_GUIDE](GATHERING_GUIDE.md)。
 
 | 当前文件 | 已承担的责任 |

@@ -11,6 +11,8 @@ export type SceneAppearance = {hour:number;fire:boolean;altar:AltarState;offerin
 export const VISUAL_DAY_SECONDS=1200;
 export const VIEWS = {
   wildlife:{label:'林间动物',target:[-36.5,22.2,1],yaw:-.3,elevation:.50,distance:25,zoom:1},
+  stagVista:{label:'远坡雄鹿 · 检视',target:[70,39.8,-40],yaw:-.75,elevation:.28,distance:32,zoom:1},
+  goatVista:{label:'崖上山羊 · 检视',target:[55,16.8,36],yaw:-.72,elevation:.28,distance:26,zoom:1},
   squirrel:{label:'松鼠近景',target:[-43,22.05,-4],yaw:-.55,elevation:.35,distance:6,zoom:1},
   hare:{label:'野兔近景',target:[-30,22.05,5],yaw:.5,elevation:.35,distance:6,zoom:1},
   understory:{label:'树形与林下',target:[-67,28,10],yaw:-.65,elevation:.36,distance:17,zoom:1},

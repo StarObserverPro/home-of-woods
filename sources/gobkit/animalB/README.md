@@ -1,0 +1,3 @@
+# Goat asset intake (HOW-WILDLIFE-PHASE2)
+
+Gobkit *Free Animal Pack Vol. 2*: https://gobkit.com/freebies and https://gobkit.com/freebies/animalB/Goat.glb — official no-login JSON catalogue https://gobkit.com/api/free lists the Goat as CC0-1.0. Original SHA-256 `51f7399bb76ea5175ac4d7c136c50b74f86250664c1f6b1acff48e5322f09ea0`. 16-bone rig, 396 triangles. Source metadata recorded in `catalog.json`. This is a stylized domestic-goat base, **not** a zoologically faithful North American mountain goat. The game derivative recolors its embedded palette atlas to off-white and dark hooves, filters out combat/death clips, and uses only idle/walk with local head/torso accents. CC0 license text is in `public/assets/licenses/gobkit-CC0-1.0.txt`.
