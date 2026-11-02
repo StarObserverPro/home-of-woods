@@ -22,7 +22,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 tools/build-mountain-goat.py
-          echo 'be15434ffebf79a1a5da896f291434f5ab84658892fc894754529472bcb51711  public/assets/wildlife/mountain-goat.glb' | sha256sum -c -
+          echo '33d0c64eee260a0b426a29c728d2e76400b68bef061a3afb1897e1c2be7e4d84  public/assets/wildlife/mountain-goat.glb' | sha256sum -c -
           python3 - <<'PY'
           import json,hashlib,pathlib
           target=pathlib.Path('public/assets/manifest.json')
