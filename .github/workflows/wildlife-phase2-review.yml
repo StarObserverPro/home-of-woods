@@ -1,0 +1,62 @@
+name: Wildlife P2 actual game review
+on:
+  push:
+    branches: [feat/wildlife-phase2]
+    paths: [.github/workflows/wildlife-phase2-review.yml]
+permissions:
+  contents: write
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: Full source checks
+        run: |
+          npm ci
+          npm run check
+          npm run verify:evidence
+      - name: Set up browser verifier
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Capture desktop, narrow viewport, and wildlife re-entry
+        run: |
+          npm run dev > /tmp/how-p2-vite.log 2>&1 &
+          for n in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:5173/ >/dev/null; then break; fi
+            sleep 1
+          done
+          node tools/capture-wildlife-phase2.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wildlife-p2-browser-evidence
+          path: evidence/wildlife-phase2/browser/
+          retention-days: 10
+          if-no-files-found: warn
+      - name: Preserve validated game screenshots on the feature branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          cat > evidence/wildlife-phase2/README.md <<'EOF'
+          # Wildlife phase-two browser evidence
+          
+          These images were captured inside the production Three.js game via the \`?inspect=1\` read-only camera presets, not standalone asset renders.
+          - \`desktop-stag.png\` / \`desktop-goat.png\`: landscape review.
+          - \`mobile-stag.png\` / \`mobile-goat.png\`: simulated narrow touch viewport.
+          - \`desktop-normal.png\`: ordinary valley view.
+          - \`browser/report.json\`: source commit, GPU backend, landmark visibility, zero shader errors and two scene lifecycle re-entries.
+          
+          The same batch's design and limitations are documented in [the phase-two guide](../../docs/WILDLIFE_PHASE2.md).
+          The capture uses Chromium/SwiftShader; physical mobile GPU testing remains outstanding.
+          EOF
+          git add evidence/wildlife-phase2/
+          git commit -m "test(wildlife): preserve distant animal game screenshots"
+          git push origin HEAD:feat/wildlife-phase2
