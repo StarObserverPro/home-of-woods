@@ -77,13 +77,12 @@ export function createWildlifePresentation(resources:Resources, models:Models) {
           if(i.actions[i.clip]!==i.actions[clip]){i.actions[i.clip].fadeOut(.18);i.actions[clip].reset().fadeIn(.18).play();}
           i.clip=clip;
         }
-        const rate=clip==='walk'?Math.max(.60,Math.min(1.7,v.speed/(landmark?.85:1.1))):1;
+        // The rebuilt mountain goat already has 21 articulated joints and authored
+        // weight-shift, front-hoof lift, head survey and two-step gait. Do not add
+        // procedural torso bounce or duplicate head rotations on top of its clip.
+        const rate=clip==='walk'?(d.id==='wildlife.goat'?1:Math.max(.60,Math.min(1.7,v.speed/(landmark?.85:1.1)))):1;
         i.mixer.update(dt*rate);
-        const active=time*1.4+v.revision*.25;
-        // Goat uses its real leg rig for the short ledge step; add a restrained torso lift.
-        i.model.position.y=landmark&&d.id==='wildlife.goat'&&clip==='walk'?.09*Math.abs(Math.sin(active*3.2)):0;
-        if(landmark&&d.id==='wildlife.goat'&&i.head&&clip==='survey'&&!reducedMotion){i.head.rotation.x+=Math.sin(active*.7)*.14;i.head.rotation.y+=Math.sin(active*.48)*.1;}
-        // Stag uses its native 38-bone survey and wide-stride clips, not tiny random twitching.
+        // Stag uses its own 38-bone survey and wide-stride clips.
         if(reducedMotion&&clip==='idle'){i.actions.idle.time=0;i.mixer.update(0);}
         const fading=v.opacity<.999;
         for(const material of i.materials){

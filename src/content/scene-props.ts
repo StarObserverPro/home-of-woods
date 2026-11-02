@@ -29,6 +29,6 @@ export const VIEWS = {
 } as const;
 export type SceneViewPreset=keyof typeof VIEWS;
 /** Keep the authored anchor for later replacement, but do not offer a rejected model preview. */
-export const INSPECTABLE_VIEWS=Object.entries(VIEWS).filter(([id])=>id!=='goatVista'||runtimeModelEnabled('goat'));
+export const INSPECTABLE_VIEWS=Object.entries(VIEWS).filter(([id])=>id!=='goatVista'||runtimeModelEnabled('mountain-goat'));
 export const WATER_BUDGET={desktopSize:512,mobileSize:256,interval:3,mobileInterval:4,splashCount:48,rapidRocks:9};
 

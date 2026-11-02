@@ -59,9 +59,9 @@ test('motion uses short, real terrain-grounded stag and cliff routes; no scene-d
     assert.ok(heightAt(goat.x,goat.z)>2);
   }
 });
-test('normalized published stag and goat are animated, low-poly, separate rigs',async()=>{
-  const expected={stag:{joints:38,clips:['bound','graze','idle','survey','walk']},goat:{joints:16,clips:['idle','walk']}} as const;
-  for(const name of ['stag','goat'] as const){
+test('published stag and original mountain goat use separate animated quadruped rigs',async()=>{
+  const expected={stag:{joints:38,clips:['bound','graze','idle','survey','walk']},'mountain-goat':{joints:21,clips:['idle','survey','lift_front','walk']}} as const;
+  for(const name of ['stag','mountain-goat'] as const){
     const g=await parseGeometryFile(`public/assets/wildlife/${name}.glb`);
     assert.deepEqual(g.animations.map(a=>a.name).sort(),[...expected[name].clips].sort());
     const skins:THREE.SkinnedMesh[]=[];g.scene.traverse(o=>{if(o instanceof THREE.SkinnedMesh)skins.push(o);});

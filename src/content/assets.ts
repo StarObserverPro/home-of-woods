@@ -16,6 +16,8 @@ export const RUNTIME_MODELS = [
   // Rejected silhouette: preserve provenance and identity, but never fetch or instantiate this model.
   // A replacement needs visual review; rebuilding the old GLB does not lift this gate.
   { name: 'goat', assetId: 'how-wildlife-goat', url: '/assets/wildlife/goat.glb', optional: true, enabled: false },
+  // Original rigged faceted Oreamnos americanus; distinct from rejected Gobkit Goat.
+  { name: 'mountain-goat', assetId: 'how-wildlife-mountain-goat', url: '/assets/wildlife/mountain-goat.glb', optional: true },
 ] as const;
 export function runtimeModelEnabled(name: string): boolean {
   const spec = RUNTIME_MODELS.find(model => model.name === name);

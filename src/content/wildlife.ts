@@ -16,7 +16,7 @@ export const WILDLIFE_DEFINITIONS = [
     category: 'common', habitat: 'meadow-edge', visualScale: 1, walkSpeed: .9, fleeSpeed: 3.2, capabilities: [] },
   { id: 'wildlife.stag', name: '远坡雄鹿', model: 'stag', assetId: 'how-wildlife-stag',
     category: 'landmark', habitat: 'ridge-meadow', visualScale: .76, walkSpeed: 1.1, fleeSpeed: 1.1, capabilities: [] },
-  { id: 'wildlife.goat', name: '崖上山羊', model: 'goat', assetId: 'how-wildlife-goat',
+  { id: 'wildlife.goat', name: '崖上山羊', model: 'mountain-goat', assetId: 'how-wildlife-mountain-goat',
     category: 'landmark', habitat: 'cliff-ledge', visualScale: .56, walkSpeed: .57, fleeSpeed: .57, capabilities: [] },
 ] as const;
 export type WildlifeDefinition = typeof WILDLIFE_DEFINITIONS[number];

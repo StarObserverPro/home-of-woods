@@ -636,6 +636,43 @@
         ]
       },
       "limitations": "Decorative distant encounter: no collection, feeding, pet identity or economic consequences."
+    },
+    {
+      "assetId": "how-wildlife-mountain-goat",
+      "batchId": "HOW-WILDLIFE-MOUNTAIN-GOAT",
+      "role": "runtime",
+      "status": "candidate-integrated-on-branch",
+      "file": "public/assets/wildlife/mountain-goat.glb",
+      "bytes": 433716,
+      "sha256": "f4ee8d8007a2b00ab3a8e541a56a6d4eab1a3c7385370bf8273f6409f72a8655",
+      "source": {
+        "author": "Home of Woods original procedural model",
+        "script": "tools/build-mountain-goat.py",
+        "speciesReference": "Oreamnos americanus morphology; no third-party mesh, texture, rig or animal animation copied"
+      },
+      "license": {
+        "id": "Project-original",
+        "evidence": "tools/build-mountain-goat.py"
+      },
+      "adaptation": "Noncoplanar irregular triangular facets, matte off-white coat, small black recurved horns, compact proportions; rigid segmented quadruped skin to prevent joint normal tearing",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/wildlife-presentation.ts",
+        "rules": "src/domain/wildlife.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "metrics": {
+        "triangles": 1908,
+        "joints": 21,
+        "clips": [
+          "idle",
+          "survey",
+          "lift_front",
+          "walk"
+        ],
+        "images": 0
+      },
+      "limitations": "Requires visual game review and physical mobile GPU check before promoting to approved art"
     }
   ],
   "worldSource": {
