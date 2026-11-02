@@ -1,4 +1,4 @@
-name: Goat ground-contact correction (one-time)
+name: Goat ground-contact correction (final normals)
 on:
   push:
     branches: [feat/wildlife-mountain-goat]
