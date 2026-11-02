@@ -1,4 +1,4 @@
-name: Original goat ground-contact visual acceptance
+name: Original goat ground-contact final image capture
 on:
   push:
     branches: [feat/wildlife-mountain-goat]
