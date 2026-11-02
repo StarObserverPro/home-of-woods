@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "d1d908b4d0474057bb85a4ea28a348478db07ce7",
+  "sourceCommit": "a1957a684898e21a274a1cef3b7c11820b6ea5c6",
   "rig": [
     {
       "name": "rig-side-idle",
@@ -7,7 +7,7 @@
       "time": 0,
       "angle": "side",
       "joints": 6,
-      "leftForehoofY": 0.29000001907348644,
+      "leftForehoofY": 0.3499999475479126,
       "headRot": [
         0,
         0.05091624679141936,
@@ -25,7 +25,7 @@
       "time": 0.1,
       "angle": "threequarter",
       "joints": 6,
-      "leftForehoofY": 0.2935244654585479,
+      "leftForehoofY": 0.3535245131422638,
       "headRot": [
         -0.007833982190665233,
         0.05482697769305736,
@@ -43,7 +43,7 @@
       "time": 1.1,
       "angle": "threequarter",
       "joints": 6,
-      "leftForehoofY": 0.3808659295870281,
+      "leftForehoofY": 0.44385018458208203,
       "headRot": [
         0,
         0,
@@ -61,7 +61,7 @@
       "time": 0.55,
       "angle": "side",
       "joints": 6,
-      "leftForehoofY": 0.29233994597545493,
+      "leftForehoofY": 0.3551404196398481,
       "headRot": [
         -0.04344990455936406,
         0.015188281264254144,
@@ -79,7 +79,7 @@
       "time": 1.55,
       "angle": "side",
       "joints": 6,
-      "leftForehoofY": 0.3463968602885171,
+      "leftForehoofY": 0.40828299231984744,
       "headRot": [
         0.04344991805219512,
         0.012971497008987042,
@@ -97,7 +97,7 @@
       "time": 1.45,
       "angle": "threequarter",
       "joints": 6,
-      "leftForehoofY": 0.2998999670926537,
+      "leftForehoofY": 0.35989992678860167,
       "headRot": [
         -0.12372962231087323,
         -0.16499910957150707,
@@ -113,7 +113,7 @@
   "game": [
     {
       "name": "desktop-game",
-      "size": 345088,
+      "size": 345278,
       "drawCalls": 181,
       "triangles": 1395359,
       "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
@@ -144,7 +144,7 @@
     },
     {
       "name": "mobile-game",
-      "size": 188894,
+      "size": 188993,
       "drawCalls": 193,
       "triangles": 1416059,
       "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
