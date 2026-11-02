@@ -270,7 +270,7 @@ for side in ('left','right'):
 # Remap *mesh and the entire articulated skeleton together*; otherwise the
 # skin bind matrices would shear the knee and lifted hoof. Feet stay at y=0.
 def compact_height(y):
-    y=y+.115
+    y=y+.190
     if y<=.3:return y
     if y>=1.5:return y-.22
     return y-.22*(y-.3)/1.2
