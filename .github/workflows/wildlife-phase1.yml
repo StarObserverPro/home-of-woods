@@ -1,0 +1,40 @@
+name: Wildlife phase-one checks
+on:
+  push:
+    branches: [feat/wildlife-phase1]
+permissions:
+  contents: read
+concurrency:
+  group: wildlife-phase1-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22.16.0'
+          package-manager-cache: false
+      - run: npm ci
+      - run: npm run check
+      - name: Prepare temporary offline review workspace
+        run: |
+          mkdir -p /tmp/wildlife-review/candidates
+          git archive HEAD | tar -x -C /tmp/wildlife-review
+          cp -a node_modules /tmp/wildlife-review/node_modules
+          curl --fail --location --retry 2 --max-time 60 https://gobkit.com/freebies/animal006/Hare.glb -o /tmp/wildlife-review/candidates/Hare.glb
+          curl --fail --location --retry 2 --max-time 60 https://gobkit.com/freebies/animal006/Squirrel.glb -o /tmp/wildlife-review/candidates/Squirrel.glb
+          curl --fail --location --retry 2 --max-time 60 https://gobkit.com/api/free -o /tmp/wildlife-review/candidates/catalog.json
+          curl --fail --location --retry 2 --max-time 60 https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt -o /tmp/wildlife-review/candidates/CC0-1.0.txt
+          tar -czf /tmp/wildlife-review.tgz -C /tmp/wildlife-review .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wildlife-review-workspace
+          path: /tmp/wildlife-review.tgz
+          retention-days: 1
+          if-no-files-found: error
