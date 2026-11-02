@@ -6,7 +6,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import type {GLTF} from 'three/addons/loaders/GLTFLoader.js';
 import {Models} from '../src/scene/models.ts';
 import {Resources} from '../src/scene/resources.ts';
-import {RUNTIME_MODELS} from '../src/content/assets.ts';
+import {RUNTIME_MODELS, ENABLED_RUNTIME_MODELS} from '../src/content/assets.ts';
 import {parseGeometryFile} from './glb-fixtures.ts';
 
 type Allocation=THREE.BufferGeometry|THREE.Material|THREE.Texture|THREE.Skeleton;
@@ -45,7 +45,9 @@ test('one early GLB failure releases later shared production resources without r
     // Use the same immediate failure cleanup as createScene; the other requests remain unresolved.
     const failure=new Error('one GLB request failed');
     const loading=models.load().catch(error=>{owner.dispose();return error;});
-    assert.equal(pending.size,RUNTIME_MODELS.length);pending.get('/assets/m0/cabin.glb')!.reject(failure);
+    assert.equal(pending.size,ENABLED_RUNTIME_MODELS.length);
+    assert.equal(pending.has('/assets/wildlife/goat.glb'),false,'a visually rejected asset must not issue a request');
+    pending.get('/assets/m0/cabin.glb')!.reject(failure);
     assert.equal(await loading,failure,'failure is reported before the pending requests finish');
     assert.deepEqual(owner.stats(),{geometries:0,materials:0,extras:0,disposed:true});
     for(const [url,request] of pending){
@@ -65,7 +67,9 @@ test('one early GLB failure releases later shared production resources without r
 
     retryOwner=new Resources();const retry=new Models(retryOwner);
     GLTFLoader.prototype.loadAsync=async function(url){const gltf=await parseProductionModel(url.split('/').at(-1)!.replace('.glb',''));observe(gltf,retryCounts);return gltf;};
-    await retry.load();assert.equal(retry.templates.size,RUNTIME_MODELS.length);
+    await retry.load();assert.equal(retry.templates.size,ENABLED_RUNTIME_MODELS.length);
+    assert.equal(retry.templates.has('goat'),false);
+    assert.equal(retry.templates.has('stag'),true);
     assert.deepEqual(retryOwner.stats(),{geometries:0,materials:0,extras:retryCounts.size,disposed:false},'normal owner counts remain unique and live');
     assert.ok([...retryCounts.values()].every(count=>count===0),'new owner is independent of the failed attempt');
     retryOwner.dispose();retryOwner.dispose();assert.ok([...retryCounts.values()].every(count=>count===1));

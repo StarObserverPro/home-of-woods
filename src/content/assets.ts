@@ -1,3 +1,4 @@
+/** Catalogue identities also include withdrawn assets; only ENABLED_RUNTIME_MODELS are loaded. */
 export const RUNTIME_MODELS = [
   { name: 'cabin', assetId: 'how-m0-cabin', url: '/assets/m0/cabin.glb' },
   { name: 'tent', assetId: 'how-m0-tent', url: '/assets/m0/tent.glb' },
@@ -12,5 +13,12 @@ export const RUNTIME_MODELS = [
   { name: 'squirrel', assetId: 'how-wildlife-squirrel', url: '/assets/wildlife/squirrel.glb', optional: true },
   { name: 'hare', assetId: 'how-wildlife-hare', url: '/assets/wildlife/hare.glb', optional: true },
   { name: 'stag', assetId: 'how-wildlife-stag', url: '/assets/wildlife/stag.glb', optional: true },
-  { name: 'goat', assetId: 'how-wildlife-goat', url: '/assets/wildlife/goat.glb', optional: true },
+  // Rejected silhouette: preserve provenance and identity, but never fetch or instantiate this model.
+  // A replacement needs visual review; rebuilding the old GLB does not lift this gate.
+  { name: 'goat', assetId: 'how-wildlife-goat', url: '/assets/wildlife/goat.glb', optional: true, enabled: false },
 ] as const;
+export function runtimeModelEnabled(name: string): boolean {
+  const spec = RUNTIME_MODELS.find(model => model.name === name);
+  return spec !== undefined && (!('enabled' in spec) || spec.enabled);
+}
+export const ENABLED_RUNTIME_MODELS = RUNTIME_MODELS.filter(model => runtimeModelEnabled(model.name));

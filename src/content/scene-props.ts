@@ -1,4 +1,5 @@
 import type {OfferingMode} from './altar.ts';
+import {runtimeModelEnabled} from './assets.ts';
 export const CAMP_PROPS = {
   fire: {id:'camp-fire',x:-37,z:10,radius:1.6},
   logs: {id:'camp-log-store',x:-25,z:-3,radius:2.1},
@@ -27,5 +28,7 @@ export const VIEWS = {
   edge:{label:'地形封边',target:[105,8,90],yaw:1.1,elevation:.22,distance:130,zoom:.7},
 } as const;
 export type SceneViewPreset=keyof typeof VIEWS;
+/** Keep the authored anchor for later replacement, but do not offer a rejected model preview. */
+export const INSPECTABLE_VIEWS=Object.entries(VIEWS).filter(([id])=>id!=='goatVista'||runtimeModelEnabled('goat'));
 export const WATER_BUDGET={desktopSize:512,mobileSize:256,interval:3,mobileInterval:4,splashCount:48,rapidRocks:9};
 
