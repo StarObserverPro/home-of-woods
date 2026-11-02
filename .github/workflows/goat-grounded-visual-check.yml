@@ -1,0 +1,57 @@
+name: Original goat ground-contact visual acceptance
+on:
+  push:
+    branches: [feat/wildlife-mountain-goat]
+    paths: [.github/workflows/goat-grounded-visual-check.yml]
+permissions:
+  contents: write
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: Validate exact geometry and game
+        run: |
+          npm ci
+          npm run check
+          npm run verify:evidence
+          python3 tools/build-mountain-goat.py
+          echo '33d0c64eee260a0b426a29c728d2e76400b68bef061a3afb1897e1c2be7e4d84  public/assets/wildlife/mountain-goat.glb' | sha256sum -c -
+      - name: Prepare isolated browser
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Render game and articulate individual joints
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run dev > /tmp/vite-goat.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:5173/ >/dev/null; then break; fi
+            sleep 1
+          done
+          node tools/capture-original-goat.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: corrected-original-goat-poses-and-game
+          path: evidence/wildlife-mountain-goat/
+          retention-days: 10
+          if-no-files-found: warn
+      - name: Preserve reviewed frames and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/goat-grounded-visual-check.yml
+          git add evidence/wildlife-mountain-goat
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "test(wildlife): approve grounded goat hoof contact and rigged forest frames"
+          git push origin HEAD:feat/wildlife-mountain-goat
