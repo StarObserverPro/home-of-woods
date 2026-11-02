@@ -17,7 +17,7 @@ const save=(result,path)=>{
 async function sceneShot(page,preset,name){
   await page.locator('details.diagnostics').evaluate(e=>e.open=true);
   await page.getByLabel('场景观察位置').selectOption(preset);
-  await page.getByRole('button',{name:'白昼',exact:true}).click();
+  // Inspector defaults to day; avoid waiting for an already-active button to become stable under software WebGL.
   await page.waitForTimeout(200);
   const stat=JSON.parse(await page.locator('#runtime-stats').textContent()).current;
   assert.equal(stat.shaderErrors,0);
@@ -32,7 +32,7 @@ async function sceneShot(page,preset,name){
       clearTimeout(fail);resolve(bytes.length);
     }).catch(reject);
   });
-  await page.getByRole('button',{name:'保存场景画面'}).click({timeout:90000});
+  await page.getByRole('button',{name:'保存场景画面'}).evaluate(e=>e.click());
   const size=await capture;
   report.game.push({name,size,drawCalls:stat.drawCalls,triangles:stat.triangles,renderer:stat.graphicsBackend,
     animals:stat.wildlife,bones:stat.wildlife.bones});
