@@ -18,7 +18,7 @@ export type WorldLoadResult =
 
 export function validateWorldState(raw: unknown, context: SaveContext, mode: 'runtime' | 'persisted') {
   const world = object(raw, 'world');
-  fields(world, ['ritual', 'seed', 'time', 'forestry', 'inventory', 'gathering', 'player', 'selected', 'route', 'visited'], 'world');
+  fields(world, ['ritual', 'seed', 'time', 'forestry', 'inventory', 'gathering', 'player', 'selected', 'route', 'visited'], 'world', mode === 'runtime' ? ['wildlife'] : []);
   requireValue(world.seed === WORLD_SEED, 'world.seed', '当前布局不支持此世界');
   const time = finite(world.time, 'world.time');
   const player = object(world.player, 'world.player'); fields(player, ['x', 'z', 'facing', 'moving'], 'world.player');
@@ -56,9 +56,11 @@ export async function serializeWorldSave(state: GameState, context: SaveContext,
   // Capture and validate synchronously before hashing yields to another frame.
   const snapshot = validateWorldState(state, context, 'runtime').state;
   integer(meta.sequence, 'save.sequence', 1); finite(meta.savedAt, 'save.savedAt');
+  // Common decorative poses are not persistent individuals or economic records.
+  const { wildlife, ...persistent } = snapshot; void wildlife;
   const core = { schemaVersion: 1, layoutVersion: WORLD_LAYOUT_VERSION, rulesetVersion: WORLD_RULESET_VERSION,
     sequence: meta.sequence, savedAt: meta.savedAt,
-    world: { ...snapshot, inventory: { schemaVersion: 2, stacks: snapshot.inventory.stacks } } };
+    world: { ...persistent, inventory: { schemaVersion: 2, stacks: snapshot.inventory.stacks } } };
   return canonicalJson({ ...core, checksum: await saveDigest(core) });
 }
 

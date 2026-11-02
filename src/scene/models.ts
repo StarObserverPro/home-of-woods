@@ -29,9 +29,15 @@ export class Models {
     let failed = false;
     try {
       await Promise.all(
-        RUNTIME_MODELS.map(async ({name, url}) => {
-          const gltf = await loader.loadAsync(url);
+        RUNTIME_MODELS.map(async (spec) => {
+          const {name, url} = spec;
+          const gltf = await loader.loadAsync(url).catch(error => {
+            if ('optional' in spec && spec.optional) { console.warn(`Optional wildlife unavailable: ${name}`, error); return null; }
+            throw error;
+          });
+          if (!gltf) return;
           gltf.scene.traverse((o) => {
+            if (o instanceof THREE.SkinnedMesh) this.r.own(o.skeleton);
             if (o instanceof THREE.Mesh) {
               this.r.own(o.geometry);
               const mats = Array.isArray(o.material) ? o.material : [o.material];

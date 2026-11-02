@@ -1,3 +1,4 @@
+import type { WildlifeState } from './wildlife.ts';
 import { START, WORLD_SEED } from "../content/world.ts";
 import type { Point } from "../content/world.ts";
 import {makeTrees} from '../world/layout.ts';
@@ -12,6 +13,8 @@ import { createGatheringRegistry } from './gathering-registry.ts';
 import { RUNTIME_MODELS } from '../content/assets.ts';
 import type {RitualAction} from './ritual.ts';
 export type GameState = {
+  /** Ephemeral common encounters; the saved clock reconstructs their scheduling window. */
+  wildlife?: WildlifeState;
   ritual: RitualAction | null;
   seed: number;
   time:number;

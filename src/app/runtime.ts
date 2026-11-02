@@ -1,3 +1,4 @@
+import { createWildlife, advanceWildlife, validateWildlifeRegistry, wildlifeViews } from '../domain/wildlife.ts';
 import {beginRitual,advanceRitual,ritualBusy} from '../domain/ritual.ts';
 import { MOVEMENT, WAYPOINTS } from "../content/world.ts";
 import {FORESTRY} from '../content/forestry.ts';
@@ -62,6 +63,7 @@ export async function createRuntime(
   upgradeWorldSession(state, saveContext);
   for (const source of registry.sources.values()) if (!interactionRoute({ player: { ...START, facing: 0, moving: false } }, source, registry, colliders).reachable) throw new Error(`Unreachable source: ${source.sourceId}`);
   synchronizeGatheringHosts(state, registry);
+  validateWildlifeRegistry(RUNTIME_MODELS.map(a => a.assetId));
   let message = "沿着小路，认识你的新家。",
     manualPause = !initialState && savedState !== null || !persistence.status().canSave,
     interfaceOpen = false,
@@ -95,6 +97,11 @@ export async function createRuntime(
       navigate(event);
     }
   }, registry);
+  const synchronizeWildlife = () => {
+    state.wildlife ??= createWildlife(state.time);
+    advanceWildlife(state.wildlife, state.time, state.seed, state.player, activeColliders(), view.wildlifeAvailable());
+  };
+  synchronizeWildlife();
   const frameTimes: number[] = [];
   let lastSampleAt:number|null=null;
   const tick = (dt: number, now:number) => {
@@ -155,6 +162,7 @@ export async function createRuntime(
           state.visited.push(wp.id);
           message = `发现了${wp.name}。`;
         }
+      synchronizeWildlife();
       accumulator -= MOVEMENT.fixedStep;
       if(captureAt!==null){
         const started=state.gathering.action?.phase==='performing'?state.gathering.action.startedAt:state.forestry.active?.startedAt??(state.ritual?.phase==='performing'?state.ritual.startedAt:null);
@@ -198,6 +206,8 @@ export async function createRuntime(
       routeNodes: state.route.length,
       player: { ...state.player, y: heightAt(state.player.x, state.player.z) },
       gameTime:state.time,
+      wildlifeState: state.wildlife,
+      wildlifeViews: wildlifeViews(state.wildlife, state.time),
       forestry:forestrySnapshot(state,treeById,registry.catalog),
       gathering: gatheringSnapshot(state,registry,activeColliders()),
       gatheringSources: state.gathering.sources,
@@ -375,13 +385,13 @@ export async function createRuntime(
     async reloadWorld() {
       const loaded = await persistence.reload();
       if (!loaded || destroyed) return false;
-      Object.assign(state, loaded); accumulator = 0; lastSampleAt = null;
+      delete state.wildlife; Object.assign(state, loaded); synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
       manualPause = true; keys.clear(); stick.x = stick.z = 0; syncPause(); view.render(state, 0); return true;
     },
     async restoreWorldCopy() {
       const loaded = await persistence.restoreValidCopy();
       if (!loaded || destroyed) return false;
-      Object.assign(state, loaded); accumulator = 0; lastSampleAt = null;
+      delete state.wildlife; Object.assign(state, loaded); synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
       manualPause = true; keys.clear(); stick.x = stick.z = 0; syncPause(); view.render(state, 0); return true;
     },
     inspectCharacter(kind:'horizontal'|'vertical'|null){

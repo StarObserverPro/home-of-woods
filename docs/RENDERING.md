@@ -147,3 +147,7 @@ content/tree-resources、world/gathering-layout 管理按树种的圈形挂点�
 
 ## 八树形与林下回接
 Models 的固定树形缓存同时提供静态合并与动作 source，远景按形态/变体实例绘制；物种视觉映射只读 world，不改 Tree.kind 与存档。createUnderstory 的装饰数据只在建场时生成，唯一 render 消费宿主生长/伐倒状态，Resources 统一回收。不新增 RAF 或写入者。详见 [回接](FOREST_INTEGRATION.md)。
+
+## 动物第一阶段
+
+`content/wildlife`、`world/wildlife-layout`、`domain/wildlife` 与 `scene/wildlife-presentation` 已接入同一 app 主循环。临时 encounter 由唯一 GameState 持有；可点击能力为空。骨架/独立材质退出时经 Resources.releaseOwned 归还，共享几何/纹理仍由缓存持有。加载可选动物失败不阻断场景。接口和实际边界见 [第一阶段](WILDLIFE_PHASE1.md)。

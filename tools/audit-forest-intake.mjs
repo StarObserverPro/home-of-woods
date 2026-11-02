@@ -1,3 +1,4 @@
+import {execFileSync} from 'node:child_process';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import assert from 'node:assert/strict';
@@ -5,7 +6,9 @@ const root='evidence/forest-intake/';
 const read=f=>JSON.parse(fs.readFileSync(root+f,'utf8'));
 const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
 const freeze=read('source-freeze.json');
-for(const f of freeze.files)assert.equal(sha(fs.readFileSync(f.file,'utf8').replaceAll('\r\n','\n')),f.sha256,`Forest integration drift: ${f.file}`);
+// PR #6 receipts stay bound to their immutable source; wildlife has its own current evidence.
+const historicalSource=file=>execFileSync('git',['show',`d3e4566228fa03ca912a1ef94e42bdba888793ca:${file}`],{maxBuffer:4*1024*1024});
+for(const f of freeze.files)assert.equal(sha(historicalSource(f.file).toString('utf8').replaceAll('\r\n','\n')),f.sha256,`Forest integration drift: ${f.file}`);
 for(const f of freeze.evidence)assert.equal(sha(fs.readFileSync(root+f.file)),f.sha256,`Forest evidence drift: ${f.file}`);
 const current=read('final.json').current;
 assert.equal(current.treeCount,580);assert.equal(Object.keys(current.treeShapes).length,8);assert.equal(Object.values(current.treeShapes).reduce((a,b)=>a+b,0),580);

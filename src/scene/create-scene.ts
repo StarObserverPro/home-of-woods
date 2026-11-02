@@ -1,3 +1,5 @@
+import { createWildlifePresentation } from './wildlife-presentation.ts';
+import { wildlifeViews } from '../domain/wildlife.ts';
 import {createUnderstory} from './understory.js';
 import {treeVisual} from '../world/tree-appearance.ts';
 import * as THREE from "three";
@@ -160,6 +162,7 @@ export async function createScene(
   });
   const characters=createCharacters(r,models,trees,forest.selections),player=characters.player;
   scene.add(player,characters.visitor);
+  const wildlife = createWildlifePresentation(r, models); scene.add(wildlife.group);
   let inspectionCamera:{yaw:number;elevation:number;zoom:number;target:THREE.Vector3}|null=null;
   const forestry=createForestryPresentation({models,resources:r,forestGroup:forest.group,trees,selections:forest.selections});
   const gathering = createGatheringPresentation(r, models, gatheringRegistry);
@@ -357,6 +360,7 @@ export async function createScene(
   resize();
   const view = {
     getAppearance:()=>({...appearance}),
+    wildlifeAvailable: () => wildlife.available(),
     inspectScene(preset:SceneViewPreset|null,overrides:Partial<SceneAppearance>={}){
       if(preset&&!sceneCamera)sceneCamera={yaw,elevation,zoom,target:target.clone()};
       if(!preset&&sceneCamera){({yaw,elevation,zoom}=sceneCamera);target.copy(sceneCamera.target);sceneCamera=null;}
@@ -502,6 +506,7 @@ export async function createScene(
           mesh.material = overlap ? fade : opaque;
         });
       });
+      wildlife.update(wildlifeViews(state.wildlife, state.time), state.time, appearance.hour, camera, reducedMotion);
       renderer.info.reset();renderer.info.autoReset=false;
       renderer.render(scene, camera);
     },
@@ -509,6 +514,7 @@ export async function createScene(
       return {
         understory:understory.stats(),treeShapes:trees.reduce((counts,t)=>{const name=treeVisual(t).name;counts[name]=(counts[name]??0)+1;return counts;},{} as Record<string,number>),appearance:{...appearance},scenePreset,camp:camp.stats(),terrain:ground.geometry.userData,shaderErrors,
         resources: r.stats(),
+        wildlife: wildlife.stats(),
         drawCalls: renderer.info.render.calls,
         triangles: renderer.info.render.triangles,
         gpu: { ...renderer.info.memory },
@@ -541,6 +547,7 @@ export async function createScene(
       pointers.clear();
       forestry.dispose();
       characters.dispose();
+      wildlife.dispose();
       gathering.dispose();
       river.dispose();
       camp.dispose();

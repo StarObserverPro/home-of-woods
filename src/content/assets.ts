@@ -9,4 +9,6 @@ export const RUNTIME_MODELS = [
   { name: 'broadleaf', assetId: 'how-m0-broadleaf', url: '/assets/m0/broadleaf.glb' },
   { name: 'branches', assetId: 'how-gathering-branches', url: '/assets/gathering/branches.glb' },
   { name: 'mushrooms', assetId: 'how-gathering-mushrooms', url: '/assets/gathering/mushrooms.glb' },
+  { name: 'squirrel', assetId: 'how-wildlife-squirrel', url: '/assets/wildlife/squirrel.glb', optional: true },
+  { name: 'hare', assetId: 'how-wildlife-hare', url: '/assets/wildlife/hare.glb', optional: true },
 ] as const;

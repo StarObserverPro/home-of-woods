@@ -467,6 +467,94 @@
         "evidence/characters/"
       ],
       "limitations": "Local project integration; no PR merge or deployment; inspector vertical cutting is not a crafting transaction."
+    },
+    {
+      "assetId": "how-wildlife-squirrel",
+      "batchId": "HOW-WILDLIFE-PHASE1",
+      "role": "runtime",
+      "status": "integrated-on-branch",
+      "file": "public/assets/wildlife/squirrel.glb",
+      "bytes": 95256,
+      "sha256": "35a83df5c25f08a18576e05f9d86cf4fc3f2e0d1296152c5609e78ee7896869d",
+      "source": {
+        "author": "Gobkit",
+        "pack": "Gobkit animal006 / Animal Pack Vol.4",
+        "page": "https://gobkit.com/freebies",
+        "catalog": "https://gobkit.com/api/free",
+        "url": "https://gobkit.com/freebies/animal006/Squirrel.glb",
+        "files": [
+          {
+            "file": "sources/gobkit/animal006/Squirrel.glb",
+            "sha256": "3ab524a913649fb08cc1fc264173a21ea04363f6f89d0d128eaaaa1ed714676f"
+          }
+        ]
+      },
+      "license": {
+        "id": "CC0-1.0",
+        "evidence": "public/assets/licenses/gobkit-CC0-1.0.txt",
+        "notice": "sources/gobkit/animal006/README.md"
+      },
+      "adaptation": "Common .68 roughness, nonmetallic materials, centered grounded scale; keep idle and walk; no attack/death gameplay.",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/wildlife-presentation.ts",
+        "rules": "src/domain/wildlife.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "metrics": {
+        "triangles": 584,
+        "joints": 16,
+        "height": 1.12,
+        "clips": [
+          "idle",
+          "walk"
+        ]
+      },
+      "limitations": "Common decorative wildlife only; visual and performance acceptance tracked separately."
+    },
+    {
+      "assetId": "how-wildlife-hare",
+      "batchId": "HOW-WILDLIFE-PHASE1",
+      "role": "runtime",
+      "status": "integrated-on-branch",
+      "file": "public/assets/wildlife/hare.glb",
+      "bytes": 95676,
+      "sha256": "061a80d8a4e3800ff73aaba16320cb194bdbf4210884a240c085ecaf9a986d3b",
+      "source": {
+        "author": "Gobkit",
+        "pack": "Gobkit animal006 / Animal Pack Vol.4",
+        "page": "https://gobkit.com/freebies",
+        "catalog": "https://gobkit.com/api/free",
+        "url": "https://gobkit.com/freebies/animal006/Hare.glb",
+        "files": [
+          {
+            "file": "sources/gobkit/animal006/Hare.glb",
+            "sha256": "3342949e3b124441d4ac8a7bdffd93835c90752bfe0f3b7785a6cdd8f5b99cfb"
+          }
+        ]
+      },
+      "license": {
+        "id": "CC0-1.0",
+        "evidence": "public/assets/licenses/gobkit-CC0-1.0.txt",
+        "notice": "sources/gobkit/animal006/README.md"
+      },
+      "adaptation": "Common .68 roughness, nonmetallic materials, centered grounded scale; keep idle and walk; no attack/death gameplay.",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/wildlife-presentation.ts",
+        "rules": "src/domain/wildlife.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "metrics": {
+        "triangles": 596,
+        "joints": 16,
+        "height": 1.1,
+        "clips": [
+          "idle",
+          "walk"
+        ]
+      },
+      "limitations": "Common decorative wildlife only; visual and performance acceptance tracked separately."
     }
   ],
   "worldSource": {

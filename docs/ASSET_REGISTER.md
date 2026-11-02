@@ -118,3 +118,7 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 
 ## 树形与林下生产资产
 本批为项目原创程序网格，来源为本仓库树形/林下沙盒的已认可版本，不标记为第三方 CC0。生产入口 `scene/forest-shapes.js`、`scene/understory-geometry.js`、`scene/understory.js`；适配包含枝干合并、低段裁切、远景细分、共享缓存、地表与遮罩筛选。无外部下载或新增贴图。树实例身份仍为 world 固定树位，地被为不可采集装饰。几何/材质/实例释放归 Resources；动作临时对象归既有 forestry owner。旧 GLB 留作历史许可与验证材料，新树入口不消费其轮廓。预算与证据见 [回接记录](FOREST_INTEGRATION.md)。
+
+## HOW-WILDLIFE-PHASE1 · 松鼠与野兔
+
+采用 Gobkit Free Animal Pack Vol.4 的 Squirrel/Hare，作者目录逐项标注 CC0，原 GLB 和许可摘录保存在 [来源目录](../sources/gobkit/animal006/README.md)。两种统一落地点、尺寸和粗糙度，保留 idle/walk；各 16 骨骼，分别 584/596 三角形。实际产物、原/新 SHA 与入口在既有 manifest 及 [修整报告](../evidence/wildlife-phase1/asset-normalization.json)。本分支已接入，实机验收状态见 [本批证据](../evidence/wildlife-phase1/README.md)；未合并或部署，不将其他候选包纳入批准清单。

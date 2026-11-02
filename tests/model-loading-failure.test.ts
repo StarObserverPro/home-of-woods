@@ -9,7 +9,7 @@ import {Resources} from '../src/scene/resources.ts';
 import {RUNTIME_MODELS} from '../src/content/assets.ts';
 import {parseGeometryFile} from './glb-fixtures.ts';
 
-type Allocation=THREE.BufferGeometry|THREE.Material|THREE.Texture;
+type Allocation=THREE.BufferGeometry|THREE.Material|THREE.Texture|THREE.Skeleton;
 async function parseProductionModel(name:string){
   const spec=RUNTIME_MODELS.find(a=>a.name===name||a.url.endsWith('/'+name+'.glb'))!;
   const gltf=await parseGeometryFile('public'+spec.url);
@@ -25,9 +25,13 @@ function observe(gltf:GLTF,counts:Map<Allocation,number>){
     if(!(object instanceof THREE.Mesh))return;
     const materials=Array.isArray(object.material)?object.material:[object.material];
     const textures=materials.flatMap(m=>Object.values(m).filter(v=>v instanceof THREE.Texture)) as THREE.Texture[];
-    for(const allocation of [object.geometry,...materials,...textures]){
+    const skeletons=object instanceof THREE.SkinnedMesh?[object.skeleton]:[];
+    for(const allocation of [object.geometry,...materials,...textures,...skeletons]){
       if(counts.has(allocation))continue;
-      counts.set(allocation,0);allocation.addEventListener('dispose',()=>counts.set(allocation,counts.get(allocation)!+1));
+      counts.set(allocation,0);
+      if(allocation instanceof THREE.Skeleton){
+        const dispose=allocation.dispose.bind(allocation);allocation.dispose=()=>{counts.set(allocation,counts.get(allocation)!+1);dispose();};
+      }else allocation.addEventListener('dispose',()=>counts.set(allocation,counts.get(allocation)!+1));
     }
   });
 }
