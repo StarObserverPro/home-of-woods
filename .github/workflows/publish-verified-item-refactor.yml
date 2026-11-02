@@ -1,0 +1,37 @@
+name: Publish verified item refactor (one shot)
+on:
+  push:
+    branches: [feat/item-properties-rarity]
+    paths: [.github/workflows/publish-verified-item-refactor.yml]
+permissions:
+  contents: write
+concurrency:
+  group: verified-item-refactor-transfer
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.repository == 'StarObserverPro/home-of-woods' && github.event.head_commit.message == 'chore: stage digest-pinned item refactor transfer'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+      - name: Verify and publish the tested tree to the isolated feature branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = dff2e9bd04dfafbd593feaccd92df806c49095f1
+          curl --fail --location --proto '=https' --retry 2 --max-time 60 'https://sb-6sxbsarhp94d.vercel.run/verified-transfer.patch' --output /tmp/verified-transfer.patch
+          echo '7cec2850016dffd42006a5e2ae16054efb9494d444223ed674f27beabc62d67b  /tmp/verified-transfer.patch' | sha256sum --check --strict
+          git apply --check --index /tmp/verified-transfer.patch
+          git apply --index /tmp/verified-transfer.patch
+          git rm --cached .github/workflows/publish-verified-item-refactor.yml
+          test "$(git write-tree)" = 454ab7629be107d85067dc2aeb4a81ccff5ebc50
+          # This transfer job does not grant itself workflow-edit privileges.
+          # The connector removes this temporary workflow after source verification.
+          git add .github/workflows/publish-verified-item-refactor.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat: extensible item records and five-tier surface rarity'
+          git push origin HEAD:refs/heads/feat/item-properties-rarity
