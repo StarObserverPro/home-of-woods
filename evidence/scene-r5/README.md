@@ -26,12 +26,12 @@
 
 | 对象 | 本轮画面 |
 | --- | --- |
-| 白昼炭头 / 夜间火焰 | [白昼](captures/scene-desktop-fire-14-ready-1.png)、[夜间](captures/scene-desktop-fire-23-ready-2.png) |
-| 更随机的崖面 | [桌面](captures/scene-desktop-cliffs-14-ready-3.png)、[手机](captures/scene-mobile-cliffs-14-answering-5.png) |
-| 供品与神谕 | [桌面](captures/scene-desktop-ritual-14-ready-4.png)、[回应](captures/scene-desktop-ritual-23-answering-5.png)、[手机](captures/scene-mobile-ritual-14-ready-6.png) |
-| 手机炭头 / 火焰 | [白昼](captures/scene-mobile-fire-14-answering-4.png)、[夜间](captures/scene-mobile-fire-23-answering-3.png) |
+| 白昼炭头 / 夜间火焰 | [白昼](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/scene-r5/captures/scene-desktop-fire-14-ready-1.png)、[夜间](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/scene-r5/captures/scene-desktop-fire-23-ready-2.png) |
+| 更随机的崖面 | [桌面](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/scene-r5/captures/scene-desktop-cliffs-14-ready-3.png)、[手机](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/scene-r5/captures/scene-mobile-cliffs-14-answering-5.png) |
+| 供品与神谕 | [桌面](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/scene-r5/captures/scene-desktop-ritual-14-ready-4.png)、[回应](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/scene-r5/captures/scene-desktop-ritual-23-answering-5.png)、[手机](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/scene-r5/captures/scene-mobile-ritual-14-ready-6.png) |
+| 手机炭头 / 火焰 | [白昼](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/scene-r5/captures/scene-mobile-fire-14-answering-4.png)、[夜间](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/scene-r5/captures/scene-mobile-fire-23-answering-3.png) |
 
-浏览器实际点读神谕，文案随待供奉/回应变化。手机新检视按钮最小高度 44px、宽度 74.5px。暂停检视切换时同步相机与场景矩阵，点选和画面保持一致。实际采集得枝料 3，实际采伐结算原木 5、已用额度 5/预留 0；[营地画面](captures/scene-desktop-camp-14-ready-6.png)与[溪流](captures/scene-desktop-creek-14-ready-7.png)的 JSON 保留这些余额。卸载重入后原木仍为 5、木架 5 根、枝料 3；旧循环停止、旧 camp/river 已释放，geometry/material/extra owner 清零，旧 renderer 计数为 geometry 0/texture 1，同名 JSON 的 audits 记录实际结果。当前页控制台无 error，shaderErrors 为 0。
+浏览器实际点读神谕，文案随待供奉/回应变化。手机新检视按钮最小高度 44px、宽度 74.5px。暂停检视切换时同步相机与场景矩阵，点选和画面保持一致。实际采集得枝料 3，实际采伐结算原木 5、已用额度 5/预留 0；[营地画面](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/scene-r5/captures/scene-desktop-camp-14-ready-6.png)与[溪流](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/scene-r5/captures/scene-desktop-creek-14-ready-7.png)的 JSON 保留这些余额。卸载重入后原木仍为 5、木架 5 根、枝料 3；旧循环停止、旧 camp/river 已释放，geometry/material/extra owner 清零，旧 renderer 计数为 geometry 0/texture 1，同名 JSON 的 audits 记录实际结果。当前页控制台无 error，shaderErrors 为 0。
 
 [生产构建检查](production-smoke.json)通过：实际打开 dist 预览，加载 `/assets/index-BJ1HXIrW.js`，默认角色镜头、白昼炭头、崖面/溪流/祭坛正常，存档可用，无控制台或着色器错误。正式燃料经济、供奉交易、真实移动设备持续帧时与多指操作不在本轮验证中；既有单包体积提示保留。
 

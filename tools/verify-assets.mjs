@@ -8,6 +8,10 @@ const manifest = JSON.parse(
 assert.equal(manifest.assets.filter(a=>a.batchId==='HOW-M0-R3').length, 5);
 assert.equal(manifest.assets.filter(a=>a.batchId==='HOW-GATHERING-1').length, 2);
 assert.equal(manifest.assets.filter(a=>a.batchId==='HOW-CHARACTERS-1').length, 4);
+assert.equal(manifest.assets.filter(a=>a.batchId==='HOW-WILDLIFE-PHASE1').length, 2);
+assert.equal(manifest.assets.filter(a=>a.batchId==='HOW-WILDLIFE-PHASE2').length, 1);
+assert.equal(manifest.assets.some(a=>a.assetId==='how-wildlife-goat'), false, 'rejected model is not shipped');
+assert.equal(manifest.assets.filter(a=>a.batchId==='HOW-WILDLIFE-MOUNTAIN-GOAT').length, 1);
 assert.ok(manifest.worldSource,'Terrain provenance is required for this batch');
 const worldBytes=await readFile(new URL(manifest.worldSource.file,root));
 assert.equal(createHash('sha256').update(worldBytes).digest('hex'),manifest.worldSource.sha256,'terrain data hash');
@@ -17,7 +21,7 @@ assert.equal(worldData.heights.length,rows*rows,'complete surface grid');
 assert.ok(worldData.heights.every(Number.isFinite),'finite terrain heights');
 const listed = new Set();
 for (const asset of manifest.assets) {
-  assert.match(asset.file, /^public\/assets\/(m0|gathering|characters)\/[a-z]+\.glb$/);
+  assert.match(asset.file, /^public\/assets\/(m0|gathering|characters|wildlife)\/[a-z-]+\.glb$/);
   assert.ok(!listed.has(asset.file));
   listed.add(asset.file);
   const bytes = await readFile(new URL(asset.file, root));
@@ -43,7 +47,7 @@ for (const asset of manifest.assets) {
   if (asset.license.id === "CC0-1.0") {
     assert.match(
       await readFile(new URL(asset.license.evidence, root), "utf8"),
-      /Creative Commons Zero, CC0/,
+      /Creative Commons Zero, CC0|CC0 1.0 Universal/,
     );
     if(asset.source.files){
       for(const source of asset.source.files)assert.equal(createHash('sha256').update(await readFile(new URL(source.file,root))).digest('hex'),source.sha256);
@@ -51,6 +55,32 @@ for (const asset of manifest.assets) {
       const original=await readFile(new URL('sources/kenney/'+asset.source.part,root));
       assert.equal(createHash('sha256').update(original).digest('hex'),asset.source.sha256.toLowerCase());
     }
+  }
+  if(asset.batchId === 'HOW-WILDLIFE-PHASE1') {
+    assert.equal(gltf.skins.length, 1); assert.equal(gltf.skins[0].joints.length, 16);
+    assert.deepEqual(gltf.animations.map(a=>a.name).sort(), ['idle','walk']);
+    assert.equal(gltf.materials.length, 1);
+    const triangles=gltf.meshes.reduce((sum,m)=>sum+m.primitives.reduce((n,p)=>n+gltf.accessors[p.indices].count/3,0),0);
+    assert.ok(triangles <= 650);
+  }
+  if(asset.batchId === 'HOW-WILDLIFE-MOUNTAIN-GOAT') {
+    assert.equal(gltf.skins.length, 1);
+    assert.equal(gltf.skins[0].joints.length, 21);
+    assert.deepEqual(gltf.animations.map(a=>a.name).sort(),['idle','lift_front','survey','walk']);
+    assert.equal(gltf.materials.length, 1);
+    assert.equal(gltf.images?.length??0, 0);
+    assert.equal(gltf.meshes.length, 1);
+    assert.ok(gltf.meshes[0].primitives[0].attributes.JOINTS_0!==undefined);
+    assert.ok(gltf.meshes[0].primitives[0].attributes.NORMAL!==undefined);
+    const triangles=gltf.accessors[gltf.meshes[0].primitives[0].indices].count/3;
+    assert.ok(triangles>=700&&triangles<=2500,`Mountain goat facets ${triangles}`);
+  }
+  if(asset.batchId === 'HOW-WILDLIFE-PHASE2') {
+    assert.equal(gltf.skins.length,1);
+    const stag=asset.assetId==='how-wildlife-stag';
+    assert.equal(gltf.skins[0].joints.length,stag?38:16);
+    assert.deepEqual(gltf.animations.map(a=>a.name).sort(),stag?['bound','graze','idle','survey','walk']:['idle','walk']);
+    assert.ok(gltf.meshes.reduce((sum,m)=>sum+m.primitives.reduce((n,p)=>n+gltf.accessors[p.indices].count/3,0),0)<5000);
   }
   if(['how-character-player','how-character-visitor'].includes(asset.assetId)){
     assert.equal(gltf.skins.length,1);assert.equal(gltf.skins[0].joints.length,23);
@@ -77,7 +107,7 @@ for (const asset of manifest.assets) {
     }
   }
 }
-for(const folder of ['m0','gathering','characters']) assert.deepEqual(
+for(const folder of ['m0','gathering','characters','wildlife']) assert.deepEqual(
   (await readdir(new URL(`public/assets/${folder}/`, root))).sort(),
   [...listed].filter(p=>p.startsWith(`public/assets/${folder}/`)).map((path) => path.split("/").at(-1)).sort(),
 );

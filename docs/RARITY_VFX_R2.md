@@ -31,4 +31,4 @@
 - `dt=0` 两次截图一致；减少动态效果时两个不同 dt 的截图一致。100 次释放/重接的资源计数保持稳定。
 - 没有改动 domain 数据读写、稀有度生成、库存 UI 或存档格式。真实手机 GPU、长期满营地珍品负载及其他未来模型尚未验收。
 
-证据：[实机动图](../evidence/item-vfx-r2/surface-motion.gif)、[白天局部](../evidence/item-vfx-r2/day-crop.webp)、[日夜/地图等帧统计](../evidence/item-vfx-r2/verification.json)、[检查日志](../evidence/item-vfx-r2/check.log)。复现使用 `tools/fixtures/rarity-vfx-r2.html` 和 `tools/verification/item-vfx-r2.mjs`；Playwright、gifenc 是外部验收工具，不加入游戏依赖。
+证据：[实机动图](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/item-vfx-r2/surface-motion.gif)、[白天局部](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/item-vfx-r2/day-crop.webp)、[日夜/地图等帧统计](../evidence/item-vfx-r2/verification.json)、[检查日志](../evidence/item-vfx-r2/check.log)。复现使用 `tools/fixtures/rarity-vfx-r2.html` 和 `tools/verification/item-vfx-r2.mjs`；Playwright、gifenc 是外部验收工具，不加入游戏依赖。

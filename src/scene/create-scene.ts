@@ -1,3 +1,5 @@
+import {createWildlifePresentation} from './wildlife-presentation.ts';
+import {wildlifeViews,landmarkInspectionView} from '../domain/wildlife.ts';
 import type {RarityVfxMode} from '../content/item-vfx.ts';
 import {createWoodcraftPresentation} from './woodcraft-presentation.ts';
 import {WOODCRAFT,insideWoodcraft} from '../content/woodcraft.ts';
@@ -167,6 +169,7 @@ export async function createScene(
   });
   const characters=createCharacters(r,models,trees,forest.selections),player=characters.player;
   scene.add(player,characters.visitor);
+  const wildlife=createWildlifePresentation(r,models);scene.add(wildlife.group);
   const workshop=createWorkshopPresentation(r,models);scene.add(workshop.group);workshop.hits.register(characters.visitor,CAMP_VISITOR.id);
   const woodcraft=createWoodcraftPresentation(r);scene.add(woodcraft.group);
   let woodDropMode=false;
@@ -373,6 +376,8 @@ export async function createScene(
   resize();
   const view = {
     getAppearance:()=>({...appearance}),
+    wildlifeAvailable:()=>wildlife.available(),
+    wildlifeObserved:()=>wildlife.observedIds(),
     inspectScene(preset:SceneViewPreset|null,overrides:Partial<SceneAppearance>={}){
       if(preset&&!sceneCamera)sceneCamera={yaw,elevation,zoom,target:target.clone()};
       if(!preset&&sceneCamera){({yaw,elevation,zoom}=sceneCamera);target.copy(sceneCamera.target);sceneCamera=null;}
@@ -454,6 +459,7 @@ export async function createScene(
       camera.lookAt(target);
       workshop.update(state,camera,dt,reducedMotion,sky.night);woodcraft.update(state.woodcraft);
       camera.zoom = THREE.MathUtils.lerp(zoom,1,blend) * (mobile ? scenePreset?.8:THREE.MathUtils.lerp(1.45,.9,blend) : 1);
+      if(['wildlife','stagVista','goatVista'].includes(scenePreset??'')&&camera.aspect<1)camera.zoom*=camera.aspect;
       camera.updateProjectionMatrix();
       environment.update(elapsed,dt,camera.position,reducedMotion);
       scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);
@@ -523,6 +529,10 @@ export async function createScene(
           mesh.material = overlap ? fade : opaque;
         });
       });
+      const wildlifeSeen=wildlifeViews(state.wildlife,state.time);
+      if(scenePreset==='stagVista')wildlifeSeen.push(landmarkInspectionView('wildlife.stag',state.time));
+      if(scenePreset==='goatVista')wildlifeSeen.push(landmarkInspectionView('wildlife.goat',state.time));
+      wildlife.update(wildlifeSeen,state.time,appearance.hour,camera,reducedMotion);
       renderer.info.reset();renderer.info.autoReset=false;
       renderer.render(scene, camera);
     },
@@ -530,6 +540,7 @@ export async function createScene(
       return {
         woodcraft:woodcraft.stats(),workshop:workshop.stats(),understory:understory.stats(),treeShapes:trees.reduce((counts,t)=>{const name=treeVisual(t).name;counts[name]=(counts[name]??0)+1;return counts;},{} as Record<string,number>),appearance:{...appearance},scenePreset,camp:camp.stats(),terrain:ground.geometry.userData,shaderErrors,
         resources: r.stats(),
+        wildlife:wildlife.stats(),
         drawCalls: renderer.info.render.calls,
         triangles: renderer.info.render.triangles,
         gpu: { ...renderer.info.memory },
@@ -564,6 +575,7 @@ export async function createScene(
       workshop.dispose();
       forestry.dispose();
       characters.dispose();
+      wildlife.dispose();
       gathering.dispose();
       river.dispose();
       camp.dispose();

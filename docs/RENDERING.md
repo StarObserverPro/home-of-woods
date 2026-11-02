@@ -163,3 +163,7 @@ Models 的固定树形缓存同时提供静态合并与动作 source，远景按
 ## 稀有特效 R3（三档显示）
 
 在 R2 上增加完整／简化／关闭。完整档仅降低传说强度，史诗不变；简化档恢复原材质并附加一枚实际表面投影贴花；关闭档撤下所有稀有特效。`item-emblem.ts` 复用现有 DecalGeometry 与 Resources，不新增主循环。显示偏好由 `app/display-preferences.ts` 独立管理，不改变世界状态；渲染统计通过 `rarityVfx` 暴露，避免被业务 workshop 快照覆盖。当前规范和复现见 [RARITY_VFX_R3](RARITY_VFX_R3.md)，本段优先于此前弱自发光阶段的已废弃表现约束。
+
+## 最终动物表现
+
+`domain/wildlife` 决定会话内出入场；`scene/wildlife-presentation` 只消费视图、现有相机和时钟。最终四种模型由 Models 可选加载；私有骨架／材质退出时释放，共享模型归 Resources。主循环、物理岛固定步长、三档稀有特效和原存档写入者均不另建副本。当前范围与组合验证见 [最终动物接入](WILDLIFE_GUIDE.md)。

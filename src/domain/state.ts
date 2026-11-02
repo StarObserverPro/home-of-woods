@@ -1,3 +1,4 @@
+import type {WildlifeState} from './wildlife.ts';
 import {createWoodcraft} from './woodcraft.ts';
 import type {WoodcraftState} from './woodcraft.ts';
 import { START, WORLD_SEED } from "../content/world.ts";
@@ -18,6 +19,8 @@ import type {WorkshopState} from './workshop.ts';
 import {createLocalClock} from './local-clock.ts';
 import type {LocalClock} from './local-clock.ts';
 export type GameState = {
+  /** Decorative encounter state is session-local, not an inventory or save slice. */
+  wildlife?: WildlifeState;
   woodcraft:WoodcraftState;
   workshop:WorkshopState;
   clock:LocalClock;

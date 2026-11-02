@@ -34,3 +34,15 @@ test-results/
 !evidence/delivery/sandbox-tests.log
 
 !evidence/action-wood/*.log
+
+# Verification captures are temporary/CI artifacts; production textures remain tracked.
+/evidence/**/*.png
+/evidence/**/*.jpg
+/evidence/**/*.jpeg
+/evidence/**/*.webp
+/evidence/**/*.gif
+/sandbox/**/evidence/**/*.png
+/sandbox/**/evidence/**/*.jpg
+/sandbox/**/evidence/**/*.jpeg
+/sandbox/**/evidence/**/*.webp
+/sandbox/**/evidence/**/*.gif

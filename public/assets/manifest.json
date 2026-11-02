@@ -467,6 +467,173 @@
         "evidence/characters/"
       ],
       "limitations": "Local project integration; no PR merge or deployment; inspector vertical cutting is not a crafting transaction."
+    },
+    {
+      "assetId": "how-wildlife-squirrel",
+      "batchId": "HOW-WILDLIFE-PHASE1",
+      "role": "runtime",
+      "status": "integrated",
+      "file": "public/assets/wildlife/squirrel.glb",
+      "bytes": 95256,
+      "sha256": "35a83df5c25f08a18576e05f9d86cf4fc3f2e0d1296152c5609e78ee7896869d",
+      "source": {
+        "author": "Gobkit",
+        "pack": "Gobkit animal006 / Animal Pack Vol.4",
+        "page": "https://gobkit.com/freebies",
+        "catalog": "https://gobkit.com/api/free",
+        "url": "https://gobkit.com/freebies/animal006/Squirrel.glb",
+        "files": [
+          {
+            "file": "sources/gobkit/animal006/Squirrel.glb",
+            "sha256": "3ab524a913649fb08cc1fc264173a21ea04363f6f89d0d128eaaaa1ed714676f"
+          }
+        ]
+      },
+      "license": {
+        "id": "CC0-1.0",
+        "evidence": "public/assets/licenses/gobkit-CC0-1.0.txt",
+        "notice": "sources/gobkit/animal006/README.md"
+      },
+      "adaptation": "Common .68 roughness, nonmetallic materials, centered grounded scale; keep idle and walk; no attack/death gameplay.",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/wildlife-presentation.ts",
+        "rules": "src/domain/wildlife.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "metrics": {
+        "triangles": 584,
+        "joints": 16,
+        "height": 1.12,
+        "clips": [
+          "idle",
+          "walk"
+        ]
+      },
+      "limitations": "Decorative encounters only; no hunting, feeding or inventory reward. Physical mobile GPU performance remains unverified."
+    },
+    {
+      "assetId": "how-wildlife-hare",
+      "batchId": "HOW-WILDLIFE-PHASE1",
+      "role": "runtime",
+      "status": "integrated",
+      "file": "public/assets/wildlife/hare.glb",
+      "bytes": 95676,
+      "sha256": "061a80d8a4e3800ff73aaba16320cb194bdbf4210884a240c085ecaf9a986d3b",
+      "source": {
+        "author": "Gobkit",
+        "pack": "Gobkit animal006 / Animal Pack Vol.4",
+        "page": "https://gobkit.com/freebies",
+        "catalog": "https://gobkit.com/api/free",
+        "url": "https://gobkit.com/freebies/animal006/Hare.glb",
+        "files": [
+          {
+            "file": "sources/gobkit/animal006/Hare.glb",
+            "sha256": "3342949e3b124441d4ac8a7bdffd93835c90752bfe0f3b7785a6cdd8f5b99cfb"
+          }
+        ]
+      },
+      "license": {
+        "id": "CC0-1.0",
+        "evidence": "public/assets/licenses/gobkit-CC0-1.0.txt",
+        "notice": "sources/gobkit/animal006/README.md"
+      },
+      "adaptation": "Common .68 roughness, nonmetallic materials, centered grounded scale; keep idle and walk; no attack/death gameplay.",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/wildlife-presentation.ts",
+        "rules": "src/domain/wildlife.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "metrics": {
+        "triangles": 596,
+        "joints": 16,
+        "height": 1.1,
+        "clips": [
+          "idle",
+          "walk"
+        ]
+      },
+      "limitations": "Decorative encounters only; no hunting, feeding or inventory reward. Physical mobile GPU performance remains unverified."
+    },
+    {
+      "assetId": "how-wildlife-stag",
+      "batchId": "HOW-WILDLIFE-PHASE2",
+      "role": "runtime",
+      "status": "integrated",
+      "file": "public/assets/wildlife/stag.glb",
+      "bytes": 1947600,
+      "sha256": "c5b8cedcb2e8cb29cc88719f392bb13dc832e464cc821b952b981ccd502959ae",
+      "source": {
+        "author": "Quaternius",
+        "page": "https://quaternius.com/packs/ultimateanimatedanimals.html",
+        "files": [
+          {
+            "file": "sources/quaternius/ultimate-animated-animals/Stag.gltf",
+            "sha256": "170b964909d16d1ab4d428b1d714f25016913d32481acd9c3d62923192583be6"
+          }
+        ]
+      },
+      "license": {
+        "id": "CC0-1.0",
+        "evidence": "sources/quaternius/ultimate-animated-animals/License.txt"
+      },
+      "adaptation": "Repack embedded glTF as GLB; keep only 5 noncombat clips; brighten nonmetallic palette.",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/wildlife-presentation.ts",
+        "rules": "src/domain/wildlife.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "metrics": {
+        "triangles": 3670,
+        "joints": 38,
+        "clips": [
+          "bound",
+          "idle",
+          "survey",
+          "graze",
+          "walk"
+        ]
+      },
+      "limitations": "Decorative encounters only; no hunting, feeding or inventory reward. Physical mobile GPU performance remains unverified."
+    },
+    {
+      "assetId": "how-wildlife-mountain-goat",
+      "batchId": "HOW-WILDLIFE-MOUNTAIN-GOAT",
+      "role": "runtime",
+      "status": "integrated",
+      "file": "public/assets/wildlife/mountain-goat.glb",
+      "bytes": 433764,
+      "sha256": "de30051117e21b0d3dd0f60e366925fcb697b8929d6c38af6c93082d081f59d0",
+      "source": {
+        "author": "Home of Woods original procedural model",
+        "script": "tools/build-mountain-goat.py",
+        "speciesReference": "Oreamnos americanus morphology; no third-party mesh, texture, rig or animal animation copied"
+      },
+      "license": {
+        "id": "Project-original",
+        "evidence": "tools/build-mountain-goat.py"
+      },
+      "adaptation": "Noncoplanar irregular triangular facets, matte off-white coat, small black recurved horns, compact proportions; rigid segmented quadruped skin to prevent joint normal tearing",
+      "integration": {
+        "loader": "src/scene/models.ts",
+        "render": "src/scene/wildlife-presentation.ts",
+        "rules": "src/domain/wildlife.ts",
+        "disposal": "src/scene/resources.ts"
+      },
+      "metrics": {
+        "triangles": 1908,
+        "joints": 21,
+        "clips": [
+          "idle",
+          "survey",
+          "lift_front",
+          "walk"
+        ],
+        "images": 0
+      },
+      "limitations": "Decorative encounters only; no hunting, feeding or inventory reward. Physical mobile GPU performance remains unverified."
     }
   ],
   "worldSource": {

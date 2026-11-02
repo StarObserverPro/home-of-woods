@@ -21,15 +21,15 @@
 
 | 场景 | 画面 |
 | --- | --- |
-| 山谷全景 | [桌面](evidence/captures/desktop-overview-14-ready-wood0-1.png) |
-| 河水、倒影与急流 | [桌面](evidence/captures/desktop-creek-14-ready-wood0-2.png) |
-| 折面山崖 | [桌面](evidence/captures/desktop-cliffs-14-ready-wood0-3.png) |
-| 从外侧观察封边 | [桌面](evidence/captures/desktop-edge-14-ready-wood0-4.png) |
-| 6 根原木和白昼篝火 | [桌面](evidence/captures/desktop-camp-14-ready-wood6-5.png) |
-| 黄昏 / 夜间篝火 | [黄昏](evidence/captures/desktop-camp-18-ready-wood18-6.png)、[夜晚](evidence/captures/desktop-camp-23-ready-wood18-7.png) |
-| 祭坛四状态 | [沉寂](evidence/captures/desktop-altar-14-dormant-wood18-9.png)、[待供奉](evidence/captures/desktop-altar-14-ready-wood18-10.png)、[回应](evidence/captures/desktop-altar-23-answering-wood18-8.png)、[休眠](evidence/captures/desktop-altar-14-resting-wood18-11.png) |
-| 手机夜间营地 | [390×844](evidence/captures/mobile-camp-23-ready-wood32-1.png) |
-| 手机祭坛回应 | [390×844](evidence/captures/mobile-altar-23-answering-wood32-2.png) |
+| 山谷全景 | [桌面](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/sandbox/scene-r5/evidence/captures/desktop-overview-14-ready-wood0-1.png) |
+| 河水、倒影与急流 | [桌面](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/sandbox/scene-r5/evidence/captures/desktop-creek-14-ready-wood0-2.png) |
+| 折面山崖 | [桌面](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/sandbox/scene-r5/evidence/captures/desktop-cliffs-14-ready-wood0-3.png) |
+| 从外侧观察封边 | [桌面](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/sandbox/scene-r5/evidence/captures/desktop-edge-14-ready-wood0-4.png) |
+| 6 根原木和白昼篝火 | [桌面](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/sandbox/scene-r5/evidence/captures/desktop-camp-14-ready-wood6-5.png) |
+| 黄昏 / 夜间篝火 | [黄昏](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/sandbox/scene-r5/evidence/captures/desktop-camp-18-ready-wood18-6.png)、[夜晚](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/sandbox/scene-r5/evidence/captures/desktop-camp-23-ready-wood18-7.png) |
+| 祭坛四状态 | [沉寂](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/sandbox/scene-r5/evidence/captures/desktop-altar-14-dormant-wood18-9.png)、[待供奉](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/sandbox/scene-r5/evidence/captures/desktop-altar-14-ready-wood18-10.png)、[回应](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/sandbox/scene-r5/evidence/captures/desktop-altar-23-answering-wood18-8.png)、[休眠](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/sandbox/scene-r5/evidence/captures/desktop-altar-14-resting-wood18-11.png) |
+| 手机夜间营地 | [390×844](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/sandbox/scene-r5/evidence/captures/mobile-camp-23-ready-wood32-1.png) |
+| 手机祭坛回应 | [390×844](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/sandbox/scene-r5/evidence/captures/mobile-altar-23-answering-wood32-2.png) |
 
 最新横屏溪流图的文件前缀由宽度生成，可能带 desktop；实际 844×390 尺寸及 256² 目标以旁边 JSON 为准。早期后台节流、穿地相机及裁切错误的试验图已剔除，不纳入结果。
 

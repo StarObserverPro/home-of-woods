@@ -34,6 +34,9 @@ export class Resources {
     else this.extra.add(resource);
     return resource;
   }
+  releaseOwned(resource: { dispose(): void }) {
+    if (this.extra.delete(resource)) this.release(resource);
+  }
   private release(resource: { dispose(): void }) {
     if (this.released.has(resource)) return;
     this.released.add(resource);

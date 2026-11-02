@@ -1,4 +1,5 @@
 import type {OfferingMode} from './altar.ts';
+import {runtimeModelEnabled} from './assets.ts';
 export const CAMP_PROPS = {
   fire: {id:'camp-fire',x:-37,z:10,radius:1.6},
   logs: {id:'camp-log-store',x:-25,z:-3,radius:2.1},
@@ -10,6 +11,12 @@ export type SceneAppearance = {hour:number;fire:boolean;altar:AltarState;offerin
 /** Visual candidate only; the M2 calendar and resource renewal use their own explicit rules. */
 export const VISUAL_DAY_SECONDS=1200;
 export const VIEWS = {
+  wildlife:{label:'林间动物',target:[-36.5,22.2,1],yaw:-.3,elevation:.50,distance:25,zoom:1},
+  stagVista:{label:'远坡雄鹿 · 检视',target:[70,39.8,-40],yaw:-.75,elevation:.28,distance:32,zoom:1},
+  goatVista:{label:'崖上山羊 · 检视',target:[55,16.8,36],yaw:-.72,elevation:.28,distance:26,zoom:1},
+  squirrel:{label:'松鼠近景',target:[-43,22.05,-4],yaw:-.55,elevation:.35,distance:6,zoom:1},
+  hare:{label:'野兔近景',target:[-31,22.05,1],yaw:.5,elevation:.35,distance:6,zoom:1},
+
   woodcraft:{label:'营地木料堆',target:[-29,22,7],yaw:-.65,elevation:.6,distance:14,zoom:1},
   understory:{label:'树形与林下',target:[-67,28,10],yaw:-.65,elevation:.36,distance:17,zoom:1},
   overview:{label:'山谷全景',target:[-5,24,15],yaw:-.13,elevation:.28,distance:120,zoom:.76},
@@ -23,5 +30,6 @@ export const VIEWS = {
   edge:{label:'地形封边',target:[105,8,90],yaw:1.1,elevation:.22,distance:130,zoom:.7},
 } as const;
 export type SceneViewPreset=keyof typeof VIEWS;
+export const INSPECTABLE_VIEWS=Object.entries(VIEWS).filter(([id])=>id!=='goatVista'||runtimeModelEnabled('mountain-goat'));
 export const WATER_BUDGET={desktopSize:512,mobileSize:256,interval:3,mobileInterval:4,splashCount:48,rapidRocks:9};
 

@@ -21,7 +21,7 @@ export type WorldLoadResult =
 
 export function validateWorldState(raw: unknown, context: SaveContext, mode: 'runtime' | 'persisted') {
   const world = object(raw, 'world');
-  fields(world, ['woodcraft','clock','workshop','ritual', 'seed', 'time', 'forestry', 'inventory', 'gathering', 'player', 'selected', 'route', 'visited'], 'world');
+  fields(world, ['woodcraft','clock','workshop','ritual', 'seed', 'time', 'forestry', 'inventory', 'gathering', 'player', 'selected', 'route', 'visited'], 'world', mode === 'runtime' ? ['wildlife'] : []);
   requireValue(world.seed === WORLD_SEED, 'world.seed', '当前布局不支持此世界');
   const time = finite(world.time, 'world.time');
   const player = object(world.player, 'world.player'); fields(player, ['x', 'z', 'facing', 'moving'], 'world.player');
@@ -71,10 +71,11 @@ export function validateWorldState(raw: unknown, context: SaveContext, mode: 'ru
 export async function serializeWorldSave(state: GameState, context: SaveContext, meta: WorldSaveMeta): Promise<string> {
   // Capture and validate synchronously before hashing yields to another frame.
   const snapshot = validateWorldState(state, context, 'runtime').state;
+  const {wildlife, ...persistent} = snapshot; void wildlife;
   integer(meta.sequence, 'save.sequence', 1); finite(meta.savedAt, 'save.savedAt');
   const core = { schemaVersion: 1, layoutVersion: WORLD_LAYOUT_VERSION, rulesetVersion: WORLD_RULESET_VERSION,
     sequence: meta.sequence, savedAt: meta.savedAt,
-    world: { ...snapshot, inventory: inventoryPersistenceData(snapshot.inventory) } };
+    world: { ...persistent, inventory: inventoryPersistenceData(snapshot.inventory) } };
   return canonicalJson({ ...core, checksum: await saveDigest(core) });
 }
 

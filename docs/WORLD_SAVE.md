@@ -35,3 +35,7 @@
 ## 验证
 
 领域/控制器测试覆盖世界往返、当前动作恢复、原子保存、备份、并发和失败保护。字段扩展与稀有度的本轮证据见 [ITEM_RARITY_VERIFICATION.md](ITEM_RARITY_VERIFICATION.md)；旧阶段的不可变证据不改写。
+
+## 动物临时状态
+
+最终动物整合不升级世界规则或库存格式。`wildlife` 仅允许存在于运行态，序列化时剔除；读档先清除旧会话动物，再按保存的时间／seed 重建候选。动物不生成库存收益。库存统一 `inventoryPersistenceData()` 编码和 Woodcraft 所有权校验保持不变，组合往返测试见 `tests/final-integration.test.ts`。

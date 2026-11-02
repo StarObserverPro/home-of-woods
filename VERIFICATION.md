@@ -46,7 +46,7 @@ PR #2 已合并为 d22ac56b641ceaf3deb0d220084af63a5e600b0d。2026-10-30 已获�
 
 主体已完成 `npm.cmd ci`（0个依赖审计问题）和 `npm.cmd run check`：23项测试全部通过，TypeScript与Vite生产构建成功。当前运行时指纹为 `e956ca630f5bf91078f7f8147643dbceb844374cbb0eec24a4cdab14032b0e78`；`npm.cmd run verify:evidence` 通过，并保持旧回执不变。回接后的生产操作与释放快照保存在 [integration证据](evidence/integration/)。
 
-当前主体生产包已实测：走近、挥斧、暂停恢复、倾倒与成桩，木材0→5、可用额度24→19；普通运行无控制台错误，开发录像POST接口在生产中返回404且没有保存按钮。五次重入均保持缓存33几何/9材质/169附属资源，当前有树桩的场景GPU为50几何/8纹理；旧owner清零、旧循环停止、上下文释放，余额不刷新。390×844视口的实际摇杆、镜头按钮、布局溢出和44px触控框检查见 mobile-input.json；当前截图为 [主体全景](evidence/integration/desktop-home.png)、[采伐后树桩](evidence/integration/desktop-stump.png)、[手机视口](evidence/integration/mobile.png)。完整JSON见 production-smoke.json 和 lifecycle-cycles.json。
+当前主体生产包已实测：走近、挥斧、暂停恢复、倾倒与成桩，木材0→5、可用额度24→19；普通运行无控制台错误，开发录像POST接口在生产中返回404且没有保存按钮。五次重入均保持缓存33几何/9材质/169附属资源，当前有树桩的场景GPU为50几何/8纹理；旧owner清零、旧循环停止、上下文释放，余额不刷新。390×844视口的实际摇杆、镜头按钮、布局溢出和44px触控框检查见 mobile-input.json；当前截图为 [主体全景](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/integration/desktop-home.png)、[采伐后树桩](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/integration/desktop-stump.png)、[手机视口](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/integration/mobile.png)。完整JSON见 production-smoke.json 和 lifecycle-cycles.json。
 
 回接审查补齐两项实际失败场景：幼树成长时扩大碰撞，可能将旁边的人物包进树干；现在只允许从既有圆形重叠中单调退离，不移动树位、缩小碰撞或绕过水岸/建筑/坡度。另一个场景是单个GLB先失败，其他请求迟到后向已销毁owner登记资源；现在终端owner立即且仅一次释放迟到资源，失败加载不能重新填入模型模板。对应生产GLB/实际成长状态回归测试随源码提交。
 
