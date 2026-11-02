@@ -275,7 +275,7 @@ def compact_height(y):
     if y>=1.5:return y-.22
     return y-.22*(y-.3)/1.2
 def compact_derivative(y):
-    y=y+.115
+    y=y+.190
     return .8166666666667 if .3<y<1.5 else 1.
 original_bone_abs=[absp(i) for i in range(len(bones))]
 for i,p in enumerate(verts):verts[i]=(p[0],compact_height(p[1]),p[2])
