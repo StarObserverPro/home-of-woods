@@ -1,3 +1,5 @@
+> **2026-11-02 更新**：用户现已接受 CC BY 等开放许可，且将外形适配作为首要条件。此前只限制 CC0 的筛选结果保留为历史比较；新的首选为 [toofball Low Poly Mountain Goat 的开放许可选型](wildlife-goat-open-license-selection.md)。Innerscene CC0 退为备选，不再是首推。
+
 # 白山羊 CC0 模型重新选型（仅候选，不接入游戏）
 
 日期：2026-11-02。分支：`art/cc0-mountain-goat-review`，继承 `feat/wildlife-phase2` 已撤下失败模型的状态。雄鹿继续使用原版。**本批只核实候选来源、几何和美术适配性；不启用任何羊的实际出场、不更新玩法与存档。**
