@@ -1,3 +1,4 @@
+import type {RarityVfxMode} from '../content/item-vfx.ts';
 import {createItemSurface} from './item-surface.ts';
 import * as THREE from 'three';
 import type {Resources} from './resources.ts';
@@ -34,7 +35,7 @@ export function createWorkshopPresentation(r:Resources,models:Models){
   const back=new THREE.Mesh(barGeo,r.own(new THREE.MeshBasicMaterial({color:'#3d4839',depthTest:false}))),fill=new THREE.Mesh(barGeo,r.own(new THREE.MeshBasicMaterial({color:'#e8d793',depthTest:false})));
   back.scale.x=1.8;fill.scale.x=1.8;fill.position.z=.01;back.renderOrder=fill.renderOrder=20;progress.add(back,fill);progress.visible=false;group.add(progress);
   let preview:PlacementDraft|null=null;
-  return {group,hits,setPreview(value:PlacementDraft|null){preview=value;},
+  return {group,hits,setRarityVfxMode:(mode:RarityVfxMode)=>surfaces.setMode(mode),setPreview(value:PlacementDraft|null){preview=value;},
     update(state:GameState,camera:THREE.Camera,dt=0,reducedMotion=false,night=0){
       surfaces.update(dt,reducedMotion,night);
       const current=new Set<string>();

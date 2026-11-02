@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { Resources } from './resources.ts';
-import { ITEM_VFX } from '../content/item-vfx.ts';
+import { ITEM_VFX, ITEM_VFX_LIGHT } from '../content/item-vfx.ts';
 import type { EffectRarity } from '../content/item-vfx.ts';
 
 /** Stratified area samples on real triangles, never a bounding-box badge floating above the item. */
@@ -49,7 +49,7 @@ export function createGlintFactory(resources: Resources, time: {value:number}, n
         material = resources.own(new THREE.ShaderMaterial({
           name:`rarity-${rarity}-surface-glints`,transparent:true,depthTest:true,depthWrite:false,
           blending:THREE.AdditiveBlending,toneMapped:false,
-          uniforms:{uTime:time,uNight:night,uTint:{value:new THREE.Color(spec.tint)},uHeight:{value:600},uDiameter:{value:spec.diameter},uMinPixels:{value:spec.minPixels},uMaxPixels:{value:spec.maxPixels}},
+          uniforms:{uTime:time,uNight:night,uLight:{value:new THREE.Vector2(ITEM_VFX_LIGHT[rarity].day,ITEM_VFX_LIGHT[rarity].night)},uTint:{value:new THREE.Color(spec.tint)},uHeight:{value:600},uDiameter:{value:spec.diameter},uMinPixels:{value:spec.minPixels},uMaxPixels:{value:spec.maxPixels}},
           vertexShader:`
             attribute float phase;
             uniform float uTime,uHeight,uDiameter,uMinPixels,uMaxPixels;
@@ -67,7 +67,7 @@ export function createGlintFactory(resources: Resources, time: {value:number}, n
             }`,
           fragmentShader:`
             uniform vec3 uTint;
-            uniform float uNight;
+            uniform float uNight; uniform vec2 uLight;
             varying float vTwinkle,vPhase,vVisible;
             void main(){
               vec2 p = gl_PointCoord*2.0-1.0;
@@ -81,7 +81,7 @@ export function createGlintFactory(resources: Resources, time: {value:number}, n
               float alpha=(halo+star*.82+core*.55)*vTwinkle*vVisible*softness;
               if(alpha<.002)discard;
               vec3 color=mix(uTint,vec3(1.0,.97,.92),clamp(star*1.8+core,0.0,1.0));
-              gl_FragColor=vec4(color,alpha*mix(1.0,.86,uNight));
+              gl_FragColor=vec4(color,alpha*mix(uLight.x,uLight.y,uNight));
               #include <colorspace_fragment>
             }`,
         }));

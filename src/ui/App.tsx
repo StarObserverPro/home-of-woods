@@ -1,3 +1,6 @@
+import {RarityVfxControls} from './RarityVfxControls.tsx';
+import {readRarityVfxPreference,writeRarityVfxPreference} from '../app/display-preferences.ts';
+import type {RarityVfxMode} from '../content/item-vfx.ts';
 import {rarityStyle} from './rarity.ts';
 import {itemRarity} from '../domain/item-properties.ts';
 import {woodcraftDetails,WoodcraftControls,WoodDropControls} from './Woodcraft.tsx';
@@ -140,6 +143,14 @@ export function App() {
     [reduced, setReduced] = useState(false),
     [mountVersion, setMountVersion] = useState(0),
     [audit, setAudit] = useState<Record<string, unknown>[]>([]);
+  const [rarityVfxMode,setRarityVfxMode]=useState(readRarityVfxPreference);
+  const rarityModeRef=useRef(rarityVfxMode);
+  const [displayNotice,setDisplayNotice]=useState('');
+  function changeRarityVfxMode(mode:RarityVfxMode){
+    rarityModeRef.current=mode;setRarityVfxMode(mode);
+    runtime.current?.setRarityVfxMode(mode);
+    setDisplayNotice(writeRarityVfxPreference(mode)?'':'设置已生效；当前浏览器未能记住这项选择。');
+  }
   const diagnostic = new URLSearchParams(window.location.search).has("inspect");
   const [snapshotVersion, setSnapshotVersion] = useState(-1);
   const recording = useRef<(() => void) | null>(null),
@@ -198,7 +209,7 @@ export function App() {
           setHelp(false);
         }
       }
-    }, sessionState.current ?? undefined, saveOwner.current)
+    }, sessionState.current ?? undefined, saveOwner.current,rarityModeRef.current)
       .then((value) => {
         if (cancelled) {
           value.destroy();
@@ -613,6 +624,7 @@ export function App() {
             />
             减少动态效果
           </label>
+          <RarityVfxControls mode={rarityVfxMode} onChange={changeRarityVfxMode} disabled={!ready} notice={displayNotice}/>
         </aside>
       )}
       <div
@@ -643,6 +655,7 @@ export function App() {
         <span className="eyebrow">A LITTLE BREATHING ROOM</span>
         <h2>山谷会等你</h2>
         <p>歇一会儿，再继续散步。</p>
+        <RarityVfxControls mode={rarityVfxMode} onChange={changeRarityVfxMode} disabled={!ready} notice={displayNotice}/>
         <SaveControls status={snapshot.save}
           onSave={() => runtime.current?.saveWorld() ?? Promise.resolve(false)}
           onReload={() => runtime.current?.reloadWorld() ?? Promise.resolve(false)}

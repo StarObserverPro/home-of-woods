@@ -5,3 +5,15 @@ export const ITEM_VFX = {
 } as const;
 export type EffectRarity = keyof typeof ITEM_VFX;
 export const ITEM_VFX_SPEED = .19;
+
+export const RARITY_VFX_MODES = ['full', 'simple', 'off'] as const;
+export type RarityVfxMode = typeof RARITY_VFX_MODES[number];
+export const isRarityVfxMode = (value: unknown): value is RarityVfxMode =>
+  RARITY_VFX_MODES.some(mode => mode === value);
+
+/** Epic is the approved R2 baseline. Only legendary is quieter, especially at night. */
+export const ITEM_VFX_LIGHT = {
+  epic: { day: 1, night: .86 },
+  legendary: { day: .82, night: .62 },
+} as const;
+export const ITEM_EMBLEM = { sizeRatio: .52, maxSize: .65, depthRatio: .12 } as const;

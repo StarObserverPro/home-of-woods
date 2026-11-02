@@ -1,3 +1,4 @@
+import type {RarityVfxMode} from '../content/item-vfx.ts';
 import {createWoodcraftSession} from './woodcraft-session.ts';
 import type {WoodcraftSnapshot} from './woodcraft-session.ts';
 import {WOODCRAFT} from '../content/woodcraft.ts';
@@ -63,6 +64,7 @@ export async function createRuntime(
   publish: (value: Snapshot) => void,
   initialState?:GameState,
   saveOwner?: SaveController,
+  initialRarityVfxMode:RarityVfxMode = 'full',
 ) {
   const trees = makeTrees(),
     treeById=new Map(trees.map(t=>[t.id,t])),
@@ -113,6 +115,7 @@ export async function createRuntime(
       navigate(event);
     }
   }, registry);
+  view.setRarityVfxMode(initialRarityVfxMode);
   const frameTimes: number[] = [];
   let lastSampleAt:number|null=null;
   const tick = (dt: number, now:number) => {
@@ -210,8 +213,10 @@ export async function createRuntime(
   );
   const stats = () => {
     const sorted = [...frameTimes].sort((a, b) => a - b);
+    const sceneStats=view.stats();
     return {
-      ...view.stats(),
+      ...sceneStats,
+      rarityVfx:sceneStats.workshop.surfaces,
       physics:woodcraft.stats(),
       loop: loop.stats(),
       samples: sorted.length,
@@ -483,6 +488,11 @@ export async function createRuntime(
       if(destroyed||manualPause||interfaceOpen||inspectionOpen||contextLost||document.hidden)return;
       stick.x = x;
       stick.z = z;
+    },
+    setRarityVfxMode(mode:RarityVfxMode){
+      if(destroyed)return;
+      view.setRarityVfxMode(mode);
+      if(!contextLost){view.render(state,0);publishSnapshot();}
     },
     setReducedMotion(value: boolean) {
       if(destroyed)return;

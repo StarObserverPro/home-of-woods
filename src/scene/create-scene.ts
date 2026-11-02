@@ -1,3 +1,4 @@
+import type {RarityVfxMode} from '../content/item-vfx.ts';
 import {createWoodcraftPresentation} from './woodcraft-presentation.ts';
 import {WOODCRAFT,insideWoodcraft} from '../content/woodcraft.ts';
 import {createWorkshopPresentation} from './workshop-presentation.ts';
@@ -396,6 +397,7 @@ export async function createScene(
     zoomBy(amount: number) {manualCamera();
       zoom = clamp(zoom * amount, CAMERA.minZoom, CAMERA.maxZoom);
     },
+    setRarityVfxMode(mode:RarityVfxMode){workshop.setRarityVfxMode(mode);},
     setReducedMotion(value: boolean) {
       reducedMotion = value;
     },
