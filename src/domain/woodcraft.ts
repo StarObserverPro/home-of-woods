@@ -35,8 +35,8 @@ function initialPiece(source: InventoryStack, n: number, target?: Vec3): LooseWo
     linear: zeroVector(), angular: {x:.25,y:.5,z:.2}, phase: 'queued', sleeping: false };
 }
 /** Synchronous exclusive ownership transfer. Every queued piece has already left inventory. */
-export function transferWood(owner: WoodcraftOwner, mode: 'prepare' | 'one', target?: Vec3): number {
-  const candidates = availableWood(owner.inventory), total = candidates.reduce((n,s)=>n+s.quantity,0);
+export function transferWood(owner: WoodcraftOwner, mode: 'prepare' | 'one', target?: Vec3, sourceKey?:string): number {
+  const candidates = availableWood(owner.inventory).filter(s=>mode!=='one'||sourceKey===undefined||stackKey(s)===sourceKey), total = candidates.reduce((n,s)=>n+s.quantity,0);
   const capacity = (mode === 'prepare' ? WOODCRAFT.maxPieces - 1 : WOODCRAFT.maxPieces) - owner.woodcraft.pieces.length;
   let need = Math.min(Math.max(0, capacity), mode === 'prepare' ? Math.max(0,total-1) : Math.min(1,total));
   if (!need) return 0;

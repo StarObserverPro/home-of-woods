@@ -48,3 +48,79 @@
 .warehouse-identity { overflow-wrap: anywhere; font-size: 11px; }
 
 .warehouse-categories { flex-wrap: wrap; }
+
+/* The scene stays exposed so the same pointer can carry a card into the world. */
+.warehouse-dock { position:absolute; z-index:35; inset:90px 18px 94px auto; width:min(420px,calc(100vw - 36px)); max-height:none; margin:0; padding:18px; display:flex; flex-direction:column; overflow:hidden; background:linear-gradient(125deg,#1b3b30f0,#263e31ed); pointer-events:auto; outline:none; }
+.warehouse-dock .warehouse-heading { flex-shrink:0; gap:12px; }
+.warehouse-dock .warehouse-heading h2 { font-size:24px; }
+.warehouse-dock .warehouse-categories { flex-wrap:nowrap; overflow-x:auto; flex-shrink:0; gap:4px; padding-bottom:9px; margin:12px 0; }
+.warehouse-dock .warehouse-categories button { min-width:0; flex:0 0 auto; padding:0 11px; font-size:12px; white-space:nowrap; }
+.warehouse-scroll { overflow-y:auto; overscroll-behavior:contain; min-height:0; scrollbar-width:thin; padding-right:3px; }
+.warehouse-context { display:flex; align-items:center; justify-content:space-between; flex-shrink:0; gap:12px; margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid #d9e8ce33; font-size:12px; color:#d6e1c9; }
+.warehouse-dock .warehouse-content { grid-template-columns:1fr; gap:16px; }
+.warehouse-dock .warehouse-grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.warehouse-dock .warehouse-item { min-height:118px; padding:10px; gap:3px; }
+.warehouse-dock .warehouse-item svg { width:32px; height:32px; }
+.warehouse-dock .warehouse-item>span { font-size:12px; }
+.warehouse-dock .warehouse-item strong { font-size:20px; }
+.warehouse-dock .warehouse-detail { padding:14px 0 0; border-left:0; border-top:1px solid #d9e8ce33; }
+.warehouse-dock .warehouse-detail h3 { font-size:18px; }
+.warehouse-dock .warehouse-detail p { margin:9px 0; line-height:1.65; }
+.warehouse-dock .warehouse-detail h4 { margin:12px 0 3px; }
+.warehouse-dock details { margin-top:14px; }
+.warehouse-dock summary { cursor:pointer; color:#e5d6b5; font-size:12px; }
+.warehouse-dock .warehouse-item .drag-affordance { position:absolute; right:8px; top:6px; color:#e0e2c5; font-size:19px; }
+.is-draggable { touch-action:none; cursor:grab; user-select:none; -webkit-user-select:none; }
+.is-draggable:active { cursor:grabbing; }
+.warehouse-transfer-action { border-radius:10px; background:#e4dbae10; padding:10px 12px; margin-top:12px; }
+.warehouse-nearby { border-top:1px solid #d9e8ce33; margin-top:20px; padding-top:14px; }
+.warehouse-nearby>div:first-child { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+.warehouse-nearby h3 { font-size:15px; margin:0; }
+.warehouse-nearby h3 small { color:#c6d4bd; font-size:11px; }
+.warehouse-nearby p,.warehouse-note { font-size:12px; line-height:1.7; color:#d6e1c9; }
+.nearby-wood-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.nearby-wood-card { border:1px solid #d9e8ce33; border-radius:8px; overflow:hidden; padding:6px; }
+.nearby-wood-card>button:first-child { width:100%; display:flex; flex-direction:column; align-items:center; gap:3px; font-size:12px; }
+.nearby-wood-card small { color:#bdcdb1; font-size:10px; }
+.nearby-wood-card .context-button { min-height:32px; width:100%; padding:4px; margin-top:5px; }
+.warehouse-dock footer.warehouse-return-zone { flex-shrink:0; margin-top:12px; padding-top:12px; line-height:1.6; }
+.warehouse-return-zone p { margin:3px 0 0; color:#f7dca6; font-size:12px; }
+.warehouse-dock.is-dragging { max-height:170px; bottom:auto; border:1px dashed #d9d5a4; }
+.warehouse-dock.is-dragging .warehouse-scroll,.warehouse-dock.is-dragging .warehouse-categories,.warehouse-dock.is-dragging .warehouse-context { visibility:hidden; height:0; min-height:0; margin:0; padding:0; }
+.warehouse-dock.is-dragging footer { font-size:13px; color:#f6e2b2; }
+.item-drag-ghost { position:fixed; z-index:100; width:220px; max-width:calc(100vw - 16px); padding:11px 14px; border:1px solid #dac7a1; border-radius:11px; background:#283f33f5; color:#f6eedb; pointer-events:none; box-shadow:0 6px 24px #10291f55; }
+.item-drag-ghost strong,.item-drag-ghost span { display:block; }
+.item-drag-ghost span { margin-top:4px; font-size:12px; line-height:1.5; }
+.item-drag-ghost.is-valid { border-color:#d9e9a3; background:#426245f5; }
+.warehouse-dock .owned-furniture { padding:0; border-top:0; }
+.warehouse-dock .owned-furniture>p { font-size:12px; }
+.blueprint-library { display:grid; gap:14px; }
+.blueprint-card { border:1px solid #cadcc866; border-radius:12px; padding:14px; background:#5c827020; }
+.blueprint-card.is-unknown { background:#415d4815; }
+.blueprint-drawing { display:block; width:100%; max-height:135px; color:#cfdfcc; background:#355d5866; border-radius:7px; margin-bottom:12px; }
+.blueprint-heading,.upgrade-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.blueprint-heading h3,.upgrade-heading h3 { margin:0; font-weight:500; font-size:15px; }
+.blueprint-heading span,.upgrade-heading span { font-size:10px; color:#f2d49b; white-space:nowrap; }
+.blueprint-card>small,.blueprint-source { color:#c8d7c0; font-size:11px; line-height:1.6; }
+.blueprint-card p { font-size:12px; line-height:1.7; margin:9px 0; }
+.blueprint-card .blueprint-cost { color:#efd7a7; }
+.upgrade-controls { margin-top:14px; border-top:1px solid #d9e8ce33; padding-top:12px; }
+.upgrade-controls p { font-size:12px; line-height:1.7; }
+.upgrade-controls .upgrade-future { opacity:.8; }
+.upgrade-materials { list-style:none; padding:0; margin:12px 0; }
+.upgrade-materials li { display:flex; justify-content:space-between; padding:4px 0; font-size:12px; }
+.upgrade-materials .is-missing { color:#edb29b; }
+.blueprint-requirement span { color:#e5d2a1; }
+.upgrade-controls progress { width:100%; height:10px; accent-color:#d5c68d; }
+.target-card:has(.upgrade-controls) { max-height:calc(100dvh - 220px); overflow:auto; }
+@media(max-width:600px) {
+  .warehouse-dock { inset:auto 12px 82px; width:calc(100vw - 24px); max-height:56dvh; padding:14px; }
+  .warehouse-dock .eyebrow { display:none; }
+  .warehouse-dock .warehouse-heading h2 { margin:0 0 4px; font-size:20px; }
+  .warehouse-dock .warehouse-categories { margin:9px 0; }
+  .warehouse-dock .warehouse-categories button { padding:0 9px; font-size:11px; }
+  .warehouse-dock .warehouse-item { min-height:108px; }
+  .warehouse-dock.is-dragging { top:auto; bottom:82px; max-height:132px; }
+  .warehouse-is-open .joystick,.warehouse-is-open .target-card { visibility:hidden; }
+  .target-card:has(.upgrade-controls) { max-height:calc(100dvh - 235px); }
+}

@@ -19,6 +19,8 @@ import { createScenery, createTerrain } from "./terrain.ts";
 import {createEnvironment} from './environment.ts';
 import {createCreek} from './creek.ts';
 import {createCampProps} from './camp-props.ts';
+import {createSelectionMarker} from './selection-marker.ts';
+import {createCabinRepair} from './cabin-repair.ts';
 import {VIEWS,CAMP_PROPS} from '../content/scene-props.ts';
 import type {SceneAppearance,SceneViewPreset} from '../content/scene-props.ts';
 import {sceneAppearanceAt,daylightAt} from '../domain/scene-props.ts';
@@ -134,6 +136,8 @@ export async function createScene(
     scene.add(model);
     props.set(name, model);
   }
+  const cabinRepair=createCabinRepair(models);
+  props.get('cabin')!.add(cabinRepair.group);
   const propFades = new Map<
     THREE.Object3D,
     {
@@ -200,22 +204,8 @@ export async function createScene(
     const direction=b.clone().sub(a),rail=new THREE.Mesh(r.geometry('sign-board',()=>new THREE.BoxGeometry(2.7,.95,.18)),r.material('#c0a270'));
     rail.position.copy(a).lerp(b,.5);rail.scale.set(direction.length()/2.7,.22/.95,1.8);rail.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),direction.normalize());rail.castShadow=true;scene.add(rail);
   }
-  const markerMaterial = r.own(
-    new THREE.MeshBasicMaterial({
-      color: "#f5df92",
-      transparent: true,
-      opacity: 0.95,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    }),
-  );
-  const marker = new THREE.Mesh(
-    r.geometry("selection-ring", () => new THREE.RingGeometry(0.8, 1, 48)),
-    markerMaterial,
-  );
-  marker.rotation.x = -Math.PI / 2;
-  marker.visible = false;
-  scene.add(marker);
+  const marker = createSelectionMarker(r);
+  scene.add(marker.object);
   const destination = new THREE.Mesh(
     r.geometry("destination-ring", () => new THREE.RingGeometry(0.3, 0.42, 32)),
     r.own(
@@ -253,7 +243,7 @@ export async function createScene(
     crownBounds.set(id,bounds);
     mesh.updateWorldMatrix(true,false);
   });
-  const pick = (clientX: number, clientY: number) => {
+  const screenRay = (clientX: number, clientY: number) => {
     scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);
     const rect = canvas.getBoundingClientRect();
     pointer.set(
@@ -261,6 +251,9 @@ export async function createScene(
       1 - ((clientY - rect.top) / rect.height) * 2,
     );
     ray.setFromCamera(pointer, camera);
+  };
+  const pick = (clientX: number, clientY: number) => {
+    screenRay(clientX,clientY);
     const hit = ray.intersectObjects([...woodcraft.hits.objects(),...workshop.hits.objects(),...forestry.getPickTargets(),...props.values(),...gathering.hits.objects(),...camp.hits.filter(o=>o.userData.propActive!==false)], true)[0],
       terrainHit = ray.intersectObject(ground)[0];
     if(woodDropMode){const drop=ray.intersectObjects([...woodcraft.hits.objects(),ground],true)[0];if(drop)intent({kind:'wood-drop',x:drop.point.x,y:drop.point.y,z:drop.point.z});return;}
@@ -389,6 +382,22 @@ export async function createScene(
     camera,
     renderer,
     getYaw: () => yaw,
+    transferPoint(clientX:number,clientY:number,wood:boolean){
+      const rect=canvas.getBoundingClientRect();
+      if(clientX<rect.left||clientX>rect.right||clientY<rect.top||clientY>rect.bottom)return null;
+      screenRay(clientX,clientY);
+      const hit=wood?ray.intersectObjects([...woodcraft.hits.objects(),ground],true)[0]:ray.intersectObject(ground)[0];
+      return hit?{x:hit.point.x,y:hit.point.y,z:hit.point.z}:null;
+    },
+    transferItemAt(clientX:number,clientY:number){
+      screenRay(clientX,clientY);
+      const hit=ray.intersectObjects([...woodcraft.hits.objects(),...workshop.hits.objects()],true)[0],terrain=ray.intersectObject(ground)[0];
+      if(!hit||(terrain&&hit.distance>terrain.distance+.2))return null;
+      const woodId=woodcraft.hits.resolve(hit.object);
+      if(woodId)return {kind:'loose-wood' as const,id:woodId};
+      const id=workshop.hits.resolve(hit.object);
+      return id?{kind:'furniture' as const,id}:null;
+    },
     setWoodcraftDrop(value:boolean){woodDropMode=value;},
     setPlacement(value:PlacementDraft|null){placementMode=!!value;workshop.setPreview(value);},
     resetCamera() {
@@ -429,6 +438,7 @@ export async function createScene(
       characters.update(state,reducedMotion);
       forestry.alignContact(characters.getImpact());
       gathering.update(state.gathering);
+      cabinRepair.update(state.workshop.upgrades?.cabin?.level??0);
       const action=state.gathering.action,ritual=state.ritual,craft=state.workshop.job;
       cameraAction=craft?.phase==='working'?craft.id:action?.phase==='performing'?action.actionId:ritual?.phase==='performing'?`prayer-${ritual.startedAt}`:'';
       const framed=!!cameraAction && cameraOverride!==cameraAction && !reducedMotion && !scenePreset;
@@ -472,21 +482,7 @@ export async function createScene(
               ? TENT
               : Object.values(CAMP_PROPS).find(p=>p.id===state.selected)??null))
         : null;
-      marker.visible = !!selected;
-      if (selected) {
-        marker.position.set(
-          selected.x,
-          heightAt(selected.x, selected.z) + 0.07,
-          selected.z,
-        );
-        marker.scale.setScalar(
-          'sourceId' in selected ? 1.25 : "role" in selected && selected.role === "landmark"
-            ? 3.8
-            : "kind" in selected
-              ? 1.6
-              : 5,
-        );
-      }
+      marker.update(state.selected,selected);
       destination.visible = state.route.length > 0;
       if (state.route.length) {
         const p = state.route[state.route.length - 1];
@@ -577,6 +573,7 @@ export async function createScene(
       characters.dispose();
       wildlife.dispose();
       gathering.dispose();
+      cabinRepair.dispose();
       river.dispose();
       camp.dispose();
       environment.dispose();

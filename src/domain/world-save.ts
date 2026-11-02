@@ -63,7 +63,7 @@ export function validateWorldState(raw: unknown, context: SaveContext, mode: 'ru
     if(a.phase==='performing'||a.phase==='completed')requireValue(a.startedAt!==null,'ritual','缺少开始时间');
     if(a.phase==='approaching'||a.phase==='performing')requireValue(forestry.active===null && !['approaching','performing'].includes(gathering.action?.phase??'') && ['grove-altar','grove-altar:oracle'].includes(world.selected as string),'ritual','进行中祈祷与世界冲突');
   }
-  if(workshop.job)requireValue(world.selected===workshopTargetId(workshop.job.kind)&&!forestry.active&&!['approaching','performing'].includes(gathering.action?.phase??'')&&!(world.ritual&&['approaching','performing'].includes((world.ritual as {phase:string}).phase)),'workshop.job','操作状态冲突');
+  if(workshop.job)requireValue(world.selected===workshopTargetId(workshop.job.kind,workshop.job.targetId)&&!forestry.active&&!['approaching','performing'].includes(gathering.action?.phase??'')&&!(world.ritual&&['approaching','performing'].includes((world.ritual as {phase:string}).phase)),'workshop.job','操作状态冲突');
   const state = { ...structuredClone(world), woodcraft, workshop, inventory, forestry, gathering } as unknown as GameState;
   return { state, diagnostics };
 }

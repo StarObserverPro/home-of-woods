@@ -6,6 +6,7 @@ import {canStand} from './navigation.ts';
 import {heightAt,slopeAt} from '../world/surface.ts';
 import {canonicalInstances,withItemLocation} from './owned-items.ts';
 import {inventoryTransaction} from './inventory.ts';
+import {ITEM_REACH,interactionAccess} from './interaction-access.ts';
 export type PlacementDraft={instanceId:string;point:Point|null;rotation:number;reason:string};
 export const workstationColliders=():Collider[]=>[
   {id:WORKBENCH.id,x:WORKBENCH.x,z:WORKBENCH.z,halfX:WORKBENCH.halfX,halfZ:WORKBENCH.halfZ},
@@ -18,6 +19,8 @@ export function placementReason(state:GameState,id:string,p:Point,blockers:Colli
   const item=state.inventory.instances?.find(i=>i.instanceId===id);
   if(!item||item.definitionId!==SEAT_DEFINITION)return '这件物品暂时不能摆放。';
   if(!Number.isFinite(p.x)||!Number.isFinite(p.z))return '请选择有效的位置。';
+  if(Math.hypot(p.x-state.player.x,p.z-state.player.z)>ITEM_REACH)return '这里离你太远，请先走近再摆放。';
+  if(item.location.kind==='world'&&!interactionAccess(state,id)?.near)return '先走近这件家具，再移动它。';
   const r=WORKSHOP_RULES.seatRadius;
   if(!canStand(p,blockers.filter(c=>c.id!==id),r)||slopeAt(p.x,p.z)>WORKSHOP_RULES.maxPlacementSlope)return '这里有障碍、水面或坡度太陡，请换一块空地。';
   const samples=[...Array(8)].map((_,i)=>({x:p.x+Math.cos(i*Math.PI/4)*r,z:p.z+Math.sin(i*Math.PI/4)*r}));
@@ -37,6 +40,7 @@ export function placeFurniture(state:GameState,id:string,p:Point,rotation:number
 export function packFurniture(state:GameState,id:string){
   const item=state.inventory.instances?.find(i=>i.instanceId===id);
   if(!item||item.definitionId!==SEAT_DEFINITION||item.location.kind!=='world')return '这件物品不在场景中。';
+  if(!interactionAccess(state,id)?.near)return '先走近这件家具，再收回仓库。';
   const inventory=inventoryTransaction(state.inventory,[]);
   inventory.instances=canonicalInstances((inventory.instances??[]).map(i=>i.instanceId===id?withItemLocation(i,{kind:'inventory'}):i));
   state.inventory=inventory;if(state.selected===id)state.selected=null;state.route=[];return '已收回仓库，原来的词条和身份都保留了。';

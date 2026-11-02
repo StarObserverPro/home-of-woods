@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createState} from '../src/domain/state.ts';
 import {inventoryTransaction,inventoryCount} from '../src/domain/inventory.ts';
 import {beginWorkshop,advanceWorkshop,cancelWorkshop,workshopTarget,merchantStock,tradeBlueprint,workshopInput} from '../src/domain/workshop.ts';
-import {BLUEPRINTS,WORKBENCH,SEAT_DEFINITION} from '../src/content/workshop.ts';
+import {BLUEPRINTS,CRAFT_BLUEPRINTS,STARTER_BLUEPRINTS,WORKBENCH,SEAT_DEFINITION} from '../src/content/workshop.ts';
 import {CAMP_VISITOR} from '../src/content/characters.ts';
 import {canonicalInstances} from '../src/domain/owned-items.ts';
 import {placeFurniture,packFurniture,furnitureColliders,placementReason,workstationColliders} from '../src/domain/furniture-placement.ts';
@@ -38,7 +38,7 @@ test('fuel-only scraps cannot silently become crafting or barter material',()=>{
 test('one-mushroom offerings have deterministic varied responses, duplicates and no-plan outcomes',()=>{
  const a=stocked(),b=stocked();const messages=new Set<string>();
  for(let i=0;i<30;i++)for(const s of [a,b]){Object.assign(s.player,workshopTarget('offering'));beginWorkshop(s,'offering',[]);advanceWorkshop(s);s.time+=1.81;messages.add(advanceWorkshop(s)!);}
- assert.deepEqual(a,b);assert.equal(inventoryCount(a.inventory,'mushroom'),20);assert.equal(a.workshop.prayerCount,30);assert.equal(a.workshop.blueprints.length,2);assert.ok([...messages].some(m=>m.includes('这次没有')));assert.ok([...messages].some(m=>m.includes('已经学会')));
+ assert.deepEqual(a,b);assert.equal(inventoryCount(a.inventory,'mushroom'),20);assert.equal(a.workshop.prayerCount,30);assert.deepEqual(new Set(a.workshop.blueprints),new Set([...STARTER_BLUEPRINTS,...CRAFT_BLUEPRINTS.map(p=>p.id)]));assert.ok([...messages].some(m=>m.includes('这次没有')));assert.ok([...messages].some(m=>m.includes('已经学会')));
  assert.equal(advanceWorkshop(a),null);assert.equal(inventoryCount(a.inventory,'mushroom'),20);
 });
 test('merchant fixed stock survives same-day remount; exchange requires proximity, stock and one debit',()=>{

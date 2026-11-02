@@ -1,13 +1,16 @@
 import { WOODCRAFT, insideWoodcraft } from '../content/woodcraft.ts';
 import type { Vec3 } from '../content/woodcraft.ts';
 import type { GameState } from '../domain/state.ts';
-import { availableWoodCount, collectWood, transferWood, woodLabel } from '../domain/woodcraft.ts';
+import { availableWood, availableWoodCount, collectWood, transferWood, woodLabel } from '../domain/woodcraft.ts';
+import {stackKey} from '../domain/inventory.ts';
 import type { WoodPhysics } from '../physics/woodcraft.ts';
 export type WoodcraftSnapshot={available:number;count:number;queued:number;awake:number;near:boolean;ready:boolean;loading:boolean;error:string;dropping:boolean;items:{id:string;name:string}[]};
 export const emptyWoodcraftSnapshot = ():WoodcraftSnapshot=>({available:0,count:0,queued:0,awake:0,near:false,ready:false,loading:false,error:'',dropping:false,items:[]});
 /** Runtime cache, not a second world or inventory. Loading never debits materials. */
 export function createWoodcraftSession(state:GameState,notify:(message:string)=>void,loader=()=>import('../physics/woodcraft.ts').then(m=>m.createWoodPhysics())) {
   let engine:WoodPhysics|null=null, loading=false, error='', destroyed=false, generation=0, prepareRequested=false, dropping=false;
+  let activationRequested=false;
+  let dropKey:string|undefined;
   const distance=()=>Math.hypot(state.player.x-WOODCRAFT.x,state.player.z-WOODCRAFT.z);
   const near=()=>distance()<=WOODCRAFT.reach;
   function ensure(){
@@ -16,25 +19,25 @@ export function createWoodcraftSession(state:GameState,notify:(message:string)=>
     loader().then(value=>{if(destroyed||token!==generation){value.dispose();return;}engine=value;loading=false;})
       .catch(e=>{if(destroyed||token!==generation)return;loading=false;prepareRequested=false;error=e instanceof Error?e.message:'加载失败';notify('物理模块未能加载，库存没有扣除。可以重试。');});
   }
-  function reset(){generation++;engine?.dispose();engine=null;loading=false;error='';prepareRequested=false;dropping=false;}
+  function reset(){generation++;engine?.dispose();engine=null;loading=false;error='';prepareRequested=false;activationRequested=false;dropping=false;dropKey=undefined;}
   return {
-    activate(){ensure();},
-    requestPrepare(){if(destroyed)return;dropping=false;prepareRequested=true;ensure();},
-    beginDrop(){if(!near()||!engine||!availableWoodCount(state.inventory)||state.woodcraft.pieces.length>=WOODCRAFT.maxPieces)return false;dropping=true;return true;},
-    cancelDrop(){dropping=false;},
-    cancelRequest(){dropping=false;prepareRequested=false;},
+    activate(){activationRequested=true;error='';if(distance()<=WOODCRAFT.activateRadius)ensure();},
+    requestPrepare(){if(destroyed)return;dropping=false;prepareRequested=true;activationRequested=true;ensure();},
+    beginDrop(key?:string){if(!near()||!engine||!availableWood(state.inventory).some(s=>key===undefined||stackKey(s)===key)||state.woodcraft.pieces.length>=WOODCRAFT.maxPieces)return false;dropKey=key;dropping=true;return true;},
+    cancelDrop(){dropping=false;dropKey=undefined;},
+    cancelRequest(){dropping=false;dropKey=undefined;prepareRequested=false;activationRequested=false;},
     isDropping:()=>dropping,
     drop(p:Vec3){
       if(!dropping||!near()||!engine)return false;
       if(!insideWoodcraft(p)){notify('请点木料围框里面，木头会从上方落下。');return false;}
-      try {const count=transferWood(state,'one',p);if(!count)return false;dropping=false;notify('松手了。看看这根木头会停在哪里。');return true;}
+      try {const count=transferWood(state,'one',p,dropKey);if(!count)return false;dropping=false;dropKey=undefined;notify('木料已放下，落稳后也可以拖回仓库。');return true;}
       catch(e){notify(e instanceof Error?e.message:'这里不能投放。');return false;}
     },
     collect(id:string){if(!near()||!engine)return false;try{const result=collectWood(state,id);if(result)notify('已收回仓库，原来的品质和规格都保留了。');return result;}catch{notify('这份木料的目录信息暂不可用，原物品已保留。');return false;}},
     step(dt:number){
       if(destroyed)return;
       if(distance()>WOODCRAFT.unloadRadius){engine?.dispose();engine=null;dropping=false;return;}
-      if(!engine){if((state.woodcraft.pieces.length||prepareRequested)&&distance()<=WOODCRAFT.activateRadius&&!error)ensure();return;}
+      if(!engine){if((state.woodcraft.pieces.length||prepareRequested||activationRequested)&&distance()<=WOODCRAFT.activateRadius&&!error)ensure();return;}
       if(prepareRequested&&near()) {
         prepareRequested=false;
         const count=transferWood(state,'prepare');

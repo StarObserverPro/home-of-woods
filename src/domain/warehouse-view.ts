@@ -5,7 +5,7 @@ export type WarehouseItemView = {
   key: string; itemId: string; qualityId: string; qualityName: string; recognized: boolean;
   name: string; icon: string; symbol: 'branch' | 'mushroom' | 'wood' | 'unknown'; category: string;
   typeName: string; materialName: string; uses: string[]; specification: string;
-  quantity: number; description: string; source: string; tags: readonly string[];
+  quantity: number; movableWood:boolean; description: string; source: string; tags: readonly string[];
   processing: { id: string; name: string; outputs: string[]; station: string; status: string; parametersReady: boolean }[];
 };
 export type WarehouseView = { categories: { id: string; name: string }[]; items: WarehouseItemView[]; total: number; occupiedKinds: number };
@@ -30,7 +30,7 @@ export function warehouseSnapshot(state: { inventory: InventoryState }, registry
     description: recognized ? item!.description : '暂时无法识别这份物品。原有数量已保留，当前不可用于加工或交易。',
     source: recognized ? item!.source : '保留的库存记录',
     tags: recognized ? [...item!.tags, ...(item!.status === 'retired' ? ['旧版物品'] : [])] : ['待识别', '暂不可用'],
-    quantity: stack.quantity,
+    quantity: stack.quantity,movableWood:recognized&&['wood','branch'].includes(stack.itemId)&&!stack.wood?.reserved&&stack.quantity>0,
     processing: recognized ? registry.processing.forItem(stack.itemId).map(p => ({ id: p.processingId, name: p.name,
       outputs: p.outputs.map(o => registry.items.get(o.itemId)!.name), station: p.station,
       status: p.status === 'planned' ? '后续开放' : '已登记', parametersReady: p.durationSeconds !== null && [...p.inputs,...p.outputs].every(m=>m.quantity!==null),

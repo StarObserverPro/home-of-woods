@@ -14,6 +14,8 @@
 | src/scene/create-scene.ts、models.ts、resources.ts | 场景、相机、拾取、模型加载、共享 GPU 资源及销毁 |
 | src/scene/forestry-presentation.ts、ground-material.ts、environment.ts | 消费状态的挥斧倒树、规划地被、原创雪山、天空/PMREM 与原河面材质；不提交经济 |
 | src/ui/App.tsx | 读取快照并发意图；持有同一会话状态引用供重入，不另存余额或复制玩法规则 |
+| src/content/upgrades.ts、domain/upgrades.ts | 图纸升级路径、操作点、材料校验、实际投入账本和阶段；共用 workshop 任务与唯一世界存档 |
+| src/domain/interaction-access.ts、ui/useItemDrag.ts | 分离距离资格与材料资格；鼠标/触控发送同类取放意图，app 在松手时复核并调用原事务 |
 
 当前已有现有世界的 IndexedDB 存档与事务备份；完整日历、通用制作/交易/建筑事务模块及在线服务尚未实现。下面涉及这些功能的类型、service 与存档键是后续实现契约，不应作为已有接口调用。实际有限林业合同见 [forestry-r4](forestry-r4.md)，参数见 [PARAMETERS](../PARAMETERS.md)，回接状态见 [scope](scopes/m0-walkable-valley.md)。
 
@@ -98,6 +100,8 @@ R5d 回接：domain/scene-props 从 GameState.time 派生视觉时刻和篝火�
 主循环顺序：输入意图 → domain 固定步长/到期事项 → 快照同步 → 视觉更新 → render。玩法不依赖帧率；大幅休息按到期时间和稳定次序推进，不靠海量渲染帧补算。
 
 页面隐藏、显式暂停与图形上下文丢失时停止玩法和渲染；恢复重置帧时间基线。无离线补收益。普通面板的暂停行为由统一模式规定，组件不能各自启停时间。
+
+仓库侧栏是整理模式：人物、游戏时钟及制作/修缮进度暂停，同一循环仅推进局部木料固定步长并渲染，使拖出的木料能够落稳。开启仓库先取消未提交的点击投放/摆放草稿；关闭后恢复正常模式。没有增加独立 RAF 或第二个游戏时钟。
 
 start/resume 不叠加帧链；pause 取消待执行帧；destroy 幂等且销毁后不可复活。异步加载返回时检查生命周期，离场的资源应归还而非重新挂回。道具更新、输入、ResizeObserver、命中项、渲染目标与资源引用在卸载时清理。
 
