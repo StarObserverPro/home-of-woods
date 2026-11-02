@@ -73,3 +73,7 @@ erDiagram
 ## 木料规格版本更新
 
 本次世界 ruleset 升为 2，库存持久化切片 schema 升为 2；同规格批次、未知规格保留、旧来源迁移与原子选材约束见 [五动作与木料用途接入](ACTION_WOOD_INTEGRATION.md)。原历史证据不改写，新验证单独记录。
+
+## Woodcraft：世界规则 4
+
+新增根切片 woodcraft（nextId、prepared、pieces）。每个单根材料保存来源批次、完整位置/四元数、线/角速度、queued/loose 阶段和睡眠状态。该记录独占已从 inventory.stacks 扣除的材料，不能同时被制作消耗；家具 inventory.instances 不改。旧规则 1/2/3 补空切片，不造材料、不改变既有家具坐标。严格校验数量 1、身份唯一、ID 计数、有限数值、旋转单位长度、范围与 32 件上限；损坏和未来数据继续保护。读取不会重播搬运事务。物理缓存不写独立存档。参见 [操作和恢复边界](WOODCRAFT.md)。

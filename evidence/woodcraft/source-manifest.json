@@ -1,0 +1,27 @@
+{
+  "parent": "7bfc7499c1412dede54a3fab85c61a83c68f0674",
+  "verifiedTree": "c635391ef12c480ab8016f16935a1a840cf65e64",
+  "scope": "All 160 present source, test, tool, lockfile and license files compared against tested workspace: zero mismatches. Subsequent changes are documentation/evidence only.",
+  "changedRuntimeBlobs": {
+    "package-lock.json": "e7587ebbf0458617b31fa239ac8cd481cd404308",
+    "package.json": "f596cac1de411a251717f3d2c4c1cf26079dbcc5",
+    "src/app/runtime.ts": "f8a5eb53bfaef90bf56fae3a93c79b01304fe9c3",
+    "src/app/session-upgrade.ts": "bf153097221e98474c1e167a81df328a8bcba538",
+    "src/app/woodcraft-session.ts": "a9a43c48c04250ea98d120ae99ace25dcefe1c19",
+    "src/content/scene-props.ts": "10505f8868ecb3504bd74b1ad95b9ffa507690af",
+    "src/content/woodcraft.ts": "098bc4b43dc341fab81b069cdaf9cc3eb5974bce",
+    "src/content/world.ts": "36b03426a4d8b37f8fe8e42c3a63d1b0e387285f",
+    "src/domain/save-context.ts": "f2d6aa611613d16e6040d54d666347d43c3215de",
+    "src/domain/state.ts": "2d82e63d0e8290f9764397c0349aae0811ba21be",
+    "src/domain/woodcraft.ts": "9b024c2172a524fbb887cbe3737eeb8b23626f77",
+    "src/domain/world-save.ts": "38fa75f4f8ae39cadbac46ce9c75c9bad2a49b82",
+    "src/physics/woodcraft.ts": "dafc0680177c9a2a4cc1aea640665d2309e51772",
+    "src/scene/create-scene.ts": "95cfd2acb26a515e2668fc5938a1b0ac8c615086",
+    "src/scene/woodcraft-presentation.ts": "3895c676bc680407143a39d04ccf2c696d7753ea",
+    "src/ui/App.tsx": "0d8bcda5931e8788a2967d6676c0a02beb393119",
+    "src/ui/Woodcraft.tsx": "1bd3e44e8a2f7eb1da9ff7334f45c2afe32c00cb",
+    "src/ui/woodcraft.css": "9236463189c061922a0aa844ac8857193cc95b38",
+    "tests/woodcraft.test.ts": "68ed26687a9338390a0dcad4f9068bb2c84fd533",
+    "tools/audit-forest-intake.mjs": "4697304a6aa6ab0711613db3e442bfebc8d70e80"
+  }
+}
