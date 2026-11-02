@@ -1,0 +1,1493 @@
+{
+  "sourceCommit": "4fa64c5e9aa7600497b26bc3e7b0c185fe29c83b",
+  "backend": "GitHub Actions Chromium / SwiftShader",
+  "deviceLimit": "Viewport emulation only; not physical mobile GPU validation",
+  "frames": {
+    "desktop-pair": {
+      "time": 3.1499999999999937,
+      "wildlife": {
+        "active": 2,
+        "visible": 2,
+        "created": 2,
+        "released": 0,
+        "available": [
+          "wildlife.squirrel",
+          "wildlife.hare"
+        ],
+        "bones": 32,
+        "ids": [
+          "wildlife:v1:104729:wildlife.home.squirrel:0",
+          "wildlife:v1:104729:wildlife.home.hare:0"
+        ],
+        "destroyed": false
+      },
+      "encounters": [
+        {
+          "id": "wildlife:v1:104729:wildlife.home.squirrel:0",
+          "targetRef": {
+            "kind": "wildlife",
+            "encounterId": "wildlife:v1:104729:wildlife.home.squirrel:0"
+          },
+          "definitionId": "wildlife.squirrel",
+          "x": -43,
+          "z": -4,
+          "y": 21.5,
+          "facing": 0.7853981633974483,
+          "behavior": "idle",
+          "motionTag": "wildlife.idle",
+          "speed": 0,
+          "opacity": 1,
+          "capabilities": [],
+          "revision": 0
+        },
+        {
+          "id": "wildlife:v1:104729:wildlife.home.hare:0",
+          "targetRef": {
+            "kind": "wildlife",
+            "encounterId": "wildlife:v1:104729:wildlife.home.hare:0"
+          },
+          "definitionId": "wildlife.hare",
+          "x": -30,
+          "z": 5,
+          "y": 21.5,
+          "facing": 0.7853981633974483,
+          "behavior": "idle",
+          "motionTag": "wildlife.idle",
+          "speed": 0,
+          "opacity": 1,
+          "capabilities": [],
+          "revision": 0
+        }
+      ],
+      "resources": {
+        "geometries": 89,
+        "materials": 40,
+        "extras": 695,
+        "disposed": false
+      },
+      "drawCalls": 283,
+      "triangles": 1733286,
+      "gpu": {
+        "geometries": 141,
+        "textures": 18
+      },
+      "shaderErrors": 0,
+      "canvas": {
+        "width": 1365,
+        "height": 900
+      },
+      "appearance": {
+        "hour": 14,
+        "fire": false,
+        "altar": "ready",
+        "offering": "empty",
+        "reflections": true
+      },
+      "loop": {
+        "paused": true,
+        "destroyed": false,
+        "scheduled": false,
+        "executing": false,
+        "running": false,
+        "frames": 43
+      },
+      "graphicsBackend": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+    },
+    "desktop-squirrel": {
+      "time": 3.1499999999999937,
+      "wildlife": {
+        "active": 2,
+        "visible": 2,
+        "created": 2,
+        "released": 0,
+        "available": [
+          "wildlife.squirrel",
+          "wildlife.hare"
+        ],
+        "bones": 32,
+        "ids": [
+          "wildlife:v1:104729:wildlife.home.squirrel:0",
+          "wildlife:v1:104729:wildlife.home.hare:0"
+        ],
+        "destroyed": false
+      },
+      "encounters": [
+        {
+          "id": "wildlife:v1:104729:wildlife.home.squirrel:0",
+          "targetRef": {
+            "kind": "wildlife",
+            "encounterId": "wildlife:v1:104729:wildlife.home.squirrel:0"
+          },
+          "definitionId": "wildlife.squirrel",
+          "x": -43,
+          "z": -4,
+          "y": 21.5,
+          "facing": 0.7853981633974483,
+          "behavior": "idle",
+          "motionTag": "wildlife.idle",
+          "speed": 0,
+          "opacity": 1,
+          "capabilities": [],
+          "revision": 0
+        },
+        {
+          "id": "wildlife:v1:104729:wildlife.home.hare:0",
+          "targetRef": {
+            "kind": "wildlife",
+            "encounterId": "wildlife:v1:104729:wildlife.home.hare:0"
+          },
+          "definitionId": "wildlife.hare",
+          "x": -30,
+          "z": 5,
+          "y": 21.5,
+          "facing": 0.7853981633974483,
+          "behavior": "idle",
+          "motionTag": "wildlife.idle",
+          "speed": 0,
+          "opacity": 1,
+          "capabilities": [],
+          "revision": 0
+        }
+      ],
+      "resources": {
+        "geometries": 89,
+        "materials": 40,
+        "extras": 695,
+        "disposed": false
+      },
+      "drawCalls": 244,
+      "triangles": 1613042,
+      "gpu": {
+        "geometries": 141,
+        "textures": 18
+      },
+      "shaderErrors": 0,
+      "canvas": {
+        "width": 1365,
+        "height": 900
+      },
+      "appearance": {
+        "hour": 14,
+        "fire": false,
+        "altar": "ready",
+        "offering": "empty",
+        "reflections": true
+      },
+      "loop": {
+        "paused": true,
+        "destroyed": false,
+        "scheduled": false,
+        "executing": false,
+        "running": false,
+        "frames": 43
+      },
+      "graphicsBackend": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+    },
+    "desktop-hare": {
+      "time": 3.1499999999999937,
+      "wildlife": {
+        "active": 2,
+        "visible": 2,
+        "created": 2,
+        "released": 0,
+        "available": [
+          "wildlife.squirrel",
+          "wildlife.hare"
+        ],
+        "bones": 32,
+        "ids": [
+          "wildlife:v1:104729:wildlife.home.squirrel:0",
+          "wildlife:v1:104729:wildlife.home.hare:0"
+        ],
+        "destroyed": false
+      },
+      "encounters": [
+        {
+          "id": "wildlife:v1:104729:wildlife.home.squirrel:0",
+          "targetRef": {
+            "kind": "wildlife",
+            "encounterId": "wildlife:v1:104729:wildlife.home.squirrel:0"
+          },
+          "definitionId": "wildlife.squirrel",
+          "x": -43,
+          "z": -4,
+          "y": 21.5,
+          "facing": 0.7853981633974483,
+          "behavior": "idle",
+          "motionTag": "wildlife.idle",
+          "speed": 0,
+          "opacity": 1,
+          "capabilities": [],
+          "revision": 0
+        },
+        {
+          "id": "wildlife:v1:104729:wildlife.home.hare:0",
+          "targetRef": {
+            "kind": "wildlife",
+            "encounterId": "wildlife:v1:104729:wildlife.home.hare:0"
+          },
+          "definitionId": "wildlife.hare",
+          "x": -30,
+          "z": 5,
+          "y": 21.5,
+          "facing": 0.7853981633974483,
+          "behavior": "idle",
+          "motionTag": "wildlife.idle",
+          "speed": 0,
+          "opacity": 1,
+          "capabilities": [],
+          "revision": 0
+        }
+      ],
+      "resources": {
+        "geometries": 89,
+        "materials": 40,
+        "extras": 695,
+        "disposed": false
+      },
+      "drawCalls": 222,
+      "triangles": 1669880,
+      "gpu": {
+        "geometries": 142,
+        "textures": 18
+      },
+      "shaderErrors": 0,
+      "canvas": {
+        "width": 1365,
+        "height": 900
+      },
+      "appearance": {
+        "hour": 14,
+        "fire": false,
+        "altar": "ready",
+        "offering": "empty",
+        "reflections": true
+      },
+      "loop": {
+        "paused": true,
+        "destroyed": false,
+        "scheduled": false,
+        "executing": false,
+        "running": false,
+        "frames": 43
+      },
+      "graphicsBackend": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+    },
+    "desktop-night": {
+      "time": 3.1499999999999937,
+      "wildlife": {
+        "active": 2,
+        "visible": 0,
+        "created": 2,
+        "released": 0,
+        "available": [
+          "wildlife.squirrel",
+          "wildlife.hare"
+        ],
+        "bones": 32,
+        "ids": [
+          "wildlife:v1:104729:wildlife.home.squirrel:0",
+          "wildlife:v1:104729:wildlife.home.hare:0"
+        ],
+        "destroyed": false
+      },
+      "encounters": [
+        {
+          "id": "wildlife:v1:104729:wildlife.home.squirrel:0",
+          "targetRef": {
+            "kind": "wildlife",
+            "encounterId": "wildlife:v1:104729:wildlife.home.squirrel:0"
+          },
+          "definitionId": "wildlife.squirrel",
+          "x": -43,
+          "z": -4,
+          "y": 21.5,
+          "facing": 0.7853981633974483,
+          "behavior": "idle",
+          "motionTag": "wildlife.idle",
+          "speed": 0,
+          "opacity": 1,
+          "capabilities": [],
+          "revision": 0
+        },
+        {
+          "id": "wildlife:v1:104729:wildlife.home.hare:0",
+          "targetRef": {
+            "kind": "wildlife",
+            "encounterId": "wildlife:v1:104729:wildlife.home.hare:0"
+          },
+          "definitionId": "wildlife.hare",
+          "x": -30,
+          "z": 5,
+          "y": 21.5,
+          "facing": 0.7853981633974483,
+          "behavior": "idle",
+          "motionTag": "wildlife.idle",
+          "speed": 0,
+          "opacity": 1,
+          "capabilities": [],
+          "revision": 0
+        }
+      ],
+      "resources": {
+        "geometries": 89,
+        "materials": 40,
+        "extras": 695,
+        "disposed": false
+      },
+      "drawCalls": 282,
+      "triangles": 1732720,
+      "gpu": {
+        "geometries": 147,
+        "textures": 18
+      },
+      "shaderErrors": 0,
+      "canvas": {
+        "width": 1365,
+        "height": 900
+      },
+      "appearance": {
+        "hour": 23,
+        "fire": true,
+        "altar": "ready",
+        "offering": "empty",
+        "reflections": true
+      },
+      "loop": {
+        "paused": true,
+        "destroyed": false,
+        "scheduled": false,
+        "executing": false,
+        "running": false,
+        "frames": 43
+      },
+      "graphicsBackend": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+    },
+    "mobile-pair": {
+      "time": 2.2999999999999967,
+      "wildlife": {
+        "active": 2,
+        "visible": 2,
+        "created": 2,
+        "released": 0,
+        "available": [
+          "wildlife.squirrel",
+          "wildlife.hare"
+        ],
+        "bones": 32,
+        "ids": [
+          "wildlife:v1:104729:wildlife.home.squirrel:0",
+          "wildlife:v1:104729:wildlife.home.hare:0"
+        ],
+        "destroyed": false
+      },
+      "encounters": [
+        {
+          "id": "wildlife:v1:104729:wildlife.home.squirrel:0",
+          "targetRef": {
+            "kind": "wildlife",
+            "encounterId": "wildlife:v1:104729:wildlife.home.squirrel:0"
+          },
+          "definitionId": "wildlife.squirrel",
+          "x": -43,
+          "z": -4,
+          "y": 21.5,
+          "facing": 0.7853981633974483,
+          "behavior": "idle",
+          "motionTag": "wildlife.idle",
+          "speed": 0,
+          "opacity": 1,
+          "capabilities": [],
+          "revision": 0
+        },
+        {
+          "id": "wildlife:v1:104729:wildlife.home.hare:0",
+          "targetRef": {
+            "kind": "wildlife",
+            "encounterId": "wildlife:v1:104729:wildlife.home.hare:0"
+          },
+          "definitionId": "wildlife.hare",
+          "x": -30,
+          "z": 5,
+          "y": 21.5,
+          "facing": 0.7853981633974483,
+          "behavior": "idle",
+          "motionTag": "wildlife.idle",
+          "speed": 0,
+          "opacity": 1,
+          "capabilities": [],
+          "revision": 0
+        }
+      ],
+      "resources": {
+        "geometries": 89,
+        "materials": 40,
+        "extras": 695,
+        "disposed": false
+      },
+      "drawCalls": 240,
+      "triangles": 1659073,
+      "gpu": {
+        "geometries": 136,
+        "textures": 17
+      },
+      "shaderErrors": 0,
+      "canvas": {
+        "width": 390,
+        "height": 844
+      },
+      "appearance": {
+        "hour": 14,
+        "fire": false,
+        "altar": "ready",
+        "offering": "empty",
+        "reflections": true
+      },
+      "loop": {
+        "paused": true,
+        "destroyed": false,
+        "scheduled": false,
+        "executing": false,
+        "running": false,
+        "frames": 33
+      },
+      "graphicsBackend": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+    },
+    "mobile-hare": {
+      "time": 2.2999999999999967,
+      "wildlife": {
+        "active": 2,
+        "visible": 2,
+        "created": 2,
+        "released": 0,
+        "available": [
+          "wildlife.squirrel",
+          "wildlife.hare"
+        ],
+        "bones": 32,
+        "ids": [
+          "wildlife:v1:104729:wildlife.home.squirrel:0",
+          "wildlife:v1:104729:wildlife.home.hare:0"
+        ],
+        "destroyed": false
+      },
+      "encounters": [
+        {
+          "id": "wildlife:v1:104729:wildlife.home.squirrel:0",
+          "targetRef": {
+            "kind": "wildlife",
+            "encounterId": "wildlife:v1:104729:wildlife.home.squirrel:0"
+          },
+          "definitionId": "wildlife.squirrel",
+          "x": -43,
+          "z": -4,
+          "y": 21.5,
+          "facing": 0.7853981633974483,
+          "behavior": "idle",
+          "motionTag": "wildlife.idle",
+          "speed": 0,
+          "opacity": 1,
+          "capabilities": [],
+          "revision": 0
+        },
+        {
+          "id": "wildlife:v1:104729:wildlife.home.hare:0",
+          "targetRef": {
+            "kind": "wildlife",
+            "encounterId": "wildlife:v1:104729:wildlife.home.hare:0"
+          },
+          "definitionId": "wildlife.hare",
+          "x": -30,
+          "z": 5,
+          "y": 21.5,
+          "facing": 0.7853981633974483,
+          "behavior": "idle",
+          "motionTag": "wildlife.idle",
+          "speed": 0,
+          "opacity": 1,
+          "capabilities": [],
+          "revision": 0
+        }
+      ],
+      "resources": {
+        "geometries": 89,
+        "materials": 40,
+        "extras": 695,
+        "disposed": false
+      },
+      "drawCalls": 205,
+      "triangles": 1661303,
+      "gpu": {
+        "geometries": 138,
+        "textures": 17
+      },
+      "shaderErrors": 0,
+      "canvas": {
+        "width": 390,
+        "height": 844
+      },
+      "appearance": {
+        "hour": 14,
+        "fire": false,
+        "altar": "ready",
+        "offering": "empty",
+        "reflections": true
+      },
+      "loop": {
+        "paused": true,
+        "destroyed": false,
+        "scheduled": false,
+        "executing": false,
+        "running": false,
+        "frames": 33
+      },
+      "graphicsBackend": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+    }
+  },
+  "reentries": [
+    {
+      "released": {
+        "time": 3.1499999999999937,
+        "wildlife": {
+          "active": 0,
+          "visible": 0,
+          "created": 2,
+          "released": 2,
+          "available": [
+            "wildlife.squirrel",
+            "wildlife.hare"
+          ],
+          "bones": 0,
+          "ids": [],
+          "destroyed": true
+        },
+        "encounters": [
+          {
+            "id": "wildlife:v1:104729:wildlife.home.squirrel:0",
+            "targetRef": {
+              "kind": "wildlife",
+              "encounterId": "wildlife:v1:104729:wildlife.home.squirrel:0"
+            },
+            "definitionId": "wildlife.squirrel",
+            "x": -43,
+            "z": -4,
+            "y": 21.5,
+            "facing": 0.7853981633974483,
+            "behavior": "idle",
+            "motionTag": "wildlife.idle",
+            "speed": 0,
+            "opacity": 1,
+            "capabilities": [],
+            "revision": 0
+          },
+          {
+            "id": "wildlife:v1:104729:wildlife.home.hare:0",
+            "targetRef": {
+              "kind": "wildlife",
+              "encounterId": "wildlife:v1:104729:wildlife.home.hare:0"
+            },
+            "definitionId": "wildlife.hare",
+            "x": -30,
+            "z": 5,
+            "y": 21.5,
+            "facing": 0.7853981633974483,
+            "behavior": "idle",
+            "motionTag": "wildlife.idle",
+            "speed": 0,
+            "opacity": 1,
+            "capabilities": [],
+            "revision": 0
+          }
+        ],
+        "resources": {
+          "geometries": 0,
+          "materials": 0,
+          "extras": 0,
+          "disposed": true
+        },
+        "drawCalls": 282,
+        "triangles": 1732720,
+        "gpu": {
+          "geometries": 0,
+          "textures": 1
+        },
+        "shaderErrors": 0,
+        "canvas": {
+          "width": 1365,
+          "height": 900
+        },
+        "appearance": {
+          "hour": 23,
+          "fire": true,
+          "altar": "ready",
+          "offering": "empty",
+          "reflections": true
+        },
+        "loop": {
+          "paused": true,
+          "destroyed": true,
+          "scheduled": false,
+          "executing": false,
+          "running": false,
+          "frames": 43
+        },
+        "graphicsBackend": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      },
+      "current": {
+        "time": 3.2499999999999933,
+        "wildlife": {
+          "active": 2,
+          "visible": 2,
+          "created": 2,
+          "released": 0,
+          "available": [
+            "wildlife.squirrel",
+            "wildlife.hare"
+          ],
+          "bones": 32,
+          "ids": [
+            "wildlife:v1:104729:wildlife.home.squirrel:0",
+            "wildlife:v1:104729:wildlife.home.hare:0"
+          ],
+          "destroyed": false
+        },
+        "encounters": [
+          {
+            "id": "wildlife:v1:104729:wildlife.home.squirrel:0",
+            "targetRef": {
+              "kind": "wildlife",
+              "encounterId": "wildlife:v1:104729:wildlife.home.squirrel:0"
+            },
+            "definitionId": "wildlife.squirrel",
+            "x": -43,
+            "z": -4,
+            "y": 21.5,
+            "facing": 0.7853981633974483,
+            "behavior": "idle",
+            "motionTag": "wildlife.idle",
+            "speed": 0,
+            "opacity": 1,
+            "capabilities": [],
+            "revision": 0
+          },
+          {
+            "id": "wildlife:v1:104729:wildlife.home.hare:0",
+            "targetRef": {
+              "kind": "wildlife",
+              "encounterId": "wildlife:v1:104729:wildlife.home.hare:0"
+            },
+            "definitionId": "wildlife.hare",
+            "x": -30,
+            "z": 5,
+            "y": 21.5,
+            "facing": 0.7853981633974483,
+            "behavior": "idle",
+            "motionTag": "wildlife.idle",
+            "speed": 0,
+            "opacity": 1,
+            "capabilities": [],
+            "revision": 0
+          }
+        ],
+        "resources": {
+          "geometries": 89,
+          "materials": 40,
+          "extras": 695,
+          "disposed": false
+        },
+        "drawCalls": 637,
+        "triangles": 2170447,
+        "gpu": {
+          "geometries": 141,
+          "textures": 18
+        },
+        "shaderErrors": 0,
+        "canvas": {
+          "width": 1365,
+          "height": 900
+        },
+        "appearance": {
+          "hour": 14.065,
+          "fire": false,
+          "altar": "ready",
+          "offering": "empty",
+          "reflections": true
+        },
+        "loop": {
+          "paused": false,
+          "destroyed": false,
+          "scheduled": true,
+          "executing": false,
+          "running": true,
+          "frames": 2
+        },
+        "graphicsBackend": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      }
+    },
+    {
+      "released": {
+        "time": 3.349999999999993,
+        "wildlife": {
+          "active": 0,
+          "visible": 0,
+          "created": 2,
+          "released": 2,
+          "available": [
+            "wildlife.squirrel",
+            "wildlife.hare"
+          ],
+          "bones": 0,
+          "ids": [],
+          "destroyed": true
+        },
+        "encounters": [
+          {
+            "id": "wildlife:v1:104729:wildlife.home.squirrel:0",
+            "targetRef": {
+              "kind": "wildlife",
+              "encounterId": "wildlife:v1:104729:wildlife.home.squirrel:0"
+            },
+            "definitionId": "wildlife.squirrel",
+            "x": -43,
+            "z": -4,
+            "y": 21.5,
+            "facing": 0.7853981633974483,
+            "behavior": "idle",
+            "motionTag": "wildlife.idle",
+            "speed": 0,
+            "opacity": 1,
+            "capabilities": [],
+            "revision": 0
+          },
+          {
+            "id": "wildlife:v1:104729:wildlife.home.hare:0",
+            "targetRef": {
+              "kind": "wildlife",
+              "encounterId": "wildlife:v1:104729:wildlife.home.hare:0"
+            },
+            "definitionId": "wildlife.hare",
+            "x": -30,
+            "z": 5,
+            "y": 21.5,
+            "facing": 0.7853981633974483,
+            "behavior": "idle",
+            "motionTag": "wildlife.idle",
+            "speed": 0,
+            "opacity": 1,
+            "capabilities": [],
+            "revision": 0
+          }
+        ],
+        "resources": {
+          "geometries": 0,
+          "materials": 0,
+          "extras": 0,
+          "disposed": true
+        },
+        "drawCalls": 362,
+        "triangles": 1134576,
+        "gpu": {
+          "geometries": 0,
+          "textures": 1
+        },
+        "shaderErrors": 0,
+        "canvas": {
+          "width": 1365,
+          "height": 900
+        },
+        "appearance": {
+          "hour": 14.067,
+          "fire": false,
+          "altar": "ready",
+          "offering": "empty",
+          "reflections": true
+        },
+        "loop": {
+          "paused": true,
+          "destroyed": true,
+          "scheduled": false,
+          "executing": false,
+          "running": false,
+          "frames": 4
+        },
+        "graphicsBackend": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      },
+      "current": {
+        "time": 3.4499999999999926,
+        "wildlife": {
+          "active": 2,
+          "visible": 2,
+          "created": 2,
+          "released": 0,
+          "available": [
+            "wildlife.squirrel",
+            "wildlife.hare"
+          ],
+          "bones": 32,
+          "ids": [
+            "wildlife:v1:104729:wildlife.home.squirrel:0",
+            "wildlife:v1:104729:wildlife.home.hare:0"
+          ],
+          "destroyed": false
+        },
+        "encounters": [
+          {
+            "id": "wildlife:v1:104729:wildlife.home.squirrel:0",
+            "targetRef": {
+              "kind": "wildlife",
+              "encounterId": "wildlife:v1:104729:wildlife.home.squirrel:0"
+            },
+            "definitionId": "wildlife.squirrel",
+            "x": -43,
+            "z": -4,
+            "y": 21.5,
+            "facing": 0.7853981633974483,
+            "behavior": "idle",
+            "motionTag": "wildlife.idle",
+            "speed": 0,
+            "opacity": 1,
+            "capabilities": [],
+            "revision": 0
+          },
+          {
+            "id": "wildlife:v1:104729:wildlife.home.hare:0",
+            "targetRef": {
+              "kind": "wildlife",
+              "encounterId": "wildlife:v1:104729:wildlife.home.hare:0"
+            },
+            "definitionId": "wildlife.hare",
+            "x": -30,
+            "z": 5,
+            "y": 21.5,
+            "facing": 0.7853981633974483,
+            "behavior": "idle",
+            "motionTag": "wildlife.idle",
+            "speed": 0,
+            "opacity": 1,
+            "capabilities": [],
+            "revision": 0
+          }
+        ],
+        "resources": {
+          "geometries": 89,
+          "materials": 40,
+          "extras": 695,
+          "disposed": false
+        },
+        "drawCalls": 637,
+        "triangles": 2170447,
+        "gpu": {
+          "geometries": 141,
+          "textures": 18
+        },
+        "shaderErrors": 0,
+        "canvas": {
+          "width": 1365,
+          "height": 900
+        },
+        "appearance": {
+          "hour": 14.068999999999999,
+          "fire": false,
+          "altar": "ready",
+          "offering": "empty",
+          "reflections": true
+        },
+        "loop": {
+          "paused": false,
+          "destroyed": false,
+          "scheduled": true,
+          "executing": false,
+          "running": true,
+          "frames": 2
+        },
+        "graphicsBackend": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      }
+    },
+    {
+      "released": {
+        "time": 3.7499999999999916,
+        "wildlife": {
+          "active": 0,
+          "visible": 0,
+          "created": 2,
+          "released": 2,
+          "available": [
+            "wildlife.squirrel",
+            "wildlife.hare"
+          ],
+          "bones": 0,
+          "ids": [],
+          "destroyed": true
+        },
+        "encounters": [
+          {
+            "id": "wildlife:v1:104729:wildlife.home.squirrel:0",
+            "targetRef": {
+              "kind": "wildlife",
+              "encounterId": "wildlife:v1:104729:wildlife.home.squirrel:0"
+            },
+            "definitionId": "wildlife.squirrel",
+            "x": -43,
+            "z": -4,
+            "y": 21.5,
+            "facing": 0.7853981633974483,
+            "behavior": "idle",
+            "motionTag": "wildlife.idle",
+            "speed": 0,
+            "opacity": 1,
+            "capabilities": [],
+            "revision": 0
+          },
+          {
+            "id": "wildlife:v1:104729:wildlife.home.hare:0",
+            "targetRef": {
+              "kind": "wildlife",
+              "encounterId": "wildlife:v1:104729:wildlife.home.hare:0"
+            },
+            "definitionId": "wildlife.hare",
+            "x": -30.042647783345927,
+            "z": 4.887834200508003,
+            "y": 21.5,
+            "facing": -2.7782526144244675,
+            "behavior": "walk",
+            "motionTag": "wildlife.move",
+            "speed": 0.9,
+            "opacity": 1,
+            "capabilities": [],
+            "revision": 1
+          }
+        ],
+        "resources": {
+          "geometries": 0,
+          "materials": 0,
+          "extras": 0,
+          "disposed": true
+        },
+        "drawCalls": 361,
+        "triangles": 1133652,
+        "gpu": {
+          "geometries": 0,
+          "textures": 1
+        },
+        "shaderErrors": 0,
+        "canvas": {
+          "width": 1365,
+          "height": 900
+        },
+        "appearance": {
+          "hour": 14.075,
+          "fire": false,
+          "altar": "ready",
+          "offering": "empty",
+          "reflections": true
+        },
+        "loop": {
+          "paused": true,
+          "destroyed": true,
+          "scheduled": false,
+          "executing": false,
+          "running": false,
+          "frames": 6
+        },
+        "graphicsBackend": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      },
+      "current": {
+        "time": 3.7833333333333248,
+        "wildlife": {
+          "active": 2,
+          "visible": 2,
+          "created": 2,
+          "released": 0,
+          "available": [
+            "wildlife.squirrel",
+            "wildlife.hare"
+          ],
+          "bones": 32,
+          "ids": [
+            "wildlife:v1:104729:wildlife.home.squirrel:0",
+            "wildlife:v1:104729:wildlife.home.hare:0"
+          ],
+          "destroyed": false
+        },
+        "encounters": [
+          {
+            "id": "wildlife:v1:104729:wildlife.home.squirrel:0",
+            "targetRef": {
+              "kind": "wildlife",
+              "encounterId": "wildlife:v1:104729:wildlife.home.squirrel:0"
+            },
+            "definitionId": "wildlife.squirrel",
+            "x": -43,
+            "z": -4,
+            "y": 21.5,
+            "facing": 0.7853981633974483,
+            "behavior": "idle",
+            "motionTag": "wildlife.idle",
+            "speed": 0,
+            "opacity": 1,
+            "capabilities": [],
+            "revision": 0
+          },
+          {
+            "id": "wildlife:v1:104729:wildlife.home.hare:0",
+            "targetRef": {
+              "kind": "wildlife",
+              "encounterId": "wildlife:v1:104729:wildlife.home.hare:0"
+            },
+            "definitionId": "wildlife.hare",
+            "x": -30.05330972918241,
+            "z": 4.859792750635004,
+            "y": 21.5,
+            "facing": -2.778252614424469,
+            "behavior": "walk",
+            "motionTag": "wildlife.move",
+            "speed": 0.9,
+            "opacity": 1,
+            "capabilities": [],
+            "revision": 1
+          }
+        ],
+        "resources": {
+          "geometries": 89,
+          "materials": 40,
+          "extras": 695,
+          "disposed": false
+        },
+        "drawCalls": 637,
+        "triangles": 2170447,
+        "gpu": {
+          "geometries": 141,
+          "textures": 18
+        },
+        "shaderErrors": 0,
+        "canvas": {
+          "width": 1365,
+          "height": 900
+        },
+        "appearance": {
+          "hour": 14.075666666666667,
+          "fire": false,
+          "altar": "ready",
+          "offering": "empty",
+          "reflections": true
+        },
+        "loop": {
+          "paused": false,
+          "destroyed": false,
+          "scheduled": true,
+          "executing": false,
+          "running": true,
+          "frames": 2
+        },
+        "graphicsBackend": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      }
+    },
+    {
+      "released": {
+        "time": 3.899999999999991,
+        "wildlife": {
+          "active": 0,
+          "visible": 0,
+          "created": 2,
+          "released": 2,
+          "available": [
+            "wildlife.squirrel",
+            "wildlife.hare"
+          ],
+          "bones": 0,
+          "ids": [],
+          "destroyed": true
+        },
+        "encounters": [
+          {
+            "id": "wildlife:v1:104729:wildlife.home.squirrel:0",
+            "targetRef": {
+              "kind": "wildlife",
+              "encounterId": "wildlife:v1:104729:wildlife.home.squirrel:0"
+            },
+            "definitionId": "wildlife.squirrel",
+            "x": -43,
+            "z": -4,
+            "y": 21.5,
+            "facing": 0.7853981633974483,
+            "behavior": "idle",
+            "motionTag": "wildlife.idle",
+            "speed": 0,
+            "opacity": 1,
+            "capabilities": [],
+            "revision": 0
+          },
+          {
+            "id": "wildlife:v1:104729:wildlife.home.hare:0",
+            "targetRef": {
+              "kind": "wildlife",
+              "encounterId": "wildlife:v1:104729:wildlife.home.hare:0"
+            },
+            "definitionId": "wildlife.hare",
+            "x": -30.090626539610096,
+            "z": 4.761647676079506,
+            "y": 21.5,
+            "facing": -2.7782526144244755,
+            "behavior": "walk",
+            "motionTag": "wildlife.move",
+            "speed": 0.9,
+            "opacity": 1,
+            "capabilities": [],
+            "revision": 1
+          }
+        ],
+        "resources": {
+          "geometries": 0,
+          "materials": 0,
+          "extras": 0,
+          "disposed": true
+        },
+        "drawCalls": 362,
+        "triangles": 1134576,
+        "gpu": {
+          "geometries": 0,
+          "textures": 1
+        },
+        "shaderErrors": 0,
+        "canvas": {
+          "width": 1365,
+          "height": 900
+        },
+        "appearance": {
+          "hour": 14.078,
+          "fire": false,
+          "altar": "ready",
+          "offering": "empty",
+          "reflections": true
+        },
+        "loop": {
+          "paused": true,
+          "destroyed": true,
+          "scheduled": false,
+          "executing": false,
+          "running": false,
+          "frames": 4
+        },
+        "graphicsBackend": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      },
+      "current": {
+        "time": 3.9999999999999907,
+        "wildlife": {
+          "active": 2,
+          "visible": 2,
+          "created": 2,
+          "released": 0,
+          "available": [
+            "wildlife.squirrel",
+            "wildlife.hare"
+          ],
+          "bones": 32,
+          "ids": [
+            "wildlife:v1:104729:wildlife.home.squirrel:0",
+            "wildlife:v1:104729:wildlife.home.hare:0"
+          ],
+          "destroyed": false
+        },
+        "encounters": [
+          {
+            "id": "wildlife:v1:104729:wildlife.home.squirrel:0",
+            "targetRef": {
+              "kind": "wildlife",
+              "encounterId": "wildlife:v1:104729:wildlife.home.squirrel:0"
+            },
+            "definitionId": "wildlife.squirrel",
+            "x": -43,
+            "z": -4,
+            "y": 21.5,
+            "facing": 0.7853981633974483,
+            "behavior": "idle",
+            "motionTag": "wildlife.idle",
+            "speed": 0,
+            "opacity": 1,
+            "capabilities": [],
+            "revision": 0
+          },
+          {
+            "id": "wildlife:v1:104729:wildlife.home.hare:0",
+            "targetRef": {
+              "kind": "wildlife",
+              "encounterId": "wildlife:v1:104729:wildlife.home.hare:0"
+            },
+            "definitionId": "wildlife.hare",
+            "x": -30.12261237711954,
+            "z": 4.677523326460508,
+            "y": 21.5,
+            "facing": -2.778252614424482,
+            "behavior": "walk",
+            "motionTag": "wildlife.move",
+            "speed": 0.9,
+            "opacity": 1,
+            "capabilities": [],
+            "revision": 1
+          }
+        ],
+        "resources": {
+          "geometries": 89,
+          "materials": 40,
+          "extras": 695,
+          "disposed": false
+        },
+        "drawCalls": 637,
+        "triangles": 2170447,
+        "gpu": {
+          "geometries": 141,
+          "textures": 18
+        },
+        "shaderErrors": 0,
+        "canvas": {
+          "width": 1365,
+          "height": 900
+        },
+        "appearance": {
+          "hour": 14.08,
+          "fire": false,
+          "altar": "ready",
+          "offering": "empty",
+          "reflections": true
+        },
+        "loop": {
+          "paused": false,
+          "destroyed": false,
+          "scheduled": true,
+          "executing": false,
+          "running": true,
+          "frames": 2
+        },
+        "graphicsBackend": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      }
+    },
+    {
+      "released": {
+        "time": 4.39999999999999,
+        "wildlife": {
+          "active": 0,
+          "visible": 0,
+          "created": 2,
+          "released": 2,
+          "available": [
+            "wildlife.squirrel",
+            "wildlife.hare"
+          ],
+          "bones": 0,
+          "ids": [],
+          "destroyed": true
+        },
+        "encounters": [
+          {
+            "id": "wildlife:v1:104729:wildlife.home.squirrel:0",
+            "targetRef": {
+              "kind": "wildlife",
+              "encounterId": "wildlife:v1:104729:wildlife.home.squirrel:0"
+            },
+            "definitionId": "wildlife.squirrel",
+            "x": -42.94219914547475,
+            "z": -3.9343089715702915,
+            "y": 21.5,
+            "facing": 0.7215926446586234,
+            "behavior": "walk",
+            "motionTag": "wildlife.move",
+            "speed": 1.05,
+            "opacity": 1,
+            "capabilities": [],
+            "revision": 1
+          },
+          {
+            "id": "wildlife:v1:104729:wildlife.home.hare:0",
+            "targetRef": {
+              "kind": "wildlife",
+              "encounterId": "wildlife:v1:104729:wildlife.home.hare:0"
+            },
+            "definitionId": "wildlife.hare",
+            "x": -30.250555727157323,
+            "z": 4.3410259279845045,
+            "y": 21.5,
+            "facing": -2.778252614424519,
+            "behavior": "walk",
+            "motionTag": "wildlife.move",
+            "speed": 0.9,
+            "opacity": 1,
+            "capabilities": [],
+            "revision": 1
+          }
+        ],
+        "resources": {
+          "geometries": 0,
+          "materials": 0,
+          "extras": 0,
+          "disposed": true
+        },
+        "drawCalls": 361,
+        "triangles": 1133652,
+        "gpu": {
+          "geometries": 0,
+          "textures": 1
+        },
+        "shaderErrors": 0,
+        "canvas": {
+          "width": 1365,
+          "height": 900
+        },
+        "appearance": {
+          "hour": 14.088,
+          "fire": false,
+          "altar": "ready",
+          "offering": "empty",
+          "reflections": true
+        },
+        "loop": {
+          "paused": true,
+          "destroyed": true,
+          "scheduled": false,
+          "executing": false,
+          "running": false,
+          "frames": 7
+        },
+        "graphicsBackend": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      },
+      "current": {
+        "time": 4.433333333333323,
+        "wildlife": {
+          "active": 2,
+          "visible": 2,
+          "created": 2,
+          "released": 0,
+          "available": [
+            "wildlife.squirrel",
+            "wildlife.hare"
+          ],
+          "bones": 32,
+          "ids": [
+            "wildlife:v1:104729:wildlife.home.squirrel:0",
+            "wildlife:v1:104729:wildlife.home.hare:0"
+          ],
+          "destroyed": false
+        },
+        "encounters": [
+          {
+            "id": "wildlife:v1:104729:wildlife.home.squirrel:0",
+            "targetRef": {
+              "kind": "wildlife",
+              "encounterId": "wildlife:v1:104729:wildlife.home.squirrel:0"
+            },
+            "definitionId": "wildlife.squirrel",
+            "x": -42.919078803664654,
+            "z": -3.908032560198408,
+            "y": 21.5,
+            "facing": 0.7215926446586214,
+            "behavior": "walk",
+            "motionTag": "wildlife.move",
+            "speed": 1.05,
+            "opacity": 1,
+            "capabilities": [],
+            "revision": 1
+          },
+          {
+            "id": "wildlife:v1:104729:wildlife.home.hare:0",
+            "targetRef": {
+              "kind": "wildlife",
+              "encounterId": "wildlife:v1:104729:wildlife.home.hare:0"
+            },
+            "definitionId": "wildlife.hare",
+            "x": -30.261217672993805,
+            "z": 4.312984478111503,
+            "y": 21.5,
+            "facing": -2.7782526144245234,
+            "behavior": "walk",
+            "motionTag": "wildlife.move",
+            "speed": 0.9,
+            "opacity": 1,
+            "capabilities": [],
+            "revision": 1
+          }
+        ],
+        "resources": {
+          "geometries": 89,
+          "materials": 40,
+          "extras": 695,
+          "disposed": false
+        },
+        "drawCalls": 637,
+        "triangles": 2170447,
+        "gpu": {
+          "geometries": 141,
+          "textures": 18
+        },
+        "shaderErrors": 0,
+        "canvas": {
+          "width": 1365,
+          "height": 900
+        },
+        "appearance": {
+          "hour": 14.088666666666667,
+          "fire": false,
+          "altar": "ready",
+          "offering": "empty",
+          "reflections": true
+        },
+        "loop": {
+          "paused": false,
+          "destroyed": false,
+          "scheduled": true,
+          "executing": false,
+          "running": true,
+          "frames": 2
+        },
+        "graphicsBackend": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      }
+    }
+  ],
+  "errors": [],
+  "optionalFailure": {
+    "time": 2.033333333333331,
+    "wildlife": {
+      "active": 0,
+      "visible": 0,
+      "created": 0,
+      "released": 0,
+      "available": [],
+      "bones": 0,
+      "ids": [],
+      "destroyed": false
+    },
+    "encounters": [],
+    "resources": {
+      "geometries": 89,
+      "materials": 40,
+      "extras": 683,
+      "disposed": false
+    },
+    "drawCalls": 629,
+    "triangles": 2162893,
+    "gpu": {
+      "geometries": 139,
+      "textures": 14
+    },
+    "shaderErrors": 0,
+    "canvas": {
+      "width": 1000,
+      "height": 700
+    },
+    "appearance": {
+      "hour": 14.040666666666667,
+      "fire": false,
+      "altar": "ready",
+      "offering": "empty",
+      "reflections": true
+    },
+    "loop": {
+      "paused": false,
+      "destroyed": false,
+      "scheduled": false,
+      "executing": true,
+      "running": true,
+      "frames": 28
+    },
+    "graphicsBackend": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+  },
+  "result": "passed"
+}
