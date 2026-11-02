@@ -643,8 +643,8 @@
       "role": "runtime",
       "status": "candidate-integrated-on-branch",
       "file": "public/assets/wildlife/mountain-goat.glb",
-      "bytes": 433716,
-      "sha256": "f4ee8d8007a2b00ab3a8e541a56a6d4eab1a3c7385370bf8273f6409f72a8655",
+      "bytes": 433764,
+      "sha256": "33d0c64eee260a0b426a29c728d2e76400b68bef061a3afb1897e1c2be7e4d84",
       "source": {
         "author": "Home of Woods original procedural model",
         "script": "tools/build-mountain-goat.py",
