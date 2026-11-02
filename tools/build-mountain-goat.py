@@ -41,9 +41,9 @@ for side in ('left','right'):
         front=leg=='front'
         z=0.60 if front else -0.64
         bone(f'{side}_{leg}_upper','goat_torso',(x,-0.16 if front else -0.17,z))
-        bone(f'{side}_{leg}_lower',f'{side}_{leg}_upper',(0,-0.59 if front else -0.48,0.06 if front else 0.19))
-        bone(f'{side}_{leg}_pastern',f'{side}_{leg}_lower',(0,-0.48 if front else -0.42,0.03 if front else -0.33))
-        bone(f'{side}_{leg}_hoof',f'{side}_{leg}_pastern',(0,-0.17 if front else -0.24,0.045 if front else 0.12))
+        bone(f'{side}_{leg}_lower',f'{side}_{leg}_upper',(0,-0.62 if front else -0.55,0.06 if front else 0.10))
+        bone(f'{side}_{leg}_pastern',f'{side}_{leg}_lower',(0,-0.51 if front else -0.48,0.03 if front else -0.16))
+        bone(f'{side}_{leg}_hoof',f'{side}_{leg}_pastern',(0,-0.20 if front else -0.28,0.045 if front else 0.07))
 assert len(bones)==21
 
 def absp(b):
