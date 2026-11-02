@@ -1,3 +1,5 @@
+import {createWoodcraft} from './woodcraft.ts';
+import type {WoodcraftState} from './woodcraft.ts';
 import { START, WORLD_SEED } from "../content/world.ts";
 import type { Point } from "../content/world.ts";
 import {makeTrees} from '../world/layout.ts';
@@ -16,6 +18,7 @@ import type {WorkshopState} from './workshop.ts';
 import {createLocalClock} from './local-clock.ts';
 import type {LocalClock} from './local-clock.ts';
 export type GameState = {
+  woodcraft:WoodcraftState;
   workshop:WorkshopState;
   clock:LocalClock;
   ritual: RitualAction | null;
@@ -31,6 +34,7 @@ export type GameState = {
 };
 export function createState(trees:Tree[]=makeTrees()): GameState {
   return {
+    woodcraft:createWoodcraft(),
     ritual: null,
     workshop:createWorkshop(),
     clock:createLocalClock(),

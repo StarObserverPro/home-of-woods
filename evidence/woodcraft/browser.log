@@ -1,0 +1,21 @@
+game loaded
+opened woodcraft
+11 released, 1 retained {
+  loaded: true,
+  loading: false,
+  bodies: 11,
+  awake: 11,
+  colliders: 19,
+  steps: 181,
+  maxStepMs: 85.5,
+  disposed: false
+}
+desktop capture deferred until behavioral checks
+cancel conserved
+manual throw conserved
+pause stopped physics
+reload preserved poses
+mobile behavior reached
+mobile controls { x: 16, y: 494.359375, width: 256, height: 261.640625 } minheight 44
+BROWSER PASS
+CAPTURE PASS

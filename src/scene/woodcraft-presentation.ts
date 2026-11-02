@@ -1,0 +1,45 @@
+import * as THREE from 'three';
+import { WOODCRAFT } from '../content/woodcraft.ts';
+import { woodShape } from '../domain/woodcraft.ts';
+import type { WoodcraftState } from '../domain/woodcraft.ts';
+import type { Resources } from './resources.ts';
+import { InteractionRegistry } from './interaction-registry.ts';
+import { heightAt } from '../world/surface.ts';
+/** Presentation only: all resting poses are physics results, never authored stack coordinates. */
+export function createWoodcraftPresentation(r:Resources) {
+  const group=new THREE.Group(), hits=new InteractionRegistry();group.name='camp-woodcraft';
+  const floor=heightAt(WOODCRAFT.x,WOODCRAFT.z), wood=r.material('#875b3c',.7), end=r.material('#ddbd87',.72);
+  const railGeo=r.geometry('woodcraft-rail',()=>new THREE.BoxGeometry(1,1,1));
+  const cylinder=r.geometry('woodcraft-cylinder',()=>new THREE.CylinderGeometry(1,1,1,9));
+  const frame=new THREE.Group();frame.name=WOODCRAFT.id;group.add(frame);hits.register(frame,WOODCRAFT.id);
+  for(const side of [-1,1]) {
+    const a=new THREE.Mesh(railGeo,wood),b=new THREE.Mesh(railGeo,wood);
+    a.scale.set(WOODCRAFT.railWidth,WOODCRAFT.railHeight,2*(WOODCRAFT.halfZ+WOODCRAFT.railWidth));
+    a.position.set(WOODCRAFT.x+side*(WOODCRAFT.halfX+WOODCRAFT.railWidth/2),floor+WOODCRAFT.railHeight/2,WOODCRAFT.z);
+    b.scale.set(2*WOODCRAFT.halfX,WOODCRAFT.railHeight,WOODCRAFT.railWidth);
+    b.position.set(WOODCRAFT.x,floor+WOODCRAFT.railHeight/2,WOODCRAFT.z+side*(WOODCRAFT.halfZ+WOODCRAFT.railWidth/2));
+    a.castShadow=b.castShadow=a.receiveShadow=b.receiveShadow=true;frame.add(a,b);
+  }
+  const placed=new Map<string,{root:THREE.Group;unregister:()=>void}>();
+  return {group,hits,
+    update(state:WoodcraftState){
+      const current=new Set(state.pieces.filter(p=>p.phase==='loose').map(p=>p.id));
+      for(const p of state.pieces) {
+        if(p.phase!=='loose')continue;
+        let owned=placed.get(p.id);
+        if(!owned) {
+          const root=new THREE.Group();root.name=p.id;
+          const {length,radius,fork}=woodShape(p.source),body=new THREE.Mesh(cylinder,[wood,end,end]);
+          body.scale.set(radius,length,radius);body.castShadow=body.receiveShadow=true;root.add(body);
+          if(fork){const branch=new THREE.Mesh(cylinder,[wood,end,end]);branch.scale.set(radius*.7,length*.56,radius*.7);branch.position.set(length*.17,length*.19,0);branch.rotation.z=-.65;branch.castShadow=branch.receiveShadow=true;root.add(branch);}
+          group.add(root);owned={root,unregister:hits.register(root,p.id)};placed.set(p.id,owned);
+        }
+        owned.root.position.copy(p.position);owned.root.quaternion.copy(p.rotation);
+      }
+      for(const [id,p] of placed)if(!current.has(id)){p.unregister();group.remove(p.root);placed.delete(id);}
+    },
+    point(id:string){if(id===WOODCRAFT.id)return WOODCRAFT;const root=placed.get(id)?.root;return root?{x:root.position.x,z:root.position.z}:null;},
+    stats:()=>({visible:placed.size,hits:hits.size}),
+    dispose(){placed.forEach(p=>p.unregister());placed.clear();hits.clear();group.removeFromParent();group.clear();},
+  };
+}

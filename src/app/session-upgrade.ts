@@ -1,3 +1,4 @@
+import {createWoodcraft} from '../domain/woodcraft.ts';
 import {createWorkshop} from '../domain/workshop.ts';
 import {createLocalClock} from '../domain/local-clock.ts';
 import type { GameState } from '../domain/state.ts';
@@ -10,6 +11,7 @@ import { validateWorldState } from '../domain/world-save.ts';
 /** Only the actual pre-save in-memory shapes are upgraded, before one root commit. */
 export function upgradeWorldSession(state: GameState, context: SaveContext) {
   const candidate = structuredClone(state);
+  if(!Object.hasOwn(candidate,'woodcraft'))candidate.woodcraft=createWoodcraft();
   if(!Object.hasOwn(candidate,'ritual'))candidate.ritual=null;
   if(!Object.hasOwn(candidate,'workshop'))candidate.workshop=createWorkshop();
   if(!Object.hasOwn(candidate,'clock'))candidate.clock=createLocalClock();

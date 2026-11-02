@@ -1,3 +1,4 @@
+import {createWoodcraft,validateWoodcraft} from './woodcraft.ts';
 import {createWorkshop,validateWorkshop,workshopTargetId} from './workshop.ts';
 import {createLocalClock,CLOCK_SPEEDS} from './local-clock.ts';
 import {canonicalInstances} from './owned-items.ts';
@@ -21,7 +22,7 @@ export type WorldLoadResult =
 
 export function validateWorldState(raw: unknown, context: SaveContext, mode: 'runtime' | 'persisted') {
   const world = object(raw, 'world');
-  fields(world, ['clock','workshop','ritual', 'seed', 'time', 'forestry', 'inventory', 'gathering', 'player', 'selected', 'route', 'visited'], 'world');
+  fields(world, ['woodcraft','clock','workshop','ritual', 'seed', 'time', 'forestry', 'inventory', 'gathering', 'player', 'selected', 'route', 'visited'], 'world');
   requireValue(world.seed === WORLD_SEED, 'world.seed', '当前布局不支持此世界');
   const time = finite(world.time, 'world.time');
   const player = object(world.player, 'world.player'); fields(player, ['x', 'z', 'facing', 'moving'], 'world.player');
@@ -40,6 +41,7 @@ export function validateWorldState(raw: unknown, context: SaveContext, mode: 'ru
     requireValue(loaded.decision !== 'protected', 'world.inventory', loaded.diagnostics.join('；'));
     inventory = loaded.value; diagnostics = loaded.diagnostics;
   }
+  const woodcraft=validateWoodcraft(world.woodcraft);
   const clock=object(world.clock,'world.clock');fields(clock,['speed'],'world.clock');
   requireValue(CLOCK_SPEEDS.includes(clock.speed as 1|4|12),'world.clock','沙漏速度无效');
   const workshop=validateWorkshop(world.workshop,time);
@@ -51,7 +53,7 @@ export function validateWorldState(raw: unknown, context: SaveContext, mode: 'ru
     }
   }
   requireValue((inventory.instances??[]).every(i=>i.createdAt<=time),'inventory.instances','物品生成时间晚于世界时间');
-  requireValue(world.selected===null || typeof world.selected==='string' && (context.selectable.has(world.selected)||(inventory.instances??[]).some(i=>i.instanceId===world.selected&&i.location.kind==='world')),'world.selected','未知目标引用');
+  requireValue(world.selected===null || typeof world.selected==='string' && (context.selectable.has(world.selected)||woodcraft.pieces.some(p=>p.id===world.selected)||(inventory.instances??[]).some(i=>i.instanceId===world.selected&&i.location.kind==='world')),'world.selected','未知目标引用');
   const forestry = validateSavedForestry(world.forestry, context, time);
   if (forestry.active?.phase === 'chopping') requireValue(world.selected === forestry.active.treeId, 'world.selected', '采伐目标冲突');
   const gathering = validateSavedGathering(world.gathering, context, forestry, time, world.selected as string | null);
@@ -63,7 +65,7 @@ export function validateWorldState(raw: unknown, context: SaveContext, mode: 'ru
     if(a.phase==='approaching'||a.phase==='performing')requireValue(forestry.active===null && !['approaching','performing'].includes(gathering.action?.phase??'') && ['grove-altar','grove-altar:oracle'].includes(world.selected as string),'ritual','进行中祈祷与世界冲突');
   }
   if(workshop.job)requireValue(world.selected===workshopTargetId(workshop.job.kind)&&!forestry.active&&!['approaching','performing'].includes(gathering.action?.phase??'')&&!(world.ritual&&['approaching','performing'].includes((world.ritual as {phase:string}).phase)),'workshop.job','操作状态冲突');
-  const state = { ...structuredClone(world), workshop, inventory, forestry, gathering } as unknown as GameState;
+  const state = { ...structuredClone(world), woodcraft, workshop, inventory, forestry, gathering } as unknown as GameState;
   return { state, diagnostics };
 }
 
@@ -83,7 +85,7 @@ export async function prepareWorldSave(raw: string | null, context: SaveContext)
     requireValue(typeof raw === 'string', 'save', '存储记录不是文本');
     const saved = object(JSON.parse(raw), 'save');
     fields(saved, ['schemaVersion', 'layoutVersion', 'rulesetVersion', 'sequence', 'savedAt', 'world', 'checksum'], 'save');
-    requireValue(saved.schemaVersion === 1 && saved.layoutVersion === WORLD_LAYOUT_VERSION && (saved.rulesetVersion === WORLD_RULESET_VERSION || saved.rulesetVersion === 1 || saved.rulesetVersion === 2), 'save', '未来格式或不兼容的世界版本');
+    requireValue(saved.schemaVersion === 1 && saved.layoutVersion === WORLD_LAYOUT_VERSION && (saved.rulesetVersion === WORLD_RULESET_VERSION || saved.rulesetVersion === 1 || saved.rulesetVersion === 2 || saved.rulesetVersion === 3), 'save', '未来格式或不兼容的世界版本');
     const sequence = integer(saved.sequence, 'save.sequence', 1), savedAt = finite(saved.savedAt, 'save.savedAt');
     requireValue(typeof saved.checksum === 'string' && /^[a-f0-9]{64}$/.test(saved.checksum), 'save.checksum', '校验记录无效');
     const { checksum, ...core } = saved;
@@ -91,7 +93,7 @@ export async function prepareWorldSave(raw: string | null, context: SaveContext)
     let upgraded = saved.world;
     if(saved.rulesetVersion!==WORLD_RULESET_VERSION){
       const legacy=object(upgraded,'world');
-      upgraded={...legacy,clock:legacy.clock??createLocalClock(),workshop:legacy.workshop??createWorkshop()};
+      upgraded={...legacy,woodcraft:Object.hasOwn(legacy,'woodcraft')?legacy.woodcraft:createWoodcraft(),clock:legacy.clock??createLocalClock(),workshop:legacy.workshop??createWorkshop()};
     }
     if (saved.rulesetVersion === 1) {
       // Validate the old exact source set before adding new pools; never heal corrupt old saves.
@@ -107,7 +109,7 @@ export async function prepareWorldSave(raw: string | null, context: SaveContext)
       upgraded = {...old, inventory: {schemaVersion: 2, stacks: old.inventory.stacks}};
     }
     const loaded = validateWorldState(upgraded, context, 'persisted');
-    if(saved.rulesetVersion!==WORLD_RULESET_VERSION)loaded.diagnostics.push('已接入本地沙漏和木作状态；原材料及世界进度保留');
+    if(saved.rulesetVersion!==WORLD_RULESET_VERSION)loaded.diagnostics.push('已接入营地物理岛；旧木作、原材料及世界进度保留');
     if (saved.rulesetVersion === 1) loaded.diagnostics.push('新增独立碎柴池；保留旧枝料与未知规格，旧进行中采集已取消');
     return { decision: loaded.diagnostics.length ? 'migrated' : 'restored', value: loaded.state, meta: { sequence, savedAt }, diagnostics: loaded.diagnostics };
   } catch (error) {

@@ -98,3 +98,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
+
+Rapier 3D (@dimforge/rapier3d-compat 0.21.0)
+Copyright Dimforge and contributors. Licensed under Apache License 2.0.
+Unmodified upstream runtime, bundled locally and loaded only for Woodcraft.
+Complete license: /licenses/rapier-LICENSE.txt
+Source: https://github.com/dimforge/rapier.js

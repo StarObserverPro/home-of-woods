@@ -1,3 +1,5 @@
+import {createWoodcraftPresentation} from './woodcraft-presentation.ts';
+import {WOODCRAFT,insideWoodcraft} from '../content/woodcraft.ts';
 import {createWorkshopPresentation} from './workshop-presentation.ts';
 import type {PlacementDraft} from '../domain/furniture-placement.ts';
 import {CAMP_VISITOR} from '../content/characters.ts';
@@ -25,6 +27,7 @@ import {createCharacters} from './characters.ts';
 import type {CharacterInspection} from './characters.ts';
 
 export type SceneIntent =
+  | { kind: "wood-drop"; x:number; y:number; z:number }
   | { kind: "select"; id: string }
   | { kind: "move"; x: number; z: number };
 export async function createScene(
@@ -164,6 +167,8 @@ export async function createScene(
   const characters=createCharacters(r,models,trees,forest.selections),player=characters.player;
   scene.add(player,characters.visitor);
   const workshop=createWorkshopPresentation(r,models);scene.add(workshop.group);workshop.hits.register(characters.visitor,CAMP_VISITOR.id);
+  const woodcraft=createWoodcraftPresentation(r);scene.add(woodcraft.group);
+  let woodDropMode=false;
   let placementMode=false;
   let inspectionCamera:{yaw:number;elevation:number;zoom:number;target:THREE.Vector3}|null=null;
   const forestry=createForestryPresentation({models,resources:r,forestGroup:forest.group,trees,selections:forest.selections});
@@ -252,10 +257,13 @@ export async function createScene(
       1 - ((clientY - rect.top) / rect.height) * 2,
     );
     ray.setFromCamera(pointer, camera);
-    const hit = ray.intersectObjects([...workshop.hits.objects(),...forestry.getPickTargets(),...props.values(),...gathering.hits.objects(),...camp.hits.filter(o=>o.userData.propActive!==false)], true)[0],
+    const hit = ray.intersectObjects([...woodcraft.hits.objects(),...workshop.hits.objects(),...forestry.getPickTargets(),...props.values(),...gathering.hits.objects(),...camp.hits.filter(o=>o.userData.propActive!==false)], true)[0],
       terrainHit = ray.intersectObject(ground)[0];
+    if(woodDropMode){const drop=ray.intersectObjects([...woodcraft.hits.objects(),ground],true)[0];if(drop)intent({kind:'wood-drop',x:drop.point.x,y:drop.point.y,z:drop.point.z});return;}
     if(placementMode){if(terrainHit)intent({kind:'move',x:terrainHit.point.x,z:terrainHit.point.z});return;}
+    if(terrainHit&&insideWoodcraft(terrainHit.point,0)&&(!hit||hit.distance>terrainHit.distance+.2)){intent({kind:'select',id:WOODCRAFT.id});return;}
     if (hit && (!terrainHit || hit.distance < terrainHit.distance + 0.2)) {
+      const looseId=woodcraft.hits.resolve(hit.object);if(looseId){intent({kind:'select',id:looseId});return;}
       const ownedId=workshop.hits.resolve(hit.object);if(ownedId){intent({kind:'select',id:ownedId});return;}
       if(hit.object.userData.propId){intent({kind:'select',id:hit.object.userData.propId});return;}
       const sourceId = gathering.hits.resolve(hit.object);
@@ -375,6 +383,7 @@ export async function createScene(
     camera,
     renderer,
     getYaw: () => yaw,
+    setWoodcraftDrop(value:boolean){woodDropMode=value;},
     setPlacement(value:PlacementDraft|null){placementMode=!!value;workshop.setPreview(value);},
     resetCamera() {
       yaw = CAMERA.yaw;
@@ -441,14 +450,14 @@ export async function createScene(
       if(camera.position.x>WORLD.minX&&camera.position.x<WORLD.maxX&&camera.position.z>WORLD.minZ&&camera.position.z<WORLD.maxZ)camera.position.y=Math.max(camera.position.y,heightAt(camera.position.x,camera.position.z)+THREE.MathUtils.lerp(3,.4,blend));
       if(scenePreset)for(const tree of trees)if(Math.hypot(camera.position.x-tree.x,camera.position.z-tree.z)<3*tree.scale)camera.position.y=Math.max(camera.position.y,heightAt(tree.x,tree.z)+9*tree.scale);
       camera.lookAt(target);
-      workshop.update(state,camera);
+      workshop.update(state,camera);woodcraft.update(state.woodcraft);
       camera.zoom = THREE.MathUtils.lerp(zoom,1,blend) * (mobile ? scenePreset?.8:THREE.MathUtils.lerp(1.45,.9,blend) : 1);
       camera.updateProjectionMatrix();
       environment.update(elapsed,dt,camera.position,reducedMotion);
       scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);
       river.update(elapsed,sky.day,reducedMotion,appearance.reflections,host.clientWidth<600||host.clientHeight<500);
       const selected = state.selected
-        ? (workshop.point(state.selected) ?? (state.selected===CAMP_VISITOR.id?CAMP_VISITOR:null) ?? gatheringRegistry.sources.get(state.selected) ?? treeById.get(state.selected) ??
+        ? (woodcraft.point(state.selected) ?? workshop.point(state.selected) ?? (state.selected===CAMP_VISITOR.id?CAMP_VISITOR:null) ?? gatheringRegistry.sources.get(state.selected) ?? treeById.get(state.selected) ??
           (state.selected === "cabin"
             ? CABIN
             : state.selected === "tent"
@@ -517,7 +526,7 @@ export async function createScene(
     },
     stats() {
       return {
-        workshop:workshop.stats(),understory:understory.stats(),treeShapes:trees.reduce((counts,t)=>{const name=treeVisual(t).name;counts[name]=(counts[name]??0)+1;return counts;},{} as Record<string,number>),appearance:{...appearance},scenePreset,camp:camp.stats(),terrain:ground.geometry.userData,shaderErrors,
+        woodcraft:woodcraft.stats(),workshop:workshop.stats(),understory:understory.stats(),treeShapes:trees.reduce((counts,t)=>{const name=treeVisual(t).name;counts[name]=(counts[name]??0)+1;return counts;},{} as Record<string,number>),appearance:{...appearance},scenePreset,camp:camp.stats(),terrain:ground.geometry.userData,shaderErrors,
         resources: r.stats(),
         drawCalls: renderer.info.render.calls,
         triangles: renderer.info.render.triangles,
@@ -549,6 +558,7 @@ export async function createScene(
       canvas.removeEventListener("wheel", wheel);
       canvas.removeEventListener("contextmenu", contextMenu);
       pointers.clear();
+      woodcraft.dispose();
       workshop.dispose();
       forestry.dispose();
       characters.dispose();

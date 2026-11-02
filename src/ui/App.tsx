@@ -1,3 +1,5 @@
+import {woodcraftDetails,WoodcraftControls,WoodDropControls} from './Woodcraft.tsx';
+import {emptyWoodcraftSnapshot} from '../app/woodcraft-session.ts';
 import {workshopDetails,Hourglass,WorkshopControls,OwnedFurniture,PlacementControls} from './Workshop.tsx';
 import {calendarAt} from '../domain/local-clock.ts';
 import {WORKBENCH} from '../content/workshop.ts';
@@ -97,6 +99,7 @@ const mapX=(x:number)=>(x+90)*.9;
 const mapZ=(z:number)=>(z+85)*.9;
 const mapLine=(p:{x:number;z:number}[])=>p.map(v=>`${mapX(v.x)},${mapZ(v.z)}`).join(' ');
 const empty: Snapshot = {
+  woodcraft:emptyWoodcraftSnapshot(),
   workshop:{blueprints:[],offers:[],items:[],job:null,lastResponse:'',calendar:calendarAt(0),speed:1},
   placement:null,
   zone: "山间营地",
@@ -238,7 +241,7 @@ export function App() {
   const activeAction = forest.active;
   const gatherTarget = snapshot.gathering.selectedTarget;
   const gatherAction = snapshot.gathering.action;
-  const selected = workshopDetails(snapshot.selected,snapshot.workshop) ?? gatherTarget ?? scenePropDetails(snapshot.selected,snapshot.appearance,forest.wood) ?? (
+  const selected = woodcraftDetails(snapshot.selected,snapshot.woodcraft) ?? workshopDetails(snapshot.selected,snapshot.workshop) ?? gatherTarget ?? scenePropDetails(snapshot.selected,snapshot.appearance,forest.wood) ?? (
     snapshot.selected === "cabin"
       ? {
           title: "旧木屋",
@@ -459,8 +462,10 @@ export function App() {
       </nav>
       </div>
       <Warehouse open={warehouseOpen} view={snapshot.warehouse} onClose={()=>setWarehouseOpen(false)}>
+        <section className="woodcraft-entry"><h3>营地木料堆</h3><p>可搬木料 {snapshot.woodcraft.available} 根。首次进入会放下大部分木料，留一根让你自己扔；超出容量的材料仍在仓库。</p><button className="context-button" onClick={()=>{setWarehouseOpen(false);runtime.current?.setInterfaceOpen(false);runtime.current?.openWoodcraft();}}>去木料堆</button></section>
         <OwnedFurniture view={snapshot.workshop} onPlace={id=>{setWarehouseOpen(false);runtime.current?.setInterfaceOpen(false);runtime.current?.beginPlacement(id);}} onPack={id=>{setWarehouseOpen(false);runtime.current?.setInterfaceOpen(false);runtime.current?.packFurniture(id);}}/>
       </Warehouse>
+      <WoodDropControls active={snapshot.woodcraft.dropping} onCancel={()=>runtime.current?.cancelWoodDrop()}/>
       <PlacementControls draft={snapshot.placement} onRotate={()=>runtime.current?.rotatePlacement()} onConfirm={()=>runtime.current?.confirmPlacement()} onCancel={()=>runtime.current?.cancelPlacement()}/>
 
       <button className="save-indicator" aria-label="查看世界存档" title={snapshot.save.message} onClick={() => runtime.current?.pause(true)}>
@@ -473,7 +478,7 @@ export function App() {
       {!selected && !mapOpen && !help && !activeAction && <div className="message" role="status" aria-live="polite">
         {snapshot.message}
       </div>}
-      {selected && (
+      {selected && !snapshot.woodcraft.dropping && (
         <aside className={`target-card${gatherAction?.sourceId === gatherTarget?.id && gatherAction?.motionTag === 'gather.pickup' && ['approaching','performing'].includes(gatherAction.phase) ? ' target-card--pickup-active' : ''}`}>
           <div className="target-top">
             <span className="eyebrow">{selected.tag}</span>
@@ -488,6 +493,8 @@ export function App() {
           {['grove-altar','grove-altar:oracle'].includes(snapshot.selected??'') && <div className="tree-actions"><button className="context-button" onClick={()=>runtime.current?.ritual('prayer')}>合掌祈祷</button><button className="context-button" onClick={()=>runtime.current?.cancelAction()}>取消动作</button></div>}
           {selectedTree && ['tree-slot-r3-hero-0','tree-slot-16-9','tree-slot-13-6','tree-slot-17-11','landmark-elder'].includes(selectedTree.id) && <button className="context-button" onClick={()=>runtime.current?.selectTreeBranches()}>上树采枝</button>}
           <p>{selected.detail}</p>
+          <WoodcraftControls selected={snapshot.selected} view={snapshot.woodcraft} message={snapshot.message} disabled={!ready||snapshot.paused||!!snapshot.placement}
+            onOpen={()=>runtime.current?.openWoodcraft()} onPrepare={()=>runtime.current?.prepareWoodcraft()} onThrow={()=>runtime.current?.beginWoodDrop()} onCollect={id=>runtime.current?.collectWood(id)} onClose={()=>runtime.current?.closeWoodcraft()}/>
           <WorkshopControls selected={snapshot.selected} view={snapshot.workshop} message={snapshot.message} disabled={!ready||snapshot.paused||!!snapshot.placement}
             onOffer={()=>runtime.current?.offer()} onCraft={id=>runtime.current?.craft(id)} onTrade={id=>runtime.current?.trade(id)} onApproach={()=>runtime.current?.approachMerchant()} onCancel={()=>runtime.current?.cancelAction()} onPlace={id=>runtime.current?.beginPlacement(id)} onPack={id=>runtime.current?.packFurniture(id)}/>
           {snapshot.selected==='tent'&&<button className="context-button" onClick={()=>runtime.current?.select(WORKBENCH.id)}>查看帐篷前的工作台</button>}
@@ -548,7 +555,7 @@ export function App() {
             </button>
           </div>
           <p>选一处风景，沿途慢慢走。方向键可以随时接过移动。</p>
-          <div className="camp-shortcuts"><button className="context-button" onClick={()=>{runtime.current?.select(WORKBENCH.id);setMapOpen(false);}}>营地工作台</button><button className="context-button" onClick={()=>{runtime.current?.select(CAMP_VISITOR.id);setMapOpen(false);}}>林间行商</button><button className="context-button" onClick={()=>{runtime.current?.select('grove-altar');setMapOpen(false);}}>林间祭坛</button></div>
+          <div className="camp-shortcuts"><button className="context-button" onClick={()=>{runtime.current?.openWoodcraft();setMapOpen(false);}}>营地木料堆</button><button className="context-button" onClick={()=>{runtime.current?.select(WORKBENCH.id);setMapOpen(false);}}>营地工作台</button><button className="context-button" onClick={()=>{runtime.current?.select(CAMP_VISITOR.id);setMapOpen(false);}}>林间行商</button><button className="context-button" onClick={()=>{runtime.current?.select('grove-altar');setMapOpen(false);}}>林间祭坛</button></div>
 
           {WAYPOINTS.map((wp, i) => (
             <button
