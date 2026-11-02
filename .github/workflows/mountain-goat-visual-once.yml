@@ -1,0 +1,50 @@
+name: Mountain goat final animation and game screenshots
+on:
+  push:
+    branches: [feat/wildlife-mountain-goat]
+    paths: [.github/workflows/mountain-goat-visual-once.yml]
+permissions:
+  contents: write
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: Install verification browser
+        run: |
+          npm ci
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Capture real rig and live forest
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run dev > /tmp/goat-vite.log 2>&1 &
+          for n in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:5173/ >/dev/null; then break; fi
+            sleep 1
+          done
+          node tools/capture-original-goat.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mountain-goat-grounded-final-evidence
+          path: evidence/wildlife-mountain-goat/
+          retention-days: 10
+      - name: Commit screenshots from actual model and retire one-off workflow
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/mountain-goat-visual-once.yml
+          git add evidence/wildlife-mountain-goat/
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "test(wildlife): capture grounded hoof lift, slow walk, and actual game"
+          git push origin HEAD:feat/wildlife-mountain-goat
