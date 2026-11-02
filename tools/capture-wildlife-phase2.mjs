@@ -36,7 +36,9 @@ async function take(page,name,preset){
   assert.equal(JSON.stringify(frozen.wildlifeViews),viewState,'Inspection must not change active encounters');
   // The production scene's own capture() renders and reads its canvas synchronously.
   // Avoid Playwright's expensive whole-page screenshot in software WebGL.
-  let captured=false;
+  let captured=false, resolveCapture;
+  let timer;
+  const finished=new Promise((resolve,reject)=>{resolveCapture=resolve;timer=setTimeout(()=>reject(new Error('Native capture timed out')),120000);});
   await page.route('**/__scene-capture',async route=>{
     const body=route.request().postDataJSON();
     assert.ok(body.image.startsWith('data:image/png;base64,'));
@@ -46,9 +48,11 @@ async function take(page,name,preset){
     await fs.writeFile(output+'/'+name+'.png',png);
     captured=true;
     await route.fulfill({status:200,body:'Saved'});
+    resolveCapture();
   });
   await page.getByRole('button',{name:'保存场景画面'}).click({timeout:120000});
-  await page.getByRole('status').waitFor({timeout:120000});
+  await finished;
+  clearTimeout(timer);
   assert.ok(captured,'Scene screenshot must complete');
   await page.unroute('**/__scene-capture');
   report.frames[name]={preset,sourceTime:data.gameTime,wildlife:data.wildlife,
