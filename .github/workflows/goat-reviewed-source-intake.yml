@@ -1,0 +1,52 @@
+name: Archive reviewed CC0 goat source
+on:
+  push:
+    branches: [art/cc0-mountain-goat-review]
+    paths: [.github/workflows/goat-reviewed-source-intake.yml]
+permissions:
+  contents: write
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Pin reviewed original and keep it OUT of runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p sources/innerscene/horned-goat
+          curl --fail -L --retry 3 --max-time 100 -sS "https://files.innerscene.com/library/horned-goat-171680de/51ee1da9c314a54d38b7/horned-goat.glb" -o sources/innerscene/horned-goat/horned-goat.glb
+          echo "2573320775db3382a30fad70f216ae812857a1081f0d5f9be8e00a649540f3fe  sources/innerscene/horned-goat/horned-goat.glb" | sha256sum -c -
+          python3 - <<'PY'
+          import json,struct,pathlib
+          f=pathlib.Path("sources/innerscene/horned-goat/horned-goat.glb").read_bytes()
+          assert f[:4]==b'glTF' and struct.unpack_from("<I",f,8)[0]==len(f)
+          json_bytes_len=struct.unpack_from("<I",f,12)[0]
+          doc=json.loads(f[20:20+json_bytes_len])
+          triangles=sum(doc["accessors"][primitive["indices"]]["count"]//3 for m in doc["meshes"] for primitive in m["primitives"])
+          assert triangles==33532,(triangles,len(doc["meshes"]))
+          assert not doc.get("animations") and not doc.get("skins")
+          print(f"Candidate is geometry only, {len(doc['meshes'])} meshes, {triangles} triangles")
+          PY
+          cat > sources/innerscene/horned-goat/README.md <<'EOF'
+          # Horned Goat (SOURCE CANDIDATE ONLY; NOT APPROVED FOR GAME)
+          
+          - Author / site: Innerscene
+          - Source page: https://www.innerscene.com/tools/library/3d-parts/horned-goat-171680de
+          - Direct original: https://files.innerscene.com/library/horned-goat-171680de/51ee1da9c314a54d38b7/horned-goat.glb
+          - Source page states **CC0**, see https://creativecommons.org/publicdomain/zero/1.0/
+          - Exact SHA-256: \`2573320775db3382a30fad70f216ae812857a1081f0d5f9be8e00a649540f3fe\`
+          - Source geometry: 33,532 triangles, 22 meshes, no armature/animation.
+          - Do not import this original as a runtime animal. It is not an accurate North American mountain goat and has not passed game art review.
+          
+          For comparison, rejected alternatives and next steps see [CC0 source review](../../../docs/scopes/wildlife-goat-cc0-source-review.md).
+          EOF
+          git rm .github/workflows/goat-candidate-review.yml .github/workflows/goat-reviewed-source-intake.yml
+          git add sources/innerscene/horned-goat docs/scopes/wildlife-goat-cc0-source-review.md
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "assets(art): archive verified CC0 goat candidate without enabling it"
+          git push origin HEAD:art/cc0-mountain-goat-review
