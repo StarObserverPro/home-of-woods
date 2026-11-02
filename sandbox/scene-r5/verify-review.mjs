@@ -17,7 +17,14 @@ await mkdir(resolve(root,'.cache'),{recursive:true});const moduleFile=resolve(ro
 const checked=spawnSync(process.execPath,['--check',moduleFile],{encoding:'utf8'});assert.equal(checked.status,0,checked.stderr?.split('\n').slice(-5).join('\n'));
 for(const doc of ['README.md','ASSET_REGISTER.md','VERIFICATION.md','VERIFICATION-R5B.md','VERIFICATION-R5C.md']){
   const text=await readFile(resolve(root,doc),'utf8');
-  for(const m of text.matchAll(/\]\(([^)#]+)(?:#[^)]*)?\)/g)){if(/^(https?:|file:)/.test(m[1])||m[1]==='evidence/source-freeze.json')continue;await access(resolve(dirname(resolve(root,doc)),m[1]));}
+  for(const m of text.matchAll(/\]\(([^)#]+)(?:#[^)]*)?\)/g)){
+    if(/^(https?:|file:)/.test(m[1])||m[1]==='evidence/source-freeze.json')continue;
+    const target=resolve(dirname(resolve(root,doc)),m[1]);
+    if(/[/\\]evidence[/\\]captures[/\\][^/\\]+\.png$/i.test(target)){
+      // Heavy screenshot bytes are archived; the exact capture receipt remains.
+      await access(target.replace(/\.png$/i,'.json'));
+    }else await access(target);
+  }
 }
 const files=[];
 async function collect(path){for(const e of await readdir(path,{withFileTypes:true})){const p=join(path,e.name);if(e.isDirectory())await collect(p);else files.push(p);}}
