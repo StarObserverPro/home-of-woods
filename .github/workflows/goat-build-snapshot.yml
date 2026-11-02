@@ -1,0 +1,19 @@
+name: Goat build snapshot
+on:
+  push:
+    branches: [feat/wildlife-mountain-goat]
+    paths: [.github/workflows/goat-build-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - run: git archive --format=tar HEAD | gzip -1 > /tmp/forest-goat-source.tgz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: goat-current-source
+          path: /tmp/forest-goat-source.tgz
+          retention-days: 1
