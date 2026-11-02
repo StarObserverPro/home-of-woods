@@ -1,3 +1,5 @@
+import {canonicalInstances} from './owned-items.ts';
+import type {OwnedItem} from './owned-items.ts';
 import { ITEM_CATALOG, isStableId } from './item-catalog.ts';
 import type { ItemCatalog } from './item-catalog.ts';
 
@@ -20,7 +22,7 @@ export function validateWood(raw: unknown): WoodBatch {
 }
 export const woodBatch = (spec: WoodSpec | null): WoodBatch => ({ spec, measureId: 'piece', amountPerPiece: 1, reserved: false });
 export type InventoryStack = StackIdentity & { quantity: number };
-export type InventoryState = { schemaVersion: 1; revision: number; stacks: InventoryStack[] };
+export type InventoryState = { schemaVersion: 1; revision: number; stacks: InventoryStack[]; instances?: OwnedItem[] };
 export type InventoryDelta = StackIdentity & { delta: number };
 export const stackKey = (stack: StackIdentity) => JSON.stringify([stack.itemId, stack.qualityId, ...(stack.wood ? [validateWood(stack.wood)] : [])]);
 export const createInventory = (): InventoryState => ({ schemaVersion: 1, revision: 0, stacks: [] });
@@ -51,7 +53,8 @@ export function canonicalStacks(value: unknown): InventoryStack[] {
 }
 export function validateInventory(state: InventoryState) {
   if (!isRecord(state)) throw new Error('Invalid inventory state');
-  exactKeys(state, ['schemaVersion', 'revision', 'stacks']);
+  exactKeys(state, ['schemaVersion', 'revision', 'stacks', ...(Object.hasOwn(state,'instances')?['instances']:[])]);
+  if(Object.hasOwn(state,'instances'))canonicalInstances(state.instances);
   if (state.schemaVersion !== 1 || !Number.isSafeInteger(state.revision) || state.revision < 0) throw new Error('Unsupported inventory state');
   return canonicalStacks(state.stacks);
 }
@@ -90,8 +93,9 @@ export function inventoryTransaction(state: InventoryState, deltas: readonly Inv
     if (!Number.isSafeInteger(quantity) || quantity < 0) throw new Error('Insufficient or invalid inventory quantity');
     next.set(key, { itemId: line.itemId, qualityId: line.qualityId, quantity, ...(line.wood ? { wood: validateWood(line.wood) } : {}) });
   }
-  return { schemaVersion: 1, revision: state.revision + 1, stacks: canonicalStacks([...next.values()]) };
+  return { schemaVersion: 1, revision: state.revision + 1, stacks: canonicalStacks([...next.values()]), ...(state.instances?{instances:canonicalInstances(state.instances)}:{}) };
 }
 export function inventoryCandidate(state: InventoryState, itemId: string, delta: number, qualityId: string, catalog: ItemCatalog = ITEM_CATALOG) {
   return inventoryTransaction(state, [{ itemId, qualityId, delta }], catalog);
 }
+

@@ -1,3 +1,5 @@
+import {WORKBENCH,WORKBENCH_STOOL} from '../content/workshop.ts';
+import {CAMP_VISITOR} from '../content/characters.ts';
 import { RUNTIME_MODELS } from '../content/assets.ts';
 import { makeTrees } from '../world/layout.ts';
 import type { Tree } from '../world/layout.ts';
@@ -7,6 +9,6 @@ import {CAMP_PROPS} from '../content/scene-props.ts';
 import {ALTAR_LAYOUT} from '../content/altar.ts';
 export function createSaveContext(trees: Tree[] = makeTrees(), registry: GatheringRegistry = createGatheringRegistry({ assetIds: RUNTIME_MODELS.map(asset => asset.assetId) })) {
   return { trees: new Map(trees.filter(tree => tree.role !== 'scenery').map(tree => [tree.id, tree])), registry,
-    selectable: new Set([...trees.map(tree => tree.id), ...registry.sources.keys(), 'cabin', 'tent',...Object.values(CAMP_PROPS).map(p=>p.id),ALTAR_LAYOUT.oracle.id]) };
+    selectable: new Set([...trees.map(tree => tree.id), ...registry.sources.keys(), WORKBENCH.id,WORKBENCH_STOOL.id,CAMP_VISITOR.id, 'cabin', 'tent',...Object.values(CAMP_PROPS).map(p=>p.id),ALTAR_LAYOUT.oracle.id]) };
 }
 export type SaveContext = ReturnType<typeof createSaveContext>;

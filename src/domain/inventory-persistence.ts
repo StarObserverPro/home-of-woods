@@ -1,3 +1,4 @@
+import {canonicalInstances} from './owned-items.ts';
 import {canonicalJson} from './save-digest.ts';
 import { canonicalStacks, createInventory, exactKeys, isRecord, validateInventory } from './inventory.ts';
 import type { InventoryState } from './inventory.ts';
@@ -12,11 +13,14 @@ export function prepareInventoryData(raw: unknown): InventoryLoadResult {
   try {
     if (!isRecord(raw)) throw new Error('Invalid inventory object');
     if (Object.hasOwn(raw, 'schemaVersion')) {
-      exactKeys(raw, ['schemaVersion', 'stacks']);
-      if (raw.schemaVersion !== 1 && raw.schemaVersion !== 2) throw new Error('Unsupported inventory schema');
+      exactKeys(raw, ['schemaVersion', 'stacks', ...(Object.hasOwn(raw,'instances')?['instances']:[])]);
+      const instances=Object.hasOwn(raw,'instances')?canonicalInstances(raw.instances):undefined;
+      if(raw.schemaVersion===3&&!instances)throw new Error('Schema 3 requires instances');
+      if(instances&&raw.schemaVersion!==3)throw new Error('Instances require inventory schema 3');
+      if (raw.schemaVersion !== 1 && raw.schemaVersion !== 2 && raw.schemaVersion !== 3) throw new Error('Unsupported inventory schema');
       const stacks = canonicalStacks(raw.stacks);
       const migrated = canonicalJson(stacks) !== canonicalJson(raw.stacks);
-      return { decision: migrated ? 'migrated' : 'restored', value: { schemaVersion: 1, revision: 0, stacks }, diagnostics: migrated ? ['Inventory safely canonicalized'] : [] };
+      return { decision: migrated ? 'migrated' : 'restored', value: { schemaVersion: 1, revision: 0, stacks, ...(instances?{instances}:{}) }, diagnostics: migrated ? ['Inventory safely canonicalized'] : [] };
     }
     // Actual pre-stack session shape; absent grades remain explicitly ungraded.
     exactKeys(raw, ['version', 'quantities']);
@@ -44,5 +48,5 @@ export function prepareInventoryPersistence(raw: string | null): InventoryLoadRe
 /** This is a slice codec, not a second localStorage writer. */
 export function serializeInventory(state: InventoryState): string {
   const stacks = validateInventory(state);
-  return JSON.stringify({ schemaVersion: 2, stacks });
+  return JSON.stringify({ schemaVersion: state.instances?3:2, stacks, ...(state.instances?{instances:canonicalInstances(state.instances)}:{}) });
 }

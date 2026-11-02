@@ -1,3 +1,5 @@
+import {createWorkshop} from '../domain/workshop.ts';
+import {createLocalClock} from '../domain/local-clock.ts';
 import type { GameState } from '../domain/state.ts';
 import type { SaveContext } from '../domain/save-context.ts';
 import { FORESTRY } from '../content/forestry.ts';
@@ -9,6 +11,8 @@ import { validateWorldState } from '../domain/world-save.ts';
 export function upgradeWorldSession(state: GameState, context: SaveContext) {
   const candidate = structuredClone(state);
   if(!Object.hasOwn(candidate,'ritual'))candidate.ritual=null;
+  if(!Object.hasOwn(candidate,'workshop'))candidate.workshop=createWorkshop();
+  if(!Object.hasOwn(candidate,'clock'))candidate.clock=createLocalClock();
   const inventory = upgradeSessionInventory(candidate);
   requireValue(inventory.decision !== 'protected', 'session.inventory', inventory.diagnostics.join('；'));
   const chop = candidate.forestry.active;

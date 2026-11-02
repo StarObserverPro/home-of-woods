@@ -1,7 +1,7 @@
 export type Point = { x: number; z: number };
 export const WORLD_SEED = 104729;
 export const WORLD_LAYOUT_VERSION = 'how-valley-r3-hosts-1';
-export const WORLD_RULESET_VERSION = 2;
+export const WORLD_RULESET_VERSION = 3;
 export const WORLD = {
   minX: -150,
   maxX: 150,
@@ -74,3 +74,4 @@ export const PALETTE = {
   rock: "#9ca9a0",
   water: "#4eb89b",
 };
+

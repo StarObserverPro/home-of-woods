@@ -1,3 +1,7 @@
+import {workshopDetails,Hourglass,WorkshopControls,OwnedFurniture,PlacementControls} from './Workshop.tsx';
+import {calendarAt} from '../domain/local-clock.ts';
+import {WORKBENCH} from '../content/workshop.ts';
+import {CAMP_VISITOR} from '../content/characters.ts';
 import {treeVisual} from '../world/tree-appearance.ts';
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
@@ -93,6 +97,8 @@ const mapX=(x:number)=>(x+90)*.9;
 const mapZ=(z:number)=>(z+85)*.9;
 const mapLine=(p:{x:number;z:number}[])=>p.map(v=>`${mapX(v.x)},${mapZ(v.z)}`).join(' ');
 const empty: Snapshot = {
+  workshop:{blueprints:[],offers:[],items:[],job:null,lastResponse:'',calendar:calendarAt(0),speed:1},
+  placement:null,
   zone: "山间营地",
   x: START.x,
   z: START.z,
@@ -232,7 +238,7 @@ export function App() {
   const activeAction = forest.active;
   const gatherTarget = snapshot.gathering.selectedTarget;
   const gatherAction = snapshot.gathering.action;
-  const selected = gatherTarget ?? scenePropDetails(snapshot.selected,snapshot.appearance,forest.wood) ?? (
+  const selected = workshopDetails(snapshot.selected,snapshot.workshop) ?? gatherTarget ?? scenePropDetails(snapshot.selected,snapshot.appearance,forest.wood) ?? (
     snapshot.selected === "cabin"
       ? {
           title: "旧木屋",
@@ -308,13 +314,14 @@ export function App() {
             <span className="brand-name">森林之家</span>
             <h1>{snapshot.zone}</h1>
             <p className="journey-meta">
-              <span>{snapshot.appearance.hour>=19||snapshot.appearance.hour<6?'春夜':snapshot.appearance.hour>=17?'春暮':'春日'} · 晴</span>
+              <span>{snapshot.workshop.calendar.season} · 第 {snapshot.workshop.calendar.dayOfSeason} 天 · {String(Math.floor(snapshot.appearance.hour)).padStart(2,'0')}:00</span>
               <span>风景 {snapshot.visited.length}/4</span>
               <span>原木 {forest.wood}</span>
               {snapshot.gathering.inventory.map(item => <span key={item.typeId}>{item.name} {item.quantity}</span>)}
             </p>
           </div>
         </section>
+        <Hourglass view={snapshot.workshop} disabled={!ready||snapshot.paused} onSpeed={s=>runtime.current?.setClockSpeed(s)}/>
         <button
           className="round-button pause"
           aria-label="暂停"
@@ -451,7 +458,11 @@ export function App() {
         </button>
       </nav>
       </div>
-      <Warehouse open={warehouseOpen} view={snapshot.warehouse} onClose={()=>setWarehouseOpen(false)}/>
+      <Warehouse open={warehouseOpen} view={snapshot.warehouse} onClose={()=>setWarehouseOpen(false)}>
+        <OwnedFurniture view={snapshot.workshop} onPlace={id=>{setWarehouseOpen(false);runtime.current?.setInterfaceOpen(false);runtime.current?.beginPlacement(id);}} onPack={id=>{setWarehouseOpen(false);runtime.current?.setInterfaceOpen(false);runtime.current?.packFurniture(id);}}/>
+      </Warehouse>
+      <PlacementControls draft={snapshot.placement} onRotate={()=>runtime.current?.rotatePlacement()} onConfirm={()=>runtime.current?.confirmPlacement()} onCancel={()=>runtime.current?.cancelPlacement()}/>
+
       <button className="save-indicator" aria-label="查看世界存档" title={snapshot.save.message} onClick={() => runtime.current?.pause(true)}>
         <span className="save-label">存档 · </span>{({loading:'读取中',ready:'待保存',saving:'保存中',saved:'已保存',protected:'受保护',conflict:'需重读',failed:'未保存'} as const)[snapshot.save.state]}
       </button>
@@ -474,9 +485,13 @@ export function App() {
             </button>
           </div>
           <h2>{selected.title}</h2>
-          {['grove-altar','grove-altar:oracle'].includes(snapshot.selected??'') && <div className="tree-actions"><button className="context-button" onClick={()=>runtime.current?.ritual('prayer')}>合掌祈祷</button><button className="context-button" disabled title="供品与回应规则待配置">祭祀待开放</button><button className="context-button" onClick={()=>runtime.current?.cancelAction()}>取消动作</button></div>}
+          {['grove-altar','grove-altar:oracle'].includes(snapshot.selected??'') && <div className="tree-actions"><button className="context-button" onClick={()=>runtime.current?.ritual('prayer')}>合掌祈祷</button><button className="context-button" onClick={()=>runtime.current?.cancelAction()}>取消动作</button></div>}
           {selectedTree && ['tree-slot-r3-hero-0','tree-slot-16-9','tree-slot-13-6','tree-slot-17-11','landmark-elder'].includes(selectedTree.id) && <button className="context-button" onClick={()=>runtime.current?.selectTreeBranches()}>上树采枝</button>}
           <p>{selected.detail}</p>
+          <WorkshopControls selected={snapshot.selected} view={snapshot.workshop} message={snapshot.message} disabled={!ready||snapshot.paused||!!snapshot.placement}
+            onOffer={()=>runtime.current?.offer()} onCraft={id=>runtime.current?.craft(id)} onTrade={id=>runtime.current?.trade(id)} onApproach={()=>runtime.current?.approachMerchant()} onCancel={()=>runtime.current?.cancelAction()} onPlace={id=>runtime.current?.beginPlacement(id)} onPack={id=>runtime.current?.packFurniture(id)}/>
+          {snapshot.selected==='tent'&&<button className="context-button" onClick={()=>runtime.current?.select(WORKBENCH.id)}>查看帐篷前的工作台</button>}
+
           {gatherTarget && <div className="tree-work">
             <div className="tree-facts"><span>{gatherTarget.status}</span><span>距你 {gatherTarget.distance.toFixed(1)}</span></div>
             {gatherTarget.status === '可以采集' && <p className="tree-cost">可得 {gatherTarget.reward}</p>}
@@ -533,6 +548,8 @@ export function App() {
             </button>
           </div>
           <p>选一处风景，沿途慢慢走。方向键可以随时接过移动。</p>
+          <div className="camp-shortcuts"><button className="context-button" onClick={()=>{runtime.current?.select(WORKBENCH.id);setMapOpen(false);}}>营地工作台</button><button className="context-button" onClick={()=>{runtime.current?.select(CAMP_VISITOR.id);setMapOpen(false);}}>林间行商</button><button className="context-button" onClick={()=>{runtime.current?.select('grove-altar');setMapOpen(false);}}>林间祭坛</button></div>
+
           {WAYPOINTS.map((wp, i) => (
             <button
               className="route-stop"
@@ -573,6 +590,7 @@ export function App() {
           </p>
           <p><b>砍树</b>　选中经营树、走近后挥斧。巨木始终受到保护。</p>
           <p><b>采集</b>　点选落枝堆或蘑菇簇，再按“采集 / 走近采集”或 E。移动或切换目标可取消。</p>
+          <p><b>木作</b>　向行商换图纸，或在祭坛供奉一份蘑菇；帐篷前工作台用一份木料制作。仓库里的家具可以自由摆放、移动和收回。沙漏切换 1/4/12 倍游戏时间。</p>
           <p><b>仓库</b>　底部“仓库”或 B 查看分类物品与加工方向；Esc 收起后继续巡林。</p>
           <p>
             <b>歇一会</b>　Esc 或右上角暂停。离开页面时，山谷也会等你。
@@ -691,6 +709,7 @@ export function App() {
           <button onClick={() => runtime.current?.select("cabin")}>
             选择木屋
           </button>
+          <button onClick={() => runtime.current?.select(WORKBENCH.id)}>选择工作台</button><button onClick={() => runtime.current?.select(CAMP_VISITOR.id)}>选择行商</button>
           <button onClick={() => runtime.current?.select('grove-altar')}>选择祭坛</button>
           <button onClick={() => runtime.current?.selectGathering('branch')}>选择树上枝杈</button><button onClick={()=>runtime.current?.selectGathering('scrap')}>选择地面碎柴</button>
           <button onClick={() => runtime.current?.selectGathering('mushroom')}>选择蘑菇簇</button>

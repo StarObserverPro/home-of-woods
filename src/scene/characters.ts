@@ -110,7 +110,9 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
       const clip=sourceClips[mode];
       actions[mode].time=mode==='gather'?Math.min(.999,gather!.progress)*clip.duration:reducedMotion?.01:(state.time*(mode==='walk'?1.6:1))%clip.duration;
       mixer.update(0);
-      if(state.ritual?.phase==='performing'){
+      if(state.workshop.job?.phase==='working'){
+        const job=state.workshop.job;procedural.update(job.kind==='offering'?'pray':'pickup',job.kind==='offering'?(state.time-job.startedAt!)*2:1.35);procedural.root.position.set(0,0,0);procedural.root.rotation.set(0,0,0);body.visible=false;procedural.root.visible=true;
+      }else if(state.ritual?.phase==='performing'){
         procedural.update('pray',state.time-state.ritual.startedAt!);procedural.root.position.set(0,0,0);procedural.root.rotation.set(0,0,0);body.visible=false;procedural.root.visible=true;
       }
       if(gather?.phase==='performing'){

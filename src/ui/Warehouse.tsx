@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type {ReactNode} from 'react';
 import type { WarehouseView } from '../domain/warehouse-view.ts';
 import './warehouse.css';
 
@@ -8,7 +9,7 @@ function ItemSymbol({ symbol }: { symbol: 'branch' | 'mushroom' | 'wood' | 'unkn
   </svg>;
 }
 
-export function Warehouse({ open, view, onClose }: { open: boolean; view: WarehouseView; onClose: () => void }) {
+export function Warehouse({ open, view, onClose, children }: { open: boolean; view: WarehouseView; onClose: () => void; children?:ReactNode }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [category,setCategory] = useState('all');
   const [selectedKey,setSelectedKey] = useState('');
@@ -34,6 +35,7 @@ export function Warehouse({ open, view, onClose }: { open: boolean; view: Wareho
         {selected.processing.length>0 && <><h4>加工方向</h4>{selected.processing.map(p=><div className="warehouse-processing" key={p.id}><div><strong>{p.name}</strong><span>{p.status}</span></div><p>可制成{p.outputs.join('、')} · {p.station}</p><small>{p.parametersReady ? '加工条件已登记。' : '配比与耗时待定。'}</small></div>)}</>}
       </section>}
     </div>
+    {children}
     <footer>采集所得直接入库。按 B 或 Esc 收起，继续巡林。</footer>
   </dialog>;
 }
