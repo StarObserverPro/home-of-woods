@@ -1,4 +1,4 @@
-name: Wildlife P2 actual game review
+name: Wildlife P2 native scene capture and review
 on:
   push:
     branches: [feat/wildlife-phase2]
@@ -51,7 +51,6 @@ jobs:
           These images were captured inside the production Three.js game via the \`?inspect=1\` read-only camera presets, not standalone asset renders.
           - \`desktop-stag.png\` / \`desktop-goat.png\`: landscape review.
           - \`mobile-stag.png\` / \`mobile-goat.png\`: simulated narrow touch viewport.
-          - \`desktop-normal.png\`: ordinary valley view.
           - \`browser/report.json\`: source commit, GPU backend, landmark visibility, zero shader errors and two scene lifecycle re-entries.
           
           The same batch's design and limitations are documented in [the phase-two guide](../../docs/WILDLIFE_PHASE2.md).
