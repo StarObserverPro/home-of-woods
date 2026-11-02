@@ -1,0 +1,67 @@
+name: Wildlife phase-two delivery
+on:
+  push:
+    branches: [feat/wildlife-phase2]
+    paths:
+      - '.github/workflows/wildlife-phase2-delivery.yml'
+permissions:
+  contents: write
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+          cache: npm
+      - name: Apply locally tested phase-two source overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat tools/p2-overlay/{00,01,02,03}.b64 | base64 -d > /tmp/p2-overlay.xz
+          echo '8347632a4af9d89fc550b8f60c8f898842276b6be27b707017df89bb4b518d44  /tmp/p2-overlay.xz' | sha256sum -c -
+          xz -dc /tmp/p2-overlay.xz > /tmp/p2-overlay.patch
+          git apply --check /tmp/p2-overlay.patch
+          git apply /tmp/p2-overlay.patch
+      - name: Admit hash-pinned CC0 Stag and Goat assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p sources/quaternius/ultimate-animated-animals sources/gobkit/animalB
+          curl --retry 3 --retry-delay 2 --fail --location --silent --show-error 'https://raw.githubusercontent.com/agentkaerf/FreeModels/main/Ultimate%20Animated%20Animals%20-%20July%202021/glTF/Stag.gltf' -o sources/quaternius/ultimate-animated-animals/Stag.gltf
+          curl --retry 3 --retry-delay 2 --fail --location --silent --show-error 'https://raw.githubusercontent.com/agentkaerf/FreeModels/main/Ultimate%20Animated%20Animals%20-%20July%202021/License.txt' -o sources/quaternius/ultimate-animated-animals/License.txt
+          curl --retry 3 --retry-delay 2 --fail --location --silent --show-error 'https://gobkit.com/freebies/animalB/Goat.glb' -o sources/gobkit/animalB/Goat.glb
+          printf '%s\n' '170b964909d16d1ab4d428b1d714f25016913d32481acd9c3d62923192583be6  sources/quaternius/ultimate-animated-animals/Stag.gltf' '83d8959f9fc56353ed571fbe2dc52e4bcd64508e2399501cd45ac2ce3df0bf8c  sources/quaternius/ultimate-animated-animals/License.txt' '51f7399bb76ea5175ac4d7c136c50b74f86250664c1f6b1acff48e5322f09ea0  sources/gobkit/animalB/Goat.glb' | sha256sum -c -
+          node --input-type=module -e '
+            import fs from "node:fs/promises";
+            const response=await fetch("https://gobkit.com/api/free");
+            if(!response.ok)throw Error("Gobkit catalog unavailable");
+            const doc=await response.json();
+            const pack=doc.packs.find(p=>p.models.some(m=>m.url==="https://gobkit.com/freebies/animalB/Goat.glb"));
+            if(!pack)throw Error("Goat not in official catalog");
+            const model=pack.models.find(m=>m.url==="https://gobkit.com/freebies/animalB/Goat.glb");
+            await fs.writeFile("sources/gobkit/animalB/catalog.json",JSON.stringify({model,pack:pack.name},null,2)+"\\n");
+          '
+          python3 -m pip install --disable-pip-version-check --quiet pillow
+          python3 tools/prepare-landmark-assets.py
+      - name: Test integration and published asset hashes
+        run: |
+          npm ci
+          npm run check
+          npm run verify:evidence
+      - name: Commit validated implementation without temporary delivery overlays
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm -rf tools/p2-overlay
+          git rm -f .github/workflows/wildlife-phase2-bootstrap.yml .github/workflows/wildlife-phase2-model-sources.yml
+          git add -A
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(wildlife): rare stag and goat landmark encounters'
+          git push origin HEAD:feat/wildlife-phase2
