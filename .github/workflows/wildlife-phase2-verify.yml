@@ -1,0 +1,37 @@
+name: Wildlife phase-two verification
+on:
+  push:
+    branches: [feat/wildlife-phase2]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'public/assets/**'
+      - 'sources/**'
+      - 'tools/**'
+      - '.github/workflows/wildlife-phase2-verify.yml'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'public/assets/**'
+      - 'sources/**'
+      - 'tools/**'
+      - '.github/workflows/wildlife-phase2-verify.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - run: npm ci
+      - run: npm run check
+      - run: npm run verify:evidence
+      - run: node tools/audit-delivery-evidence.mjs
