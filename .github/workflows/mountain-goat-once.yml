@@ -1,0 +1,56 @@
+name: Integrate original mountain goat
+on:
+  push:
+    branches: [feat/wildlife-mountain-goat]
+    paths: [.github/workflows/mountain-goat-once.yml]
+permissions:
+  contents: write
+jobs:
+  build-and-integrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: Apply audited source patch (no unstaged source dependencies)
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d tools/goat-stage/overlay.b64 > /tmp/mountain-goat.patch.xz
+          echo '109d3c5096953efb5f3a2ae93013c19e4b3826785989942eb15ef33ce984cea1  /tmp/mountain-goat.patch.xz' | sha256sum -c -
+          xz -dc /tmp/mountain-goat.patch.xz > /tmp/mountain-goat.patch
+          git apply --check /tmp/mountain-goat.patch
+          git apply /tmp/mountain-goat.patch
+          git diff --check
+      - name: Build exact original faceted animated GLB
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/build-mountain-goat.py
+          echo 'de30051117e21b0d3dd0f60e366925fcb697b8929d6c38af6c93082d081f59d0  public/assets/wildlife/mountain-goat.glb' | sha256sum -c -
+      - name: Validate geometry, rig, gameplay and production build
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run check
+          npm run verify:evidence
+          node tools/audit-delivery-evidence.mjs
+      - name: Keep only actual implementation, models and tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm -r tools/goat-stage
+          git rm .github/workflows/goat-build-snapshot.yml .github/workflows/mountain-goat-once.yml
+          git add src/ tools/build-mountain-goat.py tools/verify-assets.mjs tests/ public/assets/wildlife/mountain-goat.glb public/assets/manifest.json
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git diff --cached --stat
+          git commit -m 'feat(wildlife): original faceted mountain goat with articulated gait'
+          git push origin HEAD:feat/wildlife-mountain-goat
