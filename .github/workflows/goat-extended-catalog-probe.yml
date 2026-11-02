@@ -1,0 +1,21 @@
+name: CC0 extended goat catalog probe
+on:
+  push:
+    branches: [art/cc0-mountain-goat-review]
+    paths: [.github/workflows/goat-extended-catalog-probe.yml]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Search public CC0 catalog for genuinely relevant goat geometry
+        shell: bash
+        run: |
+          set -euo pipefail
+          for q in goat "mountain goat" ibex chamois; do
+            echo "===== SEARCH $q ====="
+            curl -f -sS -G --data-urlencode "q=$q" --data-urlencode "kind=object" --data-urlencode "limit=30" --max-time 20 "https://three.ws/api/catalog" | head -c 16000 || true
+            echo
+          done
