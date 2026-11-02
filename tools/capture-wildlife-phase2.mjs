@@ -34,9 +34,23 @@ async function take(page,name,preset){
   const frozen=await extract(page);
   assert.equal(frozen.gameTime,oldTime,'Inspection must not progress encounter time');
   assert.equal(JSON.stringify(frozen.wildlifeViews),viewState,'Inspection must not change active encounters');
-  await page.locator('details.diagnostics').evaluate(e=>e.style.visibility='hidden');
-  await page.screenshot({path:output+'/'+name+'.png'});
-  await page.locator('details.diagnostics').evaluate(e=>e.style.visibility='');
+  // The production scene's own capture() renders and reads its canvas synchronously.
+  // Avoid Playwright's expensive whole-page screenshot in software WebGL.
+  let captured=false;
+  await page.route('**/__scene-capture',async route=>{
+    const body=route.request().postDataJSON();
+    assert.ok(body.image.startsWith('data:image/png;base64,'));
+    const png=Buffer.from(body.image.slice('data:image/png;base64,'.length),'base64');
+    assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+    assert.ok(png.length>1000,'Capture must contain rendered pixels');
+    await fs.writeFile(output+'/'+name+'.png',png);
+    captured=true;
+    await route.fulfill({status:200,body:'Saved'});
+  });
+  await page.getByRole('button',{name:'保存场景画面'}).click({timeout:120000});
+  await page.getByRole('status').waitFor({timeout:120000});
+  assert.ok(captured,'Scene screenshot must complete');
+  await page.unroute('**/__scene-capture');
   report.frames[name]={preset,sourceTime:data.gameTime,wildlife:data.wildlife,
     animals:data.wildlifeViews,drawCalls:data.drawCalls,triangles:data.triangles,
     graphicsBackend:data.graphicsBackend,gpu:data.gpu,shaderErrors:data.shaderErrors,canvas:data.canvas};
@@ -47,7 +61,6 @@ try{
     const page=await context.newPage();page.on('pageerror',e=>report.errors.push(e.message));
     await page.goto('http://127.0.0.1:5173/?inspect=1',{waitUntil:'domcontentloaded'});
     await ready(page);
-    if(!v.mobile) await page.screenshot({path:output+'/desktop-normal.png'});
     await take(page,v.name+'-stag','stagVista');
     await take(page,v.name+'-goat','goatVista');
     // Retain the prior two small animals while the distant models are admitted.
