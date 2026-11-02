@@ -1,0 +1,57 @@
+name: Original mountain-goat real browser and rig review
+on:
+  push:
+    branches: [feat/wildlife-mountain-goat]
+    paths: [.github/workflows/wildlife-original-goat-review.yml]
+permissions:
+  contents: write
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: Verify reproducibility and game
+        run: |
+          npm ci
+          npm run check
+          npm run verify:evidence
+          python3 tools/build-mountain-goat.py
+          echo "f4ee8d8007a2b00ab3a8e541a56a6d4eab1a3c7385370bf8273f6409f72a8655  public/assets/wildlife/mountain-goat.glb" | sha256sum -c -
+      - name: Install isolated software WebGL viewer
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Capture independent foreleg movement and actual game camera
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run dev > /tmp/goat-vite.log 2>&1 &
+          for n in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:5173/ > /dev/null; then break; fi
+            sleep 1
+          done
+          node tools/capture-original-goat.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: original-goat-rig-and-game-images
+          path: evidence/wildlife-mountain-goat/
+          retention-days: 10
+          if-no-files-found: warn
+      - name: Commit screenshots and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/wildlife-original-goat-review.yml
+          git add evidence/wildlife-mountain-goat/
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "test(wildlife): capture original goat lift, walk and forest silhouettes"
+          git push origin HEAD:feat/wildlife-mountain-goat
