@@ -32,7 +32,7 @@ export const CABIN_REPAIR={
   blueprintId:CABIN_REPAIR_BLUEPRINT.id,durationSeconds:4,materials:[log(2),branch(3)],
 } as const satisfies UpgradePath;
 export const CABIN_REPAIR_STAND={x:CABIN.x-2.4,z:CABIN.z+10};
-const tentStand={x:TENT.x,z:TENT.z+5.4};
+const tentStand={x:TENT.x+5.4,z:TENT.z+1.3}; // Clear east-side approach, away from the workbench corridor.
 const fireStand={x:CAMP_PROPS.fire.x,z:CAMP_PROPS.fire.z+2.8};
 type ModuleArgs={
   id:string;hostId:string;title:string;description:string;materials:readonly UpgradeMaterial[];
