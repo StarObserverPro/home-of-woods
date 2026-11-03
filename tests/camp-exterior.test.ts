@@ -11,6 +11,10 @@ import {CAMP_PROPS} from '../src/content/scene-props.ts';
 import {CAMP_EXTERIOR_BLUEPRINTS,STARTER_BLUEPRINTS} from '../src/content/workshop.ts';
 import {EXTERIOR_PROFILES,FIRE_TOP_SLOT,findUpgradeProfile,upgradeHostId} from '../src/content/upgrades.ts';
 import {createCampExteriors} from '../src/scene/camp-exteriors.ts';
+import {makeTrees,makeColliders} from '../src/world/layout.ts';
+import {workstationColliders} from '../src/domain/furniture-placement.ts';
+import {canStand} from '../src/domain/navigation.ts';
+import {approachUpgrade} from '../src/domain/upgrades.ts';
 import {Resources} from '../src/scene/resources.ts';
 import {advanceWorkshop,cancelWorkshop,tradeSupply,workshopSnapshot} from '../src/domain/workshop.ts';
 import {upgradeOptions,upgradeSnapshot,beginUpgrade,mountFireTop} from '../src/domain/upgrades.ts';
@@ -63,6 +67,21 @@ test('three permanent hosts expose independent exterior parts and unique fitting
     assert.equal(profile.paths[0].blueprintId, 'blueprint.'+profile.id.replace(':','-'));
     assert.ok(CAMP_EXTERIOR_BLUEPRINTS.some(p=>p.id===profile.paths[0].blueprintId));
     assert.equal(upgradeSnapshot(state,profile.id)?.near,false);
+  }
+});
+
+test('all three exterior work spots are reachable from the camp and keep inspection separate from installation',()=>{
+  const blockers=[...makeColliders(makeTrees()),...workstationColliders()];
+  for(const targetId of ['tent:ropes','cabin:windows','camp-fire:stones']){
+    const state=createState(),profile=findUpgradeProfile(targetId)!;
+    assert.equal(canStand(profile.stand,blockers),true,`${targetId} work spot intersects a collider`);
+    const before=structuredClone(state.inventory);
+    const result=approachUpgrade(state,targetId,blockers);
+    assert.match(result,/走近/, `${targetId}: ${result}`);
+    assert.ok(state.route.length>0,`${targetId} requires a real route`);
+    assert.equal(state.selected,profile.hostId);
+    assert.equal(state.workshop.job,null);
+    assert.deepEqual(state.inventory,before);
   }
 });
 
