@@ -1,3 +1,4 @@
+import {CarryingControls,CarryingSummary,carryingDetails,GroundCarryControls} from './Carrying.tsx';
 import {RarityVfxControls} from './RarityVfxControls.tsx';
 import {readRarityVfxPreference,writeRarityVfxPreference} from '../app/display-preferences.ts';
 import type {RarityVfxMode} from '../content/item-vfx.ts';
@@ -107,6 +108,7 @@ const mapX=(x:number)=>(x+90)*.9;
 const mapZ=(z:number)=>(z+85)*.9;
 const mapLine=(p:{x:number;z:number}[])=>p.map(v=>`${mapX(v.x)},${mapZ(v.z)}`).join(' ');
 const empty: Snapshot = {
+  carrying:{weight:0,bulk:0,effort:0,speed:1,reason:'',weightLimit:30,bulkLimit:10,method:'hands',items:[],ground:[],storageNear:false,visual:null},
   interaction:null,
   woodcraft:emptyWoodcraftSnapshot(),
   workshop:{blueprints:[],offers:[],items:[],job:null,lastResponse:'',calendar:calendarAt(0),speed:1,upgrades:{},upgrade:null,inputs:{craft:false,offering:false,trade:false}},
@@ -265,7 +267,7 @@ export function App() {
   const gatherTarget = snapshot.gathering.selectedTarget;
   const gatherAction = snapshot.gathering.action;
   const selectedOwnedItem=snapshot.workshop.items.find(item=>item.instanceId===snapshot.selected);
-  const selected = woodcraftDetails(snapshot.selected,snapshot.woodcraft) ?? workshopDetails(snapshot.selected,snapshot.workshop) ?? gatherTarget ?? scenePropDetails(snapshot.selected,snapshot.appearance,forest.wood) ?? (
+  const selected = carryingDetails(snapshot.selected,snapshot.carrying) ?? woodcraftDetails(snapshot.selected,snapshot.woodcraft) ?? workshopDetails(snapshot.selected,snapshot.workshop) ?? gatherTarget ?? scenePropDetails(snapshot.selected,snapshot.appearance,forest.wood) ?? (
     snapshot.selected === "cabin"
       ? {
           title: "旧木屋",
@@ -472,7 +474,7 @@ export function App() {
           <Icon name="map" />
           <span>路线</span>
         </button>
-        <button aria-label="打开仓库" aria-pressed={warehouseOpen} onClick={()=>setWarehouseOpen(true)}><Icon name="warehouse"/><span>仓库</span></button>
+        <button aria-label="打开仓库" aria-pressed={warehouseOpen} onClick={()=>setWarehouseOpen(true)}><Icon name="warehouse"/><span>随身 / 仓库</span></button>
         <button
           className={help ? "active" : ""}
           aria-pressed={help}
@@ -487,7 +489,7 @@ export function App() {
         </button>
       </nav>
       </div>
-      <Warehouse open={warehouseOpen} view={snapshot.warehouse} woodcraft={snapshot.woodcraft} onClose={closeWarehouse}
+      <Warehouse carrySummary={<CarryingSummary view={snapshot.carrying}/>} carrying={<CarryingControls view={snapshot.carrying} warehouse={snapshot.warehouse} message={snapshot.message} onChange={intent=>runtime.current?.carry(intent)} onHome={()=>leaveWarehouse(()=>runtime.current?.approachTarget(CAMP_PROPS.logs.id))} onApproach={id=>leaveWarehouse(()=>runtime.current?.approachMaterial(id))}/>} open={warehouseOpen} view={snapshot.warehouse} woodcraft={snapshot.woodcraft} onClose={closeWarehouse}
         onApproach={()=>leaveWarehouse(()=>runtime.current?.openWoodcraft())} onFocus={()=>runtime.current?.focusWoodcraft()}
         onThrow={key=>leaveWarehouse(()=>runtime.current?.beginWoodDrop(key))}
         onCollect={id=>runtime.current?.transferItem({kind:'loose-wood',id,name:'木料'},0,0,true)}
@@ -523,6 +525,7 @@ export function App() {
           {['grove-altar','grove-altar:oracle'].includes(snapshot.selected??'') && snapshot.interaction?.near&&<div className="tree-actions"><button className="context-button" onClick={()=>runtime.current?.ritual('prayer')}>合掌祈祷</button><button className="context-button" onClick={()=>runtime.current?.cancelAction()}>取消动作</button></div>}
           {selectedTree && ['tree-slot-r3-hero-0','tree-slot-16-9','tree-slot-13-6','tree-slot-17-11','landmark-elder'].includes(selectedTree.id) && <button className="context-button" onClick={()=>runtime.current?.selectTreeBranches()}>上树采枝</button>}
           <p>{selected.detail}</p>
+          <GroundCarryControls id={snapshot.selected} view={snapshot.carrying} onChange={intent=>runtime.current?.carry(intent)} onApproach={id=>runtime.current?.approachMaterial(id)}/>
           <WoodcraftControls selected={snapshot.selected} view={snapshot.woodcraft} message={snapshot.message} disabled={!ready||snapshot.paused||!!snapshot.placement}
             onOpen={()=>runtime.current?.openWoodcraft()} onWarehouse={()=>setWarehouseOpen(true)} onPrepare={()=>runtime.current?.prepareWoodcraft()} onThrow={()=>runtime.current?.beginWoodDrop()} onCollect={id=>runtime.current?.collectWood(id)} onClose={()=>runtime.current?.closeWoodcraft()}/>
           <WorkshopControls selected={snapshot.selected} view={snapshot.workshop} access={snapshot.interaction} message={snapshot.message} disabled={!ready||snapshot.paused||!!snapshot.placement}

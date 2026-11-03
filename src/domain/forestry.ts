@@ -1,9 +1,10 @@
+import {awardGround} from './carrying.ts';
 import {LOG_HARVEST_LENGTH_MM} from '../content/wood-uses.ts';
 import {canStand} from './navigation.ts';
 import {FORESTRY} from '../content/forestry.ts';
 import type {Point} from '../content/world.ts';
 import type {Tree,Collider} from '../world/layout.ts';
-import { inventoryTransaction, woodBatch, inventoryTypeCount } from './inventory.ts';
+import { woodBatch, inventoryTypeCount } from './inventory.ts';
 import { ITEM_CATALOG } from './item-catalog.ts';
 import type { ItemCatalog } from './item-catalog.ts';
 import type { InventoryState, WoodBatch } from './inventory.ts';
@@ -86,13 +87,13 @@ export function advanceForestry(host:ForestryHost,trees:ReadonlyMap<string,Tree>
     if(!valid)return cancelChop(host,'目标或距离已经变化，采伐已取消并释放预留。').message;
     if(!state.completedActions.includes(a.id)){
       // Validate inventory first. No point/tree changes survive a failed award.
-      const inventory = inventoryTransaction(host.inventory, [{...a.reward, delta:a.yield}]);
+      const inventory = awardGround(host.inventory,a.reward,a.yield,host.player);
       host.inventory = inventory;
       state.ledger.reserved-=a.cost;state.ledger.used+=a.cost;state.completedActions.push(a.id);
       life.status='falling';life.felledAt=a.startedAt+FORESTRY.chopSeconds;life.regrowAt=life.felledAt+FORESTRY.fallSeconds+FORESTRY.regrowDelay;
     }
     a.phase='falling';a.committedAt=life.felledAt;
-    message=`切口已断开，收获 ${a.yield} 根原木；树位会原位补生。`;
+    message=`切口已断开，${a.yield} 根原木留在脚边，搬回营地后才能存放。`;
   }
   if(a?.phase==='falling'&&host.time>=(a.committedAt??host.time)+FORESTRY.fallSeconds){
     const life=state.slots[a.treeId];if(life?.individualId===a.individualId)life.status='stump';state.active=null;

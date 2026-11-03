@@ -1,3 +1,4 @@
+import {carryAdditionReason} from './carrying.ts';
 import { inventoryTypeCount } from './inventory.ts';
 import type { GatheringHost, GatherActionView } from './gathering.ts';
 import { gatheringBusy, gatheringReason, canInteract, hostResourceReason } from './gathering.ts';
@@ -19,10 +20,11 @@ export function gatheringSnapshot(host: GatheringHost, registry: GatheringRegist
     const distance = Math.hypot(host.player.x - s.x, host.player.z - s.z), reason = gatheringReason(host, s);
     const busyHere = gatheringBusy(host.gathering) && host.gathering.action?.sourceId === s.sourceId;
     const near = distance <= d.range && canInteract(host.player, s, blockers);
+    const capacityReason=near&&!busyHere?carryAdditionReason(host.inventory,{itemId:d.itemId,qualityId:d.qualityId},d.yieldPerUnit):'';
     selectedTarget = { id: s.sourceId, title: s.displayName ?? d.name, tag: s.hostLabel ? `${s.hostLabel} · 林间物产` : '林间物产', detail: s.placement === 'mushroom-circle' ? `围绕${s.hostLabel}生长的一圈蘑菇，共享这一处的采集量。` : d.description,
       status: hostResourceReason(host,s) ? '宿主暂不提供物产' : life.remaining > 0 ? '可以采集' : '已经采空', distance, reward: `${d.yieldPerUnit} 份${registry.items.get(d.itemId)!.name}`,
-      reason: hostResourceReason(host,s) || (life.remaining === 0 ? '暂时没有可采的物产，继续去林间走走吧。' : reason),
-      actions: busyHere ? [{ id: 'cancel-gather', label: '取消采集', enabled: true }] : [{ id: 'gather', label: near ? '采集' : '走近采集', enabled: !reason }],
+      reason: hostResourceReason(host,s) || (life.remaining === 0 ? '暂时没有可采的物产，继续去林间走走吧。' : reason||capacityReason),
+      actions: busyHere ? [{ id: 'cancel-gather', label: '取消采集', enabled: true }] : [{ id: 'gather', label: near ? '采集' : '走近采集', enabled: !reason&&!capacityReason }],
     };
   }
   const a = host.gathering.action;

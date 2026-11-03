@@ -1,3 +1,4 @@
+import {carryMethod} from './transport-location.ts';
 import { canonicalInstances } from './owned-items.ts';
 import { canonicalJson } from './save-digest.ts';
 import { canonicalStacks, createInventory, isRecord, validateInventory, INVENTORY_SCHEMA_VERSION } from './inventory.ts';
@@ -12,13 +13,15 @@ export type InventoryLoadResult =
 /** One current core format. New optional attributes do not change this version. */
 export function prepareInventoryData(raw: unknown): InventoryLoadResult {
   try {
-    if (!isRecord(raw) || raw.schemaVersion !== INVENTORY_SCHEMA_VERSION) throw new Error('Unsupported inventory core format');
+    if (!isRecord(raw) || ![4, INVENTORY_SCHEMA_VERSION].includes(raw.schemaVersion as number)) throw new Error('Unsupported inventory core format');
     assertItemJson(raw);
+    if(raw.schemaVersion===4&&(Object.hasOwn(raw,'carryMode')||Array.isArray(raw.stacks)&&raw.stacks.some(s=>isRecord(s)&&Object.hasOwn(s,'transport'))))throw new Error('Ambiguous legacy carrying fields');
+    carryMethod(raw.carryMode);
     const stacks = canonicalStacks(raw.stacks);
     const instances = Object.hasOwn(raw, 'instances') ? canonicalInstances(raw.instances) : undefined;
     const diagnostics = [...stacks, ...(instances ?? [])].flatMap((item, i) =>
       itemPropertyDiagnostics(item).map(message => `inventory[${i}].${message}`));
-    const normalized = canonicalJson(stacks) !== canonicalJson(raw.stacks);
+    const normalized = raw.schemaVersion !== INVENTORY_SCHEMA_VERSION || canonicalJson(stacks) !== canonicalJson(raw.stacks);
     return { decision: normalized ? 'migrated' : 'restored',
       value: { ...structuredClone(raw), schemaVersion: INVENTORY_SCHEMA_VERSION, revision: 0, stacks, ...(instances ? { instances } : {}) },
       diagnostics };

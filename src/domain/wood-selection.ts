@@ -1,3 +1,4 @@
+import {isAvailableMaterial} from './transport-location.ts';
 import {canonicalJson} from './save-digest.ts';
 import { WOOD_CAPABILITIES, WOOD_USES, WOOD_RULE_VERSION } from '../content/wood-uses.ts';
 import { inventoryTransaction, stackKey, validateInventory } from './inventory.ts';
@@ -19,7 +20,7 @@ export function woodCandidates(state: InventoryState, requirement: WoodRequireme
   if (requirement.mode === 'aggregate' && requirement.measureId !== use.measureId) throw new Error('Incompatible wood units');
   if (requirement.mode === 'piece' && (![requirement.minLengthMm, requirement.minThicknessMm].every(v => Number.isSafeInteger(v) && v > 0) || !requirement.allowedStraightness.length || requirement.allowedStraightness.some(v => !['straight','curved','crooked'].includes(v)))) throw new Error('Invalid wood dimensions');
   return validateInventory(state).filter(stack => {
-    if (stack.wood?.reserved || !ITEM_CATALOG.qualities.has(stack.qualityId) || !(WOOD_CAPABILITIES[stack.itemId] ?? []).includes(use.capability)) return false;
+    if (!isAvailableMaterial(stack) || stack.wood?.reserved || !ITEM_CATALOG.qualities.has(stack.qualityId) || !(WOOD_CAPABILITIES[stack.itemId] ?? []).includes(use.capability)) return false;
     const spec = stack.wood?.spec;
     if (requirement.mode === 'aggregate') return (requirement.allowValuable===true || !(stack.itemId==='wood' || stack.qualityId==='fine' || spec?.straightness==='straight')) && (use.allowUnknown || !!spec);
     return !!spec && spec.lengthMm >= requirement.minLengthMm && spec.thicknessMm >= requirement.minThicknessMm && requirement.allowedStraightness.includes(spec.straightness);

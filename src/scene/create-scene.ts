@@ -1,3 +1,4 @@
+import {createHaulPresentation} from './haul-presentation.ts';
 import {createWildlifePresentation} from './wildlife-presentation.ts';
 import {wildlifeViews,landmarkInspectionView} from '../domain/wildlife.ts';
 import type {RarityVfxMode} from '../content/item-vfx.ts';
@@ -182,6 +183,7 @@ export async function createScene(
   const forestry=createForestryPresentation({models,resources:r,forestGroup:forest.group,trees,selections:forest.selections});
   const gathering = createGatheringPresentation(r, models, gatheringRegistry);
   scene.add(gathering.group);
+  const hauling=createHaulPresentation(r,models);scene.add(hauling.group);
   const signs = [
     { x: -24, z: -37, label: "宅后望台 ↑" },
     { x: -31, z: -74, label: "深山 · 待开放" },
@@ -254,12 +256,13 @@ export async function createScene(
   };
   const pick = (clientX: number, clientY: number) => {
     screenRay(clientX,clientY);
-    const hit = ray.intersectObjects([...woodcraft.hits.objects(),...workshop.hits.objects(),...forestry.getPickTargets(),...props.values(),...gathering.hits.objects(),...camp.hits.filter(o=>o.userData.propActive!==false)], true)[0],
+    const hit = ray.intersectObjects([...hauling.hits.objects(),...woodcraft.hits.objects(),...workshop.hits.objects(),...forestry.getPickTargets(),...props.values(),...gathering.hits.objects(),...camp.hits.filter(o=>o.userData.propActive!==false)], true)[0],
       terrainHit = ray.intersectObject(ground)[0];
     if(woodDropMode){const drop=ray.intersectObjects([...woodcraft.hits.objects(),ground],true)[0];if(drop)intent({kind:'wood-drop',x:drop.point.x,y:drop.point.y,z:drop.point.z});return;}
     if(placementMode){if(terrainHit)intent({kind:'move',x:terrainHit.point.x,z:terrainHit.point.z});return;}
     if(terrainHit&&insideWoodcraft(terrainHit.point,0)&&(!hit||hit.distance>terrainHit.distance+.2)){intent({kind:'select',id:WOODCRAFT.id});return;}
     if (hit && (!terrainHit || hit.distance < terrainHit.distance + 0.2)) {
+      const haulId=hauling.hits.resolve(hit.object);if(haulId){intent({kind:'select',id:haulId});return;}
       const looseId=woodcraft.hits.resolve(hit.object);if(looseId){intent({kind:'select',id:looseId});return;}
       const ownedId=workshop.hits.resolve(hit.object);if(ownedId){intent({kind:'select',id:ownedId});return;}
       if(hit.object.userData.propId){intent({kind:'select',id:hit.object.userData.propId});return;}
@@ -438,6 +441,7 @@ export async function createScene(
       characters.update(state,reducedMotion);
       forestry.alignContact(characters.getImpact());
       gathering.update(state.gathering);
+      hauling.update(state.inventory);
       cabinRepair.update(state.workshop.upgrades?.cabin?.level??0);
       const action=state.gathering.action,ritual=state.ritual,craft=state.workshop.job;
       cameraAction=craft?.phase==='working'?craft.id:action?.phase==='performing'?action.actionId:ritual?.phase==='performing'?`prayer-${ritual.startedAt}`:'';
@@ -475,7 +479,7 @@ export async function createScene(
       scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);
       river.update(elapsed,sky.day,reducedMotion,appearance.reflections,host.clientWidth<600||host.clientHeight<500);
       const selected = state.selected
-        ? (woodcraft.point(state.selected) ?? workshop.point(state.selected) ?? (state.selected===CAMP_VISITOR.id?CAMP_VISITOR:null) ?? gatheringRegistry.sources.get(state.selected) ?? treeById.get(state.selected) ??
+        ? (hauling.point(state.selected) ?? woodcraft.point(state.selected) ?? workshop.point(state.selected) ?? (state.selected===CAMP_VISITOR.id?CAMP_VISITOR:null) ?? gatheringRegistry.sources.get(state.selected) ?? treeById.get(state.selected) ??
           (state.selected === "cabin"
             ? CABIN
             : state.selected === "tent"
@@ -547,6 +551,7 @@ export async function createScene(
         treeCount: trees.length,
         graphicsBackend,
         managedTrees: trees.filter((t) => t.role === "managed").length,
+        hauling:hauling.stats(),
         gatheringHits: gathering.hits.size,
         characters:characters.stats(),
         gatheringPresentation: gathering.stats(),
@@ -573,6 +578,7 @@ export async function createScene(
       characters.dispose();
       wildlife.dispose();
       gathering.dispose();
+      hauling.dispose();
       cabinRepair.dispose();
       river.dispose();
       camp.dispose();

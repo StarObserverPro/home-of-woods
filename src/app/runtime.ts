@@ -1,3 +1,5 @@
+import {currentLoad,carryingSnapshot,changeCarrying,approachGround} from '../domain/carrying.ts';
+import type {CarryingSnapshot,CarryIntent} from '../domain/carrying.ts';
 import { createWildlife, advanceWildlife, validateWildlifeRegistry, wildlifeViews } from '../domain/wildlife.ts';
 import type {RarityVfxMode} from '../content/item-vfx.ts';
 import {createWoodcraftSession} from './woodcraft-session.ts';
@@ -45,6 +47,7 @@ import type {SceneAppearance,SceneViewPreset} from '../content/scene-props.ts';
 import {CAMP_PROPS} from '../content/scene-props.ts';
 import {ALTAR_LAYOUT} from '../content/altar.ts';
 export type Snapshot = {
+  carrying:CarryingSnapshot;
   interaction:InteractionAccess|null;
   woodcraft:WoodcraftSnapshot;
   workshop:WorkshopSnapshot;
@@ -171,8 +174,8 @@ export async function createRuntime(
       const old = state.player,
         p = move(
           old,
-          dx * MOVEMENT.speed * MOVEMENT.fixedStep,
-          dz * MOVEMENT.speed * MOVEMENT.fixedStep,
+          dx * MOVEMENT.speed * currentLoad(state.inventory).speed * MOVEMENT.fixedStep,
+          dz * MOVEMENT.speed * currentLoad(state.inventory).speed * MOVEMENT.fixedStep,
           activeColliders(),
         );
       const travelled = Math.hypot(p.x - old.x, p.z - old.z);
@@ -243,6 +246,7 @@ export async function createRuntime(
       routeNodes: state.route.length,
       player: { ...state.player, y: heightAt(state.player.x, state.player.z) },
       gameTime:state.time,
+      carrying:carryingSnapshot(state),
       wildlifeState: state.wildlife,
       wildlifeViews: wildlifeViews(state.wildlife, state.time),
       forestry:forestrySnapshot(state,treeById,registry.catalog),
@@ -259,6 +263,7 @@ export async function createRuntime(
   function publishSnapshot() {
     persistence.observe(state);
     publish({
+      carrying:carryingSnapshot(state),
       interaction:interactionAccess(state,state.selected),
       woodcraft:woodcraft.snapshot(),
       zone: zoneName(state.player.x, state.player.z),
@@ -366,6 +371,8 @@ export async function createRuntime(
   loop.setPaused(manualPause || document.hidden);
   publishSnapshot();
   return {
+    carry(intent:CarryIntent){if(transferBlocked())return;try{message=changeCarrying(state,intent,activeColliders());}catch(error){message=error instanceof Error?error.message:'本次搬运未完成。';}view.render(state,0);publishSnapshot();},
+    approachMaterial(id:string){if(blocked()||placement||workshopBusy(state))return;cancelPlayerAction(state);message=approachGround(state,id,activeColliders());publishSnapshot();},
     openWoodcraft(){if(blocked()||placement||workshopBusy(state)||state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))return;
       cancelPlayerAction(state);state.selected=WOODCRAFT.id;message=approachInteraction(state,WOODCRAFT.id,activeColliders());
       view.inspectScene('woodcraft');woodcraft.activate();publishSnapshot();},
@@ -460,7 +467,7 @@ export async function createRuntime(
       if(destroyed)return;
       if(id==='cancel-gather'){const cancelled=cancelPlayerAction(state);if(cancelled)message=cancelled;inspectionOpen=false;captureAt=null;syncPause();view.render(state,0);publishSnapshot();return;}
       if(manualPause||interfaceOpen||inspectionOpen||contextLost||document.hidden)return;
-      if(state.selected) { const result=startPlayerGather(state,state.selected,registry,activeColliders());message=result.message; }
+      if(state.selected) { const result=startPlayerGather(state,state.selected,registry,activeColliders()).message;message=result; }
       publishSnapshot();
     },
     selectGathering(kind: 'branch' | 'mushroom' | 'scrap') {
@@ -480,7 +487,7 @@ export async function createRuntime(
       const loaded = await persistence.restoreValidCopy();
       if (!loaded || destroyed) return false;
       woodcraft.reset();view.setWoodcraftDrop(false);clearPlacement();delete state.wildlife;Object.assign(state, loaded);synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
-      manualPause = true; keys.clear(); stick.x = stick.z = 0; syncPause(); view.render(state, 0); return true;
+      manualPause = true; keys.clear(); stick.x = stick.z = 0; syncPause(); view.render(state,0); return true;
     },
     inspectCharacter(kind:'horizontal'|'vertical'|null){
       if(destroyed||contextLost||interfaceOpen)return;
