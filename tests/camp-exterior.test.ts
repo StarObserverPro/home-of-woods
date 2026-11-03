@@ -83,6 +83,7 @@ test('fire stones use existing rocks, support is prerequisite and upper socket i
   const afterHook=structuredClone(state.inventory);
   assert.match(mountFireTop(state,'camp-fire:smoker'),/还没有制作/);
   assert.deepEqual(state.inventory,afterHook);
+  state.inventory=inventoryTransaction(state.inventory,[{itemId:'hardware-kit',qualityId:'ordinary',delta:2}]);
   build(state,'camp-fire:grill');
   build(state,'camp-fire:smoker');
   const completed=Object.keys(state.workshop.upgrades);
@@ -112,7 +113,7 @@ test('merchant provides real canvas and hardware, while cancel or missing materi
   Object.assign(state.player,findUpgradeProfile('tent:canvas')!.stand);
   assert.match(beginUpgrade(state,'tent:canvas'),/帆布卷还差 1/);
   state.selected=CAMP_VISITOR.id;
-  Object.assign(state.player,CAMP_VISITOR);
+  Object.assign(state.player,{x:CAMP_VISITOR.x,z:CAMP_VISITOR.z});
   const mushroomBefore=inventoryTypeCount(state.inventory,'fungus.fresh');
   assert.match(tradeSupply(state,'canvas-roll'),/换得/);
   assert.equal(inventoryTypeCount(state.inventory,'fungus.fresh'),mushroomBefore-2);
@@ -166,6 +167,7 @@ test('visual fittings are attached to the original roots, mutually exclude fire 
   assert.equal(base.visible,true);
   assert.equal(scene.parts.get('camp-fire:hook')!.visible,false);
   // All three crafted parts survive, but only the active top should be in the draw tree.
+  state.inventory=inventoryTransaction(state.inventory,[{itemId:'canvas-roll',qualityId:'ordinary',delta:1},{itemId:'hardware-kit',qualityId:'ordinary',delta:1}]);
   for(const id of ['tent:canvas','tent:ropes','camp-fire:stones','camp-fire:support','camp-fire:hook','camp-fire:grill'])build(state,id);
   scene.update(state.workshop);
   assert.equal(base.visible,false);
