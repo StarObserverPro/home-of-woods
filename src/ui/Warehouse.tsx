@@ -6,9 +6,9 @@ import type {WoodcraftSnapshot} from '../app/woodcraft-session.ts';
 import {WOODCRAFT} from '../content/woodcraft.ts';
 import './warehouse.css';
 
-function ItemSymbol({ symbol }: { symbol: 'branch' | 'mushroom' | 'wood' | 'unknown' }) {
+function ItemSymbol({ symbol }: { symbol: 'branch' | 'mushroom' | 'wood' | 'bundle' | 'unknown' }) {
   return <svg width="42" height="42" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-    {symbol === 'mushroom' ? <><path d="M9 25C10 7 37 7 39 25Z" fill="#d2a268"/><path d="M20 25h9l3 14H17Z" fill="#f0dbaf"/><path d="M10 25h28" stroke="#765c3c" strokeWidth="2"/></> : symbol === 'wood' ? <><path d="m10 31 7-18 23 8-7 18Z" fill="#a77d50"/><ellipse cx="14" cy="22" rx="7" ry="10" transform="rotate(20 14 22)" fill="#e2c08a"/><ellipse cx="14" cy="22" rx="3" ry="5" transform="rotate(20 14 22)" stroke="#957041" strokeWidth="2"/></> : symbol === 'unknown' ? <><rect x="9" y="10" width="30" height="29" rx="6" stroke="#d3caae" strokeWidth="2"/><text x="24" y="31" textAnchor="middle" fill="#d3caae" fontSize="23">?</text></> : <><path d="m10 35 25-23M18 27l-4-13M26 20l13 4M13 36l19-4" stroke="#bd9462" strokeWidth="5" strokeLinecap="round"/></>}
+    {symbol === 'mushroom' ? <><path d="M9 25C10 7 37 7 39 25Z" fill="#d2a268"/><path d="M20 25h9l3 14H17Z" fill="#f0dbaf"/><path d="M10 25h28" stroke="#765c3c" strokeWidth="2"/></> : symbol === 'wood' ? <><path d="m10 31 7-18 23 8-7 18Z" fill="#a77d50"/><ellipse cx="14" cy="22" rx="7" ry="10" transform="rotate(20 14 22)" fill="#e2c08a"/><ellipse cx="14" cy="22" rx="3" ry="5" transform="rotate(20 14 22)" stroke="#957041" strokeWidth="2"/></> : symbol === 'bundle' ? <><rect x="11" y="16" width="26" height="23" rx="3" fill="#ad8960"/><path d="M11 22h26M18 16v23M30 16v23" stroke="#f0d8ae" strokeWidth="2"/><path d="m15 16 7-7h12l-6 7" fill="#bac9a1"/></> : symbol === 'unknown' ? <><rect x="9" y="10" width="30" height="29" rx="6" stroke="#d3caae" strokeWidth="2"/><text x="24" y="31" textAnchor="middle" fill="#d3caae" fontSize="23">?</text></> : <><path d="m10 35 25-23M18 27l-4-13M26 20l13 4M13 36l19-4" stroke="#bd9462" strokeWidth="5" strokeLinecap="round"/></>}
   </svg>;
 }
 
