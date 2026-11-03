@@ -12,7 +12,7 @@ import type {UpgradeLedger} from './upgrades.ts';
 import {calendarAt} from './local-clock.ts';
 import {ITEM_CATALOG,isStableId} from './item-catalog.ts';
 import {inventoryTransaction,inventoryTypeCount,recognizedStack,isRecord,exactKeys,stackIdentity} from './inventory.ts';
-import type {InventoryStack} from './inventory.ts';
+import type {InventoryStack,InventoryDelta} from './inventory.ts';
 import {canonicalInstances} from './owned-items.ts';
 import {findPath} from './navigation.ts';
 import {gatheringBusy} from './gathering.ts';
@@ -105,7 +105,7 @@ export function tradeSupply(host:GameState,itemId:string){
   if(busy(host))return '先完成或取消当前动作。';
   if(host.selected!==CAMP_VISITOR.id||Math.hypot(host.player.x-CAMP_VISITOR.x,host.player.z-CAMP_VISITOR.z)>3)return '先走到行商身边。';
   let needed:number=spec.quantity;
-  const deltas:({itemId:string;qualityId:string;delta:number;[key:string]:unknown})[]=[];
+  const deltas:InventoryDelta[]=[];
   for(const stack of host.inventory.stacks){
     if(!recognizedStack(stack)||stack.wood?.reserved||ITEM_CATALOG.items.get(stack.itemId)?.typeId!==spec.inputType)continue;
     const used=Math.min(stack.quantity,needed);
@@ -140,13 +140,13 @@ export function validateWorkshop(raw:unknown,time:number):WorkshopState{
       if(!profile||!path||path.blueprintId!==j.blueprintId||(upgrades[j.targetId]?.level??profile.initialLevel)!==path.fromLevel)throw new Error('Invalid upgrade path');
     }
   }
-  return {...structuredClone(raw),upgrades,mounted,blueprints:legacy?[...new Set([...raw.blueprints,...STARTER_BLUEPRINTS])]:[...raw.blueprints]} as WorkshopState;
+  return {...structuredClone(raw),upgrades,mounted,blueprints:legacy||legacyMount?[...new Set([...raw.blueprints,...STARTER_BLUEPRINTS])]:[...raw.blueprints]} as WorkshopState;
 }
 export function workshopSnapshot(host:GameState){
   const job=host.workshop.job;
   return {blueprints:[...host.workshop.blueprints],offers:merchantStock(host),items:structuredClone(host.inventory.instances??[]),upgrades:structuredClone(host.workshop.upgrades),mounted:structuredClone(host.workshop.mounted),upgrade:upgradeSnapshot(host,host.selected),upgradeOptions:upgradeOptions(host,host.selected),
     inputs:{craft:!!workshopInput(host,'craft'),offering:!!workshopInput(host,'offering'),trade:!!workshopInput(host,'trade'),
-      canvas:inventoryTypeCount(host.inventory,'fungus.fresh')>=2,hardware:!!workshopInput(host,'trade')},
+      canvas:inventoryTypeCount(host.inventory,'fungus.fresh')>=2,hardware:host.inventory.stacks.some(s=>recognizedStack(s)&&!s.wood?.reserved&&ITEM_CATALOG.items.get(s.itemId)?.typeId==='wood.log')},
     job:job?{...job,progress:job.phase==='working'?Math.min(1,(host.time-job.startedAt!)/job.durationSeconds):0}:null,
     lastResponse:host.workshop.lastResponse,calendar:calendarAt(host.time),speed:host.clock.speed};
 }
