@@ -5,13 +5,13 @@ import type {Collider} from '../world/layout.ts';
 import {random} from '../world/layout.ts';
 import {CAMP_PROPS} from '../content/scene-props.ts';
 import {CAMP_VISITOR} from '../content/characters.ts';
-import {WORKBENCH,WORKSHOP_RULES,CRAFT_BLUEPRINTS,STARTER_BLUEPRINTS,SEAT_DEFINITION,findBlueprint,findCraftBlueprint} from '../content/workshop.ts';
-import {findUpgradeProfile,findUpgradePath} from '../content/upgrades.ts';
-import {advanceUpgrade,upgradeSnapshot,validateUpgrades} from './upgrades.ts';
+import {WORKBENCH,WORKSHOP_RULES,CRAFT_BLUEPRINTS,CAMP_EXTERIOR_BLUEPRINTS,STARTER_BLUEPRINTS,SEAT_DEFINITION,findBlueprint,findCraftBlueprint} from '../content/workshop.ts';
+import {findUpgradeProfile,findUpgradePath,upgradeHostId} from '../content/upgrades.ts';
+import {advanceUpgrade,upgradeSnapshot,upgradeOptions,validateUpgrades,validateMounted} from './upgrades.ts';
 import type {UpgradeLedger} from './upgrades.ts';
 import {calendarAt} from './local-clock.ts';
 import {ITEM_CATALOG,isStableId} from './item-catalog.ts';
-import {inventoryTransaction,recognizedStack,isRecord,exactKeys} from './inventory.ts';
+import {inventoryTransaction,inventoryTypeCount,recognizedStack,isRecord,exactKeys,stackIdentity} from './inventory.ts';
 import type {InventoryStack} from './inventory.ts';
 import {canonicalInstances} from './owned-items.ts';
 import {findPath} from './navigation.ts';
@@ -19,11 +19,11 @@ import {gatheringBusy} from './gathering.ts';
 import {ritualBusy} from './ritual.ts';
 
 export type WorkshopJob={id:string;kind:'offering'|'craft'|'upgrade';blueprintId:string|null;phase:'approaching'|'working';startedAt:number|null;durationSeconds:number;targetId?:string;pathId?:string};
-export type WorkshopState={nextAction:number;nextInstance:number;prayerCount:number;blueprints:string[];upgrades:UpgradeLedger;job:WorkshopJob|null;lastResponse:string};
-export const createWorkshop=():WorkshopState=>({nextAction:1,nextInstance:1,prayerCount:0,blueprints:[...STARTER_BLUEPRINTS],upgrades:{},job:null,lastResponse:''});
+export type WorkshopState={nextAction:number;nextInstance:number;prayerCount:number;blueprints:string[];upgrades:UpgradeLedger;mounted:Record<string,string>;job:WorkshopJob|null;lastResponse:string};
+export const createWorkshop=():WorkshopState=>({nextAction:1,nextInstance:1,prayerCount:0,blueprints:[...STARTER_BLUEPRINTS],upgrades:{},mounted:{},job:null,lastResponse:''});
 export const workshopBusy=(host:Pick<GameState,'workshop'>)=>host.workshop.job!==null;
 export const workshopTarget=(kind:WorkshopJob['kind'],targetId?:string)=>kind==='upgrade'?findUpgradeProfile(targetId??'')!.stand:kind==='craft'?WORKBENCH.stand:{x:CAMP_PROPS.altar.x,z:CAMP_PROPS.altar.z+5};
-export const workshopTargetId=(kind:WorkshopJob['kind'],targetId?:string)=>kind==='upgrade'?(targetId??''):kind==='craft'?WORKBENCH.id:CAMP_PROPS.altar.id;
+export const workshopTargetId=(kind:WorkshopJob['kind'],targetId?:string)=>kind==='upgrade'?upgradeHostId(targetId??''):kind==='craft'?WORKBENCH.id:CAMP_PROPS.altar.id;
 const busy=(host:GameState)=>!!host.forestry.active||gatheringBusy(host.gathering)||ritualBusy(host)||workshopBusy(host);
 export function workshopInput(host:GameState,kind:'offering'|'craft'|'trade'):InventoryStack|undefined{
   return host.inventory.stacks.find(s=>s.quantity>0&&recognizedStack(s)&&!s.wood?.reserved&&
@@ -32,7 +32,8 @@ export function workshopInput(host:GameState,kind:'offering'|'craft'|'trade'):In
 export function merchantStock(host:Pick<GameState,'seed'|'time'>){
   const day=calendarAt(host.time).day;
   // The fixed plan is always offered. The second slot is stable for this local game day.
-  return [CRAFT_BLUEPRINTS[0].id,...(random(host.seed+day*7919)()>.2?[CRAFT_BLUEPRINTS[1].id]:[])];
+  return [CRAFT_BLUEPRINTS[0].id,...(random(host.seed+day*7919)()>.2?[CRAFT_BLUEPRINTS[1].id]:[]),
+    ...CAMP_EXTERIOR_BLUEPRINTS.filter(plan=>!new Set<string>(STARTER_BLUEPRINTS).has(plan.id)).map(plan=>plan.id)];
 }
 export function beginWorkshop(host:GameState,kind:'craft'|'offering',blockers:Collider[],blueprintId:string|null=null){
   if(busy(host))return '先完成或取消当前动作。';
@@ -86,20 +87,48 @@ export function advanceWorkshop(host:GameState):string|null{
 export function tradeBlueprint(host:GameState,blueprintId:string){
   if(busy(host))return '先完成或取消当前动作。';
   if(host.selected!==CAMP_VISITOR.id||Math.hypot(host.player.x-CAMP_VISITOR.x,host.player.z-CAMP_VISITOR.z)>3)return '先走到行商身边。';
-  const plan=findCraftBlueprint(blueprintId);if(!plan||!merchantStock(host).includes(plan.id))return '行商今天没有这张图纸。';
+  const plan=findBlueprint(blueprintId);if(!plan||!merchantStock(host).includes(plan.id))return '行商今天没有这张图纸。';
   if(host.workshop.blueprints.includes(plan.id))return '这张图纸已经学会了。';
   const input=workshopInput(host,'trade');if(!input)return '换图纸需要一份未预留的木料。';
   const inventory=inventoryTransaction(host.inventory,[{...input,delta:-1}]);
   const workshop={...host.workshop,blueprints:[...host.workshop.blueprints,plan.id],lastResponse:`已换得「${plan.name}」图纸。`};
   Object.assign(host,{inventory,workshop});return workshop.lastResponse;
 }
+/** The merchant transfers a real fabric/hardware stack; learning a plan does not mint materials. */
+export function tradeSupply(host:GameState,itemId:string){
+  const supplies={
+    'canvas-roll':{inputType:'fungus.fresh',quantity:2,name:'耐雨帆布卷'},
+    'hardware-kit':{inputType:'wood.log',quantity:1,name:'火塘五金包'},
+  } as const;
+  const spec=supplies[itemId as keyof typeof supplies];
+  if(!spec)return '行商没有这件材料。';
+  if(busy(host))return '先完成或取消当前动作。';
+  if(host.selected!==CAMP_VISITOR.id||Math.hypot(host.player.x-CAMP_VISITOR.x,host.player.z-CAMP_VISITOR.z)>3)return '先走到行商身边。';
+  let needed:number=spec.quantity;
+  const deltas:({itemId:string;qualityId:string;delta:number;[key:string]:unknown})[]=[];
+  for(const stack of host.inventory.stacks){
+    if(!recognizedStack(stack)||stack.wood?.reserved||ITEM_CATALOG.items.get(stack.itemId)?.typeId!==spec.inputType)continue;
+    const used=Math.min(stack.quantity,needed);
+    if(used){deltas.push({...stackIdentity(stack),delta:-used});needed-=used;}
+    if(!needed)break;
+  }
+  if(needed)return spec.inputType==='fungus.fresh'?'需要 2 份鲜蘑菇交换帆布卷。':'需要 1 根未预留的原木交换五金包。';
+  const inventory=inventoryTransaction(host.inventory,[...deltas,{itemId,qualityId:'ordinary',delta:1}]);
+  const message=`已从行商处换得「${spec.name}」，收入仓库。制作外部部件时再消耗它。`;
+  host.inventory=inventory;host.workshop={...host.workshop,lastResponse:message};return message;
+}
 export function validateWorkshop(raw:unknown,time:number):WorkshopState{
   if(!isRecord(raw))throw new Error('Invalid workshop');
   const legacy=!Object.hasOwn(raw,'upgrades');
-  exactKeys(raw,['nextAction','nextInstance','prayerCount','blueprints','job','lastResponse',...(legacy?[]:['upgrades'])]);
+  const legacyMount=!Object.hasOwn(raw,'mounted');
+  exactKeys(raw,['nextAction','nextInstance','prayerCount','blueprints','job','lastResponse',...(legacy?[]:['upgrades']),...(legacyMount?[]:['mounted'])]);
   for(const key of ['nextAction','nextInstance','prayerCount'])if(!Number.isSafeInteger(raw[key])||(raw[key] as number)<(key==='prayerCount'?0:1))throw new Error('Invalid workshop counter');
   if(!Array.isArray(raw.blueprints)||raw.blueprints.some(id=>!isStableId(id))||new Set(raw.blueprints).size!==raw.blueprints.length||typeof raw.lastResponse!=='string'||raw.lastResponse.length>500)throw new Error('Invalid blueprint knowledge');
-  const upgrades=validateUpgrades(raw.upgrades,time);
+  const upgrades=validateUpgrades(raw.upgrades,time),mounted=validateMounted(raw.mounted,upgrades);
+  for(const targetId of Object.keys(upgrades)){
+    const profile=findUpgradeProfile(targetId);
+    if(profile?.requires?.some(id=>(upgrades[id]?.level??findUpgradeProfile(id)?.initialLevel??0)<1))throw new Error('Missing prerequisite for installed fitting');
+  }
   if(raw.job!==null){const j=raw.job;if(!isRecord(j))throw new Error('Invalid workshop job');exactKeys(j,['id','kind','blueprintId','phase','startedAt','durationSeconds',...(j.kind==='upgrade'?['targetId','pathId']:[])]);
     if(!isStableId(j.id)||!['craft','offering','upgrade'].includes(j.kind as string)||!['approaching','working'].includes(j.phase as string)||typeof j.durationSeconds!=='number'||!Number.isFinite(j.durationSeconds)||j.durationSeconds<=0||j.durationSeconds>86400)throw new Error('Invalid workshop action');
     if(j.phase==='approaching'?j.startedAt!==null:typeof j.startedAt!=='number'||!Number.isFinite(j.startedAt)||j.startedAt<0||j.startedAt>time)throw new Error('Invalid workshop timestamp');
@@ -111,12 +140,13 @@ export function validateWorkshop(raw:unknown,time:number):WorkshopState{
       if(!profile||!path||path.blueprintId!==j.blueprintId||(upgrades[j.targetId]?.level??profile.initialLevel)!==path.fromLevel)throw new Error('Invalid upgrade path');
     }
   }
-  return {...structuredClone(raw),upgrades,blueprints:legacy?[...new Set([...raw.blueprints,...STARTER_BLUEPRINTS])]:[...raw.blueprints]} as WorkshopState;
+  return {...structuredClone(raw),upgrades,mounted,blueprints:legacy?[...new Set([...raw.blueprints,...STARTER_BLUEPRINTS])]:[...raw.blueprints]} as WorkshopState;
 }
 export function workshopSnapshot(host:GameState){
   const job=host.workshop.job;
-  return {blueprints:[...host.workshop.blueprints],offers:merchantStock(host),items:structuredClone(host.inventory.instances??[]),upgrades:structuredClone(host.workshop.upgrades),upgrade:upgradeSnapshot(host,host.selected),
-    inputs:{craft:!!workshopInput(host,'craft'),offering:!!workshopInput(host,'offering'),trade:!!workshopInput(host,'trade')},
+  return {blueprints:[...host.workshop.blueprints],offers:merchantStock(host),items:structuredClone(host.inventory.instances??[]),upgrades:structuredClone(host.workshop.upgrades),mounted:structuredClone(host.workshop.mounted),upgrade:upgradeSnapshot(host,host.selected),upgradeOptions:upgradeOptions(host,host.selected),
+    inputs:{craft:!!workshopInput(host,'craft'),offering:!!workshopInput(host,'offering'),trade:!!workshopInput(host,'trade'),
+      canvas:inventoryTypeCount(host.inventory,'fungus.fresh')>=2,hardware:!!workshopInput(host,'trade')},
     job:job?{...job,progress:job.phase==='working'?Math.min(1,(host.time-job.startedAt!)/job.durationSeconds):0}:null,
     lastResponse:host.workshop.lastResponse,calendar:calendarAt(host.time),speed:host.clock.speed};
 }
