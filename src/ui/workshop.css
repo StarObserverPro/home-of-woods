@@ -7,3 +7,24 @@
 .owned-card .stump-icon{border:1px solid color-mix(in srgb,var(--rarity-color) 66%,transparent);border-radius:9px;padding:4px 9px;background:#172b2444}
 .rarity-label{font-size:12px;letter-spacing:.06em;border:1px solid color-mix(in srgb,var(--rarity-color) 45%,transparent);border-radius:99px;padding:3px 9px}
 .owned-card .context-button{min-height:44px}
+
+/* The selected facility owns one compact, scrollable list of independently fitted parts. */
+.upgrade-module-list{display:grid;gap:10px;margin-top:9px}
+.upgrade-module{padding:10px 11px;border:1px solid #f1e8cb47;border-radius:11px;background:#f9f4e410}
+.upgrade-module .upgrade-heading{display:flex;justify-content:space-between;align-items:start;gap:8px;margin-bottom:6px}
+.upgrade-module .upgrade-heading h4{margin:0;font-size:13px;font-weight:600}
+.upgrade-module .upgrade-heading span{font-size:10px;white-space:nowrap;opacity:.85}
+.upgrade-module p{margin:5px 0;font-size:11px;line-height:1.6}
+.upgrade-module .context-button{margin-top:5px;width:100%;min-height:36px}
+.upgrade-module .upgrade-installed{color:#d7eabb}
+.upgrade-module progress{width:100%;accent-color:#e3c77f}
+.upgrade-module .upgrade-materials{margin:7px 0;padding:0;list-style:none;display:grid;gap:4px}
+.upgrade-module .upgrade-materials li{display:flex;align-items:baseline;justify-content:space-between;gap:9px;font-size:11px}
+.upgrade-module .upgrade-materials li small{font-size:10px;opacity:.8}
+.upgrade-module .upgrade-materials .is-missing{color:#ffcfad}
+.merchant-exterior-plans{margin-top:8px;border-top:1px solid #f1e8cb45;padding:9px 0}
+.merchant-exterior-plans summary{cursor:pointer;font-size:12px;line-height:1.8}
+.merchant-exterior-plans .recipe-row{align-items:flex-start}
+.merchant-exterior-plans .context-button{min-width:76px}
+.target-card:has(.upgrade-module-list){max-height:calc(100dvh - 220px);overflow-y:auto}
+@media(max-width:600px){.target-card:has(.upgrade-module-list){max-height:calc(100dvh - 250px)}}
