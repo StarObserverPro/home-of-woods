@@ -124,3 +124,6 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 ## 最终动物素材
 
 四种运行模型及来源统一见 [最终动物接入](WILDLIFE_GUIDE.md) 与 `public/assets/manifest.json`：Gobkit CC0 松鼠／野兔、Quaternius CC0 雄鹿、项目原创 1908 三角形／21 关节北美山羊。来源原件、许可证、重建脚本保留，旧 Gobkit 羊和候选素材不进入当前树。四个最终 GLB 使用交付版本原始字节；仅将野兔营地锚点移出 Woodcraft 碰撞区。
+
+
+2026-11-03「家宅平安」第一批外部装配件由 `src/scene/camp-exteriors.ts` 使用本仓库原创低多边形几何生成（帐篷布面局部复用已登记 `tent.glb` 网格）；不接入外部资产、下载或贴图，不冒标 CC0。新建几何和材质均由 `Resources` 释放，只有顶层 12 个部件状态属于既有营地设施，来源/装配范围见 [家宅平安](CAMP_EXTERIORS.md)。
