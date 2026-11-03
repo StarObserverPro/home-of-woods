@@ -21,7 +21,7 @@ export function createItemCatalog(items: readonly ItemDefinition[] = ITEMS, qual
   if (categories.has('all') || categories.has('unknown')) throw new Error('Reserved category ID');
   for (const category of categories.values()) if (!category.name) throw new Error('Invalid category name');
   for (const material of materials.values()) if (!material.name || !material.categoryIds.length || material.categoryIds.some(id => !categories.has(id))) throw new Error('Invalid material/category reference');
-  for (const group of useGroups.values()) if (!group.name || !group.resourceLines.length || group.resourceLines.some(line => !['small-wood', 'structure-wood', 'forest-produce'].includes(line))) throw new Error('Invalid use-group resource line');
+  for (const group of useGroups.values()) if (!group.name || !group.resourceLines.length || group.resourceLines.some(line => !['small-wood', 'structure-wood', 'forest-produce', 'trade-good'].includes(line))) throw new Error('Invalid use-group resource line');
   for (const type of types.values()) {
     if (!categories.has(type.categoryId) || !isStableId(type.formId) || new Set(type.useGroupIds).size !== type.useGroupIds.length ||
         type.useGroupIds.some(id => !useGroups.get(id)?.resourceLines.includes(type.resourceLine))) throw new Error('Invalid type or use-group reference');
