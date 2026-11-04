@@ -55,10 +55,10 @@ test('three permanent hosts expose independent exterior parts and unique fitting
   const state=createState();
   assert.equal(upgradeOptions(state,'tent').length,4);
   assert.equal(upgradeOptions(state,'cabin').length,4);
-  assert.equal(upgradeOptions(state,CAMP_PROPS.fire.id).length,5);
-  assert.equal(EXTERIOR_PROFILES.length,12);
-  assert.equal(new Set(EXTERIOR_PROFILES.map(p=>p.id)).size,12);
-  assert.equal(new Set(CAMP_EXTERIOR_BLUEPRINTS.map(p=>p.id)).size,12);
+  assert.equal(upgradeOptions(state,CAMP_PROPS.fire.id).length,6);
+  assert.equal(EXTERIOR_PROFILES.length,13);
+  assert.equal(new Set(EXTERIOR_PROFILES.map(p=>p.id)).size,13);
+  assert.equal(new Set(CAMP_EXTERIOR_BLUEPRINTS.map(p=>p.id)).size,13);
   assert.equal(EXTERIOR_PROFILES.filter(p=>p.mountSlot===FIRE_TOP_SLOT).length,3);
   for(const profile of EXTERIOR_PROFILES){
     assert.ok(['tent','cabin',CAMP_PROPS.fire.id].includes(profile.hostId!));
@@ -120,7 +120,7 @@ test('fire stones use existing rocks, support is prerequisite and upper socket i
   mountFireTop(state,'camp-fire:smoker');
   const loaded=await restore(state);
   assert.equal(loaded.workshop.mounted[FIRE_TOP_SLOT],'camp-fire:smoker');
-  assert.equal(workshopSnapshot(loaded).upgradeOptions.length,5);
+  assert.equal(workshopSnapshot(loaded).upgradeOptions.length,6);
   const loadedInventory=structuredClone(loaded.inventory);
   assert.match(mountFireTop(loaded,'camp-fire:grill'),/已装上/);
   assert.deepEqual(loaded.inventory,loadedInventory);
@@ -177,7 +177,7 @@ test('visual fittings are attached to the original roots, mutually exclude fire 
   const base=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshStandardMaterial({color:'#eee1bc'}));
   base.name='canvas_panel';tent.add(base);
   const scene=createCampExteriors(r,tent,cabin,fire);
-  assert.equal(scene.parts.size,12);
+  assert.equal(scene.parts.size,13);
   assert.ok(tent.getObjectByName('fitting-tent:ropes'));
   assert.ok(cabin.getObjectByName('fitting-cabin:windows'));
   assert.ok(fire.getObjectByName('fitting-camp-fire:grill'));
