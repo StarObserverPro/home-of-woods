@@ -13,7 +13,7 @@ import './workshop.css';
 export function workshopDetails(selected:string|null,view:WorkshopSnapshot){
   if(selected===WORKBENCH.id)return {title:'粗木工作台',tag:'营地木作 · 一级',detail:'学会图纸后，在这里把一份木料做成木墩。工作台与旁边的小凳以后可以升级。'};
   if(selected===WORKBENCH_STOOL.id)return {title:'工作台小凳',tag:'营地家具 · 一级',detail:'几块粗木搭成的小凳，先陪着工作台使用。升级和坐下动作以后开放。'};
-  if(selected===CAMP_VISITOR.id)return {title:'林间行商',tag:'图纸与材料',detail:'除了木作图纸，行商还带着外装图纸、耐雨帆布和火塘五金。先换图纸学习做法，再准备实际施工材料。'};
+  if(selected===CAMP_VISITOR.id)return {title:'林间行商',tag:'图纸与材料',detail:'行商带着外装图纸、五金和混合干粮。换一麻袋食品即可一次补充几种谷物与少量调味品。'};
   const item=view.items.find(i=>i.instanceId===selected&&i.location.kind==='world');
   return item?{title:findBlueprint(item.blueprintId)?.name??'待识别家具',tag:`${itemRarity(item).name} · 已摆放的木作`,detail:itemProperties(item).traits.map(t=>`${traitLabel(t.id)} ${t.value}`).join(' · ')}:null;
 }
@@ -33,6 +33,7 @@ export function WorkshopControls({selected,view,access,message,disabled,onOffer,
       <p>这些是独立的施工材料，不会因获得图纸而免费出现。</p>
       <div className="recipe-row"><div><strong>耐雨帆布卷</strong><small>鲜蘑菇 2 份 · 更换帐篷布面</small></div><button className="context-button" disabled={disabled||busy||!view.inputs.canvas} onClick={()=>onSupply('canvas-roll')}>换帆布</button></div>
       <div className="recipe-row"><div><strong>火塘五金包</strong><small>原木 1 根 · 制作烤网或焖烤罩</small></div><button className="context-button" disabled={disabled||busy||!view.inputs.hardware} onClick={()=>onSupply('hardware-kit')}>换五金</button></div>
+      <div className="recipe-row"><div><strong>行商混合粮袋</strong><small>鲜蘑菇 2 份 · 豆、米、燕麦、黑面包和少量调味品，一次兑换与拆包</small></div><button className="context-button" disabled={disabled||busy||!view.inputs.foodSack} onClick={()=>onSupply('food-sack')}>换一麻袋干粮</button></div>
       <h3>木作图纸</h3>
       {view.offers.filter(id=>!CAMP_EXTERIOR_BLUEPRINTS.some(p=>p.id===id)).map(id=>{const p=findBlueprint(id)!;return <div className="recipe-row" key={id}><div><strong>{p.name}</strong><small>木料 1 份</small></div><button className="context-button" disabled={disabled||busy||view.blueprints.includes(id)||!view.inputs.trade} onClick={()=>onTrade(id)}>{view.blueprints.includes(id)?'已经学会':'交换图纸'}</button></div>;})}
       <details className="merchant-exterior-plans"><summary>营地外装图纸 · {view.offers.filter(id=>CAMP_EXTERIOR_BLUEPRINTS.some(p=>p.id===id)).length} 张</summary>
