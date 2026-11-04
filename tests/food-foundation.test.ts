@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createState} from '../src/domain/state.ts';
-import {inventoryTransaction,inventoryCount} from '../src/domain/inventory.ts';
+import {inventoryTransaction,inventoryCount,stackKey} from '../src/domain/inventory.ts';
+import {changeCarrying} from '../src/domain/carrying.ts';
 import {CAMP_VISITOR} from '../src/content/characters.ts';
 import {CAMP_PROPS} from '../src/content/scene-props.ts';
 import {foodSackContents} from '../src/content/food.ts';
@@ -83,6 +84,20 @@ test('uncooked black bread breaks the no-pot/no-logging dependency after the fir
   assert.equal(heavyLaborAllowed(state.food,state.time),false);
   state.time=1800;
   assert.equal(heavyLaborAllowed(state.food,state.time),true);
+});
+test('an unfed day permits small material carrying but refuses new large logs',()=>{
+  const state=createState();
+  state.time=600;
+  at(state,CAMP_PROPS.logs.id,CAMP_PROPS.logs);
+  grant(state,'wood',1);grant(state,'branch',1);
+  const log=state.inventory.stacks.find(v=>v.itemId==='wood')!;
+  const branch=state.inventory.stacks.find(v=>v.itemId==='branch')!;
+  assert.match(changeCarrying(state,{kind:'withdraw',key:stackKey(log)},[]),/昨天没有吃饱/);
+  assert.match(changeCarrying(state,{kind:'withdraw',key:stackKey(branch)},[]),/已拿起/);
+  assert.equal(inventoryCount(state.inventory,'wood'),1);
+  changeCarrying(state,{kind:'store'},[]);
+  state.time=1800;state.food.lastMealDay=2;
+  assert.match(changeCarrying(state,{kind:'withdraw',key:stackKey(log)},[]),/已拿起/);
 });
 test('world save accepts optional legacy food and rejects malformed added state',()=>{
   const state=createState(),context=createSaveContext();
