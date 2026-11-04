@@ -5,7 +5,7 @@ import {inventoryTransaction,inventoryCount} from '../src/domain/inventory.ts';
 import {CAMP_VISITOR} from '../src/content/characters.ts';
 import {CAMP_PROPS} from '../src/content/scene-props.ts';
 import {foodSackContents} from '../src/content/food.ts';
-import {tradeFoodSack,startDryMushrooms,startMushroomSoup,advanceFood,eatMushroomSoup,heavyLaborAllowed,foodSnapshot} from '../src/domain/food.ts';
+import {tradeFoodSack,startDryMushrooms,startMushroomSoup,advanceFood,eatMushroomSoup,eatBlackBread,heavyLaborAllowed,foodSnapshot} from '../src/domain/food.ts';
 import {createProcessingService} from '../src/domain/processing.ts';
 import {ITEM_CATALOG} from '../src/domain/item-catalog.ts';
 import {validateWorldState} from '../src/domain/world-save.ts';
@@ -71,6 +71,18 @@ test('dried or fresh mushrooms with any listed grain yield a traceable consumed 
   assert.equal(heavyLaborAllowed(state.food,state.time),true);
   state.time=1800;
   assert.equal(heavyLaborAllowed(state.food,state.time),false);
+});
+test('uncooked black bread breaks the no-pot/no-logging dependency after the first day',()=>{
+  const state=createState();
+  state.time=600;
+  assert.equal(heavyLaborAllowed(state.food,state.time),false);
+  at(state,CAMP_PROPS.fire.id,CAMP_PROPS.fire);
+  grant(state,'food-black-bread',1);
+  assert.match(eatBlackBread(state),/明天/);
+  assert.equal(inventoryCount(state.inventory,'food-black-bread'),0);
+  assert.equal(heavyLaborAllowed(state.food,state.time),false);
+  state.time=1800;
+  assert.equal(heavyLaborAllowed(state.food,state.time),true);
 });
 test('world save accepts optional legacy food and rejects malformed added state',()=>{
   const state=createState(),context=createSaveContext();
