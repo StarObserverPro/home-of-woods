@@ -41,6 +41,7 @@ test('the real KayKit rig accepts independent bone-following hair, outfits, hats
     'one actor never equips another');
   wardrobe.update(1.5,true,false);
   assert.equal(wardrobe.stats().look.hair,'ponytail');
+  assert.ok(wardrobe.stats().hiddenBaseHairFaces>0,'alternate hair must conceal the original hair atlas islands');
   assert.deepEqual(otherWardrobe.stats().look,DEFAULT_WARDROBE);
   assert.equal(WARDROBE_CAPABILITIES.realClothSimulation,'unsupported');
   assert.throws(()=>resolveWardrobe({hair:'unregistered' as 'original'}),/Unknown wardrobe/);
