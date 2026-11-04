@@ -35,10 +35,11 @@ export function createCampProps(r:Resources){
   const coals=new THREE.Mesh(r.own(new THREE.IcosahedronGeometry(.65,0).scale(1,.25,1)),coalMaterial);coals.position.y=.3;fire.add(coals);
   // A small low-poly drying rack; this is a single campsite station, not a new kitchen.
   const dryer=roots.get(CAMP_PROPS.dryer.id)!;
-  for(const x of [-.95,.95])for(const z of [-.5,.5])mesh(dryer,new THREE.CylinderGeometry(.09,.11,2.1,6),'#816646',x,1.05,z);
-  for(const z of [-.5,.5])mesh(dryer,new THREE.CylinderGeometry(.085,.085,2.05,6).rotateZ(Math.PI/2),'#aa865e',0,2.1,z);
-  for(const x of [-.95,.95])mesh(dryer,new THREE.CylinderGeometry(.065,.065,1.1,6).rotateX(Math.PI/2),'#aa865e',x,2.05,0);
-  const dryingMushrooms=new THREE.Group();dryingMushrooms.name='hung-mushrooms';dryer.add(dryingMushrooms);
+  const dryerFrame=new THREE.Group();dryerFrame.name='built-drying-rack';dryer.add(dryerFrame);
+  for(const x of [-.95,.95])for(const z of [-.5,.5])mesh(dryerFrame,new THREE.CylinderGeometry(.09,.11,2.1,6),'#816646',x,1.05,z);
+  for(const z of [-.5,.5])mesh(dryerFrame,new THREE.CylinderGeometry(.085,.085,2.05,6).rotateZ(Math.PI/2),'#aa865e',0,2.1,z);
+  for(const x of [-.95,.95])mesh(dryerFrame,new THREE.CylinderGeometry(.065,.065,1.1,6).rotateX(Math.PI/2),'#aa865e',x,2.05,0);
+  const dryingMushrooms=new THREE.Group();dryingMushrooms.name='hung-mushrooms';dryerFrame.add(dryingMushrooms);
   for(let i=0;i<5;i++){
     const x=-.76+i*.38;
     mesh(dryingMushrooms,new THREE.CylinderGeometry(.022,.022,.38,5),'#c7b690',x,1.77,0);
@@ -74,10 +75,11 @@ export function createCampProps(r:Resources){
   const hits:THREE.Object3D[]=[crown.oracleHit];
   for(const [id,root] of roots){const s=Object.values(CAMP_PROPS).find(s=>s.id===id)!,h=id===CAMP_PROPS.altar.id?1.7:3.3,m=new THREE.Mesh(r.own(new THREE.CylinderGeometry(s.radius,s.radius,h,8)),r.own(new THREE.MeshBasicMaterial({visible:false})));m.position.y=h/2;m.userData.propId=id;root.add(m);hits.push(m);}
   let lastQuantity=-1,disposed=false;
-  return {group,hits,roots,foundation,update(time:number,state:SceneAppearance,inventory:InventoryState,night:number,reduced:boolean,foodDrying=false){
+  return {group,hits,roots,foundation,update(time:number,state:SceneAppearance,inventory:InventoryState,night:number,reduced:boolean,foodDrying=false,rackBuilt=false){
     if(disposed)return;const t=reduced?0:time,stock=logPresentation(inventory);
     if(stock.quantity!==lastQuantity){logs.count=stock.visible;caps.count=rings.count=stock.visible*2;lastQuantity=stock.quantity;}
-    dryingMushrooms.visible=foodDrying;
+    dryerFrame.visible=rackBuilt;
+    dryingMushrooms.visible=foodDrying&&rackBuilt;
     hearthLogs.material=state.fire?warmLogs:coldLogs;ashes.visible=!state.fire;
     embers.visible=smoke.visible=state.fire;coalMaterial.color.set(state.fire?'#6b3520':'#303632');coalMaterial.emissiveIntensity=state.fire?.8:0;glow.visible=state.fire;glowMaterial.uniforms.strength.value=.08+night*.24;
     flames.update(time,night,reduced,state.fire);
