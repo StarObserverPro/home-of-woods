@@ -1,6 +1,6 @@
 import {carryMethod} from './transport-location.ts';
 import { canonicalInstances } from './owned-items.ts';
-import { validateAttachedItems } from './item-attachments.ts';
+import { validateAttachedItems } from './item-attachment-contract.ts';
 import { canonicalJson } from './save-digest.ts';
 import { canonicalStacks, createInventory, isRecord, validateInventory, INVENTORY_SCHEMA_VERSION } from './inventory.ts';
 import type { InventoryState } from './inventory.ts';
