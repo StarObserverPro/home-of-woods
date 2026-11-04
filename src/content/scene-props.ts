@@ -4,6 +4,7 @@ export const CAMP_PROPS = {
   // Keep a clear open strip between the hearth, canvas and both wood stores.
   fire: {id:'camp-fire',x:-35,z:14,radius:1.6},
   logs: {id:'camp-log-store',x:-25,z:-3,radius:2.1},
+  dryer: {id:'camp-drying-rack',x:-40,z:18,radius:1.3},
   altar: {id:'grove-altar',x:-10,z:45,radius:3.35},
 } as const;
 export const ALTAR_STATES = ['dormant','ready','answering','resting'] as const;
