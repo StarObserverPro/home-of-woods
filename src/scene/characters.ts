@@ -11,10 +11,13 @@ import { heightAt } from '../world/surface.ts';
 import type { Models } from './models.ts';
 import type { Resources } from './resources.ts';
 import { syncTwoHandedAxe } from './character-grip.ts';
+import { createCharacterWardrobe } from './character-wardrobe.ts';
+import { DEFAULT_WARDROBE, resolveWardrobe, wardrobeForMountedItems } from '../content/wardrobe.ts';
+import type { WardrobeLook } from '../content/wardrobe.ts';
 import { axeHeadSamples, geometryContactTarget, contactClearance, findAxeStop, stoppedStrokeFraction } from './axe-contact.ts';
 import type { AxeTarget, AxeStop } from './axe-contact.ts';
 
-export type CharacterInspection = 'horizontal'|'vertical'|null;
+export type CharacterInspection = 'horizontal'|'vertical'|'wardrobe'|null;
 type Mode='idle'|'walk'|'gather'|'horizontal'|'vertical';
 export type CharacterImpact={treeId:string;point:THREE.Vector3};
 
@@ -42,6 +45,15 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   const partial=new THREE.AnimationClip('Visitor_ArmsAndHead',waving.duration,waving.tracks.filter(t=>/^(upperarm|lowerarm|wrist|hand|head)/.test(t.name)).map(t=>t.clone()));
   const wave=npcMixer.clipAction(partial);wave.play();
   const procedural=createActor(models.templates.get('ranger')!,models.animations.get('motions')!);procedural.root.scale.setScalar(1);player.add(procedural.root);procedural.root.visible=false;
+  const standardClothes=createCharacterWardrobe(r,body),actionClothes=createCharacterWardrobe(r,procedural.body);
+  let previewLook:WardrobeLook={...DEFAULT_WARDROBE},lastLookKey='';
+  function updateWardrobe(state:GameState,reducedMotion:boolean){
+    const next=wardrobeForMountedItems(previewLook,state.inventory.instances??[]);
+    const key=JSON.stringify(next);
+    if(key!==lastLookKey){standardClothes.apply(next);actionClothes.apply(next);lastLookKey=key;}
+    standardClothes.update(state.time,state.player.moving,reducedMotion);
+    actionClothes.update(state.time,state.player.moving,reducedMotion);
+  }
   const pickedScrap=new THREE.Mesh(r.geometry('held-scrap',()=>new THREE.CylinderGeometry(.025,.04,.38,5)),r.material('#92704a',.9));pickedScrap.rotation.z=Math.PI/2;pickedScrap.visible=false;player.add(pickedScrap);
   const blade=axeHeadSamples(tool),byId=new Map(trees.map(t=>[t.id,t]));
   // Inspector-only solids demonstrate both constraints without inventing a crafting transaction.
@@ -85,8 +97,12 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   function update(state:GameState,reducedMotion=false){
     if(disposed)return;
     player.position.set(state.player.x,heightAt(state.player.x,state.player.z),state.player.z);player.rotation.y=state.player.facing;
-    inspectionProps.visible=inspection!==null;impact=null;body.visible=true;pickedScrap.visible=false;cutHeight=null;chest.position.y=chestY;procedural.root.visible=false;
-    if(inspection){
+    updateWardrobe(state,reducedMotion);
+    inspectionProps.visible=inspection!==null&&inspection!=='wardrobe';impact=null;body.visible=true;pickedScrap.visible=false;cutHeight=null;chest.position.y=chestY;procedural.root.visible=false;
+    if(inspection==='wardrobe'){
+      cutKey='';stop=null;grip=null;lastContact=Infinity;tool.visible=false;
+      setMode('idle');actions.idle.time=0;mixer.update(0);
+    }else if(inspection){
       trunk.visible=inspection==='horizontal';stump.visible=block.visible=inspection==='vertical';player.updateMatrixWorld(true);
       let target:AxeTarget;
       if(inspection==='horizontal')target=geometryContactTarget(trunk.geometry,trunk.matrixWorld);
@@ -148,12 +164,14 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   return {
     player,visitor,update,
     setInspection(value:CharacterInspection){inspection=value;cutKey='';stop=null;},
+    setWardrobe(value:Partial<WardrobeLook>){previewLook=resolveWardrobe(value,previewLook);lastLookKey='';},
     getInspection:()=>inspection,
     getImpact:()=>impact,
-    stats:()=>({model:'KayKit R3',mode,inspection,stopFound:stop?.found??null,stopFraction:stop?.fraction??null,contactClearance:Number.isFinite(lastContact)?lastContact:null,grip,planMs,disposed}),
+    stats:()=>({model:'KayKit R3',mode,inspection,wardrobe:{standard:standardClothes.stats(),action:actionClothes.stats()},stopFound:stop?.found??null,stopFraction:stop?.fraction??null,contactClearance:Number.isFinite(lastContact)?lastContact:null,grip,planMs,disposed}),
     dispose(){
       if(disposed)return;disposed=true;
       for(const m of [mixer,npcMixer]){m.stopAllAction();m.uncacheRoot(m.getRoot());}
+      standardClothes.dispose();actionClothes.dispose();
       procedural.dispose();
       player.removeFromParent();visitor.removeFromParent();player.clear();visitor.clear();byId.clear();
       // Shared geometry, textures/materials and each cloned skeleton belong to Resources.
