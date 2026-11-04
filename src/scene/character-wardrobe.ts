@@ -18,7 +18,7 @@ export function createCharacterWardrobe(resources:Resources, actor:THREE.Object3
   type Part={root:THREE.Group; slot:WardrobeSlot;variant:string};
   const parts:Part[]=[];
   let look:WardrobeLook={...DEFAULT_WARDROBE},disposed=false;
-  let hairTail:THREE.Group|null=null,packKnot:THREE.Group|null=null;
+  let hairTail:THREE.Group|null=null;
   // The reviewed Blender export joins the original hair into its single SkinnedMesh.
   // Its dedicated hair atlas island can be hidden on alternative hairstyles without
   // mutating the shared GLB geometry (the procedural actor has another cloned rig).
@@ -120,7 +120,7 @@ export function createCharacterWardrobe(resources:Resources, actor:THREE.Object3
     }else if(id==='bun'){
       put(root,ellipsoid(),shade,[0,.36,.31],[.17,.18,.17]);
     }else if(id==='ponytail'){
-      const tail=new THREE.Group();tail.position.set(0,.28,.29);root.add(tail);
+      const tail=new THREE.Group();tail.name='tail-tip';tail.position.set(0,.28,.29);root.add(tail);
       put(tail,ellipsoid(),shade,[0,-.15,.02],[.14,.24,.14]);
       hairTail=tail;
     }
@@ -146,9 +146,14 @@ export function createCharacterWardrobe(resources:Resources, actor:THREE.Object3
     put(pack,cuboid(.48,.12,.31),'#a48a65',[0,.075,.28]);
     put(pack,cuboid(.42,.07,.07),'#6a5137',[0,-.05,.48]);
     for(const sx of [-1,1])put(pack,cuboid(.07,.49,.07),'#65543e',[sx*.23,-.17,.04]);
-    const knot=new THREE.Group();knot.position.set(.18,.04,.44);pack.add(knot);
-    const leaf=put(knot,ellipsoid(),'#d1b782',[.07,0,0],[.11,.04,.045]);leaf.rotation.z=.3;
-    packKnot=knot;
+    // Exact item-local-motion anchors; trait X93 remains planned, so no automatic bow animation.
+    for(const side of ['left','right'] as const){
+      const wing=new THREE.Group();wing.name='bow-'+side;
+      wing.position.set(side==='left'?-.045:.045,.04,.44);pack.add(wing);
+      const leaf=put(wing,ellipsoid(),'#d1b782',
+        [side==='left'?-.075:.075,0,0],[.11,.04,.045]);
+      leaf.rotation.z=side==='left'?-.3:.3;
+    }
   }
 
   function apply(next:WardrobeLook){
@@ -164,7 +169,6 @@ export function createCharacterWardrobe(resources:Resources, actor:THREE.Object3
       if(disposed)return;
       const swing=moving&&!reducedMotion?Math.sin(seconds*7)*.075:0;
       if(hairTail)hairTail.rotation.z=look.hair==='ponytail'?swing:0;
-      if(packKnot)packKnot.rotation.z=look.back==='pack'?swing*.7:0;
     },
     stats:()=>({look:{...look},parts:parts.length,hiddenBaseHairFaces,disposed}),
     dispose(){
@@ -172,7 +176,7 @@ export function createCharacterWardrobe(resources:Resources, actor:THREE.Object3
       if(skinned&&originalGeometry)skinned.geometry=originalGeometry;
       if(noBaseHair)resources.releaseOwned(noBaseHair);
       for(const p of parts){p.root.removeFromParent();p.root.clear();}
-      parts.length=0;hairTail=null;packKnot=null;noBaseHair=null;
+      parts.length=0;hairTail=null;noBaseHair=null;
       // Other geometries and materials are cached by the scene Resources owner.
     },
   };
