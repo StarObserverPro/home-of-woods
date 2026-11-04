@@ -10,6 +10,8 @@ import {interactionAccess,approachInteraction} from '../domain/interaction-acces
 import type {InteractionAccess,ItemTransferIntent} from '../domain/interaction-access.ts';
 import {beginUpgrade,approachUpgrade,mountFireTop} from '../domain/upgrades.ts';
 import {beginWorkshop,advanceWorkshop,workshopSnapshot,tradeBlueprint,tradeSupply,workshopBusy} from '../domain/workshop.ts';
+import {merchantSnapshot,exchangeMerchant} from '../domain/merchant.ts';
+import type {MerchantOrder,MerchantSnapshot} from '../domain/merchant.ts';
 import type {WorkshopSnapshot} from '../domain/workshop.ts';
 import {advanceLocalClock,CLOCK_SPEEDS} from '../domain/local-clock.ts';
 import type {ClockSpeed} from '../domain/local-clock.ts';
@@ -51,6 +53,7 @@ export type Snapshot = {
   interaction:InteractionAccess|null;
   woodcraft:WoodcraftSnapshot;
   workshop:WorkshopSnapshot;
+  merchant:MerchantSnapshot;
   placement:PlacementDraft|null;
   zone: string;
   x: number;
@@ -254,6 +257,7 @@ export async function createRuntime(
       gatheringSources: state.gathering.sources,
       warehouse: warehouseSnapshot(state, registry),
       workshop:workshopSnapshot(state),
+      merchant:merchantSnapshot(state),
       placement:placement?structuredClone(placement):null,
       save: persistence.status(),
       appearance:view.getAppearance(),
@@ -280,6 +284,7 @@ export async function createRuntime(
       gathering: gatheringSnapshot(state,registry,activeColliders()),
       warehouse: warehouseSnapshot(state, registry),
       workshop:workshopSnapshot(state),
+      merchant:merchantSnapshot(state),
       placement:placement?structuredClone(placement):null,
       save: persistence.status(),
       appearance:view.getAppearance(),
@@ -396,6 +401,7 @@ export async function createRuntime(
     craft(id:string){if(blocked()||placement)return;message=beginWorkshop(state,'craft',activeColliders(),id);publishSnapshot();},
     trade(id:string){if(blocked()||placement)return;message=tradeBlueprint(state,id);publishSnapshot();},
     tradeSupply(id:string){if(blocked()||placement)return;message=tradeSupply(state,id);publishSnapshot();},
+    merchantCheckout(order:MerchantOrder){if(blocked()||placement)return false;const result=exchangeMerchant(state,order);message=result.message;publishSnapshot();return result.ok;},
     approachMerchant(){if(blocked()||placement)return;cancelPlayerAction(state);state.selected=CAMP_VISITOR.id;
       const target={x:CAMP_VISITOR.x+2,z:CAMP_VISITOR.z+1};
       if(Math.hypot(state.player.x-CAMP_VISITOR.x,state.player.z-CAMP_VISITOR.z)<=3)message='已经在行商身边，可以交换图纸。';

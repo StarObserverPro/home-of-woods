@@ -5,6 +5,7 @@ import type {RarityVfxMode} from '../content/item-vfx.ts';
 import {createWoodcraftPresentation} from './woodcraft-presentation.ts';
 import {WOODCRAFT,insideWoodcraft} from '../content/woodcraft.ts';
 import {createWorkshopPresentation} from './workshop-presentation.ts';
+import {createMerchantWagon} from './merchant-wagon.ts';
 import type {PlacementDraft} from '../domain/furniture-placement.ts';
 import {CAMP_VISITOR} from '../content/characters.ts';
 import {createUnderstory} from './understory.js';
@@ -176,8 +177,9 @@ export async function createScene(
   });
   const characters=createCharacters(r,models,trees,forest.selections),player=characters.player;
   scene.add(player,characters.visitor);
+  const merchantWagon=createMerchantWagon(r);scene.add(merchantWagon.group);
   const wildlife=createWildlifePresentation(r,models);scene.add(wildlife.group);
-  const workshop=createWorkshopPresentation(r,models);scene.add(workshop.group);workshop.hits.register(characters.visitor,CAMP_VISITOR.id);
+  const workshop=createWorkshopPresentation(r,models);scene.add(workshop.group);workshop.hits.register(characters.visitor,CAMP_VISITOR.id);workshop.hits.register(merchantWagon.group,CAMP_VISITOR.id);
   const woodcraft=createWoodcraftPresentation(r);scene.add(woodcraft.group);
   let woodDropMode=false;
   let placementMode=false;
@@ -258,7 +260,7 @@ export async function createScene(
   };
   const pick = (clientX: number, clientY: number) => {
     screenRay(clientX,clientY);
-    const hit = ray.intersectObjects([...hauling.hits.objects(),...woodcraft.hits.objects(),...workshop.hits.objects(),...forestry.getPickTargets(),...props.values(),...gathering.hits.objects(),...camp.hits.filter(o=>o.userData.propActive!==false)], true)[0],
+    const hit = ray.intersectObjects([...hauling.hits.objects(),...woodcraft.hits.objects(),...workshop.hits.objects(),...forestry.getPickTargets(),...props.values(),...gathering.hits.objects(),...camp.hits.filter(o=>o.userData.propActive!==false)], true).find(hit=>{let o:THREE.Object3D|null=hit.object;while(o){if(!o.visible)return false;o=o.parent;}return true;}),
       terrainHit = ray.intersectObject(ground)[0];
     if(woodDropMode){const drop=ray.intersectObjects([...woodcraft.hits.objects(),ground],true)[0];if(drop)intent({kind:'wood-drop',x:drop.point.x,y:drop.point.y,z:drop.point.z});return;}
     if(placementMode){if(terrainHit)intent({kind:'move',x:terrainHit.point.x,z:terrainHit.point.z});return;}
@@ -401,7 +403,7 @@ export async function createScene(
       const woodId=woodcraft.hits.resolve(hit.object);
       if(woodId)return {kind:'loose-wood' as const,id:woodId};
       const id=workshop.hits.resolve(hit.object);
-      return id?{kind:'furniture' as const,id}:null;
+      return id&&id!==CAMP_VISITOR.id?{kind:'furniture' as const,id}:null;
     },
     setWoodcraftDrop(value:boolean){woodDropMode=value;},
     setPlacement(value:PlacementDraft|null){placementMode=!!value;workshop.setPreview(value);},
@@ -441,6 +443,7 @@ export async function createScene(
         y = heightAt(x, z);
       forestry.update(state,reducedMotion);understory.update(state);
       characters.update(state,reducedMotion);
+      merchantWagon.update(state.time,reducedMotion);
       forestry.alignContact(characters.getImpact());
       gathering.update(state.gathering);
       hauling.update(state.inventory);
@@ -579,6 +582,7 @@ export async function createScene(
       workshop.dispose();
       forestry.dispose();
       characters.dispose();
+      merchantWagon.dispose();
       wildlife.dispose();
       gathering.dispose();
       campExteriors.dispose();

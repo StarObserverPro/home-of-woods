@@ -162,3 +162,5 @@ export function exchangeMerchant(host:GameState,order:MerchantOrder):MerchantTra
   return {ok:true,message:(claim?'收下见面礼 · ':'')+'交易完成，铜币'+(change>=0?'+':'')+change+
     (newLedger.debt?' · 赊账 '+newLedger.debt:'')};
 }
+
+export type MerchantSnapshot=ReturnType<typeof merchantSnapshot>;

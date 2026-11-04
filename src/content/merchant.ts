@@ -12,7 +12,7 @@ export const MERCHANT_CAPACITY = { cargoUnits: 100, buyBudget: 800, creditLimit:
 export const MERCHANT_SCENE = {
   parked: { x: -40, z: -1 },
   wagon: { x: -43.6, z: -3.2 },
-  entryOffset: { x: 15, z: 14 },
+  entryOffset: { x: -15, z: -14 },
 } as const;
 
 export type MerchantCategory = 'food'|'material'|'blueprint'|'consumable'|'gift';

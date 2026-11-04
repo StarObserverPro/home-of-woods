@@ -28,18 +28,7 @@ export function WorkshopControls({selected,view,access,message,disabled,onOffer,
   return <section className="workshop-controls" aria-label="木作与图纸">
     {altar&&<><p>献上一份蘑菇，森林之母会随机回应；不一定带来新图纸。</p><button className="context-button" disabled={disabled||busy||!view.inputs.offering} onClick={onOffer}>献上蘑菇 · 祈求神谕</button>{!view.inputs.offering&&<p>需要一份蘑菇。</p>}</>}
     {bench&&<>{CRAFT_BLUEPRINTS.map(p=><div className="recipe-row" key={p.id}><div><strong>{p.name}</strong><small>{p.traitName} {p.value} · 消耗木料 1 份</small></div><button className="context-button" disabled={disabled||busy||!view.availableBlueprints.includes(p.id)||!view.inputs.craft} onClick={()=>onCraft(p.id)}>{view.availableBlueprints.includes(p.id)?`制作${p.name}`:'尚未学会'}</button></div>)}{!CRAFT_BLUEPRINTS.some(p=>view.availableBlueprints.includes(p.id))&&<p>先向行商换图纸，或在祭坛献上蘑菇。</p>}{!view.inputs.craft&&<p>需要一份未预留的木料。</p>}</>}
-    {merchant&&<>
-      <h3>材料交换</h3>
-      <p>这些是独立的施工材料，不会因获得图纸而免费出现。</p>
-      <div className="recipe-row"><div><strong>耐雨帆布卷</strong><small>鲜蘑菇 2 份 · 更换帐篷布面</small></div><button className="context-button" disabled={disabled||busy||!view.inputs.canvas} onClick={()=>onSupply('canvas-roll')}>换帆布</button></div>
-      <div className="recipe-row"><div><strong>火塘五金包</strong><small>原木 1 根 · 制作烤网或焖烤罩</small></div><button className="context-button" disabled={disabled||busy||!view.inputs.hardware} onClick={()=>onSupply('hardware-kit')}>换五金</button></div>
-      <h3>木作图纸</h3>
-      {view.offers.filter(id=>!CAMP_EXTERIOR_BLUEPRINTS.some(p=>p.id===id)).map(id=>{const p=findBlueprint(id)!;return <div className="recipe-row" key={id}><div><strong>{p.name}</strong><small>木料 1 份</small></div><button className="context-button" disabled={disabled||busy||view.blueprints.includes(id)||!view.inputs.trade} onClick={()=>onTrade(id)}>{view.blueprints.includes(id)?'已经学会':'交换图纸'}</button></div>;})}
-      <details className="merchant-exterior-plans"><summary>营地外装图纸 · {view.offers.filter(id=>CAMP_EXTERIOR_BLUEPRINTS.some(p=>p.id===id)).length} 张</summary>
-        {view.offers.filter(id=>CAMP_EXTERIOR_BLUEPRINTS.some(p=>p.id===id)).map(id=>{const p=findBlueprint(id)!;return <div className="recipe-row" key={id}><div><strong>{p.name}</strong><small>{p.targetLabel} · 木料 1 份</small></div><button className="context-button" disabled={disabled||busy||view.blueprints.includes(id)||!view.inputs.trade} onClick={()=>onTrade(id)}>{view.blueprints.includes(id)?'已收录':'换图纸'}</button></div>;})}
-      </details>
-      {!view.inputs.trade&&<p>交换图纸需要一份未预留的木料。</p>}
-    </>}
+    {merchant&&null}
     {item&&<div className="tree-actions"><button className="context-button" disabled={disabled||busy||item.definitionId!==SEAT_DEFINITION} onClick={()=>onPlace(item.instanceId)}>移动摆放</button><button className="context-button" disabled={disabled||busy||item.definitionId!==SEAT_DEFINITION} onClick={()=>onPack(item.instanceId)}>收回仓库</button></div>}
     {view.job&&<><p>{view.job.phase==='approaching'?'正在走到操作位置…':view.job.kind==='offering'?'正在祈求神谕…':'正在制作木墩…'}</p><progress aria-label="木作或供奉进度" value={view.job.progress} max={1}/><button className="context-button" onClick={onCancel}>取消 · 不扣材料</button></>}
     <p className="action-message" role="status">{message}</p>

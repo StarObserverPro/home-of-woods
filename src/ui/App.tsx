@@ -8,6 +8,8 @@ import {woodcraftDetails,WoodcraftControls,WoodDropControls} from './Woodcraft.t
 import {emptyWoodcraftSnapshot} from '../app/woodcraft-session.ts';
 import {workshopDetails,Hourglass,WorkshopControls,OwnedFurniture,PlacementControls} from './Workshop.tsx';
 import {calendarAt} from '../domain/local-clock.ts';
+import {merchantVisitAt} from '../content/merchant.ts';
+import {MerchantShop} from './MerchantShop.tsx';
 import {WORKBENCH} from '../content/workshop.ts';
 import {CAMP_VISITOR} from '../content/characters.ts';
 import {treeVisual} from '../world/tree-appearance.ts';
@@ -111,7 +113,8 @@ const empty: Snapshot = {
   carrying:{weight:0,bulk:0,effort:0,speed:1,reason:'',weightLimit:30,bulkLimit:10,method:'hands',items:[],ground:[],storageNear:false,visual:null},
   interaction:null,
   woodcraft:emptyWoodcraftSnapshot(),
-  workshop:{blueprints:[],offers:[],items:[],job:null,lastResponse:'',calendar:calendarAt(0),speed:1,upgrades:{},mounted:{},upgrade:null,upgradeOptions:[],inputs:{craft:false,offering:false,trade:false,canvas:false,hardware:false}},
+  merchant:{...merchantVisitAt(0),coins:100,debt:0,cargoLeft:100,budgetLeft:800,giftAvailable:false,listings:[],saleables:[]},
+  workshop:{blueprints:[],availableBlueprints:[],copyUses:{},offers:[],items:[],job:null,lastResponse:'',calendar:calendarAt(0),speed:1,upgrades:{},mounted:{},upgrade:null,upgradeOptions:[],inputs:{craft:false,offering:false,trade:false,canvas:false,hardware:false}},
   placement:null,
   zone: "山间营地",
   x: START.x,
@@ -511,7 +514,7 @@ export function App() {
         {snapshot.message}
       </div>}
       {selected && !snapshot.woodcraft.dropping && !warehouseOpen && (
-        <aside className={`target-card${gatherAction?.sourceId === gatherTarget?.id && gatherAction?.motionTag === 'gather.pickup' && ['approaching','performing'].includes(gatherAction.phase) ? ' target-card--pickup-active' : ''}`}>
+        <aside className={`target-card${snapshot.selected===CAMP_VISITOR.id?' is-merchant':''}${gatherAction?.sourceId === gatherTarget?.id && gatherAction?.motionTag === 'gather.pickup' && ['approaching','performing'].includes(gatherAction.phase) ? ' target-card--pickup-active' : ''}`}>
           <div className="target-top">
             <span className="eyebrow">{selected.tag}</span>
             <button
@@ -524,12 +527,18 @@ export function App() {
           <h2 className={selectedOwnedItem?'rarity-name':undefined} data-rarity={selectedOwnedItem?itemRarity(selectedOwnedItem).id:undefined} style={selectedOwnedItem?rarityStyle(selectedOwnedItem):undefined}>{selected.title}</h2>
           {['grove-altar','grove-altar:oracle'].includes(snapshot.selected??'') && snapshot.interaction?.near&&<div className="tree-actions"><button className="context-button" onClick={()=>runtime.current?.ritual('prayer')}>合掌祈祷</button><button className="context-button" onClick={()=>runtime.current?.cancelAction()}>取消动作</button></div>}
           {selectedTree && ['tree-slot-r3-hero-0','tree-slot-16-9','tree-slot-13-6','tree-slot-17-11','landmark-elder'].includes(selectedTree.id) && <button className="context-button" onClick={()=>runtime.current?.selectTreeBranches()}>上树采枝</button>}
-          <p>{selected.detail}</p>
+          {snapshot.selected!==CAMP_VISITOR.id&&<p>{selected.detail}</p>}
           <GroundCarryControls id={snapshot.selected} view={snapshot.carrying} onChange={intent=>runtime.current?.carry(intent)} onApproach={id=>runtime.current?.approachMaterial(id)}/>
           <WoodcraftControls selected={snapshot.selected} view={snapshot.woodcraft} message={snapshot.message} disabled={!ready||snapshot.paused||!!snapshot.placement}
             onOpen={()=>runtime.current?.openWoodcraft()} onWarehouse={()=>setWarehouseOpen(true)} onPrepare={()=>runtime.current?.prepareWoodcraft()} onThrow={()=>runtime.current?.beginWoodDrop()} onCollect={id=>runtime.current?.collectWood(id)} onClose={()=>runtime.current?.closeWoodcraft()}/>
-          <WorkshopControls selected={snapshot.selected} view={snapshot.workshop} access={snapshot.interaction} message={snapshot.message} disabled={!ready||snapshot.paused||!!snapshot.placement}
-            onOffer={()=>runtime.current?.offer()} onCraft={id=>runtime.current?.craft(id)} onTrade={id=>runtime.current?.trade(id)} onSupply={id=>runtime.current?.tradeSupply(id)} onApproach={()=>runtime.current?.approachTarget(snapshot.selected!)} onCancel={()=>runtime.current?.cancelAction()} onPlace={id=>runtime.current?.beginPlacement(id)} onPack={id=>runtime.current?.packFurniture(id)}/>
+          {snapshot.selected!==CAMP_VISITOR.id&&<WorkshopControls selected={snapshot.selected} view={snapshot.workshop} access={snapshot.interaction} message={snapshot.message} disabled={!ready||snapshot.paused||!!snapshot.placement}
+            onOffer={()=>runtime.current?.offer()} onCraft={id=>runtime.current?.craft(id)} onTrade={id=>runtime.current?.trade(id)} onSupply={id=>runtime.current?.tradeSupply(id)} onApproach={()=>runtime.current?.approachTarget(snapshot.selected!)} onCancel={()=>runtime.current?.cancelAction()} onPlace={id=>runtime.current?.beginPlacement(id)} onPack={id=>runtime.current?.packFurniture(id)}/>}
+          {snapshot.selected===CAMP_VISITOR.id&&(
+            snapshot.merchant.parked?(snapshot.interaction?.near?
+              <MerchantShop view={snapshot.merchant} disabled={!ready||snapshot.paused||!!snapshot.placement} onCheckout={order=>runtime.current?.merchantCheckout(order)??false}/>:
+              <button className="context-button" onClick={()=>runtime.current?.approachMerchant()}>走近货车</button>):
+              <span className="merchant-empty">{snapshot.merchant.active?'行商正赶着小车过来':'行商暂时不在'}</span>
+          )}
           {snapshot.selected===CAMP_PROPS.logs.id&&<div className="tree-actions">{snapshot.interaction?.near?<><button className="context-button" onClick={()=>setWarehouseOpen(true)}>打开仓库</button><button className="context-button" onClick={()=>runtime.current?.openWoodcraft()}>前往木料堆取放</button></>:<button className="context-button" disabled={!ready||snapshot.paused} onClick={()=>runtime.current?.approachTarget(CAMP_PROPS.logs.id)}>走近原木架</button>}</div>}
           <UpgradeControls view={snapshot.workshop} hasContextActions={!!snapshot.interaction} disabled={!ready||snapshot.paused||!!snapshot.placement} onApproach={id=>runtime.current?.approachUpgrade(id)} onUpgrade={id=>runtime.current?.upgrade(id)} onMount={id=>runtime.current?.mountExterior(id)} onCancel={()=>runtime.current?.cancelAction()}/>
           {snapshot.selected==='tent'&&<button className="context-button" onClick={()=>runtime.current?.select(WORKBENCH.id)}>查看帐篷前的工作台</button>}

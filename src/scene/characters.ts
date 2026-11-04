@@ -4,6 +4,7 @@ import {canStand} from '../domain/navigation.ts';
 import {makeColliders} from '../world/layout.ts';
 import {createActor} from './actions/actor.js';
 import { CHARACTER, CAMP_VISITOR } from '../content/characters.ts';
+import {merchantVisitAt,MERCHANT_SCENE} from '../content/merchant.ts';
 import { FORESTRY } from '../content/forestry.ts';
 import type { GameState } from '../domain/state.ts';
 import type { Tree } from '../world/layout.ts';
@@ -41,6 +42,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   const waving=need('Waving');
   const partial=new THREE.AnimationClip('Visitor_ArmsAndHead',waving.duration,waving.tracks.filter(t=>/^(upperarm|lowerarm|wrist|hand|head)/.test(t.name)).map(t=>t.clone()));
   const wave=npcMixer.clipAction(partial);wave.play();
+  const npcWalk=npcMixer.clipAction(sourceClips.walk);npcWalk.play();
   const procedural=createActor(models.templates.get('ranger')!,models.animations.get('motions')!);procedural.root.scale.setScalar(1);player.add(procedural.root);procedural.root.visible=false;
   const pickedScrap=new THREE.Mesh(r.geometry('held-scrap',()=>new THREE.CylinderGeometry(.025,.04,.38,5)),r.material('#92704a',.9));pickedScrap.rotation.z=Math.PI/2;pickedScrap.visible=false;player.add(pickedScrap);
   const blade=axeHeadSamples(tool),byId=new Map(trees.map(t=>[t.id,t]));
@@ -85,6 +87,12 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   function update(state:GameState,reducedMotion=false){
     if(disposed)return;
     player.position.set(state.player.x,heightAt(state.player.x,state.player.z),state.player.z);player.rotation.y=state.player.facing;
+    const visit=merchantVisitAt(state.time);
+    visitor.visible=visit.active;
+    if(visit.active){const eased=visit.travel*visit.travel*(3-2*visit.travel);
+      const vx=CAMP_VISITOR.x+MERCHANT_SCENE.entryOffset.x*(1-eased),vz=CAMP_VISITOR.z+MERCHANT_SCENE.entryOffset.z*(1-eased);
+      visitor.position.set(vx,heightAt(vx,vz),vz);
+    }
     inspectionProps.visible=inspection!==null;impact=null;body.visible=true;pickedScrap.visible=false;cutHeight=null;chest.position.y=chestY;procedural.root.visible=false;
     if(inspection){
       trunk.visible=inspection==='horizontal';stump.visible=block.visible=inspection==='vertical';player.updateMatrixWorld(true);
@@ -141,9 +149,11 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
       const x=state.player.x-dir.x*step,z=state.player.z-dir.z*step;
       if(canStand({x,z},blockers))player.position.set(x,heightAt(x,z),z);
     }
-    const near=Math.hypot(state.player.x-CAMP_VISITOR.x,state.player.z-CAMP_VISITOR.z)<CAMP_VISITOR.waveRange;
+    const near=visit.parked&&Math.hypot(state.player.x-CAMP_VISITOR.x,state.player.z-CAMP_VISITOR.z)<CAMP_VISITOR.waveRange;
     const localTime=state.time%CAMP_VISITOR.waveInterval;
-    wave.enabled=true;wave.setEffectiveWeight(near&&!reducedMotion&&localTime<partial.duration?1:0);wave.time=Math.min(localTime,partial.duration*.999);npcMixer.update(0);
+    wave.enabled=true;wave.setEffectiveWeight(near&&!reducedMotion&&localTime<partial.duration?1:0);wave.time=Math.min(localTime,partial.duration*.999);
+    npcWalk.setEffectiveWeight(visit.active&&!visit.parked&&!reducedMotion?1:0);npcWalk.time=state.time%sourceClips.walk.duration;
+    npcMixer.update(0);
   }
   return {
     player,visitor,update,
