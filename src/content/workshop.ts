@@ -27,6 +27,7 @@ export const CAMP_EXTERIOR_BLUEPRINTS=[
   exteriorPlan('blueprint.camp-fire-stones','重垒挡风石圈','重新堆好现有火塘散石，不增加新石材。','camp-fire:stones','篝火 · 火塘',true),
   exteriorPlan('blueprint.camp-fire-support','双柱横梁锅架','火塘外围立柱与横梁，是烹饪上部接口的前提。','camp-fire:support','篝火 · 支架'),
   exteriorPlan('blueprint.camp-fire-hook','悬锅吊钩','留出吊锅位置，锅具以后另行制作。','camp-fire:hook','篝火 · 可换上部件'),
+  exteriorPlan('blueprint.camp-fire-pot','基础悬挂汤锅','在悬锅吊钩上安装简易金属汤锅，制作菌菇汤。','camp-fire:pot','篝火 · 汤锅'),
   exteriorPlan('blueprint.camp-fire-grill','可收起的烧烤网','从行商换五金包，再做可收起的网架。','camp-fire:grill','篝火 · 可换上部件'),
   exteriorPlan('blueprint.camp-fire-smoker','焖烤烟罩','从行商换五金包，再做可拆的带烟口罩。','camp-fire:smoker','篝火 · 可换上部件'),
 ] as const;
