@@ -30,5 +30,6 @@ export function rollBlueprintRarity(seed: number, serial: number, blueprintId: s
     cumulative += distribution[rarity.id];
     if (roll < cumulative) return rarity.id;
   }
-  return RARITIES[RARITIES.length - 1].id;
+  // Float accumulation must never leak across the blueprint's hard rarity cap.
+  return [...RARITIES].reverse().find(r => distribution[r.id] > 0)!.id;
 }
