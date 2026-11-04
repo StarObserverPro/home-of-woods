@@ -35,6 +35,12 @@ export function createCampProps(r:Resources){
   const coals=new THREE.Mesh(r.own(new THREE.IcosahedronGeometry(.65,0).scale(1,.25,1)),coalMaterial);coals.position.y=.3;fire.add(coals);
   // A small low-poly drying rack; this is a single campsite station, not a new kitchen.
   const dryer=roots.get(CAMP_PROPS.dryer.id)!;
+  // The unbuilt station needs a visible worksite; an invisible hit target is not discoverable.
+  const dryerSite=new THREE.Group();dryerSite.name='unbuilt-drying-rack-worksite';dryer.add(dryerSite);
+  for(const [x,z] of [[-.95,-.5],[.95,-.5],[-.95,.5],[.95,.5]]){
+    mesh(dryerSite,new THREE.CylinderGeometry(.09,.11,.38,6),'#b28b5e',x,.19,z);
+  }
+  mesh(dryerSite,new THREE.CylinderGeometry(.08,.08,1.7,6).rotateZ(Math.PI/2).rotateY(.45),'#97754b',0,.18,0);
   const dryerFrame=new THREE.Group();dryerFrame.name='built-drying-rack';dryer.add(dryerFrame);
   for(const x of [-.95,.95])for(const z of [-.5,.5])mesh(dryerFrame,new THREE.CylinderGeometry(.09,.11,2.1,6),'#816646',x,1.05,z);
   for(const z of [-.5,.5])mesh(dryerFrame,new THREE.CylinderGeometry(.085,.085,2.05,6).rotateZ(Math.PI/2),'#aa865e',0,2.1,z);
@@ -78,6 +84,7 @@ export function createCampProps(r:Resources){
   return {group,hits,roots,foundation,update(time:number,state:SceneAppearance,inventory:InventoryState,night:number,reduced:boolean,foodDrying=false,rackBuilt=false){
     if(disposed)return;const t=reduced?0:time,stock=logPresentation(inventory);
     if(stock.quantity!==lastQuantity){logs.count=stock.visible;caps.count=rings.count=stock.visible*2;lastQuantity=stock.quantity;}
+    dryerSite.visible=!rackBuilt;
     dryerFrame.visible=rackBuilt;
     dryingMushrooms.visible=foodDrying&&rackBuilt;
     hearthLogs.material=state.fire?warmLogs:coldLogs;ashes.visible=!state.fire;
