@@ -32,6 +32,7 @@ import type { GatheringRegistry } from '../domain/gathering-registry.ts';
 import {ramp} from './actions/motion.js';
 import {createCharacters} from './characters.ts';
 import type {CharacterInspection} from './characters.ts';
+import type {WardrobeLook} from '../content/wardrobe.ts';
 
 export type SceneIntent =
   | { kind: "wood-drop"; x:number; y:number; z:number }
@@ -420,6 +421,7 @@ export async function createScene(
     setReducedMotion(value: boolean) {
       reducedMotion = value;
     },
+    setWardrobe(patch:Partial<WardrobeLook>){characters.setWardrobe(patch);},
     inspectCharacter(value:CharacterInspection){
       if(value&&!inspectionCamera){inspectionCamera={yaw,elevation,zoom,target:target.clone()};yaw=player.rotation.y-.6;elevation=.24;zoom=1;}
       if(!value&&inspectionCamera){({yaw,elevation,zoom}=inspectionCamera);target.copy(inspectionCamera.target);inspectionCamera=null;}
