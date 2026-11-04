@@ -93,6 +93,17 @@ export function eatMushroomSoup(host:GameState):string{
   host.inventory=inventory;host.food={...host.food,lastMealDay:calendarAt(host.time).day,mealsEaten:host.food.mealsEaten+1};
   return '喝完了热汤，明天可以从容地做重体力活。';
 }
+/** Emergency staple meal: merchant bread prevents a day-two no-axe/no-pot softlock. */
+export function eatBlackBread(host:GameState):string{
+  if(host.selected!==CAMP_PROPS.fire.id||!near(host,CAMP_PROPS.fire.x,CAMP_PROPS.fire.z,3.9))return '先回到火塘旁用餐。';
+  if(busy(host))return '先完成当前动作。';
+  const bread=available(host.inventory,'food-black-bread')[0];
+  if(!bread)return '没有可以吃的黑面包。';
+  if(!Number.isSafeInteger(host.food.mealsEaten+1))return '用餐计数已用尽。';
+  const inventory=inventoryTransaction(host.inventory,[{...stackIdentity(bread),delta:-1}]);
+  host.inventory=inventory;host.food={...host.food,lastMealDay:calendarAt(host.time).day,mealsEaten:host.food.mealsEaten+1};
+  return '吃了一份扎实的黑面包，明天可以正常干重体力活。';
+}
 export function foodSnapshot(host:GameState){
   const count=(id:string)=>available(host.inventory,id).reduce((n,s)=>n+s.quantity,0);
   const today=calendarAt(host.time).day;
