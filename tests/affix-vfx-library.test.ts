@@ -6,7 +6,8 @@ import {
 } from '../src/content/affix-vfx-palette.ts';
 import {
   AFFIX_PARTICLE_SHAPES, AFFIX_EMISSION_PATTERNS, AFFIX_TRIGGER_LIBRARY,
-  LOW_TIER_AFFIX_CANDIDATES, validateLowTierAffixLibrary,
+  LOW_TIER_AFFIX_CANDIDATES, LOW_TIER_AFFIX_DEFINITIONS, AFFIX_GRADES, AFFIX_CATEGORIES,
+  validateLowTierAffixLibrary, validateAffixComposition,
 } from '../src/content/affix-vfx-library.ts';
 import { RARITIES } from '../src/content/rarities.ts';
 import { ITEM_VFX } from '../src/content/item-vfx.ts';
@@ -69,15 +70,58 @@ test('candidate wordings are distinct, stay dormant, and enforce low-tier combin
   assert.equal(new Set(LOW_TIER_AFFIX_CANDIDATES.map(x=>x.name)).size,13);
   for(const candidate of LOW_TIER_AFFIX_CANDIDATES){
     assert.equal(candidate.status,'candidate');
-    assert.ok(['common','uncommon'].includes(candidate.complexity));
+    assert.ok(['common','uncommon'].includes(candidate.grade));
+    assert.equal(candidate.category,candidate.visual.kind==='tint'?'color':'particle');
     assert.ok(candidate.imagery.length>8);
     const colors=candidate.colorIds.map(id=>AFFIX_SWATCH_BY_ID.get(id));
     assert.ok(colors.every(Boolean));
-    if(candidate.complexity==='common')assert.equal(colors.length,1);
+    if(candidate.grade==='common')assert.equal(colors.length,1);
     else assert.ok(colors.length>=1&&colors.length<=2);
   }
   assert.ok(LOW_TIER_AFFIX_CANDIDATES.some(x=>x.visual.kind==='tint'));
   assert.ok(LOW_TIER_AFFIX_CANDIDATES.some(x=>x.visual.kind==='particles'));
+});
+
+test('affix grades and effect groups are separate from equipment rarity and rarity VFX',()=>{
+  assert.deepEqual(AFFIX_GRADES,['common','uncommon','rare','epic','legendary']);
+  assert.deepEqual(AFFIX_CATEGORIES,['color','particle','motion','interaction','utility']);
+  assert.equal(LOW_TIER_AFFIX_DEFINITIONS.size,LOW_TIER_AFFIX_CANDIDATES.length);
+  for(const proposal of LOW_TIER_AFFIX_CANDIDATES){
+    assert.deepEqual(LOW_TIER_AFFIX_DEFINITIONS.get(proposal.id),
+      {id:proposal.id,category:proposal.category,grade:proposal.grade});
+  }
+});
+
+test('legendary equipment may combine low-grade color, particle and high-grade motion',()=>{
+  const registry=new Map(LOW_TIER_AFFIX_DEFINITIONS);
+  registry.set('apparel.coat-patrol',{id:'apparel.coat-patrol',grade:'epic',category:'motion'});
+  const legendaryItem={
+    rarityId:'legendary',
+    traits:[
+      {id:'apparel.meadow-afterglow',value:1},
+      {id:'apparel.gold-meets-lake',value:1},
+      {id:'apparel.coat-patrol',value:1},
+    ],
+  };
+  const ids=legendaryItem.traits.map(trait=>trait.id);
+  assert.doesNotThrow(()=>validateAffixComposition(ids,registry));
+  assert.equal(legendaryItem.rarityId,'legendary');
+  // Particle palettes may include two colors without occupying the color category.
+  assert.equal(LOW_TIER_AFFIX_DEFINITIONS.get('apparel.gold-meets-lake')?.category,'particle');
+  assert.equal(LOW_TIER_AFFIX_DEFINITIONS.get('apparel.gold-meets-lake')?.grade,'uncommon');
+  assert.deepEqual(legendaryItem.traits.map(trait=>trait.value),[1,1,1]);
+});
+
+test('only one affix per effect category, even across distinct tiers',()=>{
+  assert.doesNotThrow(()=>validateAffixComposition([],LOW_TIER_AFFIX_DEFINITIONS));
+  assert.doesNotThrow(()=>validateAffixComposition(['apparel.meadow-afterglow'],LOW_TIER_AFFIX_DEFINITIONS));
+  assert.throws(()=>validateAffixComposition(
+    ['apparel.meadow-afterglow','apparel.sunset-berry'],LOW_TIER_AFFIX_DEFINITIONS),/Duplicate affix category: color/);
+  assert.throws(()=>validateAffixComposition(
+    ['apparel.moon-dew','apparel.gold-meets-lake'],LOW_TIER_AFFIX_DEFINITIONS),/Duplicate affix category: particle/);
+  assert.throws(()=>validateAffixComposition(
+    ['apparel.moon-dew','apparel.moon-dew'],LOW_TIER_AFFIX_DEFINITIONS),/Duplicate affix ID/);
+  assert.throws(()=>validateAffixComposition(['apparel.unknown'],LOW_TIER_AFFIX_DEFINITIONS),/Unknown affix definition/);
 });
 
 test('the proposal library does not reassign the five item rarities or glow presentation',()=>{
