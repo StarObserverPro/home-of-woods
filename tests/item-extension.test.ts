@@ -18,8 +18,8 @@ const instance = () => ({ instanceId:'test-seat',definitionId:'furniture.stump-s
 const context = createSaveContext();
 const load = (raw:string) => { const result=prepareInventoryPersistence(raw);if(!('value' in result))throw Error(result.diagnostics.join(';'));return result.value; };
 
-test('one clean format, no historical imports; old browser database is not reused', async () => {
-  assert.equal(INVENTORY_SCHEMA_VERSION,4);assert.equal(WORLD_RULESET_VERSION,5);assert.equal(WORLD_SAVE_DATABASE,'home-of-woods-save-v2');
+test('carrying core format preserves the intentional v4 migration; abandoned formats stay protected', async () => {
+  assert.equal(INVENTORY_SCHEMA_VERSION,5);assert.equal(WORLD_RULESET_VERSION,6);assert.equal(WORLD_SAVE_DATABASE,'home-of-woods-save-v2');
   for(const schemaVersion of [1,2,3,99]) assert.equal(prepareInventoryPersistence(JSON.stringify({schemaVersion,stacks:[]})).decision,'protected');
   assert.equal(prepareInventoryPersistence(JSON.stringify({version:1,quantities:{wood:3}})).decision,'protected');
   assert.equal(prepareInventoryPersistence(null).decision,'no-save');

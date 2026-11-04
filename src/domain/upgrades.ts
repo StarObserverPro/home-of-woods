@@ -1,3 +1,4 @@
+import {isAvailableMaterial} from './transport-location.ts';
 import type {GameState} from './state.ts';
 import type {Collider} from '../world/layout.ts';
 import type {UpgradePath} from '../content/upgrades.ts';
@@ -20,7 +21,7 @@ function materialCandidate(host:GameState,path:UpgradePath){
   const consumed:InventoryStack[]=[];
   const remaining=new Map<InventoryStack,number>();
   const materials=path.materials.map(requirement=>{
-    const eligible=host.inventory.stacks.filter(s=>recognizedStack(s)&&!s.wood?.reserved&&ITEM_CATALOG.items.get(s.itemId)?.typeId===requirement.typeId);
+    const eligible=host.inventory.stacks.filter(s=>isAvailableMaterial(s)&&recognizedStack(s)&&!s.wood?.reserved&&ITEM_CATALOG.items.get(s.itemId)?.typeId===requirement.typeId);
     const available=eligible.reduce((n,s)=>n+(remaining.get(s)??s.quantity),0);
     let wanted=requirement.quantity;
     for(const stack of eligible){

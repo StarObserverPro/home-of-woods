@@ -1,7 +1,8 @@
+import {transportLocation,carryMethod} from './transport-location.ts';
 import { assertItemJson, withoutFields } from './item-data.ts';
 import type { ExtensibleRecord } from './item-data.ts';
 import { canonicalJson } from './save-digest.ts';
-export const INVENTORY_SCHEMA_VERSION = 4 as const;
+export const INVENTORY_SCHEMA_VERSION = 5 as const;
 import {canonicalInstances} from './owned-items.ts';
 import type {OwnedItem} from './owned-items.ts';
 import { ITEM_CATALOG, isStableId } from './item-catalog.ts';
@@ -32,6 +33,7 @@ export type InventoryDelta = StackIdentity & { delta: number };
 export function stackIdentity(stack: StackIdentity): StackIdentity {
   const identity = withoutFields(stack, ['quantity', 'delta']);
   if (Object.hasOwn(stack, 'wood')) identity.wood = validateWood(stack.wood);
+  transportLocation(identity);
   assertItemJson(identity);
   return structuredClone(identity) as StackIdentity;
 }
@@ -66,6 +68,7 @@ export function canonicalStacks(value: unknown): InventoryStack[] {
 export function validateInventory(state: InventoryState) {
   if (!isRecord(state)) throw new Error('Invalid inventory state');
   assertItemJson(state);
+  carryMethod(state.carryMode);
   if(Object.hasOwn(state,'instances'))canonicalInstances(state.instances);
   if (state.schemaVersion !== INVENTORY_SCHEMA_VERSION || !Number.isSafeInteger(state.revision) || state.revision < 0) throw new Error('Unsupported inventory state');
   return canonicalStacks(state.stacks);
