@@ -431,6 +431,8 @@ export async function createScene(
       appearance={...sceneAppearanceAt(state.time),...(Number.isFinite(auditHour)&&auditHour>=0&&auditHour<=24?{hour:auditHour}:{}),...sceneOverrides};
       if(state.ritual?.startedAt!=null&&state.time-state.ritual.startedAt<8){if(state.ritual.phase==='completed')appearance.altar='resting';else if(state.ritual.phase==='performing'&&state.time-state.ritual.startedAt>3.5)appearance.altar='answering';}
       if((sceneOverrides.hour!==undefined||Number.isFinite(auditHour))&&sceneOverrides.fire===undefined)appearance.fire=daylightAt(appearance.hour).night>.5;
+      // A real cooking job lights the hearth even when the daily decorative fire is off.
+      if(state.food.cooking&&sceneOverrides.fire===undefined)appearance.fire=true;
       const sky=environment.setHour(appearance.hour);
       hemi.color.copy(light.skyColor);hemi.groundColor.copy(light.groundColor);hemi.intensity=light.ambientIntensity;
       sun.color.copy(light.sunColor);sun.intensity=light.sunIntensity;sun.position.copy(sun.target.position).addScaledVector(light.sunDirection,135);
