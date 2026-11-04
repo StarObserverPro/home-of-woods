@@ -24,6 +24,7 @@ export const CAMP_EXTERIOR_BLUEPRINTS=[
   exteriorPlan('blueprint.cabin-roof','屋脊与檐口包边','木屋基础修缮后再收整屋顶轮廓。','cabin:roof','木屋 · 屋面'),
   exteriorPlan('blueprint.cabin-windows','外开木窗板','木屋基础修缮后加装外窗板。','cabin:windows','木屋 · 窗'),
   exteriorPlan('blueprint.cabin-entry','门前遮雨檐','木屋基础修缮后增设入口遮雨结构。','cabin:entry','木屋 · 门与外廊'),
+  exteriorPlan('blueprint.camp-drying-rack','蘑菇晾晒架','用枝杈在营地搭建一个小型菌类晾晒架。','camp-drying-rack','营地 · 食材晾晒',true),
   exteriorPlan('blueprint.camp-fire-stones','重垒挡风石圈','重新堆好现有火塘散石，不增加新石材。','camp-fire:stones','篝火 · 火塘',true),
   exteriorPlan('blueprint.camp-fire-support','双柱横梁锅架','火塘外围立柱与横梁，是烹饪上部接口的前提。','camp-fire:support','篝火 · 支架'),
   exteriorPlan('blueprint.camp-fire-hook','悬锅吊钩','留出吊锅位置，锅具以后另行制作。','camp-fire:hook','篝火 · 可换上部件'),
@@ -32,7 +33,7 @@ export const CAMP_EXTERIOR_BLUEPRINTS=[
   exteriorPlan('blueprint.camp-fire-smoker','焖烤烟罩','从行商换五金包，再做可拆的带烟口罩。','camp-fire:smoker','篝火 · 可换上部件'),
 ] as const;
 export const BLUEPRINTS = [...CRAFT_BLUEPRINTS,CABIN_REPAIR_BLUEPRINT,...CAMP_EXTERIOR_BLUEPRINTS] as const;
-export const STARTER_BLUEPRINTS = [CABIN_REPAIR_BLUEPRINT.id,'blueprint.tent-ropes','blueprint.camp-fire-stones'] as const;
+export const STARTER_BLUEPRINTS = [CABIN_REPAIR_BLUEPRINT.id,'blueprint.tent-ropes','blueprint.camp-fire-stones','blueprint.camp-drying-rack'] as const;
 export const SEAT_DEFINITION = 'furniture.stump-seat';
 export const findBlueprint = (id:string) => BLUEPRINTS.find(b=>b.id===id);
 export const findCraftBlueprint = (id:string) => CRAFT_BLUEPRINTS.find(b=>b.id===id);
