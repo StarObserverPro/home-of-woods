@@ -1,6 +1,7 @@
 import {groundItem} from './carrying.ts';
 import {validateWoodcraft} from './woodcraft.ts';
 import {validateWorkshop,workshopTargetId} from './workshop.ts';
+import {validateMerchant,createMerchant} from './merchant.ts';
 import {CLOCK_SPEEDS} from './local-clock.ts';
 import {canonicalInstances} from './owned-items.ts';
 import { WAYPOINTS, WORLD_LAYOUT_VERSION, WORLD_RULESET_VERSION, WORLD_SEED } from '../content/world.ts';
@@ -22,7 +23,7 @@ export type WorldLoadResult =
 
 export function validateWorldState(raw: unknown, context: SaveContext, mode: 'runtime' | 'persisted') {
   const world = object(raw, 'world');
-  fields(world, ['woodcraft','clock','workshop','ritual', 'seed', 'time', 'forestry', 'inventory', 'gathering', 'player', 'selected', 'route', 'visited'], 'world', mode === 'runtime' ? ['wildlife'] : []);
+  fields(world, ['woodcraft','clock','workshop','ritual', 'seed', 'time', 'forestry', 'inventory', 'gathering', 'player', 'selected', 'route', 'visited'], 'world', mode === 'runtime' ? ['wildlife','merchant'] : ['merchant']);
   requireValue(world.seed === WORLD_SEED, 'world.seed', '当前布局不支持此世界');
   const time = finite(world.time, 'world.time');
   const player = object(world.player, 'world.player'); fields(player, ['x', 'z', 'facing', 'moving'], 'world.player');
@@ -44,7 +45,8 @@ export function validateWorldState(raw: unknown, context: SaveContext, mode: 'ru
   const woodcraft=validateWoodcraft(world.woodcraft);
   const clock=object(world.clock,'world.clock');fields(clock,['speed'],'world.clock');
   requireValue(CLOCK_SPEEDS.includes(clock.speed as 1|4|12),'world.clock','沙漏速度无效');
-  const workshop=validateWorkshop(world.workshop,time);
+  const workshop=validateWorkshop(world.workshop,time,inventory);
+  const merchant=validateMerchant(world.merchant??createMerchant());
   const ownedPrefix=`crafted-${WORLD_SEED}-`;
   for(const item of inventory.instances??[]){
     if(item.instanceId.startsWith(ownedPrefix)){
@@ -65,7 +67,7 @@ export function validateWorldState(raw: unknown, context: SaveContext, mode: 'ru
     if(a.phase==='approaching'||a.phase==='performing')requireValue(forestry.active===null && !['approaching','performing'].includes(gathering.action?.phase??'') && ['grove-altar','grove-altar:oracle'].includes(world.selected as string),'ritual','进行中祈祷与世界冲突');
   }
   if(workshop.job)requireValue(world.selected===workshopTargetId(workshop.job.kind,workshop.job.targetId)&&!forestry.active&&!['approaching','performing'].includes(gathering.action?.phase??'')&&!(world.ritual&&['approaching','performing'].includes((world.ritual as {phase:string}).phase)),'workshop.job','操作状态冲突');
-  const state = { ...structuredClone(world), woodcraft, workshop, inventory, forestry, gathering } as unknown as GameState;
+  const state = { ...structuredClone(world), woodcraft, workshop, merchant, inventory, forestry, gathering } as unknown as GameState;
   return { state, diagnostics };
 }
 
@@ -86,11 +88,12 @@ export async function prepareWorldSave(raw: string | null, context: SaveContext)
     requireValue(typeof raw === 'string', 'save', '存储记录不是文本');
     const saved = object(JSON.parse(raw), 'save');
     fields(saved, ['schemaVersion', 'layoutVersion', 'rulesetVersion', 'sequence', 'savedAt', 'world', 'checksum'], 'save');
-    requireValue(saved.schemaVersion === 1 && saved.layoutVersion === WORLD_LAYOUT_VERSION && [5,6,WORLD_RULESET_VERSION].includes(saved.rulesetVersion as number), 'save', '未来格式或不兼容的世界版本');
+    requireValue(saved.schemaVersion === 1 && saved.layoutVersion === WORLD_LAYOUT_VERSION && [5,6,7,WORLD_RULESET_VERSION].includes(saved.rulesetVersion as number), 'save', '未来格式或不兼容的世界版本');
     const sequence = integer(saved.sequence, 'save.sequence', 1), savedAt = finite(saved.savedAt, 'save.savedAt');
     requireValue(typeof saved.checksum === 'string' && /^[a-f0-9]{64}$/.test(saved.checksum), 'save.checksum', '校验记录无效');
     const { checksum, ...core } = saved;
     requireValue(await saveDigest(core) === checksum, 'save.checksum', '数据完整性校验失败');
+    if(saved.rulesetVersion===WORLD_RULESET_VERSION)requireValue(Object.hasOwn(object(saved.world,'world'),'merchant'),'world.merchant','缺少商人交易账本');
     const loaded = validateWorldState(saved.world, context, 'persisted');
     return { decision: saved.rulesetVersion===WORLD_RULESET_VERSION?'restored':'migrated', value: loaded.state, meta: { sequence, savedAt }, diagnostics: loaded.diagnostics };
   } catch (error) {

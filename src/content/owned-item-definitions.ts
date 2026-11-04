@@ -18,6 +18,7 @@ export type OwnedItemDefinition = {
 };
 
 export const OWNED_ITEM_DEFINITIONS: readonly OwnedItemDefinition[] = [
+  {definitionId:'blueprint.sheet',name:'图纸副本',category:'blueprint',status:'active',blueprintIds:[],mountKinds:[],presentationId:null},
   {
     definitionId: 'furniture.stump-seat', name: '整木坐墩', category: 'furniture',
     status: 'active', blueprintIds: ['blueprint.stump-cozy', 'blueprint.stump-sturdy'],

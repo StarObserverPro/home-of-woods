@@ -15,6 +15,8 @@ import { createGatheringRegistry } from './gathering-registry.ts';
 import { RUNTIME_MODELS } from '../content/assets.ts';
 import type {RitualAction} from './ritual.ts';
 import {createWorkshop} from './workshop.ts';
+import {createMerchant} from './merchant.ts';
+import type {MerchantState} from './merchant.ts';
 import type {WorkshopState} from './workshop.ts';
 import {createLocalClock} from './local-clock.ts';
 import type {LocalClock} from './local-clock.ts';
@@ -23,6 +25,7 @@ export type GameState = {
   wildlife?: WildlifeState;
   woodcraft:WoodcraftState;
   workshop:WorkshopState;
+  merchant:MerchantState;
   clock:LocalClock;
   ritual: RitualAction | null;
   seed: number;
@@ -40,6 +43,7 @@ export function createState(trees:Tree[]=makeTrees()): GameState {
     woodcraft:createWoodcraft(),
     ritual: null,
     workshop:createWorkshop(),
+    merchant:createMerchant(),
     clock:createLocalClock(),
     seed: WORLD_SEED,
     time:0,

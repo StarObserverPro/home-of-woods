@@ -8,12 +8,14 @@ export type ItemType = {
 };
 export type ItemTaxonomy = { categories: readonly ItemCategory[]; materials: readonly ItemMaterial[]; types: readonly ItemType[]; useGroups: readonly ItemUseGroup[] };
 export const ITEM_TAXONOMY: ItemTaxonomy = {
-  categories: [{ categoryId: 'wood', name: '木料' }, { categoryId: 'forest-produce', name: '林产' }, { categoryId:'camp-supplies',name:'营地配件' }],
+  categories: [{ categoryId: 'wood', name: '木料' }, { categoryId: 'forest-produce', name: '林产' }, { categoryId:'camp-supplies',name:'营地配件' }, { categoryId:'provisions',name:'食品补给' }, { categoryId:'daily-consumables',name:'生活耗材' }],
   materials: [
     { materialId: 'wood.unspecified', name: '未细分木材', categoryIds: ['wood'] },
     { materialId: 'fungus.unspecified', name: '未细分菌类', categoryIds: ['forest-produce'] },
     { materialId:'supplier.fabric',name:'商人布料',categoryIds:['camp-supplies'] },
     { materialId:'supplier.metal',name:'商人五金',categoryIds:['camp-supplies'] },
+    { materialId:'supplier.food',name:'商人干粮',categoryIds:['provisions'] },
+    { materialId:'supplier.personal',name:'日用杂货',categoryIds:['daily-consumables'] },
   ],
   useGroups: [
     { useGroupId: 'fuel', name: '生火燃料', resourceLines: ['small-wood'], status: 'planned' },
@@ -33,5 +35,10 @@ export const ITEM_TAXONOMY: ItemTaxonomy = {
     { typeId: 'fungus.dried', categoryId: 'forest-produce', name: '干菌类', formId: 'dried', resourceLine: 'forest-produce', useGroupIds: ['forest-goods'] },
     { typeId:'supply.canvas',categoryId:'camp-supplies',name:'帐篷帆布',formId:'roll',resourceLine:'trade-good',useGroupIds:['camp-fitting'] },
     { typeId:'supply.hardware',categoryId:'camp-supplies',name:'火塘五金',formId:'kit',resourceLine:'trade-good',useGroupIds:['camp-fitting'] },
+    { typeId:'supply.rations',categoryId:'provisions',name:'旅粮',formId:'sack',resourceLine:'trade-good',useGroupIds:[] },
+    { typeId:'supply.soap',categoryId:'daily-consumables',name:'手工皂',formId:'bar',resourceLine:'trade-good',useGroupIds:[] },
+    { typeId:'supply.bath-salt',categoryId:'daily-consumables',name:'浴盐',formId:'jar',resourceLine:'trade-good',useGroupIds:[] },
+    { typeId:'supply.paper-ink',categoryId:'daily-consumables',name:'纸墨',formId:'pack',resourceLine:'trade-good',useGroupIds:[] },
+    { typeId:'supply.festival-spark',categoryId:'daily-consumables',name:'烟花',formId:'bundle',resourceLine:'trade-good',useGroupIds:[] },
   ],
 };
