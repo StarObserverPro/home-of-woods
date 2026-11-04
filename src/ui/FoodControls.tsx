@@ -1,5 +1,6 @@
 import {CAMP_PROPS} from '../content/scene-props.ts';
 import {FOOD_GRAINS} from '../content/food.ts';
+import {MUSHROOM_DRYING} from '../content/processing.ts';
 import type {FoodGrain} from '../content/food.ts';
 import type {InteractionAccess} from '../domain/interaction-access.ts';
 import type {WorkshopSnapshot} from '../domain/workshop.ts';
@@ -38,9 +39,9 @@ export function FoodControls({selected,view,workshop,access,disabled,onApproach,
     </>}
     {dryer&&<>
       <h3>蘑菇晾晒</h3>
-      <p>2 份鲜菌 → 1 份干菌。使用同一个材料库存和世界时间，不另开加工背包。</p>
+      <p>{MUSHROOM_DRYING.inputs[0].quantity} 份鲜菌 → {MUSHROOM_DRYING.outputs[0].quantity} 份干菌。使用同一个材料库存和世界时间，不另开加工背包。</p>
       <p>鲜菌 {c.mushroom??0} · 干菌 {c['dried-mushroom']??0}</p>
-      {view.dryingProgress!==null?<p>正在晾晒 · {Math.round(view.dryingProgress*100)}%</p>:<button className="context-button" disabled={disabled||(c.mushroom??0)<2} onClick={onDry}>挂上两份鲜蘑菇</button>}
+      {view.dryingProgress!==null?<p>正在晾晒 · {Math.round(view.dryingProgress*100)}%</p>:<button className="context-button" disabled={disabled||(c.mushroom??0)<MUSHROOM_DRYING.inputs[0].quantity} onClick={onDry}>开始晾晒蘑菇</button>}
     </>}
   </section>;
 }
