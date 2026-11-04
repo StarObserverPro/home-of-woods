@@ -5,6 +5,7 @@ import { CRAFT_BLUEPRINTS } from '../src/content/workshop.ts';
 import { RARITIES } from '../src/content/rarities.ts';
 import { createGeometrySpec, verifiedGeometrySpec, geometryParts, assemblyGuides, assessAssembly } from '../src/domain/parametric-crafting.ts';
 import { blueprintRarityProbabilities, rollBlueprintRarity } from '../src/domain/blueprint-rarity.ts';
+import { resolveCraftOutcome } from '../src/domain/crafting-result.ts';
 import { createState } from '../src/domain/state.ts';
 import { inventoryTransaction, inventoryCount } from '../src/domain/inventory.ts';
 import { beginWorkshop, advanceWorkshop, workshopTarget } from '../src/domain/workshop.ts';
@@ -90,6 +91,18 @@ test('tier hard caps hold; higher fitting scores shift odds without erasing luck
     rollBlueprintRarity(104729,7,'blueprint.stump-cozy','common',60));
   assert.throws(()=>blueprintRarityProbabilities('rare',NaN));
   assert.throws(()=>rollBlueprintRarity(104729,0,'blueprint.stump-cozy','common',50));
+});
+
+test('the craft result boundary refuses bad fittings before awarding an item or rolling rarity', () => {
+  const spec=createGeometrySpec('bench.supported');
+  const placement=assemblyGuides(spec).map(g=>({id:g.id,...g.target}));
+  const finished=resolveCraftOutcome('blueprint.bench-guided',104729,3,{mode:'guided',placements:placement});
+  assert.equal(finished.geometry?.family,'supported-surface');
+  assert.equal(finished.crafting.qualityScore,100);
+  assert.equal(finished.crafting.scoreSource,'guided');
+  assert.throws(()=>resolveCraftOutcome('blueprint.bench-guided',104729,3,{mode:'preset'}));
+  assert.throws(()=>resolveCraftOutcome('blueprint.bench-guided',104729,3,{mode:'guided',placements:placement.slice(1)}));
+  assert.throws(()=>resolveCraftOutcome('blueprint.stump-cozy',104729,3,{mode:'guided',placements:[]}));
 });
 
 test('current basic blueprint completes one atomic craft, saves compact geometry and stable roll', async () => {
