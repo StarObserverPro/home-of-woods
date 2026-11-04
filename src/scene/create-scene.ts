@@ -436,7 +436,7 @@ export async function createScene(
       sun.color.copy(light.sunColor);sun.intensity=light.sunIntensity;sun.position.copy(sun.target.position).addScaledVector(light.sunDirection,135);
       scene.environmentIntensity=light.environmentIntensity;(scene.fog as THREE.Fog).color.copy(light.haze);
       if(state.workshop.job?.kind==='offering'&&state.workshop.job.phase==='working')appearance.altar='answering';
-      camp.update(elapsed,appearance,state.inventory,sky.night,reducedMotion);
+      camp.update(elapsed,appearance,state.inventory,sky.night,reducedMotion,!!state.food.drying);
       const { x, z, facing, moving } = state.player,
         y = heightAt(x, z);
       forestry.update(state,reducedMotion);understory.update(state);
