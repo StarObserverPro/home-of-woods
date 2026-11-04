@@ -3,6 +3,8 @@ import type { ActionTarget, ActionTrigger, ItemActionDefinition, LocalMotionProf
 import type { OwnedItemDefinition } from '../content/owned-item-definitions.ts';
 import { ITEM_CATALOG, isStableId } from './item-catalog.ts';
 import { itemProperties } from './item-properties.ts';
+import { ITEM_ATTACHMENT_REGISTRY, validateAttachedItems } from './item-attachment-contract.ts';
+import type { AttachmentRegistry } from './item-attachment-contract.ts';
 import type { OwnedItem } from './owned-items.ts';
 
 export type ItemBehaviorRegistry = {
@@ -110,3 +112,19 @@ export function prepareItemAction(
 export const actionsForItem = (item: OwnedItem, registry: ItemBehaviorRegistry = ITEM_BEHAVIOR_REGISTRY) =>
   [...registry.actions.values()].filter(action => action.ownerDefinitionId === item.definitionId &&
     (action.source !== 'trait' || itemProperties(item).traits.some(trait => trait.id === action.traitId)));
+
+/** Reuse #14's installed-slot contexts; never copy or rewrite the host's traits. */
+export function itemMountedContexts(
+  item: OwnedItem, instances: readonly OwnedItem[],
+  attachments: AttachmentRegistry = ITEM_ATTACHMENT_REGISTRY,
+): readonly string[] {
+  if (item.location.kind !== 'mounted') return [];
+  validateAttachedItems(instances, attachments);
+  const registered = instances.find(value => value.instanceId === item.instanceId);
+  if (!registered || registered.location.kind !== 'mounted' ||
+      registered.location.hostId !== item.location.hostId ||
+      registered.location.slotId !== item.location.slotId)
+    throw new Error('Item is not mounted in the supplied owner ledger');
+  const slot = attachments.slots.get(item.location.slotId)!;
+  return [...slot.contexts];
+}
