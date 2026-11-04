@@ -143,6 +143,17 @@ test('invalid mounted references and forged duplicated slot records protect inve
   assert.ok('value' in migrated);
 });
 
+test('location states cannot silently retain another ownership mode\'s reserved keys', () => {
+  for (const location of [
+    {kind:'inventory',hostId:'cabin',slotId:'cabin:entry-hanging'},
+    {kind:'world',x:0,z:0,rotation:0,hostId:'cabin'},
+    {kind:'mounted',hostId:'cabin',slotId:'cabin:entry-hanging',x:2},
+  ]) {
+    const item={...createBell(),location};
+    assert.throws(()=>canonicalInstances([item]),/Conflicting/);
+  }
+});
+
 test('switching the location core does not discard unrelated future location fields', () => {
   const a=createBell();
   const mounted=withItemLocation(a,{kind:'mounted',hostId:'cabin',slotId:'cabin:entry-hanging'});
