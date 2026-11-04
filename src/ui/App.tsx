@@ -113,7 +113,7 @@ const empty: Snapshot = {
   interaction:null,
   woodcraft:emptyWoodcraftSnapshot(),
   food:{today:1,heavyWork:true,nextDayReady:false,counts:{},dryingProgress:null,cookingProgress:null,sacksBought:0,mealsEaten:0},
-  workshop:{blueprints:[],offers:[],items:[],job:null,lastResponse:'',calendar:calendarAt(0),speed:1,upgrades:{},mounted:{},upgrade:null,upgradeOptions:[],inputs:{craft:false,offering:false,trade:false,canvas:false,hardware:false}},
+  workshop:{blueprints:[],offers:[],items:[],job:null,lastResponse:'',calendar:calendarAt(0),speed:1,upgrades:{},mounted:{},upgrade:null,upgradeOptions:[],inputs:{craft:false,offering:false,trade:false,foodSack:false,canvas:false,hardware:false}},
   placement:null,
   zone: "山间营地",
   x: START.x,
