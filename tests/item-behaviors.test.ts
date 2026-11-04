@@ -57,6 +57,7 @@ test('action intents are gated by object identity, range, target, executable han
   const registry=createItemBehaviorRegistry([whistleBase],[],withActiveOwner('travel.whistle'));
   const owned=item('travel.whistle'),original=structuredClone(owned);
   assert.equal(prepareItemAction(owned,whistleBase.actionId,ctx(),registry).handlerId,'test.handler');
+  assert.deepEqual(prepareItemAction(owned,whistleBase.actionId,ctx(),registry).target,{kind:'none'});
   assert.deepEqual(owned,original); // request is not an effect or an inventory transaction
   assert.equal(itemActionEligibility(item('travel.umbrella'),whistleBase.actionId,ctx(),registry).available,false);
   for(const bad of [
@@ -70,20 +71,36 @@ test('action intents are gated by object identity, range, target, executable han
   assert.equal(itemActionEligibility(inWorld,whistleBase.actionId,ctx(),registry).available,false);
 });
 
+test('point and item interactions must carry a concrete target in the action intent', () => {
+  const pointAction:ItemActionDefinition={...whistleBase,actionId:'travel.whistle.test-point',target:'point'};
+  const itemAction:ItemActionDefinition={...whistleBase,actionId:'travel.whistle.test-item',target:'item'};
+  const registry=createItemBehaviorRegistry([pointAction,itemAction],[],withActiveOwner('travel.whistle'));
+  const owned=item('travel.whistle');
+  assert.equal(itemActionEligibility(owned,pointAction.actionId,ctx({target:'point'}),registry).available,false);
+  assert.equal(itemActionEligibility(owned,pointAction.actionId,ctx({target:'point',targetPoint:{x:NaN,z:0}}),registry).available,false);
+  const selectedPoint=ctx({target:'point',targetPoint:{x:-44,z:12}});
+  assert.deepEqual(prepareItemAction(owned,pointAction.actionId,selectedPoint,registry).target,
+    {kind:'point',point:{x:-44,z:12}});
+  assert.equal(itemActionEligibility(owned,itemAction.actionId,ctx({target:'item'}),registry).available,false);
+  assert.deepEqual(prepareItemAction(owned,itemAction.actionId,ctx({target:'item',targetItemId:'another-instance'}),registry).target,
+    {kind:'item',instanceId:'another-instance'});
+  assert.equal(selectedPoint.targetPoint!.x,-44);
+});
+
 test('unrecognized affixes are inert; registered trait actions need the owner trait and all prerequisites', () => {
   const traitAction: ItemActionDefinition = {
     ...whistleBase,actionId:'travel.whistle.trait-demo',source:'trait',traitId:'future.reply',
-    trigger:'environment',target:'environment',requiredContexts:['wind'],
+    trigger:'environment',target:'environment',targetContextId:'wind',requiredContexts:['wind'],
     requiredItemDefinitions:['travel.spyglass'],
   };
   const registry=createItemBehaviorRegistry([traitAction],[],withActiveOwner('travel.whistle'));
-  const input=ctx({trigger:'environment',target:'environment',contexts:new Set(['wind']),
+  const input=ctx({trigger:'environment',target:'environment',targetContextId:'wind',contexts:new Set(['wind']),
     presentItemDefinitions:new Set(['travel.spyglass'])});
   assert.equal(itemActionEligibility(item('travel.whistle'),traitAction.actionId,input,registry).available,false);
   const hasTrait=item('travel.whistle','future.reply');
   assert.equal(itemActionEligibility(hasTrait,traitAction.actionId,input,registry).available,true);
-  assert.equal(itemActionEligibility(hasTrait,traitAction.actionId,ctx({trigger:'environment',target:'environment',contexts:new Set(['wind'])}),registry).available,false);
-  assert.equal(itemActionEligibility(hasTrait,traitAction.actionId,ctx({trigger:'environment',target:'environment',
+  assert.equal(itemActionEligibility(hasTrait,traitAction.actionId,ctx({trigger:'environment',target:'environment',targetContextId:'wind',contexts:new Set(['wind'])}),registry).available,false);
+  assert.equal(itemActionEligibility(hasTrait,traitAction.actionId,ctx({trigger:'environment',target:'environment',targetContextId:'wind',
     contexts:new Set(),presentItemDefinitions:new Set(['travel.spyglass'])}),registry).available,false);
   assert.equal(itemActionEligibility(item('travel.whistle','unknown.affix'),traitAction.actionId,input,registry).available,false);
 });
