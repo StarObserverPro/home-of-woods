@@ -26,6 +26,7 @@ import type { SaveController } from '../app/save-controller.ts';
 import { createBrowserWorldSaveStore } from '../app/world-save-store.ts';
 import { createSaveContext } from '../domain/save-context.ts';
 import {sceneAppearanceAt,scenePropDetails} from '../domain/scene-props.ts';
+import {WardrobeLab} from './WardrobeLab.tsx';
 import {SceneInspector} from './SceneInspector.tsx';
 import {BlueprintLibrary,UpgradeControls} from './Blueprints.tsx';
 import {useItemDrag} from './useItemDrag.ts';
@@ -722,6 +723,7 @@ export function App() {
         <details className="diagnostics">
           <summary>运行检查</summary>
           <SceneInspector key={mountVersion} runtime={()=>runtime.current} active={typeof snapshot.stats.scenePreset==='string'} audits={audit}/>
+          <WardrobeLab key={'wardrobe-'+mountVersion} runtime={()=>runtime.current}/>
           <button
             disabled={capturing}
             onClick={() => {
