@@ -16,6 +16,7 @@ import type {ClockSpeed} from '../domain/local-clock.ts';
 import {workstationColliders,furnitureColliders,placementReason,placeFurniture,packFurniture} from '../domain/furniture-placement.ts';
 import type {PlacementDraft} from '../domain/furniture-placement.ts';
 import {CAMP_VISITOR} from '../content/characters.ts';
+import type {WardrobeLook} from '../content/wardrobe.ts';
 import {beginRitual,advanceRitual,ritualBusy} from '../domain/ritual.ts';
 import { MOVEMENT, WAYPOINTS } from "../content/world.ts";
 import {FORESTRY} from '../content/forestry.ts';
@@ -491,7 +492,7 @@ export async function createRuntime(
       woodcraft.reset();view.setWoodcraftDrop(false);clearPlacement();delete state.wildlife;Object.assign(state, loaded);synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
       manualPause = true; keys.clear(); stick.x = stick.z = 0; syncPause(); view.render(state,0); return true;
     },
-    inspectCharacter(kind:'horizontal'|'vertical'|null){
+    inspectCharacter(kind:'horizontal'|'vertical'|'wardrobe'|null){
       if(destroyed||contextLost||interfaceOpen)return;
       if(kind&&(state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))){message='先完成或取消当前动作，再检视角色。';publishSnapshot();return;}
       view.inspectScene(null);inspectionOpen=kind!==null;view.inspectCharacter(kind);syncPause();view.render(state,0);publishSnapshot();
@@ -500,6 +501,11 @@ export async function createRuntime(
       if(destroyed||contextLost||interfaceOpen)return;
       if(preset&&(state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))){message='先完成或取消当前动作，再检视场景。';publishSnapshot();return;}
       view.inspectCharacter(null);inspectionOpen=preset!==null;view.inspectScene(preset,overrides);syncPause();view.render(state,0);publishSnapshot();
+    },
+    previewWardrobe(patch:Partial<WardrobeLook>){
+      if(destroyed||contextLost)return;
+      view.setWardrobe(patch);
+      view.render(state,0);publishSnapshot();
     },
     captureScene(){const image=view.capture(state),data=stats();const {worldState,...sceneStats}=data;void worldState;return {image,stats:sceneStats};},
     setInterfaceOpen(value: boolean) {
