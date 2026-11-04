@@ -1,4 +1,6 @@
 import { ITEMS } from '../content/items.ts';
+import { OWNED_ITEM_DEFINITIONS } from '../content/owned-item-definitions.ts';
+import type { OwnedItemDefinition } from '../content/owned-item-definitions.ts';
 import type { ItemDefinition } from '../content/items.ts';
 import { QUALITIES } from '../content/qualities.ts';
 import type { QualityDefinition } from '../content/qualities.ts';
@@ -8,7 +10,7 @@ import type { ItemTaxonomy } from '../content/item-types.ts';
 export const isStableId = (id: unknown): id is string =>
   typeof id === 'string' && /^[a-z0-9][a-z0-9._:-]{0,159}$/.test(id);
 
-export function createItemCatalog(items: readonly ItemDefinition[] = ITEMS, qualities: readonly QualityDefinition[] = QUALITIES, taxonomy: ItemTaxonomy = ITEM_TAXONOMY) {
+export function createItemCatalog(items: readonly ItemDefinition[] = ITEMS, qualities: readonly QualityDefinition[] = QUALITIES, taxonomy: ItemTaxonomy = ITEM_TAXONOMY, ownedDefinitions: readonly OwnedItemDefinition[] = OWNED_ITEM_DEFINITIONS) {
   const unique = <T>(entries: readonly T[], key: (entry: T) => string) => {
     const map = new Map<string, T>();
     for (const entry of entries) { const id = key(entry); if (!isStableId(id) || map.has(id)) throw new Error('Duplicate or invalid taxonomy ID'); map.set(id, entry); }
@@ -41,7 +43,19 @@ export function createItemCatalog(items: readonly ItemDefinition[] = ITEMS, qual
         !qualityById.has(item.defaultQualityId) || !['active', 'planned', 'retired'].includes(item.status)) throw new Error('Duplicate or invalid item');
     itemById.set(item.itemId, item);
   }
-  return { items: itemById as ReadonlyMap<string, ItemDefinition>, qualities: qualityById as ReadonlyMap<string, QualityDefinition>, categories, materials, types, useGroups };
+  const ownedById = unique(ownedDefinitions, entry => entry.definitionId);
+  for (const entry of ownedById.values()) {
+    if (itemById.has(entry.definitionId) || !entry.name || !['active','planned','retired'].includes(entry.status) ||
+        !isStableId(entry.category) || !Array.isArray(entry.blueprintIds) ||
+        entry.blueprintIds.some(id => !isStableId(id)) || new Set(entry.blueprintIds).size !== entry.blueprintIds.length ||
+        !Array.isArray(entry.mountKinds) || entry.mountKinds.some(id => !isStableId(id)) ||
+        new Set(entry.mountKinds).size !== entry.mountKinds.length ||
+        (entry.presentationId !== null && !isStableId(entry.presentationId)))
+      throw new Error('Invalid independent item definition');
+  }
+  return { items: itemById as ReadonlyMap<string, ItemDefinition>,
+    ownedItems: ownedById as ReadonlyMap<string, OwnedItemDefinition>,
+    qualities: qualityById as ReadonlyMap<string, QualityDefinition>, categories, materials, types, useGroups };
 }
 export type ItemCatalog = ReturnType<typeof createItemCatalog>;
 export const ITEM_CATALOG = createItemCatalog();
