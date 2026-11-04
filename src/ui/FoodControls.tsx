@@ -20,6 +20,7 @@ export function FoodControls({selected,view,workshop,access,disabled,onApproach,
   const c=view.counts;
   const pot=(workshop.upgrades['camp-fire:pot']?.level??0)>=1&&workshop.mounted['camp-fire:top']==='camp-fire:hook';
   const mushroom=(c.mushroom??0)+(c['dried-mushroom']??0);
+  const rackBuilt=(workshop.upgrades[CAMP_PROPS.dryer.id]?.level??0)>0;
   const grainNames:Record<FoodGrain,string>={'food-oats':'燕麦','food-beans':'干豆','food-rice':'米'};
   return <section className="workshop-controls" aria-label="营地食物">
     {fire&&<>
@@ -41,7 +42,8 @@ export function FoodControls({selected,view,workshop,access,disabled,onApproach,
       <h3>蘑菇晾晒</h3>
       <p>{MUSHROOM_DRYING.inputs[0].quantity} 份鲜菌 → {MUSHROOM_DRYING.outputs[0].quantity} 份干菌。使用同一个材料库存和世界时间，不另开加工背包。</p>
       <p>鲜菌 {c.mushroom??0} · 干菌 {c['dried-mushroom']??0}</p>
-      {view.dryingProgress!==null?<p>正在晾晒 · {Math.round(view.dryingProgress*100)}%</p>:<button className="context-button" disabled={disabled||(c.mushroom??0)<MUSHROOM_DRYING.inputs[0].quantity} onClick={onDry}>开始晾晒蘑菇</button>}
+      {!rackBuilt&&<p>先在下方升级面板用基础图纸和两份枝杈搭建晾晒架。</p>}
+      {view.dryingProgress!==null?<p>正在晾晒 · {Math.round(view.dryingProgress*100)}%</p>:<button className="context-button" disabled={disabled||!rackBuilt||(c.mushroom??0)<MUSHROOM_DRYING.inputs[0].quantity} onClick={onDry}>开始晾晒蘑菇</button>}
     </>}
   </section>;
 }
