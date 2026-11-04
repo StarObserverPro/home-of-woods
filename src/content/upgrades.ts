@@ -64,6 +64,12 @@ export const UPGRADE_PROFILES:readonly UpgradeProfile[]=[
   {id:'cabin',title:'旧木屋',initialLevel:0,position:CABIN,stand:CABIN_REPAIR_STAND,paths:[CABIN_REPAIR],future:'屋顶补板和入口加固已完成；其余墙体、屋面仍待后续图纸修整。'},
   {id:'tent',title:'帐篷',initialLevel:1,position:TENT,stand:tentStand,paths:[],future:'内部床铺、收纳和私人空间以后另行开放。'},
   {id:CAMP_PROPS.fire.id,title:'营地篝火',initialLevel:1,position:CAMP_PROPS.fire,stand:fireStand,paths:[],future:'火塘基座和烹饪附件由外部部件分别改装。'},
+  {id:CAMP_PROPS.dryer.id,title:'蘑菇晾晒架',initialLevel:0,position:CAMP_PROPS.dryer,stand:{x:CAMP_PROPS.dryer.x,z:CAMP_PROPS.dryer.z+2.5},
+    paths:[{id:'upgrade.camp-drying-rack.frame',name:'搭建蘑菇晾晒架',description:'按基础图纸用两份枝杈搭成可晾干菌类的小木架。',
+      completionMessage:'蘑菇晾晒架已搭好，可以挂上鲜菌。',fromLevel:0,toLevel:1,
+      blueprintId:'blueprint.camp-drying-rack',durationSeconds:3,materials:[branch(2)]}],
+    future:'架子已搭好，遮雨布棚等扩展以后再做。'},
+
   ...EXTERIOR_PROFILES,
   {id:CAMP_PROPS.logs.id,title:'原木架',initialLevel:1,position:CAMP_PROPS.logs,stand:{x:CAMP_PROPS.logs.x,z:CAMP_PROPS.logs.z+3.2},paths:[],future:'后续可按图纸增设防雨顶棚和储存空间，升级路径尚未开放。'},
   {id:WOODCRAFT.id,title:'营地木料堆',initialLevel:1,position:WOODCRAFT,stand:WOODCRAFT.stand,paths:[],future:'后续可按图纸改良木料围框和搬运设施，升级路径尚未开放。'},
