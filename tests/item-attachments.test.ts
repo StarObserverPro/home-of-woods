@@ -115,8 +115,10 @@ test('invalid mounted references and forged duplicated slot records protect inve
   const bad=structuredClone(s.inventory);
   bad.instances!.push({...structuredClone(bad.instances![0]),instanceId:'bell-two'});
   assert.throws(()=>validateInventory(bad),/occupied/);
-  const oldest={...s.inventory,schemaVersion:5};
-  const migrated=prepareInventoryPersistence(JSON.stringify(oldest));
+  const forgedLegacy={...s.inventory,schemaVersion:5};
+  assert.equal(prepareInventoryPersistence(JSON.stringify(forgedLegacy)).decision,'protected');
+  const authenticLegacy={...savedState().inventory,schemaVersion:5};
+  const migrated=prepareInventoryPersistence(JSON.stringify(authenticLegacy));
   assert.equal(migrated.decision,'migrated');
   assert.ok('value' in migrated);
 });
