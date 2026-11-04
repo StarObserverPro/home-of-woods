@@ -24,13 +24,18 @@ export function canonicalInstances(value: unknown): OwnedItem[] {
     const p = v.location;
     if (!isItemRecord(p)) throw new Error('Invalid instance location');
     if (p.kind === 'world') {
+      if (Object.hasOwn(p,'hostId') || Object.hasOwn(p,'slotId')) throw new Error('Conflicting mounted and world location fields');
       if (![p.x, p.z, p.rotation].every(n => typeof n === 'number' && Number.isFinite(n)) ||
           (p.x as number) < WORLD.minX || (p.x as number) > WORLD.maxX ||
           (p.z as number) < WORLD.minZ || (p.z as number) > WORLD.maxZ)
         throw new Error('Invalid placed instance');
     } else if (p.kind === 'mounted') {
+      if (['x','z','rotation'].some(k => Object.hasOwn(p,k))) throw new Error('Conflicting world and mounted location fields');
       if (!isStableId(p.hostId) || !isStableId(p.slotId)) throw new Error('Invalid mounted item reference');
-    } else if (p.kind !== 'inventory') throw new Error('Unknown instance location');
+    } else if (p.kind === 'inventory') {
+      if (['x','z','rotation','hostId','slotId'].some(k => Object.hasOwn(p,k)))
+        throw new Error('Conflicting inventory ownership fields');
+    } else throw new Error('Unknown instance location');
   }
   return structuredClone(value as OwnedItem[]).sort((a,b) => a.instanceId.localeCompare(b.instanceId));
 }
