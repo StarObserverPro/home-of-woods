@@ -56,6 +56,7 @@ export const EXTERIOR_PROFILES:readonly UpgradeProfile[]=[
   moduleProfile({id:'camp-fire:stones',hostId:'camp-fire',title:'重垒挡风石圈',description:'重新摆放火塘旁现有的散石，垒出较高的外圈；无需额外耗材。',materials:[],stand:fireStand,position:CAMP_PROPS.fire,durationSeconds:3}),
   moduleProfile({id:'camp-fire:support',hostId:'camp-fire',title:'双柱横梁锅架',description:'在火塘外侧立双柱，把承重横梁架在火焰上方；先有架子，才可挂其他烹饪附件。',materials:[log(1),branch(2)],stand:fireStand,position:CAMP_PROPS.fire,requires:['camp-fire:stones']}),
   moduleProfile({id:'camp-fire:hook',hostId:'camp-fire',title:'悬锅吊钩',description:'装在横梁下的吊链和锅钩；锅具本身日后另行制作。',materials:[branch(1)],stand:fireStand,position:CAMP_PROPS.fire,requires:['camp-fire:support'],mountSlot:FIRE_TOP_SLOT}),
+  moduleProfile({id:'camp-fire:pot',hostId:'camp-fire',title:'基础悬挂汤锅',description:'使用行商五金件制成一只可挂在吊钩上的基础汤锅，供营地煮菌汤。',materials:[supplied('supply.hardware','五金包','套')],stand:fireStand,position:CAMP_PROPS.fire,requires:['camp-fire:hook']}),
   moduleProfile({id:'camp-fire:grill',hostId:'camp-fire',title:'可收起的烧烤网',description:'用行商换来的五金件拼出烤网；与吊钩共用同一个火塘上部接口。',materials:[supplied('supply.hardware','五金包','套')],stand:fireStand,position:CAMP_PROPS.fire,requires:['camp-fire:support'],mountSlot:FIRE_TOP_SLOT}),
   moduleProfile({id:'camp-fire:smoker',hostId:'camp-fire',title:'焖烤烟罩',description:'用五金件装一个有出烟口的罩体；暂作外观与安装预留，食谱系统另做。',materials:[supplied('supply.hardware','五金包','套'),branch(1)],stand:fireStand,position:CAMP_PROPS.fire,requires:['camp-fire:support'],mountSlot:FIRE_TOP_SLOT}),
 ];
