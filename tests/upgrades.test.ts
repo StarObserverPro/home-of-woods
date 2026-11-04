@@ -78,7 +78,7 @@ test('old v5 workshop slices gain only the starter plan and an empty upgrade led
   const raw=await serializeWorldSave(createState(),context,{sequence:1,savedAt:1});
   const legacy=await altered(raw,s=>{delete s.world.workshop.upgrades;s.world.workshop.blueprints=['blueprint.stump-cozy','blueprint.future'];});
   const loaded=await prepareWorldSave(legacy,context);assert.equal(loaded.decision,'restored');
-  if('value' in loaded){assert.deepEqual(loaded.value.workshop.upgrades,{});assert.deepEqual(loaded.value.workshop.blueprints,['blueprint.stump-cozy','blueprint.future',CABIN_REPAIR_BLUEPRINT.id]);}
+  if('value' in loaded){assert.deepEqual(loaded.value.workshop.upgrades,{});assert.deepEqual(loaded.value.workshop.blueprints,['blueprint.stump-cozy','blueprint.future',CABIN_REPAIR_BLUEPRINT.id,'blueprint.tent-ropes','blueprint.camp-fire-stones']);}
   const state=stocked();Object.assign(state.player,CABIN_REPAIR_STAND);beginUpgrade(state,'cabin');state.time=5;advanceWorkshop(state);
   const repaired=await serializeWorldSave(state,context,{sequence:2,savedAt:2});
   for(const change of [

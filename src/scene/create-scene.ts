@@ -21,6 +21,7 @@ import {createCreek} from './creek.ts';
 import {createCampProps} from './camp-props.ts';
 import {createSelectionMarker} from './selection-marker.ts';
 import {createCabinRepair} from './cabin-repair.ts';
+import {createCampExteriors} from './camp-exteriors.ts';
 import {VIEWS,CAMP_PROPS} from '../content/scene-props.ts';
 import type {SceneAppearance,SceneViewPreset} from '../content/scene-props.ts';
 import {sceneAppearanceAt,daylightAt} from '../domain/scene-props.ts';
@@ -130,7 +131,7 @@ export async function createScene(
     ["cabin", CABIN],
     ["tent", TENT],
   ] as const) {
-    const model = models.staticClone(name);
+    const model = name==='tent'?models.clone(name):models.staticClone(name);
     model.scale.setScalar(1.6);
     model.position.set(p.x, heightAt(p.x, p.z), p.z);
     scene.add(model);
@@ -138,6 +139,7 @@ export async function createScene(
   }
   const cabinRepair=createCabinRepair(models);
   props.get('cabin')!.add(cabinRepair.group);
+  const campExteriors=createCampExteriors(r,props.get('tent')! as THREE.Group,props.get('cabin')! as THREE.Group,camp.roots.get(CAMP_PROPS.fire.id)!);
   const propFades = new Map<
     THREE.Object3D,
     {
@@ -439,6 +441,7 @@ export async function createScene(
       forestry.alignContact(characters.getImpact());
       gathering.update(state.gathering);
       cabinRepair.update(state.workshop.upgrades?.cabin?.level??0);
+      campExteriors.update(state.workshop);
       const action=state.gathering.action,ritual=state.ritual,craft=state.workshop.job;
       cameraAction=craft?.phase==='working'?craft.id:action?.phase==='performing'?action.actionId:ritual?.phase==='performing'?`prayer-${ritual.startedAt}`:'';
       const framed=!!cameraAction && cameraOverride!==cameraAction && !reducedMotion && !scenePreset;
@@ -573,6 +576,7 @@ export async function createScene(
       characters.dispose();
       wildlife.dispose();
       gathering.dispose();
+      campExteriors.dispose();
       cabinRepair.dispose();
       river.dispose();
       camp.dispose();

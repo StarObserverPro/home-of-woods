@@ -6,8 +6,8 @@ import {WOODCRAFT} from '../content/woodcraft.ts';
 import {createItemTransfers} from './item-transfers.ts';
 import {interactionAccess,approachInteraction} from '../domain/interaction-access.ts';
 import type {InteractionAccess,ItemTransferIntent} from '../domain/interaction-access.ts';
-import {beginUpgrade,approachUpgrade} from '../domain/upgrades.ts';
-import {beginWorkshop,advanceWorkshop,workshopSnapshot,tradeBlueprint,workshopBusy} from '../domain/workshop.ts';
+import {beginUpgrade,approachUpgrade,mountFireTop} from '../domain/upgrades.ts';
+import {beginWorkshop,advanceWorkshop,workshopSnapshot,tradeBlueprint,tradeSupply,workshopBusy} from '../domain/workshop.ts';
 import type {WorkshopSnapshot} from '../domain/workshop.ts';
 import {advanceLocalClock,CLOCK_SPEEDS} from '../domain/local-clock.ts';
 import type {ClockSpeed} from '../domain/local-clock.ts';
@@ -378,6 +378,7 @@ export async function createRuntime(
     approachTarget(id:string){if(blocked()||placement||workshopBusy(state))return;cancelPlayerAction(state);state.selected=id;message=approachInteraction(state,id,activeColliders());if(id===WOODCRAFT.id||state.woodcraft.pieces.some(p=>p.id===id))woodcraft.activate();publishSnapshot();},
     approachUpgrade(id:string){if(blocked()||placement)return;message=approachUpgrade(state,id,activeColliders());publishSnapshot();},
     upgrade(id:string){if(blocked()||placement)return;message=beginUpgrade(state,id);publishSnapshot();},
+    mountExterior(id:string|null){if(blocked()||placement)return;message=mountFireTop(state,id);view.render(state,0);publishSnapshot();},
     previewTransfer:itemTransfers.preview,
     worldTransferItem:itemTransfers.worldItem,
     transferItem(item:ItemTransferIntent,x:number,y:number,toWarehouse:boolean){
@@ -387,6 +388,7 @@ export async function createRuntime(
     offer(){if(blocked()||placement)return;message=beginWorkshop(state,'offering',activeColliders());publishSnapshot();},
     craft(id:string){if(blocked()||placement)return;message=beginWorkshop(state,'craft',activeColliders(),id);publishSnapshot();},
     trade(id:string){if(blocked()||placement)return;message=tradeBlueprint(state,id);publishSnapshot();},
+    tradeSupply(id:string){if(blocked()||placement)return;message=tradeSupply(state,id);publishSnapshot();},
     approachMerchant(){if(blocked()||placement)return;cancelPlayerAction(state);state.selected=CAMP_VISITOR.id;
       const target={x:CAMP_VISITOR.x+2,z:CAMP_VISITOR.z+1};
       if(Math.hypot(state.player.x-CAMP_VISITOR.x,state.player.z-CAMP_VISITOR.z)<=3)message='已经在行商身边，可以交换图纸。';

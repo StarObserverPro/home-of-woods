@@ -3,7 +3,7 @@ import type { InventoryState, InventoryStack } from './inventory.ts';
 import { recognizedStack, stackKey } from './inventory.ts';
 export type WarehouseItemView = {
   key: string; itemId: string; qualityId: string; qualityName: string; recognized: boolean;
-  name: string; icon: string; symbol: 'branch' | 'mushroom' | 'wood' | 'unknown'; category: string;
+  name: string; icon: string; symbol: 'branch' | 'mushroom' | 'wood' | 'bundle' | 'unknown'; category: string;
   typeName: string; materialName: string; uses: string[]; specification: string;
   quantity: number; movableWood:boolean; description: string; source: string; tags: readonly string[];
   processing: { id: string; name: string; outputs: string[]; station: string; status: string; parametersReady: boolean }[];
