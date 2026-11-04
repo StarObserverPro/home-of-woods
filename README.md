@@ -49,6 +49,7 @@ WASD/方向键或点地面移动，拖动旋转、滚轮/按钮缩放，R/按钮
 | [M0–M2 与待定参数](docs/MILESTONES.md) | 分阶段交付、验收证据、数值冻结节点 |
 | [世界存档与物品目录](docs/WORLD_SAVE.md) | 全世界快照、事务备份、损坏保护及类别/类型/通用去处 |
 | [运行时与数据](docs/RENDERING.md) | service、状态、地表、渲染与资源生命周期 |
+| [独立道具去向与宿主关系](docs/ITEM_DESTINATIONS.md) | 独立 Item、安装槽、词条归属与旧设施外装边界 |
 | [参数化图纸与装配评分](docs/PARAMETRIC_CRAFTING.md) | 首版两类几何、图纸品质档次、偏差评分及未来工序接口 |
 | [物品扩展与存档兼容方案](docs/ITEM_DATA_EVOLUTION.md) | 已实现身份、品质堆叠和库存兼容；细分类与深加工后续接入 |
 | [美术、建模与 HUD](docs/ART_HUD.md) | 视觉规格、操作体验、首版资产清单 |
