@@ -33,6 +33,17 @@ export function createCampProps(r:Resources){
   const ashes=merge(fire,ashEnds,'#a4a797');ashes.name='cold-ash-on-log-ends';
   const coalMaterial=r.own(new THREE.MeshStandardMaterial({color:'#6b3520',emissive:'#ff3e09',emissiveIntensity:.5,roughness:.85}));
   const coals=new THREE.Mesh(r.own(new THREE.IcosahedronGeometry(.65,0).scale(1,.25,1)),coalMaterial);coals.position.y=.3;fire.add(coals);
+  // A small low-poly drying rack; this is a single campsite station, not a new kitchen.
+  const dryer=roots.get(CAMP_PROPS.dryer.id)!;
+  for(const x of [-.95,.95])for(const z of [-.5,.5])mesh(dryer,new THREE.CylinderGeometry(.09,.11,2.1,6),'#816646',x,1.05,z);
+  for(const z of [-.5,.5])mesh(dryer,new THREE.CylinderGeometry(.085,.085,2.05,6).rotateZ(Math.PI/2),'#aa865e',0,2.1,z);
+  for(const x of [-.95,.95])mesh(dryer,new THREE.CylinderGeometry(.065,.065,1.1,6).rotateX(Math.PI/2),'#aa865e',x,2.05,0);
+  const dryingMushrooms=new THREE.Group();dryingMushrooms.name='hung-mushrooms';dryer.add(dryingMushrooms);
+  for(let i=0;i<5;i++){
+    const x=-.76+i*.38;
+    mesh(dryingMushrooms,new THREE.CylinderGeometry(.022,.022,.38,5),'#c7b690',x,1.77,0);
+    mesh(dryingMushrooms,new THREE.ConeGeometry(.17,.16,7),'#ac8764',x,1.57,0);
+  }
   const coreMat=r.own(new THREE.MeshBasicMaterial({color:'#ffe7a0',transparent:true,opacity:.92,depthWrite:false}));
   const flames=createFlames(r);fire.add(flames.group);
   const fireLight=new THREE.PointLight('#ff9a42',65,18,2);fireLight.position.y=1.4;fire.add(fireLight);
@@ -63,9 +74,10 @@ export function createCampProps(r:Resources){
   const hits:THREE.Object3D[]=[crown.oracleHit];
   for(const [id,root] of roots){const s=Object.values(CAMP_PROPS).find(s=>s.id===id)!,h=id===CAMP_PROPS.altar.id?1.7:3.3,m=new THREE.Mesh(r.own(new THREE.CylinderGeometry(s.radius,s.radius,h,8)),r.own(new THREE.MeshBasicMaterial({visible:false})));m.position.y=h/2;m.userData.propId=id;root.add(m);hits.push(m);}
   let lastQuantity=-1,disposed=false;
-  return {group,hits,roots,foundation,update(time:number,state:SceneAppearance,inventory:InventoryState,night:number,reduced:boolean){
+  return {group,hits,roots,foundation,update(time:number,state:SceneAppearance,inventory:InventoryState,night:number,reduced:boolean,foodDrying=false){
     if(disposed)return;const t=reduced?0:time,stock=logPresentation(inventory);
     if(stock.quantity!==lastQuantity){logs.count=stock.visible;caps.count=rings.count=stock.visible*2;lastQuantity=stock.quantity;}
+    dryingMushrooms.visible=foodDrying;
     hearthLogs.material=state.fire?warmLogs:coldLogs;ashes.visible=!state.fire;
     embers.visible=smoke.visible=state.fire;coalMaterial.color.set(state.fire?'#6b3520':'#303632');coalMaterial.emissiveIntensity=state.fire?.8:0;glow.visible=state.fire;glowMaterial.uniforms.strength.value=.08+night*.24;
     flames.update(time,night,reduced,state.fire);
