@@ -134,10 +134,13 @@ test('Three local motion binding updates cloned child anchors and restores exact
 });
 
 test('mounted item actions reuse host contexts without gaining host traits or duplicating ownership',()=>{
+  const definitions=new Map(ITEM_CATALOG.ownedItems);
+  const whistle=definitions.get('travel.whistle')!;
+  definitions.set('travel.whistle',{...whistle,mountKinds:['travel-hook']});
   const registry=createAttachmentRegistry([
     {slotId:'cabin:travel-hook',host:{kind:'fixture',id:'cabin'},kind:'travel-hook',
       status:'active',anchorId:'cabin.hook',contexts:['wind','night']},
-  ]);
+  ],definitions);
   const mounted:OwnedItem={...item('travel.whistle'),location:{kind:'mounted',hostId:'cabin',slotId:'cabin:travel-hook'}};
   const instances=canonicalInstances([mounted]);const original=structuredClone(instances);
   assert.deepEqual(itemMountedContexts(mounted,instances,registry),['wind','night']);
