@@ -19,7 +19,7 @@ export function sceneAppearanceAt(time:number):SceneAppearance{
 }
 export function scenePropDetails(id:string|null,appearance:SceneAppearance,wood:number){
   if(id===CAMP_PROPS.fire.id)return {title:'营地篝火',tag:appearance.fire?'夜间营火':'白昼炭堆',detail:appearance.fire?'火舌照亮石圈与营地。':'灰黑的焦木与炭头留在石圈中，白天没有火光。'};
-  if(id===CAMP_PROPS.dryer.id)return {title:'蘑菇晾晒架',tag:'营地食材加工',detail:'把两份鲜蘑菇挂上架子，过一段游戏时间便能收获一份干蘑菇。'};
+  if(id===CAMP_PROPS.dryer.id)return {title:'蘑菇晾晒架',tag:'营地食材加工',detail:'按基础图纸与枝杈搭好小木架后，就可以把鲜蘑菇挂上晾干。'};
   if(id===CAMP_PROPS.logs.id)return {title:'原木堆',tag:`库存 ${wood} 根`,detail:`木架陈列 ${Math.min(18,wood)} 根原木${wood>18?`，其余 ${wood-18} 根收纳在仓库`:''}。`};
   if(id===CAMP_PROPS.altar.id)return {title:'林间祭坛',tag:'盖亚的供奉台',detail:'前沿三格石盘留作供品陈列，右上方悬浮着神谕纸页。供奉尚待开启，可先点击纸页读谕。'};
   if(id===ALTAR_LAYOUT.oracle.id){const text=oracleFor(appearance.altar,appearance.offering);return {title:text.title,tag:'悬浮神谕',detail:text.lines.join('，')+'。'};}
