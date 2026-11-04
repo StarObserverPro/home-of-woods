@@ -7,6 +7,8 @@ export const CARRY_ITEMS: Readonly<Record<string, CarrySize>> = {
   'scrap-fuel': {weight: 1, bulk: 1.5, bundleFactor: .7},
   'small-wood': {weight: 2, bulk: 2, bundleFactor: .65},
   'dried-mushroom': {weight: .1, bulk: .5, bundleFactor: 1},
+  'canvas-roll': {weight: 3, bulk: 4, bundleFactor: 1},
+  'hardware-kit': {weight: 4, bulk: 2, bundleFactor: 1},
 };
 export type CarryMethod = 'hands' | 'bundle';
 export type CarryProfile = {
