@@ -31,7 +31,7 @@ export function FoodControls({selected,view,workshop,access,disabled,onApproach,
         <button className="context-button" disabled={disabled||!pot||view.cookingProgress!==null||!mushroom||!(c[grain]>0)} onClick={()=>onCook(grain)}>煮一碗</button>
       </div>)}
       {view.cookingProgress!==null&&<p>正在煮汤 · {Math.round(view.cookingProgress*100)}%</p>}
-      <div className="recipe-row"><div><strong>坐下吃一碗</strong><small>吃过正餐，下一游戏日可以正常采伐成熟树木</small></div>
+      <div className="recipe-row"><div><strong>吃一碗</strong><small>吃过正餐，下一游戏日可以正常采伐成熟树木</small></div>
         <button className="context-button" disabled={disabled||!(c['forest-soup']>0)} onClick={onEat}>享用正餐</button></div>
       <div className="recipe-row"><div><strong>简单吃一份干粮</strong><small>无需锅具 · 用掉一份行商硬黑面包，也能准备明天的重活</small></div><button className="context-button" disabled={disabled||!(c['food-black-bread']>0)} onClick={onBread}>吃黑面包</button></div>
       <p>{view.heavyWork?'今天可以正常进行重体力劳动。':'今天只适合散步、拾枝、采菌等轻活。'}{view.nextDayReady?' 明天的重体力劳动已准备好。':''}</p>
