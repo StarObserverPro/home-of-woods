@@ -10,8 +10,8 @@ export type BlueprintSheet = OwnedItem & { definitionId:typeof BLUEPRINT_SHEET; 
 export function blueprintCopies(inventory:InventoryState,blueprintId:string):BlueprintSheet[] {
   return (inventory.instances??[]).filter((item):item is BlueprintSheet=>
     item.definitionId===BLUEPRINT_SHEET && item.blueprintId===blueprintId &&
-    item.location.kind==='inventory' && Number.isSafeInteger(item.usesRemaining) &&
-    item.usesRemaining>0 && Number.isSafeInteger(item.usesTotal) && item.usesTotal>=item.usesRemaining);
+    item.location.kind==='inventory' && typeof item.usesRemaining==='number' && Number.isSafeInteger(item.usesRemaining) &&
+    item.usesRemaining>0 && typeof item.usesTotal==='number' && Number.isSafeInteger(item.usesTotal) && item.usesTotal>=item.usesRemaining);
 }
 export function knowsBlueprint(inventory:InventoryState,known:readonly string[],id:string):boolean {
   return known.includes(id) || blueprintCopies(inventory,id).length>0;

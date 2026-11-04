@@ -51,7 +51,7 @@ function currentLedger(host:GameState,index:number):MerchantState {
 }
 const saleRule=(item:OwnedItem)=>{
   const rule=MERCHANT_BUY_RULES[item.definitionId as keyof typeof MERCHANT_BUY_RULES];
-  if(!rule||('status' in rule&&rule.status!=='active')||
+  if(!rule||('status' in rule&&rule.status==='planned')||
     ITEM_CATALOG.ownedItems.get(item.definitionId)?.status!=='active')return null;
   const rarity=typeof item.rarityId==='string'?item.rarityId:'common';
   return {...rule,price:Math.round(rule.basePrice*(MERCHANT_RARITY_MULTIPLIER[rarity]??1))};
