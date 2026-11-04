@@ -2,6 +2,7 @@ import {groundItem} from './carrying.ts';
 import {validateWoodcraft} from './woodcraft.ts';
 import {validateWorkshop,workshopTargetId} from './workshop.ts';
 import {CLOCK_SPEEDS} from './local-clock.ts';
+import {createFoodState,validateFoodState} from './food.ts';
 import {canonicalInstances} from './owned-items.ts';
 import { WAYPOINTS, WORLD_LAYOUT_VERSION, WORLD_RULESET_VERSION, WORLD_SEED } from '../content/world.ts';
 import type { GameState } from './state.ts';
@@ -22,7 +23,7 @@ export type WorldLoadResult =
 
 export function validateWorldState(raw: unknown, context: SaveContext, mode: 'runtime' | 'persisted') {
   const world = object(raw, 'world');
-  fields(world, ['woodcraft','clock','workshop','ritual', 'seed', 'time', 'forestry', 'inventory', 'gathering', 'player', 'selected', 'route', 'visited'], 'world', mode === 'runtime' ? ['wildlife'] : []);
+  fields(world, ['woodcraft','clock','workshop','ritual', 'seed', 'time', 'forestry', 'inventory', 'gathering', 'player', 'selected', 'route', 'visited'], 'world', mode === 'runtime' ? ['wildlife','food'] : ['food']);
   requireValue(world.seed === WORLD_SEED, 'world.seed', '当前布局不支持此世界');
   const time = finite(world.time, 'world.time');
   const player = object(world.player, 'world.player'); fields(player, ['x', 'z', 'facing', 'moving'], 'world.player');
@@ -45,6 +46,7 @@ export function validateWorldState(raw: unknown, context: SaveContext, mode: 'ru
   const clock=object(world.clock,'world.clock');fields(clock,['speed'],'world.clock');
   requireValue(CLOCK_SPEEDS.includes(clock.speed as 1|4|12),'world.clock','沙漏速度无效');
   const workshop=validateWorkshop(world.workshop,time);
+  const food=Object.hasOwn(world,'food')?validateFoodState(world.food,time):createFoodState();
   const ownedPrefix=`crafted-${WORLD_SEED}-`;
   for(const item of inventory.instances??[]){
     if(item.instanceId.startsWith(ownedPrefix)){
@@ -65,7 +67,7 @@ export function validateWorldState(raw: unknown, context: SaveContext, mode: 'ru
     if(a.phase==='approaching'||a.phase==='performing')requireValue(forestry.active===null && !['approaching','performing'].includes(gathering.action?.phase??'') && ['grove-altar','grove-altar:oracle'].includes(world.selected as string),'ritual','进行中祈祷与世界冲突');
   }
   if(workshop.job)requireValue(world.selected===workshopTargetId(workshop.job.kind,workshop.job.targetId)&&!forestry.active&&!['approaching','performing'].includes(gathering.action?.phase??'')&&!(world.ritual&&['approaching','performing'].includes((world.ritual as {phase:string}).phase)),'workshop.job','操作状态冲突');
-  const state = { ...structuredClone(world), woodcraft, workshop, inventory, forestry, gathering } as unknown as GameState;
+  const state = { ...structuredClone(world), woodcraft, workshop, inventory, forestry, gathering, food } as unknown as GameState;
   return { state, diagnostics };
 }
 
