@@ -37,6 +37,13 @@ test('the real KayKit rig accepts independent bone-following hair, outfits, hats
     assert.ok(object,name);
     assert.equal(object!.visible,true,name);
   }
+  const packPart=first.getObjectByName('wardrobe:back:pack:chest')!;
+  const leftBow=packPart.getObjectByName('bow-left')!;
+  const rightBow=packPart.getObjectByName('bow-right')!;
+  assert.ok(leftBow instanceof THREE.Group&&rightBow instanceof THREE.Group);
+  wardrobe.update(2,true,false);
+  assert.equal(leftBow.rotation.z,0,'planned bow trait must not run by default');
+  assert.equal(rightBow.rotation.z,0);
   assert.equal(other.getObjectByName('wardrobe:hair:ponytail:head')!.visible,false,
     'one actor never equips another');
   wardrobe.update(1.5,true,false);
