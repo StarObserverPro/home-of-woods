@@ -18,12 +18,15 @@ import {createWorkshop} from './workshop.ts';
 import type {WorkshopState} from './workshop.ts';
 import {createLocalClock} from './local-clock.ts';
 import type {LocalClock} from './local-clock.ts';
+import {createFoodState} from './food.ts';
+import type {FoodState} from './food.ts';
 export type GameState = {
   /** Decorative encounter state is session-local, not an inventory or save slice. */
   wildlife?: WildlifeState;
   woodcraft:WoodcraftState;
   workshop:WorkshopState;
   clock:LocalClock;
+  food:FoodState;
   ritual: RitualAction | null;
   seed: number;
   time:number;
@@ -41,6 +44,7 @@ export function createState(trees:Tree[]=makeTrees()): GameState {
     ritual: null,
     workshop:createWorkshop(),
     clock:createLocalClock(),
+    food:createFoodState(),
     seed: WORLD_SEED,
     time:0,
     forestry:createForestry(trees),
