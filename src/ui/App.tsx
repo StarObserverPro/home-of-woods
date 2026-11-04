@@ -20,6 +20,7 @@ import { WAYPOINTS, PATH, RIVER_KNOTS, GIANT, HOME, START } from "../content/wor
 import { makeTrees } from "../world/layout.ts";
 import { recordCanvas } from "../app/recorder.ts";
 import { Warehouse } from './Warehouse.tsx';
+import {FoodControls} from './FoodControls.tsx';
 import { SaveControls } from './SaveControls.tsx';
 import { createSaveController, INITIAL_SAVE_STATUS } from '../app/save-controller.ts';
 import type { SaveController } from '../app/save-controller.ts';
@@ -111,6 +112,7 @@ const empty: Snapshot = {
   carrying:{weight:0,bulk:0,effort:0,speed:1,reason:'',weightLimit:30,bulkLimit:10,method:'hands',items:[],ground:[],storageNear:false,visual:null},
   interaction:null,
   woodcraft:emptyWoodcraftSnapshot(),
+  food:{today:1,heavyWork:true,nextDayReady:false,counts:{},dryingProgress:null,cookingProgress:null,sacksBought:0,mealsEaten:0},
   workshop:{blueprints:[],offers:[],items:[],job:null,lastResponse:'',calendar:calendarAt(0),speed:1,upgrades:{},mounted:{},upgrade:null,upgradeOptions:[],inputs:{craft:false,offering:false,trade:false,canvas:false,hardware:false}},
   placement:null,
   zone: "山间营地",
@@ -531,6 +533,8 @@ export function App() {
           <WorkshopControls selected={snapshot.selected} view={snapshot.workshop} access={snapshot.interaction} message={snapshot.message} disabled={!ready||snapshot.paused||!!snapshot.placement}
             onOffer={()=>runtime.current?.offer()} onCraft={id=>runtime.current?.craft(id)} onTrade={id=>runtime.current?.trade(id)} onSupply={id=>runtime.current?.tradeSupply(id)} onApproach={()=>runtime.current?.approachTarget(snapshot.selected!)} onCancel={()=>runtime.current?.cancelAction()} onPlace={id=>runtime.current?.beginPlacement(id)} onPack={id=>runtime.current?.packFurniture(id)}/>
           {snapshot.selected===CAMP_PROPS.logs.id&&<div className="tree-actions">{snapshot.interaction?.near?<><button className="context-button" onClick={()=>setWarehouseOpen(true)}>打开仓库</button><button className="context-button" onClick={()=>runtime.current?.openWoodcraft()}>前往木料堆取放</button></>:<button className="context-button" disabled={!ready||snapshot.paused} onClick={()=>runtime.current?.approachTarget(CAMP_PROPS.logs.id)}>走近原木架</button>}</div>}
+          <FoodControls selected={snapshot.selected} view={snapshot.food} workshop={snapshot.workshop} access={snapshot.interaction} disabled={!ready||snapshot.paused||!!snapshot.placement}
+            onApproach={()=>runtime.current?.approachTarget(snapshot.selected!)} onDry={()=>runtime.current?.dryMushrooms()} onCook={grain=>runtime.current?.cookSoup(grain)} onEat={()=>runtime.current?.eatSoup()}/>
           <UpgradeControls view={snapshot.workshop} hasContextActions={!!snapshot.interaction} disabled={!ready||snapshot.paused||!!snapshot.placement} onApproach={id=>runtime.current?.approachUpgrade(id)} onUpgrade={id=>runtime.current?.upgrade(id)} onMount={id=>runtime.current?.mountExterior(id)} onCancel={()=>runtime.current?.cancelAction()}/>
           {snapshot.selected==='tent'&&<button className="context-button" onClick={()=>runtime.current?.select(WORKBENCH.id)}>查看帐篷前的工作台</button>}
 
@@ -632,6 +636,7 @@ export function App() {
           </p>
           <p><b>砍树</b>　选中经营树、走近后挥斧。巨木始终受到保护。</p>
           <p><b>采集</b>　点选落枝堆或蘑菇簇，再按“采集 / 走近采集”或 E。移动或切换目标可取消。</p>
+          <p><b>吃饭</b>　在行商处用鲜蘑菇换一袋混合干粮；火塘安装汤锅、晾晒架加工蘑菇。吃下正餐可为次日重体力劳动做准备，不吃饭仍可采集和散步。</p>
           <p><b>木作</b>　向行商换图纸，或在祭坛供奉一份蘑菇；帐篷前工作台用一份木料制作。仓库里的家具可以自由摆放、移动和收回。沙漏切换 1/4/12 倍游戏时间。</p>
           <p><b>仓库</b>　底部“仓库”或 B 查看分类物品与加工方向；Esc 收起后继续巡林。</p>
           <p>
