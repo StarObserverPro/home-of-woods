@@ -68,10 +68,15 @@ test('an actual mounted owned item overrides preview but keeps unique inventory 
       location:{kind:'mounted',hostId:'player',slotId:'player:back-gear'}},
     {instanceId:'hat-b',definitionId:'travel.sun-hat',
       location:{kind:'inventory'}},
+    {instanceId:'jacket-a',definitionId:'apparel.work-jacket',
+      location:{kind:'mounted',hostId:'player',slotId:'player:upper-body'}},
+    {instanceId:'boots-a',definitionId:'apparel.work-boots',
+      location:{kind:'mounted',hostId:'player',slotId:'player:footwear'}},
   ];
   const frozen=JSON.stringify(instances);
   const seen=wardrobeForMountedItems(base,instances);
   assert.equal(seen.headwear,'straw');assert.equal(seen.back,'pack');
+  assert.equal(seen.top,'work-jacket');assert.equal(seen.footwear,'boots');
   assert.equal(seen.hair,'swept');
   assert.equal(JSON.stringify(instances),frozen,'presentation does not write ownership or traits');
   assert.equal(base.headwear,'beanie');
