@@ -4,7 +4,7 @@ import {createState} from '../src/domain/state.ts';
 import {inventoryTransaction,inventoryCount,woodBatch} from '../src/domain/inventory.ts';
 import {upgradeSnapshot,approachUpgrade,beginUpgrade} from '../src/domain/upgrades.ts';
 import {advanceWorkshop,cancelWorkshop,beginWorkshop} from '../src/domain/workshop.ts';
-import {CABIN_REPAIR_BLUEPRINT,WORKBENCH,SEAT_DEFINITION} from '../src/content/workshop.ts';
+import {CABIN_REPAIR_BLUEPRINT,WORKBENCH,SEAT_DEFINITION,STARTER_BLUEPRINTS} from '../src/content/workshop.ts';
 import {CABIN_REPAIR,CABIN_REPAIR_STAND,UPGRADE_PROFILES} from '../src/content/upgrades.ts';
 import {createSaveContext} from '../src/domain/save-context.ts';
 import {serializeWorldSave,prepareWorldSave} from '../src/domain/world-save.ts';
@@ -78,7 +78,7 @@ test('old v5 workshop slices gain only the starter plan and an empty upgrade led
   const raw=await serializeWorldSave(createState(),context,{sequence:1,savedAt:1});
   const legacy=await altered(raw,s=>{delete s.world.workshop.upgrades;s.world.workshop.blueprints=['blueprint.stump-cozy','blueprint.future'];});
   const loaded=await prepareWorldSave(legacy,context);assert.equal(loaded.decision,'restored');
-  if('value' in loaded){assert.deepEqual(loaded.value.workshop.upgrades,{});assert.deepEqual(loaded.value.workshop.blueprints,['blueprint.stump-cozy','blueprint.future',CABIN_REPAIR_BLUEPRINT.id,'blueprint.tent-ropes','blueprint.camp-fire-stones']);}
+  if('value' in loaded){assert.deepEqual(loaded.value.workshop.upgrades,{});assert.deepEqual(loaded.value.workshop.blueprints,[...new Set(['blueprint.stump-cozy','blueprint.future',...STARTER_BLUEPRINTS])]);}
   const state=stocked();Object.assign(state.player,CABIN_REPAIR_STAND);beginUpgrade(state,'cabin');state.time=5;advanceWorkshop(state);
   const repaired=await serializeWorldSave(state,context,{sequence:2,savedAt:2});
   for(const change of [
