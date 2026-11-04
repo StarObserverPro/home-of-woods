@@ -4,7 +4,8 @@
  */
 export type AttachmentHost =
   | { kind: 'fixture'; id: string }
-  | { kind: 'item'; definitionId: string };
+  | { kind: 'item'; definitionId: string }
+  | { kind: 'character'; id: string };
 export type AttachmentSlotDefinition = {
   slotId: string;
   host: AttachmentHost;
@@ -18,6 +19,21 @@ export type AttachmentSlotDefinition = {
   requires?: { upgradeId: string; activeLegacySlot?: string; activeLegacyPart?: string };
 };
 export const HOST_ATTACHMENT_SLOTS: readonly AttachmentSlotDefinition[] = [
+  // Character wardrobe anchors are semantic. Actual rig fittings and player UI are not enabled yet.
+  { slotId:'player:headwear', host:{kind:'character',id:'player'}, kind:'headwear',
+    status:'planned', anchorId:'character.head', contexts:['equipped','movement','weather'] },
+  { slotId:'player:upper-body', host:{kind:'character',id:'player'}, kind:'upper-body',
+    status:'planned', anchorId:'character.torso', contexts:['equipped','movement','weather'] },
+  { slotId:'player:lower-body', host:{kind:'character',id:'player'}, kind:'lower-body',
+    status:'planned', anchorId:'character.legs', contexts:['equipped','movement','weather'] },
+  { slotId:'player:footwear', host:{kind:'character',id:'player'}, kind:'footwear',
+    status:'planned', anchorId:'character.feet', contexts:['equipped','movement','terrain'] },
+  { slotId:'player:back-gear', host:{kind:'character',id:'player'}, kind:'back-gear',
+    status:'planned', anchorId:'character.back', contexts:['equipped','movement','carrying'] },
+  { slotId:'player:hand-left', host:{kind:'character',id:'player'}, kind:'hand-gear',
+    status:'planned', anchorId:'character.hand-left', contexts:['equipped','action','movement'] },
+  { slotId:'player:hand-right', host:{kind:'character',id:'player'}, kind:'hand-gear',
+    status:'planned', anchorId:'character.hand-right', contexts:['equipped','action','movement'] },
   {
     slotId: 'cabin:entry-hanging', host: { kind: 'fixture', id: 'cabin' },
     kind: 'entrance-hanging', status: 'planned',
