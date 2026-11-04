@@ -1,5 +1,6 @@
 import {isAvailableMaterial} from './transport-location.ts';
-import {craftedRarity} from './item-creation.ts';
+import {craftProfile} from '../content/parametric-crafting.ts';
+import {resolveCraftOutcome} from './crafting-result.ts';
 import {rarityDefinition} from '../content/rarities.ts';
 import type {GameState} from './state.ts';
 import type {Collider} from '../world/layout.ts';
@@ -78,9 +79,12 @@ export function advanceWorkshop(host:GameState):string|null{
   }else{
     const plan=findCraftBlueprint(job.blueprintId!);if(!plan||!nextWorkshop.blueprints.includes(plan.id)){cancelWorkshop(host);return '图纸不可用，未扣料。';}
     if(!Number.isSafeInteger(nextWorkshop.nextInstance+1)){cancelWorkshop(host);return '物品编号已用尽，未扣料。';}
+    const profile=craftProfile(plan.id);
+    if(!profile||profile.status!=='active'||!profile.geometryTemplateId){cancelWorkshop(host);return '图纸对应的制作流程尚未开放，未扣材料。';}
     const instanceId=`crafted-${host.seed}-${nextWorkshop.nextInstance}`;
-    const rarityId=craftedRarity(host.seed,nextWorkshop.nextInstance);
-    nextInventory.instances=canonicalInstances([...(nextInventory.instances??[]),{instanceId,definitionId:SEAT_DEFINITION,blueprintId:plan.id,createdAt:host.time,rarityId,traits:[{id:plan.traitId,value:plan.value}],location:{kind:'inventory'}}]);
+    // The preset workbench currently supplies neutral quality. A later action module will submit guided fitting evidence.
+    const {rarityId,geometry,crafting}=resolveCraftOutcome(plan.id,host.seed,nextWorkshop.nextInstance,{mode:'preset'});
+    nextInventory.instances=canonicalInstances([...(nextInventory.instances??[]),{instanceId,definitionId:SEAT_DEFINITION,blueprintId:plan.id,createdAt:host.time,rarityId,traits:[{id:plan.traitId,value:plan.value}],geometry,crafting,location:{kind:'inventory'}}]);
     nextWorkshop.nextInstance++;result=`做好了「${rarityDefinition(rarityId).name} · ${plan.name}」，已放入仓库。`;
   }
   nextWorkshop.lastResponse=result;Object.assign(host,{inventory:nextInventory,workshop:nextWorkshop});return result;

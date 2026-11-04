@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { RARITIES } from '../src/content/rarities.ts';
 import { craftedRarity } from '../src/domain/item-creation.ts';
+import { rollBlueprintRarity } from '../src/domain/blueprint-rarity.ts';
 import { itemRarity, itemProperties } from '../src/domain/item-properties.ts';
 import { createItemSurface } from '../src/scene/item-surface.ts';
 import { Resources } from '../src/scene/resources.ts';
@@ -58,7 +59,7 @@ test('all grades are obtainable deterministically; roll depends on identity rath
 test('real craft settles rarity once; cancellation and a mid-job world reload never reroll or change traits/costs', async () => {
   const state=createState();state.inventory=inventoryTransaction(state.inventory,[{itemId:'wood',qualityId:'ordinary',delta:4}]);
   state.workshop.blueprints=[BLUEPRINTS[0].id];Object.assign(state.player,workshopTarget('craft'));
-  const expected=craftedRarity(state.seed,1);
+  const expected=rollBlueprintRarity(state.seed,1,BLUEPRINTS[0].id,'common',50);
   beginWorkshop(state,'craft',[],BLUEPRINTS[0].id);advanceWorkshop(state);cancelWorkshop(state);
   assert.equal(state.workshop.nextInstance,1);assert.equal(state.inventory.stacks[0].quantity,4);
   beginWorkshop(state,'craft',[],BLUEPRINTS[0].id);advanceWorkshop(state);state.time+=1;
