@@ -37,6 +37,8 @@ test('merchant bundle is one atomic exchange, varied and stable across saves',()
 test('drying consumes only real input and completes once on the local clock',()=>{
   const state=createState();at(state,CAMP_PROPS.dryer.id,CAMP_PROPS.dryer);
   grant(state,'mushroom',2);
+  assert.match(startDryMushrooms(state),/图纸/);
+  state.workshop.upgrades[CAMP_PROPS.dryer.id]={level:1,completedPaths:['upgrade.camp-drying-rack.frame'],investments:[],updatedAt:0};
   assert.match(startDryMushrooms(state),/挂上/);
   assert.equal(inventoryCount(state.inventory,'mushroom'),0);
   assert.match(startDryMushrooms(state),/已有/);
