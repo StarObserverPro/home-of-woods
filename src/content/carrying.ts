@@ -9,6 +9,13 @@ export const CARRY_ITEMS: Readonly<Record<string, CarrySize>> = {
   'dried-mushroom': {weight: .1, bulk: .5, bundleFactor: 1},
   'canvas-roll': {weight: 3, bulk: 4, bundleFactor: 1},
   'hardware-kit': {weight: 4, bulk: 2, bundleFactor: 1},
+  'food-beans': {weight: 1, bulk: .8, bundleFactor: 1},
+  'food-oats': {weight: .6, bulk: .8, bundleFactor: 1},
+  'food-rice': {weight: 1, bulk: .7, bundleFactor: 1},
+  'food-black-bread': {weight: .7, bulk: 1.1, bundleFactor: 1},
+  'food-salt': {weight: .2, bulk: .2, bundleFactor: 1},
+  'food-spice': {weight: .1, bulk: .2, bundleFactor: 1},
+  'forest-soup': {weight: .8, bulk: 1.2, bundleFactor: 1},
 };
 export type CarryMethod = 'hands' | 'bundle';
 export type CarryProfile = {
