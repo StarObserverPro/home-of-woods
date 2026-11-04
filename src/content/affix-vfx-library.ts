@@ -52,9 +52,21 @@ export const AFFIX_TRIGGER_LIBRARY = [
   {id:'action.craft-done',name:'制作完成',family:'action',source:'workshop',readiness:'adapter-needed'},
 ] as const;
 export type AffixTriggerId=typeof AFFIX_TRIGGER_LIBRARY[number]['id'];
-export type AffixComplexity='common'|'uncommon';
+/** Affix grade is independent of item rarity and never determines the number of slots. */
+export const AFFIX_GRADES=['common','uncommon','rare','epic','legendary'] as const;
+export type AffixGrade=typeof AFFIX_GRADES[number];
+export type LowTierAffixGrade=Extract<AffixGrade,'common'|'uncommon'>;
+/**
+ * Exactly one affix in a primary effect category per item.
+ * A particle effect may USE two colors without consuming the 'color' category;
+ * time/weather/action triggers are conditions, not competing affix categories.
+ */
+export const AFFIX_CATEGORIES=['color','particle','motion','interaction','utility'] as const;
+export type AffixCategory=typeof AFFIX_CATEGORIES[number];
+export type AffixDescriptor={id:string;grade:AffixGrade;category:AffixCategory};
 export type LowTierAffixCandidate={
-  id:string;name:string;complexity:AffixComplexity; colorIds:readonly string[];
+  id:string;name:string;grade:LowTierAffixGrade;
+  category:Extract<AffixCategory,'color'|'particle'>;colorIds:readonly string[];
   triggerId:AffixTriggerId; imagery:string;status:'candidate';
   visual:
     | {kind:'tint';target:'upper-body'|'lower-body'|'headwear'|'footwear'}
@@ -65,46 +77,74 @@ export type LowTierAffixCandidate={
  * Their names remain curated, even though shape/placement/trigger are shared.
  */
 export const LOW_TIER_AFFIX_CANDIDATES:readonly LowTierAffixCandidate[]=[
-  {id:'apparel.meadow-afterglow',name:'麦田余温',complexity:'common',
+  {id:'apparel.meadow-afterglow',name:'麦田余温',grade:'common',category:'color',
     colorIds:['tone-180'],triggerId:'time.dusk',imagery:'黄昏过后，外套留住一会儿麦浪的暖色',
     status:'candidate',visual:{kind:'tint',target:'upper-body'}},
-  {id:'apparel.peppermint-after-rain',name:'雨后薄荷',complexity:'common',
+  {id:'apparel.peppermint-after-rain',name:'雨后薄荷',grade:'common',category:'color',
     colorIds:['tone-79'],triggerId:'weather.rain-stops',imagery:'雨刚停，衣服忽然换成清新的薄荷色',
     status:'candidate',visual:{kind:'tint',target:'upper-body'}},
-  {id:'apparel.moon-dew',name:'月露微光',complexity:'common',
+  {id:'apparel.moon-dew',name:'月露微光',grade:'common',category:'particle',
     colorIds:['tone-159'],triggerId:'time.midnight',imagery:'几颗月露色的光点围着人慢慢绕一圈',
     status:'candidate',visual:{kind:'particles',shapeId:'soft-disc',patternId:'body-orbit'}},
-  {id:'apparel.sunset-berry',name:'夕云莓焰',complexity:'common',
+  {id:'apparel.sunset-berry',name:'夕云莓焰',grade:'common',category:'color',
     colorIds:['tone-210'],triggerId:'time.dusk',imagery:'帽子在夕阳里短暂变成云边的莓红',
     status:'candidate',visual:{kind:'tint',target:'headwear'}},
-  {id:'apparel.oak-dawn',name:'橡叶晨绿',complexity:'common',
+  {id:'apparel.oak-dawn',name:'橡叶晨绿',grade:'common',category:'particle',
     colorIds:['tone-107'],triggerId:'time.dawn',imagery:'肩头升起几粒橡叶色的菱形晨光',
     status:'candidate',visual:{kind:'particles',shapeId:'diamond',patternId:'shoulder-rise'}},
-  {id:'apparel.stream-glimmer',name:'清溪碎波',complexity:'common',
+  {id:'apparel.stream-glimmer',name:'清溪碎波',grade:'common',category:'particle',
     colorIds:['tone-81'],triggerId:'place.riverside',imagery:'走近溪边，脚边水色的小环轻轻散开',
     status:'candidate',visual:{kind:'particles',shapeId:'hollow-ring',patternId:'feet-ripple'}},
-  {id:'apparel.ember-step',name:'篝火朱砂',complexity:'common',
+  {id:'apparel.ember-step',name:'篝火朱砂',grade:'common',category:'particle',
     colorIds:['tone-203'],triggerId:'place.campfire',imagery:'离火塘不远，身后浮起几笔温暖的短线',
     status:'candidate',visual:{kind:'particles',shapeId:'short-streak',patternId:'back-fan'}},
-  {id:'apparel.peach-dawn',name:'桃云初醒',complexity:'common',
+  {id:'apparel.peach-dawn',name:'桃云初醒',grade:'common',category:'particle',
     colorIds:['tone-217'],triggerId:'player.walk-start',imagery:'清晨迈步般轻快，头顶闪过一簇桃色纸片',
     status:'candidate',visual:{kind:'particles',shapeId:'confetti',patternId:'head-spray'}},
-  {id:'apparel.fog-silver',name:'碎银薄雾',complexity:'common',
+  {id:'apparel.fog-silver',name:'碎银薄雾',grade:'common',category:'particle',
     colorIds:['tone-188'],triggerId:'weather.fog-enters',imagery:'走进雾里，身旁缓缓落下几颗银白光点',
     status:'candidate',visual:{kind:'particles',shapeId:'soft-disc',patternId:'nearby-fall'}},
-  {id:'apparel.gold-meets-lake',name:'金铃落湖',complexity:'uncommon',
+  {id:'apparel.gold-meets-lake',name:'金铃落湖',grade:'uncommon',category:'particle',
     colorIds:['tone-220','tone-74'],triggerId:'time.dusk',imagery:'金色和湖蓝色的四芒星绕身而过',
     status:'candidate',visual:{kind:'particles',shapeId:'four-star',patternId:'body-orbit'}},
-  {id:'apparel.frost-and-ember',name:'霜火隔窗',complexity:'uncommon',
+  {id:'apparel.frost-and-ember',name:'霜火隔窗',grade:'uncommon',category:'particle',
     colorIds:['tone-209','tone-153'],triggerId:'season.first-winter',imagery:'冬天第一日，霜蓝与火橙的弯月依次掠过身后',
     status:'candidate',visual:{kind:'particles',shapeId:'crescent',patternId:'back-fan'}},
-  {id:'apparel.lavender-dawn',name:'丁香迎曦',complexity:'uncommon',
+  {id:'apparel.lavender-dawn',name:'丁香迎曦',grade:'uncommon',category:'particle',
     colorIds:['tone-176','tone-223'],triggerId:'time.dawn',imagery:'杏白和丁香紫的花瓣在头顶绽开一圈',
     status:'candidate',visual:{kind:'particles',shapeId:'petal',patternId:'head-crown'}},
-  {id:'apparel.stream-leaf',name:'溪叶同行',complexity:'uncommon',
+  {id:'apparel.stream-leaf',name:'溪叶同行',grade:'uncommon',category:'particle',
     colorIds:['tone-81','tone-72'],triggerId:'place.riverside',imagery:'蓝色水花和青枝叶片一齐漂过脚边',
     status:'candidate',visual:{kind:'particles',shapeId:'leaf',patternId:'feet-ripple'}},
 ];
+
+
+/**
+ * Shared composition rule for FUTURE rolls, crafting and loadout edits.
+ * The registry, not item instance metadata, owns each affix's category/grade.
+ * 'rarityId' and per-rarity slot-count policy are intentionally absent:
+ * a legendary item may carry a common color affix, uncommon particle affix,
+ * and epic independent motion affix simultaneously.
+ * This does NOT mutate or reject existing save data on read.
+ */
+export function validateAffixComposition(
+  traitIds: readonly string[],
+  definitions: ReadonlyMap<string,Pick<AffixDescriptor,'category'|'grade'>>,
+): void {
+  const ids=new Set<string>(),categories=new Set<AffixCategory>();
+  for(const id of traitIds){
+    const definition=definitions.get(id);
+    if(!definition||!AFFIX_CATEGORIES.includes(definition.category)||
+      !AFFIX_GRADES.includes(definition.grade))
+      throw new Error('Unknown affix definition: '+id);
+    if(ids.has(id))throw new Error('Duplicate affix ID: '+id);
+    if(categories.has(definition.category))
+      throw new Error('Duplicate affix category: '+definition.category);
+    ids.add(id);categories.add(definition.category);
+  }
+}
+export const LOW_TIER_AFFIX_DEFINITIONS:ReadonlyMap<string,AffixDescriptor> =
+  new Map(LOW_TIER_AFFIX_CANDIDATES.map(({id,grade,category})=>[id,{id,grade,category}]));
 
 /** Structural checks only; never converts proposals into a gameplay handler. */
 export function validateLowTierAffixLibrary():void {
@@ -114,7 +154,7 @@ export function validateLowTierAffixLibrary():void {
   const triggers=new Set(AFFIX_TRIGGER_LIBRARY.map(trigger=>trigger.id));
   for(const affix of LOW_TIER_AFFIX_CANDIDATES){
     if(ids.has(affix.id)||!affix.id||!affix.name||!triggers.has(affix.triggerId)||
-      affix.colorIds.length<1||affix.colorIds.length>(affix.complexity==='common'?1:2)||
+      affix.colorIds.length<1||affix.colorIds.length>(affix.grade==='common'?1:2)||
       affix.colorIds.some(id=>!AFFIX_SWATCH_BY_ID.has(id)))
       throw new Error('Invalid low-tier affix candidate: '+affix.id);
     if(new Set(affix.colorIds).size!==affix.colorIds.length)
@@ -122,10 +162,13 @@ export function validateLowTierAffixLibrary():void {
     if(affix.colorIds.length===2&&!AFFIX_COLOR_DUOS.some(duo =>
       duo.colors.every(colorId=>affix.colorIds.includes(colorId))))
       throw new Error('Unreviewed affix color combination: '+affix.id);
+    if(affix.category!==(affix.visual.kind==='tint'?'color':'particle')||
+      !['common','uncommon'].includes(affix.grade))
+      throw new Error('Mismatched affix grade/category: '+affix.id);
     ids.add(affix.id);
     if(affix.visual.kind==='particles'){
       const shape=shapes.get(affix.visual.shapeId),pattern=patterns.get(affix.visual.patternId);
-      if(!shape||!pattern||affix.complexity==='common'&&shape.complexity!=='simple')
+      if(!shape||!pattern||affix.category!=='particle'||affix.grade==='common'&&shape.complexity!=='simple')
         throw new Error('Unsupported particle shape for candidate: '+affix.id);
     }
   }
