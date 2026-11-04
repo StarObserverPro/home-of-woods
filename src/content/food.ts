@@ -4,7 +4,7 @@ export const FOOD_GRAINS = ['food-oats','food-beans','food-rice'] as const;
 export type FoodGrain = typeof FOOD_GRAINS[number];
 export const FOOD_SOUP_ITEM_ID = 'forest-soup';
 export const FOOD_DRYER_ID = 'camp-drying-rack';
-export const FOOD_RULES = {foodSackCostMushrooms:2, mushroomDryInput:2, drySeconds:100, cookSeconds:8} as const;
+export const FOOD_RULES = {foodSackCostMushrooms:2, cookSeconds:8} as const;
 /** A single merchant trade yields a varied but useful assortment. */
 export function foodSackContents(seed:number,ordinal:number):{itemId:string;quantity:number}[]{
   if(!Number.isSafeInteger(ordinal)||ordinal<1)throw new Error('Invalid bag serial');
