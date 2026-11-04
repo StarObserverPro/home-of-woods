@@ -1,5 +1,5 @@
 import {transportLocation,carryMethod} from './transport-location.ts';
-import {validateAttachedItems} from './item-attachments.ts';
+import {validateAttachedItems} from './item-attachment-contract.ts';
 import { assertItemJson, withoutFields } from './item-data.ts';
 import type { ExtensibleRecord } from './item-data.ts';
 import { canonicalJson } from './save-digest.ts';
