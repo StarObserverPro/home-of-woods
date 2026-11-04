@@ -3,7 +3,8 @@ import { isStableId } from './item-catalog.ts';
 import { assertItemJson, isItemRecord, withoutFields } from './item-data.ts';
 import type { ExtensibleRecord } from './item-data.ts';
 export type ItemLocation = ExtensibleRecord & (
-  { kind: 'inventory' } | { kind: 'world'; x: number; z: number; rotation: number }
+  { kind: 'inventory' } | { kind: 'world'; x: number; z: number; rotation: number } |
+  { kind: 'mounted'; hostId: string; slotId: string }
 );
 export type OwnedItem = ExtensibleRecord & {
   instanceId: string; definitionId: string; blueprintId: string; createdAt: number;
@@ -27,11 +28,13 @@ export function canonicalInstances(value: unknown): OwnedItem[] {
           (p.x as number) < WORLD.minX || (p.x as number) > WORLD.maxX ||
           (p.z as number) < WORLD.minZ || (p.z as number) > WORLD.maxZ)
         throw new Error('Invalid placed instance');
+    } else if (p.kind === 'mounted') {
+      if (!isStableId(p.hostId) || !isStableId(p.slotId)) throw new Error('Invalid mounted item reference');
     } else if (p.kind !== 'inventory') throw new Error('Unknown instance location');
   }
   return structuredClone(value as OwnedItem[]).sort((a,b) => a.instanceId.localeCompare(b.instanceId));
 }
 /** Replace the ownership core without losing future attachment/location metadata. */
 export function withItemLocation(item: OwnedItem, location: ItemLocation): OwnedItem {
-  return { ...item, location: { ...withoutFields(item.location, ['kind','x','z','rotation']), ...location } as ItemLocation };
+  return { ...item, location: { ...withoutFields(item.location, ['kind','x','z','rotation','hostId','slotId']), ...location } as ItemLocation };
 }
