@@ -1,4 +1,5 @@
 import {CAMP_PROPS} from '../content/scene-props.ts';
+import {MUSHROOM_DRYING} from '../content/processing.ts';
 import {CAMP_VISITOR} from '../content/characters.ts';
 import {FOOD_DRYER_ID,FOOD_GRAINS,FOOD_RULES,FOOD_SOUP_ITEM_ID,foodSackContents} from '../content/food.ts';
 import type {FoodGrain} from '../content/food.ts';
@@ -54,9 +55,9 @@ export function startDryMushrooms(host:GameState):string{
   if(host.selected!==FOOD_DRYER_ID||!near(host,CAMP_PROPS.dryer.x,CAMP_PROPS.dryer.z,3.2))return '先走近晾晒架。';
   if(busy(host))return '先完成当前动作。';
   if(host.food.drying)return '晾晒架上已有蘑菇。';
-  const debit=take(host.inventory,'mushroom',FOOD_RULES.mushroomDryInput);if(!debit)return '晾晒需要 2 份鲜蘑菇。';
+  const debit=take(host.inventory,MUSHROOM_DRYING.inputs[0].itemId,MUSHROOM_DRYING.inputs[0].quantity);if(!debit)return '晾晒需要 2 份鲜蘑菇。';
   const inventory=inventoryTransaction(host.inventory,debit);
-  host.inventory=inventory;host.food={...host.food,drying:{startedAt:host.time,durationSeconds:FOOD_RULES.drySeconds}};
+  host.inventory=inventory;host.food={...host.food,drying:{startedAt:host.time,durationSeconds:MUSHROOM_DRYING.durationSeconds}};
   return '已把两份鲜蘑菇挂上晾晒架。';
 }
 export function startMushroomSoup(host:GameState,grain:FoodGrain):string{
@@ -78,7 +79,7 @@ export function advanceFood(host:GameState):string|null{
   const cookDone=!!cooking&&host.time>=cooking.startedAt+cooking.durationSeconds;
   if(!dryDone&&!cookDone)return null;
   const deltas:InventoryDelta[]=[];
-  if(dryDone)deltas.push({itemId:'dried-mushroom',qualityId:'ordinary',delta:1});
+  if(dryDone)deltas.push({itemId:MUSHROOM_DRYING.outputs[0].itemId,qualityId:'ordinary',delta:MUSHROOM_DRYING.outputs[0].quantity});
   if(cookDone&&cooking)deltas.push({itemId:FOOD_SOUP_ITEM_ID,qualityId:'ordinary',food:{series:'mushroom-grain-soup',grain:cooking.grain,fungus:cooking.fungus},delta:1});
   const inventory=inventoryTransaction(host.inventory,deltas);
   host.inventory=inventory;host.food={...host.food,drying:dryDone?null:drying,cooking:cookDone?null:cooking};
