@@ -28,7 +28,7 @@ export const OWNED_ITEM_DEFINITIONS: readonly OwnedItemDefinition[] = [
   { definitionId:'travel.umbrella', name:'旅行伞', category:'travel-gear',
     status:'planned', blueprintIds:[], mountKinds:[], presentationId:null },
   { definitionId:'travel.sun-hat', name:'旅行帽', category:'travel-gear',
-    status:'planned', blueprintIds:[], mountKinds:[], presentationId:null },
+    status:'planned', blueprintIds:[], mountKinds:['headwear'], presentationId:null },
   { definitionId:'travel.spyglass', name:'望远镜', category:'travel-gear',
     status:'planned', blueprintIds:[], mountKinds:[], presentationId:null },
   { definitionId:'travel.whistle', name:'口哨', category:'travel-gear',
@@ -36,7 +36,7 @@ export const OWNED_ITEM_DEFINITIONS: readonly OwnedItemDefinition[] = [
   { definitionId:'travel.animal-blanket', name:'旅行毯', category:'travel-gear',
     status:'planned', blueprintIds:[], mountKinds:[], presentationId:null },
   { definitionId:'travel.backpack', name:'旅行背包', category:'travel-gear',
-    status:'planned', blueprintIds:[], mountKinds:[], presentationId:null },
+    status:'planned', blueprintIds:[], mountKinds:['back-gear'], presentationId:null },
   // Candidate destinations for the "住" item taxonomy; not unlocked, craftable,
   // spawned, rendered or interpreted as approved trait effects in this patch.
   {
