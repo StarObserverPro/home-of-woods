@@ -83,6 +83,26 @@ test('wrong host, wrong item and occupied slot reject atomically', () => {
   assert.throws(()=>mountIndependentItem(mounted,'bell-one','cabin','cabin:entry-hanging',registry),/inventory/);
 });
 
+test('a kettle belongs to itself, but the fire provides a hook and an active top-slot prerequisite', () => {
+  const definitions=new Map(ITEM_CATALOG.ownedItems);
+  const kettle=definitions.get('vessel.copper-kettle')!;
+  definitions.set(kettle.definitionId,{...kettle,status:'active'});
+  const slots=HOST_ATTACHMENT_SLOTS.map(slot=>slot.slotId==='camp-fire:pot-hanger'?{...slot,status:'active' as const}:slot);
+  const registry=createAttachmentRegistry(slots,definitions);
+  const state=createState();
+  state.inventory.instances=[{instanceId:'kettle-one',definitionId:kettle.definitionId,
+    blueprintId:'blueprint.test-kettle',createdAt:0,rarityId:'legendary',
+    traits:[{id:'warmth',value:2}],location:{kind:'inventory'}}];
+  assert.throws(()=>mountIndependentItem(state.inventory,'kettle-one','camp-fire','camp-fire:pot-hanger',registry),/prerequisite/);
+  const noTop={builtUpgrades:new Set(['camp-fire:hook']),legacyMounted:{}};
+  assert.throws(()=>mountIndependentItem(state.inventory,'kettle-one','camp-fire','camp-fire:pot-hanger',registry,noTop),/prerequisite/);
+  const activeHook={builtUpgrades:new Set(['camp-fire:hook']),legacyMounted:{'camp-fire:top':'camp-fire:hook'}};
+  const mounted=mountIndependentItem(state.inventory,'kettle-one','camp-fire','camp-fire:pot-hanger',registry,activeHook);
+  assert.equal(mounted.instances![0].rarityId,'legendary');
+  assert.equal(mounted.instances![0].location.kind,'mounted');
+  assert.equal(state.inventory.instances![0].location.kind,'inventory');
+});
+
 test('cross-instance slots check their host type, reject missing hosts, cycles and duplicate occupants', () => {
   const registry=createAttachmentRegistry([
     {slotId:'item-holder:hook',host:{kind:'item',definitionId:'fixture.test-holder'},kind:'hanger',status:'active',anchorId:'fixture.hook',contexts:['night']},
