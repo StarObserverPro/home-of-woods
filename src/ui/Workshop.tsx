@@ -1,6 +1,9 @@
 import {rarityStyle} from './rarity.ts';
 import {itemProperties,itemRarity} from '../domain/item-properties.ts';
-import {BLUEPRINTS,WORKBENCH,WORKBENCH_STOOL,SEAT_DEFINITION,findBlueprint,traitLabel} from '../content/workshop.ts';
+import {CRAFT_BLUEPRINTS,WORKBENCH,WORKBENCH_STOOL,SEAT_DEFINITION,findBlueprint,traitLabel} from '../content/workshop.ts';
+import type {PointerEvent} from 'react';
+import {ITEM_REACH} from '../domain/interaction-access.ts';
+import type {InteractionAccess,ItemTransferIntent} from '../domain/interaction-access.ts';
 import {CAMP_VISITOR} from '../content/characters.ts';
 import type {WorkshopSnapshot} from '../domain/workshop.ts';
 import type {PlacementDraft} from '../domain/furniture-placement.ts';
@@ -17,32 +20,33 @@ export function workshopDetails(selected:string|null,view:WorkshopSnapshot){
 export function Hourglass({view,onSpeed,disabled}:{view:WorkshopSnapshot;onSpeed:(s:ClockSpeed)=>void;disabled:boolean}){
   return <div className="hourglass" role="group" aria-label="本地沙漏"><span aria-hidden="true">⌛</span>{CLOCK_SPEEDS.map(s=><button key={s} disabled={disabled} aria-pressed={view.speed===s} aria-label={`沙漏 ${s} 倍速`} onClick={()=>onSpeed(s)}>{s}×</button>)}</div>;
 }
-export function WorkshopControls({selected,view,message,disabled,onOffer,onCraft,onTrade,onApproach,onCancel,onPlace,onPack}:{selected:string|null;view:WorkshopSnapshot;message:string;disabled:boolean;onOffer:()=>void;onCraft:(id:string)=>void;onTrade:(id:string)=>void;onApproach:()=>void;onCancel:()=>void;onPlace:(id:string)=>void;onPack:(id:string)=>void}){
+export function WorkshopControls({selected,view,access,message,disabled,onOffer,onCraft,onTrade,onApproach,onCancel,onPlace,onPack}:{selected:string|null;view:WorkshopSnapshot;access:InteractionAccess|null;message:string;disabled:boolean;onOffer:()=>void;onCraft:(id:string)=>void;onTrade:(id:string)=>void;onApproach:()=>void;onCancel:()=>void;onPlace:(id:string)=>void;onPack:(id:string)=>void}){
   const altar=['grove-altar','grove-altar:oracle'].includes(selected??''),bench=selected===WORKBENCH.id,merchant=selected===CAMP_VISITOR.id,item=view.items.find(i=>i.instanceId===selected);
   if(!altar&&!bench&&!merchant&&!item)return null;
   const busy=!!view.job;
+  if(access&&!access.near&&!busy)return <section className="workshop-controls" aria-label="木作与图纸"><p>距你 {access.distance.toFixed(1)} · 走近后可以操作。</p><button className="context-button" disabled={disabled} onClick={onApproach}>走近{access.name}</button><p className="action-message" role="status">{message}</p></section>;
   return <section className="workshop-controls" aria-label="木作与图纸">
-    {altar&&<><p>献上一份蘑菇，森林之母会随机回应；不一定带来新图纸。</p><button className="context-button" disabled={disabled||busy} onClick={onOffer}>献上蘑菇 · 祈求神谕</button></>}
-    {bench&&<>{BLUEPRINTS.map(p=><div className="recipe-row" key={p.id}><div><strong>{p.name}</strong><small>{p.traitName} {p.value} · 消耗木料 1 份</small></div><button className="context-button" disabled={disabled||busy||!view.blueprints.includes(p.id)} onClick={()=>onCraft(p.id)}>{view.blueprints.includes(p.id)?`制作${p.name}`:'尚未学会'}</button></div>)}{!view.blueprints.length&&<p>先向行商换图纸，或在祭坛献上蘑菇。</p>}</>}
-    {merchant&&<><button className="context-button" disabled={disabled||busy} onClick={onApproach}>走到行商身边</button>{view.offers.map(id=>{const p=findBlueprint(id)!;return <div className="recipe-row" key={id}><div><strong>{p.name}</strong><small>{id===BLUEPRINTS[0].id?'常备图纸':'今日随身货'} · 木料 1 份</small></div><button className="context-button" disabled={disabled||busy||view.blueprints.includes(id)} onClick={()=>onTrade(id)}>{view.blueprints.includes(id)?'已经学会':`交换${p.name}图纸`}</button></div>;})}</>}
+    {altar&&<><p>献上一份蘑菇，森林之母会随机回应；不一定带来新图纸。</p><button className="context-button" disabled={disabled||busy||!view.inputs.offering} onClick={onOffer}>献上蘑菇 · 祈求神谕</button>{!view.inputs.offering&&<p>需要一份蘑菇。</p>}</>}
+    {bench&&<>{CRAFT_BLUEPRINTS.map(p=><div className="recipe-row" key={p.id}><div><strong>{p.name}</strong><small>{p.traitName} {p.value} · 消耗木料 1 份</small></div><button className="context-button" disabled={disabled||busy||!view.blueprints.includes(p.id)||!view.inputs.craft} onClick={()=>onCraft(p.id)}>{view.blueprints.includes(p.id)?`制作${p.name}`:'尚未学会'}</button></div>)}{!CRAFT_BLUEPRINTS.some(p=>view.blueprints.includes(p.id))&&<p>先向行商换图纸，或在祭坛献上蘑菇。</p>}{!view.inputs.craft&&<p>需要一份未预留的木料。</p>}</>}
+    {merchant&&<>{view.offers.map(id=>{const p=findBlueprint(id)!;return <div className="recipe-row" key={id}><div><strong>{p.name}</strong><small>{id===CRAFT_BLUEPRINTS[0].id?'常备图纸':'今日随身货'} · 木料 1 份</small></div><button className="context-button" disabled={disabled||busy||view.blueprints.includes(id)||!view.inputs.trade} onClick={()=>onTrade(id)}>{view.blueprints.includes(id)?'已经学会':`交换${p.name}图纸`}</button></div>;})}{!view.inputs.trade&&<p>交换图纸需要一份未预留的木料。</p>}</>}
     {item&&<div className="tree-actions"><button className="context-button" disabled={disabled||busy||item.definitionId!==SEAT_DEFINITION} onClick={()=>onPlace(item.instanceId)}>移动摆放</button><button className="context-button" disabled={disabled||busy||item.definitionId!==SEAT_DEFINITION} onClick={()=>onPack(item.instanceId)}>收回仓库</button></div>}
     {view.job&&<><p>{view.job.phase==='approaching'?'正在走到操作位置…':view.job.kind==='offering'?'正在祈求神谕…':'正在制作木墩…'}</p><progress aria-label="木作或供奉进度" value={view.job.progress} max={1}/><button className="context-button" onClick={onCancel}>取消 · 不扣材料</button></>}
     <p className="action-message" role="status">{message}</p>
   </section>;
 }
-export function OwnedFurniture({view,onPlace,onPack}:{view:WorkshopSnapshot;onPlace:(id:string)=>void;onPack:(id:string)=>void}){
+export function OwnedFurniture({view,player,onPlace,onPack,onApproach,onDragStart}:{view:WorkshopSnapshot;player:{x:number;z:number};onPlace:(id:string)=>void;onPack:(id:string)=>void;onApproach:(id:string)=>void;onDragStart:(event:PointerEvent<HTMLElement>,item:ItemTransferIntent)=>void}){
   return <section className="owned-furniture" aria-label="木作家具">
     <h3>木作家具 <small>{view.items.filter(i=>i.location.kind==='inventory').length} 件在库 · {view.items.filter(i=>i.location.kind==='world').length} 件已摆放</small></h3>
     <p>每件木作都有自己的等级与词条，移动和收回不会改变它们。等级带来不同的颜色与光泽，暂不增加制作收益。</p>
     <div className="owned-grid">{view.items.map(item=>{
-      const rarity=itemRarity(item),traits=itemProperties(item).traits;
+      const rarity=itemRarity(item),traits=itemProperties(item).traits,near=item.location.kind==='inventory'||Math.hypot(player.x-item.location.x,player.z-item.location.z)<=ITEM_REACH;
       return <article className="owned-card" key={item.instanceId} data-rarity={rarity.id} style={rarityStyle(item)}>
-        <div className="rarity-icon-row"><span className="stump-icon" aria-hidden="true">▰</span><span className="rarity-label">{rarity.name}</span></div>
+        <div className="rarity-icon-row"><button className={`stump-icon${near?' is-draggable':''}`} aria-label={`拖动${findBlueprint(item.blueprintId)?.name??'家具'}`} onPointerDown={event=>{if(near)onDragStart(event,{kind:'furniture',id:item.instanceId,name:findBlueprint(item.blueprintId)?.name??'家具'});}}>▰</button><span className="rarity-label">{rarity.name}</span></div>
         <strong className="rarity-name">{findBlueprint(item.blueprintId)?.name??item.definitionId}</strong>
         <p>{traits.length?traits.map(t=>`${traitLabel(t.id)} ${t.value}`).join(' · '):'暂无额外词条'}</p>
         <small>{item.location.kind==='inventory'?'在仓库':`已摆放 (${item.location.x.toFixed(1)}, ${item.location.z.toFixed(1)})`} · 编号 {item.instanceId.split('-').at(-1)}</small>
-        <div><button className="context-button" disabled={!!view.job||item.definitionId!==SEAT_DEFINITION} onClick={()=>onPlace(item.instanceId)}>{item.location.kind==='inventory'?'摆放到地上':'移动位置'}</button>
-          {item.location.kind==='world'&&<button className="context-button" disabled={!!view.job||item.definitionId!==SEAT_DEFINITION} onClick={()=>onPack(item.instanceId)}>收回</button>}</div>
+        <div>{!near?<button className="context-button" disabled={!!view.job} onClick={()=>onApproach(item.instanceId)}>走近这件家具</button>:<><button className="context-button" disabled={!!view.job||item.definitionId!==SEAT_DEFINITION} onClick={()=>onPlace(item.instanceId)}>{item.location.kind==='inventory'?'摆放到地上':'移动位置'}</button>
+          {item.location.kind==='world'&&<button className="context-button" disabled={!!view.job||item.definitionId!==SEAT_DEFINITION} onClick={()=>onPack(item.instanceId)}>收回</button>}</>}</div>
       </article>;
     })}</div>
     {!view.items.length&&<p>还没有木作。拿到图纸后，去帐篷前的工作台做第一件。</p>}

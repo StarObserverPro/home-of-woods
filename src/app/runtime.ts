@@ -3,6 +3,10 @@ import type {RarityVfxMode} from '../content/item-vfx.ts';
 import {createWoodcraftSession} from './woodcraft-session.ts';
 import type {WoodcraftSnapshot} from './woodcraft-session.ts';
 import {WOODCRAFT} from '../content/woodcraft.ts';
+import {createItemTransfers} from './item-transfers.ts';
+import {interactionAccess,approachInteraction} from '../domain/interaction-access.ts';
+import type {InteractionAccess,ItemTransferIntent} from '../domain/interaction-access.ts';
+import {beginUpgrade,approachUpgrade} from '../domain/upgrades.ts';
 import {beginWorkshop,advanceWorkshop,workshopSnapshot,tradeBlueprint,workshopBusy} from '../domain/workshop.ts';
 import type {WorkshopSnapshot} from '../domain/workshop.ts';
 import {advanceLocalClock,CLOCK_SPEEDS} from '../domain/local-clock.ts';
@@ -41,6 +45,7 @@ import type {SceneAppearance,SceneViewPreset} from '../content/scene-props.ts';
 import {CAMP_PROPS} from '../content/scene-props.ts';
 import {ALTAR_LAYOUT} from '../content/altar.ts';
 export type Snapshot = {
+  interaction:InteractionAccess|null;
   woodcraft:WoodcraftSnapshot;
   workshop:WorkshopSnapshot;
   placement:PlacementDraft|null;
@@ -92,6 +97,7 @@ export async function createRuntime(
   const keys = new Set<string>(),
     stick = { x: 0, z: 0 };
   const woodcraft=createWoodcraftSession(state,m=>{message=m;});
+  if(state.selected===WOODCRAFT.id||state.woodcraft.pieces.some(p=>p.id===state.selected))woodcraft.activate();
   const activeColliders=()=>[{id:WOODCRAFT.id,x:WOODCRAFT.x,z:WOODCRAFT.z,halfX:WOODCRAFT.halfX+.2,halfZ:WOODCRAFT.halfZ+.2},...forestryColliders(colliders,treeById,state.forestry,state.time),...workstationColliders(),...furnitureColliders(state)];
   const navigate = (p: Point) => {
     woodcraft.cancelDrop();view.setWoodcraftDrop(false);view.inspectScene(null);
@@ -110,6 +116,7 @@ export async function createRuntime(
     if (event.kind === "select") {
       const cancelled=cancelPlayerAction(state);if(cancelled)message=cancelled;
       state.selected = event.id;
+      if(event.id===WOODCRAFT.id||state.woodcraft.pieces.some(p=>p.id===event.id))woodcraft.activate();
       state.route = [];
       message = "已选中目标，可以查看详情。";
     } else {
@@ -128,6 +135,8 @@ export async function createRuntime(
   const tick = (dt: number, now:number) => {
     accumulator += dt;
     while (accumulator >= MOVEMENT.fixedStep) {
+      // An open inventory freezes walking and the world clock, while nearby wood can settle.
+      if(interfaceOpen){woodcraft.step(MOVEMENT.fixedStep);accumulator-=MOVEMENT.fixedStep;continue;}
       advanceLocalClock(state,MOVEMENT.fixedStep);
       let sx =
           stick.x +
@@ -250,6 +259,7 @@ export async function createRuntime(
   function publishSnapshot() {
     persistence.observe(state);
     publish({
+      interaction:interactionAccess(state,state.selected),
       woodcraft:woodcraft.snapshot(),
       zone: zoneName(state.player.x, state.player.z),
       x: state.player.x,
@@ -271,7 +281,7 @@ export async function createRuntime(
     });
   }
   const syncPause = () => {
-    loop.setPaused(manualPause || interfaceOpen || inspectionOpen || contextLost || document.hidden);
+    loop.setPaused(manualPause || inspectionOpen || contextLost || document.hidden);
     keys.clear();
     stick.x = stick.z = 0;
     state.player.moving = false;
@@ -350,19 +360,29 @@ export async function createRuntime(
   view.canvas.addEventListener("webglcontextrestored", restored);
   view.render(state, 0);
   const blocked=()=>destroyed||manualPause||interfaceOpen||inspectionOpen||contextLost||document.hidden;
+  const transferBlocked=()=>destroyed||manualPause||inspectionOpen||contextLost||document.hidden||!!placement||workshopBusy(state)||!!state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state);
+  const itemTransfers=createItemTransfers(state,woodcraft,view,activeColliders,transferBlocked);
   const clearPlacement=()=>{placement=null;view.setPlacement(null);};
   loop.setPaused(manualPause || document.hidden);
   publishSnapshot();
   return {
     openWoodcraft(){if(blocked()||placement||workshopBusy(state)||state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))return;
-      cancelPlayerAction(state);state.selected=WOODCRAFT.id;state.route=findPath(state.player,WOODCRAFT.stand,activeColliders());
-      view.inspectScene('woodcraft');woodcraft.activate();if(!state.woodcraft.prepared)woodcraft.requestPrepare();
-      message='到木料堆旁看看；首次进入会搬入可用木料，并留一根给你。';publishSnapshot();},
+      cancelPlayerAction(state);state.selected=WOODCRAFT.id;message=approachInteraction(state,WOODCRAFT.id,activeColliders());
+      view.inspectScene('woodcraft');woodcraft.activate();publishSnapshot();},
     prepareWoodcraft(){if(blocked()||placement||workshopBusy(state)||state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))return;woodcraft.requestPrepare();publishSnapshot();},
-    beginWoodDrop(){if(blocked()||placement||workshopBusy(state)||state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))return;if(woodcraft.beginDrop()){state.route=[];view.setWoodcraftDrop(true);view.inspectScene('woodcraft');}publishSnapshot();},
+    beginWoodDrop(key?:string){if(blocked()||placement||workshopBusy(state)||state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))return;if(woodcraft.beginDrop(key)){state.route=[];view.setWoodcraftDrop(true);view.inspectScene('woodcraft');}publishSnapshot();},
     cancelWoodDrop(){woodcraft.cancelDrop();view.setWoodcraftDrop(false);publishSnapshot();},
     collectWood(id:string){if(blocked()||placement||workshopBusy(state)||state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))return;woodcraft.collect(id);publishSnapshot();},
     closeWoodcraft(){woodcraft.cancelRequest();view.setWoodcraftDrop(false);view.inspectScene(null);state.selected=null;publishSnapshot();},
+    focusWoodcraft(){if(destroyed||manualPause||contextLost)return;woodcraft.activate();view.inspectScene('woodcraft');view.render(state,0);publishSnapshot();},
+    approachTarget(id:string){if(blocked()||placement||workshopBusy(state))return;cancelPlayerAction(state);state.selected=id;message=approachInteraction(state,id,activeColliders());if(id===WOODCRAFT.id||state.woodcraft.pieces.some(p=>p.id===id))woodcraft.activate();publishSnapshot();},
+    approachUpgrade(id:string){if(blocked()||placement)return;message=approachUpgrade(state,id,activeColliders());publishSnapshot();},
+    upgrade(id:string){if(blocked()||placement)return;message=beginUpgrade(state,id);publishSnapshot();},
+    previewTransfer:itemTransfers.preview,
+    worldTransferItem:itemTransfers.worldItem,
+    transferItem(item:ItemTransferIntent,x:number,y:number,toWarehouse:boolean){
+      const result=itemTransfers.commit(item,x,y,toWarehouse);message=result.reason;view.render(state,0);publishSnapshot();return result;
+    },
     setClockSpeed(speed:ClockSpeed){if(blocked()||!CLOCK_SPEEDS.includes(speed))return;state.clock={speed};publishSnapshot();},
     offer(){if(blocked()||placement)return;message=beginWorkshop(state,'offering',activeColliders());publishSnapshot();},
     craft(id:string){if(blocked()||placement)return;message=beginWorkshop(state,'craft',activeColliders(),id);publishSnapshot();},
@@ -396,6 +416,7 @@ export async function createRuntime(
       const cancelled=cancelPlayerAction(state);if(cancelled)message=cancelled;
       woodcraft.cancelRequest();view.setWoodcraftDrop(false);if(id===null)view.inspectScene(null);
       state.selected = id;
+      if(id===WOODCRAFT.id||state.woodcraft.pieces.some(p=>p.id===id))woodcraft.activate();
       state.route = [];
       publishSnapshot();
     },
@@ -475,7 +496,9 @@ export async function createRuntime(
     setInterfaceOpen(value: boolean) {
       if(destroyed)return;
       if(value&&inspectionOpen){inspectionOpen=false;view.inspectCharacter(null);view.inspectScene(null);}
+      if(value){woodcraft.cancelRequest();view.setWoodcraftDrop(false);clearPlacement();}
       interfaceOpen=value;syncPause();
+      if(value&&woodcraft.snapshot().near)woodcraft.activate();
       if (value) void persistence.saveNow(state);
     },
     pause(value: boolean) {

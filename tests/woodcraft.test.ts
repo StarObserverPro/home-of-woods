@@ -15,6 +15,10 @@ import {Resources} from '../src/scene/resources.ts';
 const context=createSaveContext(),dt=WOODCRAFT.fixedStep;
 function stock(logs=8,branches=4){const s=createState();s.player={...WOODCRAFT.stand,facing:0,moving:false};s.inventory=inventoryTransaction(s.inventory,[{itemId:'wood',qualityId:'ordinary',wood:woodBatch({lengthMm:1800,thicknessMm:460,straightness:'straight'}),delta:logs},{itemId:'branch',qualityId:'ordinary',delta:branches}]);return s;}
 const yieldTask=()=>new Promise(r=>setTimeout(r,0));
+function mockPhysics(onDispose=()=>{}){
+  let disposed=false;
+  return {step:()=>[],stats:()=>({bodies:0,awake:0,colliders:0,steps:0,maxStepMs:0,disposed}),dispose(){if(disposed)return;disposed=true;onDispose();}};
+}
 async function rehash(raw:string,change:(s:any)=>void){const s=JSON.parse(raw);change(s);delete s.checksum;s.checksum=await saveDigest(s);return JSON.stringify(s);}
 
 test('batch transfer reserves one total piece and manual release uses the final slot',()=>{
@@ -55,4 +59,33 @@ test('loader failure never charges inventory and late results are disposed',asyn
   let resolve:any,disposed=0;const deferred=new Promise<any>(r=>resolve=r);const late=createWoodcraftSession(s,()=>{},()=>deferred);late.requestPrepare();late.dispose();resolve({dispose(){disposed++;}});await yieldTask();assert.equal(disposed,1);assert.deepEqual(s.inventory,before);
 });
 test('far travel frees physics and revisiting restores the same saved pieces',async()=>{const s=stock(3,0),session=createWoodcraftSession(s,()=>{});session.requestPrepare();for(let i=0;i<20&&!session.snapshot().ready;i++)await yieldTask();for(let i=0;i<1200;i++)session.step(dt);const poses=structuredClone(s.woodcraft);s.player.x=50;session.step(dt);assert.equal(session.stats().loaded,false);assert.deepEqual(s.woodcraft,poses);s.player={...WOODCRAFT.stand,facing:0,moving:false};session.step(dt);for(let i=0;i<20&&!session.snapshot().ready;i++)await yieldTask();session.step(dt);assert.equal(session.stats().loaded,true);assert.equal(s.woodcraft.pieces.length,2);session.dispose();});
+test('approaching an empty wood area retains activation through travel and does not automatically move stock',async()=>{
+  const s=stock(3,0),before=structuredClone(s.inventory);s.player.x=50;s.player.z=0;
+  let loads=0,disposals=0;
+  const session=createWoodcraftSession(s,()=>{},async()=>{loads++;return mockPhysics(()=>disposals++);});
+  session.activate();session.step(dt);await yieldTask();
+  assert.equal(loads,0,'distant inspection does not start loading');
+  s.player.x=WOODCRAFT.x+WOODCRAFT.activateRadius-1;s.player.z=WOODCRAFT.z;
+  session.step(dt);await yieldTask();assert.equal(session.snapshot().ready,true);assert.equal(loads,1);
+  s.player.x=50;session.step(dt);assert.equal(session.snapshot().ready,false);assert.equal(disposals,1);
+  s.player={...WOODCRAFT.stand,facing:0,moving:false};session.step(dt);await yieldTask();session.step(dt);
+  assert.equal(session.snapshot().near,true);assert.equal(session.snapshot().ready,true);assert.equal(loads,2,'an empty island still reloads after returning');
+  assert.deepEqual(s.inventory,before);assert.equal(s.woodcraft.pieces.length,0);
+  assert.equal(session.beginDrop(),true,'manual placement is available on arrival');
+  session.cancelRequest();assert.equal(session.isDropping(),false);assert.deepEqual(s.inventory,before);
+  session.dispose();assert.equal(disposals,2);
+});
+test('cancelling an approach, pending batch or uncommitted drop never moves materials',async()=>{
+  const s=stock(3,0),before=structuredClone(s.inventory);s.player.x=50;s.player.z=0;
+  let loads=0;
+  const session=createWoodcraftSession(s,()=>{},async()=>{loads++;return mockPhysics();});
+  session.activate();session.cancelRequest();s.player={...WOODCRAFT.stand,facing:0,moving:false};
+  session.step(dt);await yieldTask();assert.equal(loads,0,'cancelled approach does not activate the empty island later');
+  session.requestPrepare();session.cancelRequest();await yieldTask();session.step(dt);
+  assert.equal(session.snapshot().ready,true);assert.deepEqual(s.inventory,before);assert.equal(s.woodcraft.pieces.length,0,'late loader completion cannot resurrect the cancelled batch');
+  assert.equal(session.beginDrop(),true);session.cancelRequest();
+  assert.equal(session.drop({x:WOODCRAFT.x,y:heightAt(WOODCRAFT.x,WOODCRAFT.z),z:WOODCRAFT.z}),false);
+  assert.deepEqual(s.inventory,before);assert.equal(s.woodcraft.pieces.length,0);
+  session.dispose();
+});
 test('presentation follows solver poses and unregisters collected pieces',()=>{const s=stock(3,0);transferWood(s,'prepare');s.woodcraft.pieces.forEach(p=>p.phase='loose');const r=new Resources(),v=createWoodcraftPresentation(r);v.update(s.woodcraft);assert.equal(v.stats().visible,2);const p=s.woodcraft.pieces[0];assert.equal(v.group.getObjectByName(p.id)?.position.y,p.position.y);collectWood(s,p.id);v.update(s.woodcraft);assert.equal(v.stats().visible,1);v.dispose();r.dispose();assert.equal(v.stats().hits,0);assert.equal(r.stats().geometries,0);});
