@@ -16,6 +16,8 @@ import {ITEM_CATALOG,isStableId} from './item-catalog.ts';
 import {inventoryTransaction,inventoryTypeCount,recognizedStack,isRecord,exactKeys,stackIdentity} from './inventory.ts';
 import type {InventoryStack,InventoryDelta} from './inventory.ts';
 import {canonicalInstances} from './owned-items.ts';
+import {knowsBlueprint,consumeBlueprintUse,blueprintCopyUses} from './blueprint-copies.ts';
+import type {InventoryState} from './inventory.ts';
 import {findPath} from './navigation.ts';
 import {gatheringBusy} from './gathering.ts';
 import {ritualBusy} from './ritual.ts';
@@ -39,7 +41,7 @@ export function merchantStock(host:Pick<GameState,'seed'|'time'>){
 }
 export function beginWorkshop(host:GameState,kind:'craft'|'offering',blockers:Collider[],blueprintId:string|null=null){
   if(busy(host))return '先完成或取消当前动作。';
-  if(kind==='craft'&&(!blueprintId||!findCraftBlueprint(blueprintId)||!host.workshop.blueprints.includes(blueprintId)))return '先获得可在工作台制作的图纸。';
+  if(kind==='craft'&&(!blueprintId||!findCraftBlueprint(blueprintId)||!knowsBlueprint(host.inventory,host.workshop.blueprints,blueprintId)))return '先获得可在工作台制作的图纸。';
   if(!workshopInput(host,kind))return kind==='offering'?'需要一份蘑菇。':'需要一份未预留的木料。';
   const target=workshopTarget(kind),near=Math.hypot(host.player.x-target.x,host.player.z-target.z)<.65;
   const route=near?[]:findPath(host.player,target,blockers);
@@ -68,7 +70,7 @@ export function advanceWorkshop(host:GameState):string|null{
   if(Math.hypot(host.player.x-target.x,host.player.z-target.z)>.8){cancelWorkshop(host);return '离开了操作位置，材料未扣除。';}
   if(host.time-job.startedAt!<job.durationSeconds)return null;
   const input=workshopInput(host,job.kind);if(!input){cancelWorkshop(host);return '材料已不足，本次未扣料。';}
-  const nextInventory=inventoryTransaction(host.inventory,[{...input,delta:-1}]);
+  let nextInventory=inventoryTransaction(host.inventory,[{...input,delta:-1}]);
   const nextWorkshop={...host.workshop,job:null,blueprints:[...host.workshop.blueprints]};let result:string;
   if(job.kind==='offering'){
     if(!Number.isSafeInteger(nextWorkshop.prayerCount+1)){cancelWorkshop(host);return '供奉计数已用尽，未扣料。';}
@@ -77,10 +79,11 @@ export function advanceWorkshop(host:GameState):string|null{
     if(plan&&!nextWorkshop.blueprints.includes(plan.id)){nextWorkshop.blueprints.push(plan.id);result=`神谕带来了「${plan.name}」图纸。`;}
     else result=plan?'神谕再次提起熟悉的木作。图纸已经学会，没有新增图纸。':'树叶轻响，森林之母回应了祈愿；这次没有带来图纸。';
   }else{
-    const plan=findCraftBlueprint(job.blueprintId!);if(!plan||!nextWorkshop.blueprints.includes(plan.id)){cancelWorkshop(host);return '图纸不可用，未扣料。';}
+    const plan=findCraftBlueprint(job.blueprintId!);if(!plan||!knowsBlueprint(nextInventory,nextWorkshop.blueprints,plan.id)){cancelWorkshop(host);return '图纸不可用，未扣料。';}
     if(!Number.isSafeInteger(nextWorkshop.nextInstance+1)){cancelWorkshop(host);return '物品编号已用尽，未扣料。';}
     const profile=craftProfile(plan.id);
     if(!profile||profile.status!=='active'||!profile.geometryTemplateId){cancelWorkshop(host);return '图纸对应的制作流程尚未开放，未扣材料。';}
+    nextInventory=consumeBlueprintUse(nextInventory,nextWorkshop.blueprints,plan.id);
     const instanceId=`crafted-${host.seed}-${nextWorkshop.nextInstance}`;
     // The preset workbench currently supplies neutral quality. A later action module will submit guided fitting evidence.
     const {rarityId,geometry,crafting}=resolveCraftOutcome(plan.id,host.seed,nextWorkshop.nextInstance,{mode:'preset'});
@@ -122,7 +125,7 @@ export function tradeSupply(host:GameState,itemId:string){
   const message=`已从行商处换得「${spec.name}」，收入仓库。制作外部部件时再消耗它。`;
   host.inventory=inventory;host.workshop={...host.workshop,lastResponse:message};return message;
 }
-export function validateWorkshop(raw:unknown,time:number):WorkshopState{
+export function validateWorkshop(raw:unknown,time:number,inventory?:InventoryState):WorkshopState{
   if(!isRecord(raw))throw new Error('Invalid workshop');
   const legacy=!Object.hasOwn(raw,'upgrades');
   const legacyMount=!Object.hasOwn(raw,'mounted');
@@ -137,7 +140,7 @@ export function validateWorkshop(raw:unknown,time:number):WorkshopState{
   if(raw.job!==null){const j=raw.job;if(!isRecord(j))throw new Error('Invalid workshop job');exactKeys(j,['id','kind','blueprintId','phase','startedAt','durationSeconds',...(j.kind==='upgrade'?['targetId','pathId']:[])]);
     if(!isStableId(j.id)||!['craft','offering','upgrade'].includes(j.kind as string)||!['approaching','working'].includes(j.phase as string)||typeof j.durationSeconds!=='number'||!Number.isFinite(j.durationSeconds)||j.durationSeconds<=0||j.durationSeconds>86400)throw new Error('Invalid workshop action');
     if(j.phase==='approaching'?j.startedAt!==null:typeof j.startedAt!=='number'||!Number.isFinite(j.startedAt)||j.startedAt<0||j.startedAt>time)throw new Error('Invalid workshop timestamp');
-    if(j.kind==='offering'?j.blueprintId!==null:!isStableId(j.blueprintId)||!raw.blueprints.includes(j.blueprintId))throw new Error('Invalid workshop recipe');
+    if(j.kind==='offering'?j.blueprintId!==null:!isStableId(j.blueprintId)||!(raw.blueprints.includes(j.blueprintId)||inventory&&knowsBlueprint(inventory,raw.blueprints as string[],j.blueprintId as string)))throw new Error('Invalid workshop recipe');
     if(j.kind==='craft'&&findBlueprint(j.blueprintId as string)?.kind==='upgrade')throw new Error('Upgrade blueprint cannot craft a furniture item');
     if(j.kind==='upgrade'){
       if(!isStableId(j.targetId)||!isStableId(j.pathId)||j.phase!=='working')throw new Error('Invalid upgrade action');
@@ -149,7 +152,8 @@ export function validateWorkshop(raw:unknown,time:number):WorkshopState{
 }
 export function workshopSnapshot(host:GameState){
   const job=host.workshop.job;
-  return {blueprints:[...host.workshop.blueprints],offers:merchantStock(host),items:structuredClone(host.inventory.instances??[]),upgrades:structuredClone(host.workshop.upgrades),mounted:structuredClone(host.workshop.mounted),upgrade:upgradeSnapshot(host,host.selected),upgradeOptions:upgradeOptions(host,host.selected),
+  const copies=blueprintCopyUses(host.inventory);
+  return {blueprints:[...host.workshop.blueprints],availableBlueprints:[...new Set([...host.workshop.blueprints,...Object.keys(copies)])],copyUses:copies,offers:merchantStock(host),items:structuredClone(host.inventory.instances??[]),upgrades:structuredClone(host.workshop.upgrades),mounted:structuredClone(host.workshop.mounted),upgrade:upgradeSnapshot(host,host.selected),upgradeOptions:upgradeOptions(host,host.selected),
     inputs:{craft:!!workshopInput(host,'craft'),offering:!!workshopInput(host,'offering'),trade:!!workshopInput(host,'trade'),
       canvas:inventoryTypeCount(host.inventory,'fungus.fresh')>=2,hardware:host.inventory.stacks.some(s=>recognizedStack(s)&&!s.wood?.reserved&&ITEM_CATALOG.items.get(s.itemId)?.typeId==='wood.log')},
     job:job?{...job,progress:job.phase==='working'?Math.min(1,(host.time-job.startedAt!)/job.durationSeconds):0}:null,

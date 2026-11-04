@@ -6,6 +6,7 @@ import {UPGRADE_PROFILES,findUpgradeProfile,findUpgradePath,upgradeHostId,FIRE_T
 import {findBlueprint} from '../content/workshop.ts';
 import {ITEM_CATALOG,isStableId} from './item-catalog.ts';
 import {canonicalStacks,exactKeys,inventoryTransaction,isRecord,recognizedStack,stackIdentity,stackKey} from './inventory.ts';
+import {knowsBlueprint,consumeBlueprintUse} from './blueprint-copies.ts';
 import type {InventoryStack} from './inventory.ts';
 import {gatheringBusy} from './gathering.ts';
 import {ritualBusy} from './ritual.ts';
@@ -52,7 +53,7 @@ export function upgradeSnapshot(host:GameState,targetId:string|null){
     return {targetId,hostId,title:profile.title,level,status:installed?'installed' as const:'planned' as const,near:isNear,canStart:false,reason:profile.future,
       pathName:installed?profile.title:'后续升级',detail:profile.future,requiredBlueprint:null,materials:[],stand:profile.stand,mountSlot,mounted};
   }
-  const blueprint=findBlueprint(path.blueprintId),known=host.workshop.blueprints.includes(path.blueprintId);
+  const blueprint=findBlueprint(path.blueprintId),known=knowsBlueprint(host.inventory,host.workshop.blueprints,path.blueprintId);
   const candidate=materialCandidate(host,path);
   const missingPrerequisite=profile.requires?.find(id=>!built(host,id));
   const missing=candidate.materials.filter(m=>m.available<m.required).map(m=>`${m.name}还差 ${m.required-m.available} ${m.unit}`).join('，');
@@ -96,9 +97,10 @@ export function advanceUpgrade(host:GameState):string|null{
   if(!profile||!path||host.selected!==upgradeHostId(profile.id)||host.forestry.active||gatheringBusy(host.gathering)||ritualBusy(host)||!near(host,profile.stand))return cancel(host,'改装已取消，材料未扣除。');
   if(host.time-job.startedAt!<job.durationSeconds)return null;
   const level=host.workshop.upgrades?.[profile.id]?.level??profile.initialLevel;
-  if(level!==path.fromLevel||job.blueprintId!==path.blueprintId||!host.workshop.blueprints.includes(path.blueprintId)||profile.requires?.some(id=>!built(host,id)))return cancel(host,'改装阶段、前置结构或图纸已变化，材料未扣除。');
+  if(level!==path.fromLevel||job.blueprintId!==path.blueprintId||!knowsBlueprint(host.inventory,host.workshop.blueprints,path.blueprintId)||profile.requires?.some(id=>!built(host,id)))return cancel(host,'改装阶段、前置结构或图纸已变化，材料未扣除。');
   const candidate=materialCandidate(host,path);if(!candidate.enough)return cancel(host,'改装材料不足，本次未扣除材料。');
-  const inventory=candidate.consumed.length?inventoryTransaction(host.inventory,candidate.consumed.map(s=>({...stackIdentity(s),delta:-s.quantity}))):host.inventory;
+  const debited=candidate.consumed.length?inventoryTransaction(host.inventory,candidate.consumed.map(s=>({...stackIdentity(s),delta:-s.quantity}))):host.inventory;
+  const inventory=consumeBlueprintUse(debited,host.workshop.blueprints,path.blueprintId);
   const previous=host.workshop.upgrades?.[profile.id];
   const invested=new Map<string,InventoryStack>();
   for(const stack of [...(previous?.investments??[]),...candidate.consumed]){
