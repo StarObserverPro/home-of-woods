@@ -6,7 +6,8 @@
 export type OwnedItemDefinition = {
   definitionId: string;
   name: string;
-  category: 'furniture' | 'residential-accessory' | 'tool' | 'vessel' | 'container';
+  /** Content category; adding future object families does not change the instance schema. */
+  category: string;
   status: 'active' | 'planned' | 'retired';
   /** Not a recipe itself. The blueprint/recipe system owns production. */
   blueprintIds: readonly string[];
