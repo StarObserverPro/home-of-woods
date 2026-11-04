@@ -1,8 +1,9 @@
 import {transportLocation,carryMethod} from './transport-location.ts';
+import {validateAttachedItems} from './item-attachment-contract.ts';
 import { assertItemJson, withoutFields } from './item-data.ts';
 import type { ExtensibleRecord } from './item-data.ts';
 import { canonicalJson } from './save-digest.ts';
-export const INVENTORY_SCHEMA_VERSION = 5 as const;
+export const INVENTORY_SCHEMA_VERSION = 6 as const;
 import {canonicalInstances} from './owned-items.ts';
 import type {OwnedItem} from './owned-items.ts';
 import { ITEM_CATALOG, isStableId } from './item-catalog.ts';
@@ -69,7 +70,7 @@ export function validateInventory(state: InventoryState) {
   if (!isRecord(state)) throw new Error('Invalid inventory state');
   assertItemJson(state);
   carryMethod(state.carryMode);
-  if(Object.hasOwn(state,'instances'))canonicalInstances(state.instances);
+  if(Object.hasOwn(state,'instances'))validateAttachedItems(canonicalInstances(state.instances));
   if (state.schemaVersion !== INVENTORY_SCHEMA_VERSION || !Number.isSafeInteger(state.revision) || state.revision < 0) throw new Error('Unsupported inventory state');
   return canonicalStacks(state.stacks);
 }

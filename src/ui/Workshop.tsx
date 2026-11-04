@@ -46,21 +46,22 @@ export function WorkshopControls({selected,view,access,message,disabled,onOffer,
   </section>;
 }
 export function OwnedFurniture({view,player,onPlace,onPack,onApproach,onDragStart}:{view:WorkshopSnapshot;player:{x:number;z:number};onPlace:(id:string)=>void;onPack:(id:string)=>void;onApproach:(id:string)=>void;onDragStart:(event:PointerEvent<HTMLElement>,item:ItemTransferIntent)=>void}){
+  const furniture=view.items.filter(item=>item.definitionId===SEAT_DEFINITION);
   return <section className="owned-furniture" aria-label="木作家具">
-    <h3>木作家具 <small>{view.items.filter(i=>i.location.kind==='inventory').length} 件在库 · {view.items.filter(i=>i.location.kind==='world').length} 件已摆放</small></h3>
+    <h3>木作家具 <small>{furniture.filter(i=>i.location.kind==='inventory').length} 件在库 · {furniture.filter(i=>i.location.kind==='world').length} 件已摆放</small></h3>
     <p>每件木作都有自己的等级与词条，移动和收回不会改变它们。等级带来不同的颜色与光泽，暂不增加制作收益。</p>
-    <div className="owned-grid">{view.items.map(item=>{
-      const rarity=itemRarity(item),traits=itemProperties(item).traits,near=item.location.kind==='inventory'||Math.hypot(player.x-item.location.x,player.z-item.location.z)<=ITEM_REACH;
+    <div className="owned-grid">{furniture.map(item=>{
+      const rarity=itemRarity(item),traits=itemProperties(item).traits,near=item.location.kind==='inventory'||item.location.kind==='world'&&Math.hypot(player.x-item.location.x,player.z-item.location.z)<=ITEM_REACH;
       return <article className="owned-card" key={item.instanceId} data-rarity={rarity.id} style={rarityStyle(item)}>
         <div className="rarity-icon-row"><button className={`stump-icon${near?' is-draggable':''}`} aria-label={`拖动${findBlueprint(item.blueprintId)?.name??'家具'}`} onPointerDown={event=>{if(near)onDragStart(event,{kind:'furniture',id:item.instanceId,name:findBlueprint(item.blueprintId)?.name??'家具'});}}>▰</button><span className="rarity-label">{rarity.name}</span></div>
         <strong className="rarity-name">{findBlueprint(item.blueprintId)?.name??item.definitionId}</strong>
         <p>{traits.length?traits.map(t=>`${traitLabel(t.id)} ${t.value}`).join(' · '):'暂无额外词条'}</p>
-        <small>{item.location.kind==='inventory'?'在仓库':`已摆放 (${item.location.x.toFixed(1)}, ${item.location.z.toFixed(1)})`} · 编号 {item.instanceId.split('-').at(-1)}</small>
-        <div>{!near?<button className="context-button" disabled={!!view.job} onClick={()=>onApproach(item.instanceId)}>走近这件家具</button>:<><button className="context-button" disabled={!!view.job||item.definitionId!==SEAT_DEFINITION} onClick={()=>onPlace(item.instanceId)}>{item.location.kind==='inventory'?'摆放到地上':'移动位置'}</button>
+        <small>{item.location.kind==='inventory'?'在仓库':item.location.kind==='world'?`已摆放 (${item.location.x.toFixed(1)}, ${item.location.z.toFixed(1)})`:`已安装在 ${item.location.hostId}`} · 编号 {item.instanceId.split('-').at(-1)}</small>
+        <div>{item.location.kind==='mounted'?<small>此处不能对宿主附件进行家具摆放操作。</small>:!near?<button className="context-button" disabled={!!view.job} onClick={()=>onApproach(item.instanceId)}>走近这件家具</button>:<><button className="context-button" disabled={!!view.job||item.definitionId!==SEAT_DEFINITION} onClick={()=>onPlace(item.instanceId)}>{item.location.kind==='inventory'?'摆放到地上':'移动位置'}</button>
           {item.location.kind==='world'&&<button className="context-button" disabled={!!view.job||item.definitionId!==SEAT_DEFINITION} onClick={()=>onPack(item.instanceId)}>收回</button>}</>}</div>
       </article>;
     })}</div>
-    {!view.items.length&&<p>还没有木作。拿到图纸后，去帐篷前的工作台做第一件。</p>}
+    {!furniture.length&&<p>还没有木作。拿到图纸后，去帐篷前的工作台做第一件。</p>}
   </section>;
 }
 export function PlacementControls({draft,onRotate,onConfirm,onCancel}:{draft:PlacementDraft|null;onRotate:()=>void;onConfirm:()=>void;onCancel:()=>void}){
