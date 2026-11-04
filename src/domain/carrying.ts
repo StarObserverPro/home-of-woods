@@ -1,4 +1,6 @@
 import {CARRY_ITEMS,CARRY_PROFILES,CARRY_RULES} from '../content/carrying.ts';
+import {heavyLaborAllowed} from './food.ts';
+import type {FoodState} from './food.ts';
 import type {CarryMethod,CarryProfile} from '../content/carrying.ts';
 import {CAMP_PROPS} from '../content/scene-props.ts';
 import type {Point} from '../content/world.ts';
@@ -54,7 +56,7 @@ export const groundId=(stack:StackIdentity)=>`haul:${stackKey(stack)}`;
 export const groundStacks=(inventory:InventoryState)=>inventory.stacks.filter(s=>transportLocation(s)?.kind==='ground');
 export function groundItem(inventory:InventoryState,id:string|null){return id?groundStacks(inventory).find(s=>groundId(s)===id):undefined;}
 export const storageNear=(point:Point)=>Math.hypot(point.x-CAMP_PROPS.logs.x,point.z-CAMP_PROPS.logs.z)<=CARRY_RULES.storageReach;
-export type CarryHost={inventory:InventoryState;player:Point;selected:string|null;route:Point[]};
+export type CarryHost={inventory:InventoryState;player:Point;selected:string|null;route:Point[];food?:FoodState;time?:number};
 export type CarryIntent={kind:'take'|'withdraw'|'drop';key:string;quantity?:number}|{kind:'store'}|{kind:'method';method:CarryMethod};
 /** No mutations until every delta, capacity and distance check has succeeded. */
 export function changeCarrying(host:CarryHost,intent:CarryIntent,blockers:Collider[]):string{
@@ -76,6 +78,7 @@ export function changeCarrying(host:CarryHost,intent:CarryIntent,blockers:Collid
   if(!item||!recognizedStack(item)||item.wood?.reserved)return '这份材料已经变化或暂不能搬动。';
   const quantity=intent.quantity??1;
   if(!Number.isSafeInteger(quantity)||quantity<=0||quantity>item.quantity)return '搬运数量已变化，请重新选择。';
+  if(intent.kind!=='drop'&&item.itemId==='wood'&&host.food&&host.time!==undefined&&!heavyLaborAllowed(host.food,host.time))return '昨天没有吃饱，今天只能搬轻料，先留原木在这里。';
   let location:TransportLocation;
   if(intent.kind==='drop'){
     if(!isCarried(item))return '只能放下随身材料。';
@@ -115,7 +118,7 @@ export function carryingSnapshot(host:CarryHost){
   const ground=groundStacks(host.inventory).map(s=>{
     const p=transportLocation(s)! as {kind:'ground';x:number;z:number};
     const distance=Math.hypot(host.player.x-p.x,host.player.z-p.z);
-    return {...describe(s),id:groundId(s),distance,near:distance<=CARRY_RULES.pickupReach,takeReason:carryAdditionReason(host.inventory,s,1)};
+    return {...describe(s),id:groundId(s),distance,near:distance<=CARRY_RULES.pickupReach,takeReason:s.itemId==='wood'&&host.food&&host.time!==undefined&&!heavyLaborAllowed(host.food,host.time)?'昨天没有吃饱，今天只适合搬轻料。':carryAdditionReason(host.inventory,s,1)};
   }).sort((a,b)=>a.distance-b.distance);
   const visual=items.some(s=>s.itemId==='wood')?'shoulder-log':items.some(s=>s.itemId==='branch')?'wood-bundle':items.length?'backpack':null;
   return {...load,method:carryMethod(host.inventory.carryMode),items:items.map(describe),ground,storageNear:storageNear(host.player),visual};
