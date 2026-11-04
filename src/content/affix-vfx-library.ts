@@ -3,7 +3,7 @@
  * Normal-view legibility comes before tiny decorative details.
  * Original item rarity VFX remains completely independent.
  */
-import { AFFIX_SWATCH_BY_ID } from './affix-vfx-palette.ts';
+import { AFFIX_COLOR_DUOS, AFFIX_SWATCH_BY_ID } from './affix-vfx-palette.ts';
 
 export const AFFIX_PARTICLE_SHAPES = [
   {id:'soft-disc',name:'柔光圆点',complexity:'simple',geometry:'billboard-disc'},
@@ -117,6 +117,11 @@ export function validateLowTierAffixLibrary():void {
       affix.colorIds.length<1||affix.colorIds.length>(affix.complexity==='common'?1:2)||
       affix.colorIds.some(id=>!AFFIX_SWATCH_BY_ID.has(id)))
       throw new Error('Invalid low-tier affix candidate: '+affix.id);
+    if(new Set(affix.colorIds).size!==affix.colorIds.length)
+      throw new Error('Duplicate affix colors: '+affix.id);
+    if(affix.colorIds.length===2&&!AFFIX_COLOR_DUOS.some(duo =>
+      duo.colors.every(colorId=>affix.colorIds.includes(colorId))))
+      throw new Error('Unreviewed affix color combination: '+affix.id);
     ids.add(affix.id);
     if(affix.visual.kind==='particles'){
       const shape=shapes.get(affix.visual.shapeId),pattern=patterns.get(affix.visual.patternId);
