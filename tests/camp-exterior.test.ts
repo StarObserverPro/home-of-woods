@@ -58,7 +58,7 @@ test('three permanent hosts expose independent exterior parts and unique fitting
   assert.equal(upgradeOptions(state,CAMP_PROPS.fire.id).length,6);
   assert.equal(EXTERIOR_PROFILES.length,13);
   assert.equal(new Set(EXTERIOR_PROFILES.map(p=>p.id)).size,13);
-  assert.equal(new Set(CAMP_EXTERIOR_BLUEPRINTS.map(p=>p.id)).size,13);
+  assert.equal(new Set(CAMP_EXTERIOR_BLUEPRINTS.map(p=>p.id)).size,14);
   assert.equal(EXTERIOR_PROFILES.filter(p=>p.mountSlot===FIRE_TOP_SLOT).length,3);
   for(const profile of EXTERIOR_PROFILES){
     assert.ok(['tent','cabin',CAMP_PROPS.fire.id].includes(profile.hostId!));
