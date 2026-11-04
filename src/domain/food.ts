@@ -54,6 +54,7 @@ export function tradeFoodSack(host:GameState):string{
 export function startDryMushrooms(host:GameState):string{
   if(host.selected!==FOOD_DRYER_ID||!near(host,CAMP_PROPS.dryer.x,CAMP_PROPS.dryer.z,3.2))return '先走近晾晒架。';
   if(busy(host))return '先完成当前动作。';
+  if((host.workshop.upgrades[FOOD_DRYER_ID]?.level??0)<1)return '先使用基础图纸搭好蘑菇晾晒架。';
   if(host.food.drying)return '晾晒架上已有蘑菇。';
   const debit=take(host.inventory,MUSHROOM_DRYING.inputs[0].itemId,MUSHROOM_DRYING.inputs[0].quantity);if(!debit)return '晾晒需要 2 份鲜蘑菇。';
   const inventory=inventoryTransaction(host.inventory,debit);
