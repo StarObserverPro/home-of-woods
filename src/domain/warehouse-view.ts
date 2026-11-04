@@ -1,3 +1,4 @@
+import {isStored} from './transport-location.ts';
 import type { GatheringRegistry } from './gathering-registry.ts';
 import type { InventoryState, InventoryStack } from './inventory.ts';
 import { recognizedStack, stackKey } from './inventory.ts';
@@ -10,8 +11,9 @@ export type WarehouseItemView = {
 };
 export type WarehouseView = { categories: { id: string; name: string }[]; items: WarehouseItemView[]; total: number; occupiedKinds: number };
 export function warehouseSnapshot(state: { inventory: InventoryState }, registry: GatheringRegistry): WarehouseView {
-  const owned = new Set(state.inventory.stacks.map(stack => stack.itemId));
-  const stacks: InventoryStack[] = [...state.inventory.stacks, ...[...registry.items.values()]
+  const stored=state.inventory.stacks.filter(isStored);
+  const owned = new Set(stored.map(stack => stack.itemId));
+  const stacks: InventoryStack[] = [...stored, ...[...registry.items.values()]
     .filter(item => item.status === 'active' && !owned.has(item.itemId))
     .map(item => ({ itemId: item.itemId, qualityId: item.defaultQualityId, quantity: 0 }))];
   const items: WarehouseItemView[] = stacks.map(stack => {

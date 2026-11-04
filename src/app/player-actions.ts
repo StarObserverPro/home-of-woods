@@ -1,3 +1,4 @@
+import {carryAdditionReason} from '../domain/carrying.ts';
 import {cancelWorkshop,workshopBusy} from '../domain/workshop.ts';
 import {cancelRitual,ritualBusy} from '../domain/ritual.ts';
 import type { GameState } from '../domain/state.ts';
@@ -24,7 +25,11 @@ export function startPlayerGather(state: GameState, sourceId: string, registry: 
   return beginGather(state, sourceId, registry, blockers);
 }
 export function advancePlayerGather(state: GameState, registry: GatheringRegistry, blockers: Collider[]) {
+  const previous=state.gathering.action;
   const candidate = advanceGather(state, registry, blockers);
+  if(previous&&previous.phase!=='cancelled'&&state.gathering.action?.phase==='cancelled'){
+    const reason=carryAdditionReason(state.inventory,previous.reward,previous.reward.quantity);if(reason)return reason;
+  }
   return candidate && commitGather(state, candidate, registry, blockers) ? candidate.message : null;
 }
 

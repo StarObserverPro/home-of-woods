@@ -12,25 +12,26 @@ function ItemSymbol({ symbol }: { symbol: 'branch' | 'mushroom' | 'wood' | 'bund
   </svg>;
 }
 
-export function Warehouse({open,view,woodcraft,onClose,onApproach,onFocus,onThrow,onCollect,onDragStart,dragging,notice,furniture,blueprints}:{
+export function Warehouse({open,view,woodcraft,onClose,onApproach,onFocus,onThrow,onCollect,onDragStart,dragging,notice,furniture,blueprints,carrying,carrySummary}:{
   open:boolean;view:WarehouseView;woodcraft:WoodcraftSnapshot;onClose:()=>void;onApproach:()=>void;onFocus:()=>void;
   onThrow:(key:string)=>void;onCollect:(id:string)=>void;onDragStart:(event:PointerEvent<HTMLElement>,item:ItemTransferIntent)=>void;
-  dragging:boolean;notice:string;furniture:ReactNode;blueprints:ReactNode;
+  dragging:boolean;notice:string;furniture:ReactNode;blueprints:ReactNode;carrying:ReactNode;carrySummary:ReactNode;
 }) {
   const panel = useRef<HTMLElement>(null);
   const closeRef=useRef(onClose);closeRef.current=onClose;
-  const [category,setCategory] = useState('all');
+  const [category,setCategory] = useState('carrying');
   const [selectedKey,setSelectedKey] = useState('');
   useEffect(()=>{if(!open)return;const previous=document.activeElement as HTMLElement|null;panel.current?.focus();return()=>previous?.focus?.({preventScroll:true});},[open]);
   useEffect(()=>{if(!open)return;const key=(event:KeyboardEvent)=>{if(event.key==='Escape'&&!event.defaultPrevented){event.preventDefault();closeRef.current();}};window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);},[open]);
   const items = view.items.filter(i => category === 'all' || i.category === category);
   const selected = items.find(i=>i.key===selectedKey) ?? items[0];
   if(!open)return null;
-  const materialTab=!['furniture','blueprints'].includes(category);
+  const materialTab=!['carrying','furniture','blueprints'].includes(category);
   return <aside ref={panel} tabIndex={-1} role="dialog" aria-modal="false" className={`warehouse-dialog warehouse-dock${dragging?' is-dragging':''}`} aria-labelledby="warehouse-title" data-transfer-target="warehouse">
     <header className="warehouse-heading"><div><span className="eyebrow">林间所得，慢慢积攒</span><h2 id="warehouse-title">仓库</h2><p>{view.occupiedKinds} 类物品 · 合计 {view.total} 份</p></div><button aria-label="关闭仓库" onClick={onClose}>×</button></header>
+    <div className="warehouse-carry-summary">{carrySummary}</div>
     <nav className="warehouse-categories" aria-label="仓库分类">
-      {[{id:'all',name:'全部材料'},...view.categories,{id:'furniture',name:'家具'},{id:'blueprints',name:'图纸'},...(view.items.some(i=>!i.recognized)?[{id:'unknown',name:'待识别'}]:[])].map(({id,name})=><button key={id} aria-pressed={category===id} onClick={()=>setCategory(id)}>{name}</button>)}
+      {[{id:'carrying',name:'随身'},{id:'all',name:'营地材料'},...view.categories,{id:'furniture',name:'家具'},{id:'blueprints',name:'图纸'},...(view.items.some(i=>!i.recognized)?[{id:'unknown',name:'待识别'}]:[])].map(({id,name})=><button key={id} aria-pressed={category===id} onClick={()=>setCategory(id)}>{name}</button>)}
     </nav>
     {materialTab&&<div className="warehouse-context"><span>木料堆 {woodcraft.count} / {WOODCRAFT.maxPieces}</span><button className="context-button" onClick={woodcraft.near?onFocus:onApproach}>{woodcraft.near?'看向木料堆':'走近木料堆'}</button></div>}
     <div className="warehouse-scroll">
@@ -54,6 +55,7 @@ export function Warehouse({open,view,woodcraft,onClose,onApproach,onFocus,onThro
       <h3>地上的木料 <small>{woodcraft.count} / {WOODCRAFT.maxPieces}</small></h3>
       {woodcraft.near?<><p>地上的木料可以拖回这个面板，也可以点“收回”。</p><div className="nearby-wood-grid">{woodcraft.items.map(item=><div className="nearby-wood-card" key={item.id}><button className="is-draggable" onPointerDown={event=>onDragStart(event,{kind:'loose-wood',id:item.id,name:item.name})} aria-label={`拖回${item.name} ${item.id}`}><ItemSymbol symbol="wood"/><span>{item.name}</span><small>#{item.id.split('-').at(-1)}</small></button><button className="context-button" onClick={()=>onCollect(item.id)}>收回</button></div>)}</div>{!woodcraft.items.length&&<p>这里还没有木料。从仓库拖一根进去试试。</p>}</>:<p>远处可以查看库存，走近后取放木料。</p>}
     </section></>}
+    {category==='carrying'&&carrying}
     {category==='furniture'&&furniture}
     {category==='blueprints'&&blueprints}
     </div>

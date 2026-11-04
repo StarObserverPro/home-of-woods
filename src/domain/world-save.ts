@@ -1,3 +1,4 @@
+import {groundItem} from './carrying.ts';
 import {validateWoodcraft} from './woodcraft.ts';
 import {validateWorkshop,workshopTargetId} from './workshop.ts';
 import {CLOCK_SPEEDS} from './local-clock.ts';
@@ -52,7 +53,7 @@ export function validateWorldState(raw: unknown, context: SaveContext, mode: 'ru
     }
   }
   requireValue((inventory.instances??[]).every(i=>i.createdAt<=time),'inventory.instances','物品生成时间晚于世界时间');
-  requireValue(world.selected===null || typeof world.selected==='string' && (context.selectable.has(world.selected)||woodcraft.pieces.some(p=>p.id===world.selected)||(inventory.instances??[]).some(i=>i.instanceId===world.selected&&i.location.kind==='world')),'world.selected','未知目标引用');
+  requireValue(world.selected===null || typeof world.selected==='string' && (context.selectable.has(world.selected)||!!groundItem(inventory,world.selected)||woodcraft.pieces.some(p=>p.id===world.selected)||(inventory.instances??[]).some(i=>i.instanceId===world.selected&&i.location.kind==='world')),'world.selected','未知目标引用');
   const forestry = validateSavedForestry(world.forestry, context, time);
   if (forestry.active?.phase === 'chopping') requireValue(world.selected === forestry.active.treeId, 'world.selected', '采伐目标冲突');
   const gathering = validateSavedGathering(world.gathering, context, forestry, time, world.selected as string | null);
@@ -85,13 +86,13 @@ export async function prepareWorldSave(raw: string | null, context: SaveContext)
     requireValue(typeof raw === 'string', 'save', '存储记录不是文本');
     const saved = object(JSON.parse(raw), 'save');
     fields(saved, ['schemaVersion', 'layoutVersion', 'rulesetVersion', 'sequence', 'savedAt', 'world', 'checksum'], 'save');
-    requireValue(saved.schemaVersion === 1 && saved.layoutVersion === WORLD_LAYOUT_VERSION && saved.rulesetVersion === WORLD_RULESET_VERSION, 'save', '未来格式或不兼容的世界版本');
+    requireValue(saved.schemaVersion === 1 && saved.layoutVersion === WORLD_LAYOUT_VERSION && [5,WORLD_RULESET_VERSION].includes(saved.rulesetVersion as number), 'save', '未来格式或不兼容的世界版本');
     const sequence = integer(saved.sequence, 'save.sequence', 1), savedAt = finite(saved.savedAt, 'save.savedAt');
     requireValue(typeof saved.checksum === 'string' && /^[a-f0-9]{64}$/.test(saved.checksum), 'save.checksum', '校验记录无效');
     const { checksum, ...core } = saved;
     requireValue(await saveDigest(core) === checksum, 'save.checksum', '数据完整性校验失败');
     const loaded = validateWorldState(saved.world, context, 'persisted');
-    return { decision: 'restored', value: loaded.state, meta: { sequence, savedAt }, diagnostics: loaded.diagnostics };
+    return { decision: saved.rulesetVersion===WORLD_RULESET_VERSION?'restored':'migrated', value: loaded.state, meta: { sequence, savedAt }, diagnostics: loaded.diagnostics };
   } catch (error) {
     return { decision: 'protected', raw, diagnostics: [error instanceof Error ? error.message : '无法校验存档'] };
   }

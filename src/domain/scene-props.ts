@@ -1,10 +1,11 @@
+import {isStored} from './transport-location.ts';
 import type {InventoryState} from './inventory.ts';
 import {inventoryCount} from './inventory.ts';
 import {VISUAL_DAY_SECONDS,CAMP_PROPS} from '../content/scene-props.ts';
 import type {SceneAppearance} from '../content/scene-props.ts';
 import {ALTAR_LAYOUT,oracleFor} from '../content/altar.ts';
 export function logPresentation(inventory:InventoryState){
-  const quantity=inventoryCount(inventory,'wood');
+  const quantity=inventoryCount({...inventory,stacks:inventory.stacks.filter(isStored)},'wood');
   return {quantity,visible:Math.min(18,quantity),overflow:Math.max(0,quantity-18)};
 }
 export function daylightAt(hour:number){

@@ -4,7 +4,9 @@
 
 ## 核心身份严格，附加属性开放
 
-库存采用当前唯一核心格式 `schemaVersion: 4`。批次核心是 `itemId`、`qualityId`、`quantity`，实例核心是 `instanceId`、`definitionId`、`blueprintId`、`createdAt`、`location`。身份、整数数量、位置与所有权不变量继续校验；未知物品 ID 仍可保存，不强制套用当前目录定义。
+库存采用当前核心格式 `schemaVersion: 5`。材料批次新增核心位置 `transport`（缺省为营地；另有随身和地面位置），根记录 `carryMode` 保存携带方式。上一版库存 4 / 世界规则 5 只作一次明确迁移：原库存仍在营地，原数量和扩展属性不变；与新保留字段重名的旧数据保护原档。更早的废弃试验格式不恢复。详见 [材料负重与搬运](CARRYING.md)。
+
+批次核心是 `itemId`、`qualityId`、`quantity`，实例核心是 `instanceId`、`definitionId`、`blueprintId`、`createdAt`、`location`。身份、整数数量、位置与所有权不变量继续校验；未知物品 ID 仍可保存，不强制套用当前目录定义。
 
 物品记录、批次木料规格和库存根记录允许额外的 JSON 字段。读取时不再用完整键名清单拒绝新增字段，也不按旧清单重建一个缩水对象。JSON 校验只排除不可序列化值、循环、访问器、非有限数字和过深/过大的数据；不把未知属性当作格式错误。`quantity`、`delta`、`revision` 等操作字段仍有明确保留用途。
 

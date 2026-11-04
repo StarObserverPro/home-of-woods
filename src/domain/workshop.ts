@@ -1,3 +1,4 @@
+import {isAvailableMaterial} from './transport-location.ts';
 import {craftedRarity} from './item-creation.ts';
 import {rarityDefinition} from '../content/rarities.ts';
 import type {GameState} from './state.ts';
@@ -26,7 +27,7 @@ export const workshopTarget=(kind:WorkshopJob['kind'],targetId?:string)=>kind===
 export const workshopTargetId=(kind:WorkshopJob['kind'],targetId?:string)=>kind==='upgrade'?upgradeHostId(targetId??''):kind==='craft'?WORKBENCH.id:CAMP_PROPS.altar.id;
 const busy=(host:GameState)=>!!host.forestry.active||gatheringBusy(host.gathering)||ritualBusy(host)||workshopBusy(host);
 export function workshopInput(host:GameState,kind:'offering'|'craft'|'trade'):InventoryStack|undefined{
-  return host.inventory.stacks.find(s=>s.quantity>0&&recognizedStack(s)&&!s.wood?.reserved&&
+  return host.inventory.stacks.find(s=>isAvailableMaterial(s)&&s.quantity>0&&recognizedStack(s)&&!s.wood?.reserved&&
     (kind==='offering'?ITEM_CATALOG.items.get(s.itemId)?.typeId==='fungus.fresh':['wood.log','wood.branch','wood.small-piece','wood.lumber'].includes(ITEM_CATALOG.items.get(s.itemId)?.typeId??'')));
 }
 export function merchantStock(host:Pick<GameState,'seed'|'time'>){

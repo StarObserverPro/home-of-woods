@@ -1,3 +1,4 @@
+import {isStored} from './transport-location.ts';
 import { WOODCRAFT, insideWoodcraft, zeroVector } from '../content/woodcraft.ts';
 import type { Vec3, Quat } from '../content/woodcraft.ts';
 import { heightAt } from '../world/surface.ts';
@@ -14,7 +15,7 @@ export type WoodcraftOwner = { inventory: InventoryState; woodcraft: WoodcraftSt
 export const createWoodcraft = (): WoodcraftState => ({ nextId: 1, prepared: false, pieces: [] });
 export const woodLabel = (s: InventoryStack) => ITEM_CATALOG.items.get(s.itemId)?.name ?? s.itemId;
 export function availableWood(inventory: InventoryState) {
-  return inventory.stacks.filter(s => ['wood', 'branch'].includes(s.itemId) && !s.wood?.reserved && recognizedStack(s) && s.quantity > 0)
+  return inventory.stacks.filter(s => isStored(s) && ['wood', 'branch'].includes(s.itemId) && !s.wood?.reserved && recognizedStack(s) && s.quantity > 0)
     .sort((a,b) => Number(b.itemId === 'wood') - Number(a.itemId === 'wood') || stackKey(a).localeCompare(stackKey(b)));
 }
 export const availableWoodCount = (inventory: InventoryState) => availableWood(inventory).reduce((n,s) => n+s.quantity,0);
@@ -82,7 +83,7 @@ export function validateWoodcraft(raw:unknown): WoodcraftState {
     if(!Number.isSafeInteger(n)||n>=(raw.nextId as number)||ids.has(p.id as string)) throw new Error('Invalid loose wood identity');
     ids.add(p.id as string);
     const stacks=canonicalStacks([p.source]);
-    if(stacks.length!==1||stacks[0].quantity!==1||!['wood','branch'].includes(stacks[0].itemId)||stacks[0].wood?.reserved) throw new Error('Invalid loose wood source');
+    if(stacks.length!==1||stacks[0].quantity!==1||!isStored(stacks[0])||!['wood','branch'].includes(stacks[0].itemId)||stacks[0].wood?.reserved) throw new Error('Invalid loose wood source');
     const pos=vector(p.position), q=vector(p.rotation,true), v=vector(p.linear), a=vector(p.angular);
     const ground=WOODCRAFT.ground;
     if(pos.x<ground.minX||pos.x>ground.maxX||pos.z<ground.minZ||pos.z>ground.maxZ||pos.y<heightAt(pos.x,pos.z)-2||pos.y>heightAt(WOODCRAFT.x,WOODCRAFT.z)+14 ||

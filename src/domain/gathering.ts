@@ -1,3 +1,4 @@
+import {awardCarried,carryAdditionReason} from './carrying.ts';
 import { BRANCH_HARVEST_SPEC } from '../content/wood-uses.ts';
 import type { Point } from '../content/world.ts';
 import type { GatherMotionTag, RegenerationConfig } from '../content/gatherables.ts';
@@ -7,7 +8,7 @@ import type { Collider } from '../world/layout.ts';
 import { heightAt } from '../world/surface.ts';
 import { canStand, findPath } from './navigation.ts';
 import type { ForestryState } from './forestry.ts';
-import { inventoryTransaction, woodBatch } from './inventory.ts';
+import { woodBatch } from './inventory.ts';
 import type { InventoryState, WoodBatch } from './inventory.ts';
 import type { GatheringRegistry } from './gathering-registry.ts';
 
@@ -95,6 +96,8 @@ export function beginGather(host: GatheringHost, sourceId: string, registry: Gat
   const path = interactionRoute(host, source, registry, blockers);
   if (!path.reachable) return { ok: false, message: '暂时没有可到达的采集位置。' };
   const d = registry.definitions.get(source.definitionId)!;
+  const carryReason=carryAdditionReason(host.inventory,{itemId:d.itemId,qualityId:d.qualityId},d.yieldPerUnit);
+  if(!path.route.length&&carryReason)return {ok:false,message:carryReason};
   host.gathering.action = {
     actionId: `gather-${host.gathering.nextAction++}`, actorId: 'player', sourceId,
     motionTag: d.motionTag, targetAnchor: { ...source.targetAnchor }, phase: 'approaching', progress: 0,
@@ -122,10 +125,11 @@ export function gatherCandidate(host: GatheringHost, registry: GatheringRegistry
   if (hostResourceReason(host, s)) return null;
   const d = registry.definitions.get(s.definitionId)!;
   if (host.time < a.startedAt + a.durationSeconds || Math.hypot(host.player.x - s.x, host.player.z - s.z) > d.range || !canInteract(host.player, s, blockers)) return null;
+  if(carryAdditionReason(host.inventory,a.reward,a.reward.quantity))return null;
   const remaining = life.remaining - 1;
   return { actionId: a.actionId, sourceId: s.sourceId, sourceVersion: life.version, inventoryRevision: host.inventory.revision,
     source: { ...life, remaining, version: life.version + 1, depletedAt: remaining === 0 ? host.time : life.depletedAt },
-    inventory: inventoryTransaction(host.inventory, [{...a.reward, delta:a.reward.quantity}],registry.catalog),
+    inventory: awardCarried(host.inventory,a.reward,a.reward.quantity),
     action: { ...a, phase: 'completed', progress: 1 }, message: `收获 ${a.reward.quantity} 份${registry.items.get(a.reward.itemId)!.name}。` };
 }
 /** App calls this synchronously; stale candidates and replays cannot write either half. */
@@ -148,9 +152,11 @@ export function advanceGather(host: GatheringHost, registry: GatheringRegistry, 
     if (host.route.length) return null;
     const d = registry.definitions.get(source.definitionId)!;
     if (Math.hypot(host.player.x - source.x, host.player.z - source.z) > d.range || !canInteract(host.player, source, blockers)) { cancelGather(host); return null; }
+    if(carryAdditionReason(host.inventory,a.reward,a.reward.quantity)){cancelGather(host);return null;}
     a.phase = 'performing'; a.startedAt = host.time; host.player.moving = false;
     host.player.facing = Math.atan2(source.x - host.player.x, source.z - host.player.z);
   }
+  if(carryAdditionReason(host.inventory,a.reward,a.reward.quantity)){cancelGather(host);return null;}
   const duration = a.durationSeconds;
   a.progress = duration === 0 ? 1 : Math.min(1, Math.max(0, (host.time - a.startedAt!) / duration));
   return gatherCandidate(host, registry, blockers);
