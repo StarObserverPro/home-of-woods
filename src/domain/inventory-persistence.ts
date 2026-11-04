@@ -20,6 +20,8 @@ export function prepareInventoryData(raw: unknown): InventoryLoadResult {
     carryMethod(raw.carryMode);
     const stacks = canonicalStacks(raw.stacks);
     const instances = Object.hasOwn(raw, 'instances') ? canonicalInstances(raw.instances) : undefined;
+    if (raw.schemaVersion !== INVENTORY_SCHEMA_VERSION && instances?.some(item => item.location.kind === 'mounted'))
+      throw new Error('Mounted ownership is not valid under a legacy inventory version');
     if (instances) validateAttachedItems(instances);
     const diagnostics = [...stacks, ...(instances ?? [])].flatMap((item, i) =>
       itemPropertyDiagnostics(item).map(message => `inventory[${i}].${message}`));
