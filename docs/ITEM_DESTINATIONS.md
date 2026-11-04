@@ -18,7 +18,7 @@
 | 独立成品定义 | 名称、用途、可制作图纸引用、是否允许挂接、表现资源引用 | `content/owned-item-definitions.ts` → `ITEM_CATALOG.ownedItems` |
 | 宿主槽位 | 宿主设施/独立宿主物品、可用槽种类、锚点 ID、事件上下文及依赖 | `content/item-attachment-slots.ts` |
 | 道具实例 | 身份、图纸来源、等级、词条、可选几何参数、当前归属 | `inventory.instances[]` |
-| 安装关系 | **只在道具实例上**记录 `location:{kind:'mounted',hostId,slotId}` | `domain/owned-items.ts`，`domain/item-attachments.ts` |
+| 安装关系 | **只在道具实例上**记录 `location:{kind:'mounted',hostId,slotId}` | `domain/owned-items.ts`；纯关系验证在 `domain/item-attachment-contract.ts`，装卸事务在 `domain/item-attachments.ts` |
 | 既有设施升级 | 宿主修缮、固定模块进度、历史耗材账本 | `workshop.upgrades` |
 | 既有可换外装 | `camp-fire:top` 固定支架/附件的旧逻辑 | `workshop.mounted`；暂无自动改写 |
 
