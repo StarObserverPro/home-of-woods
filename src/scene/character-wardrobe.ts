@@ -19,6 +19,31 @@ export function createCharacterWardrobe(resources:Resources, actor:THREE.Object3
   const parts:Part[]=[];
   let look:WardrobeLook={...DEFAULT_WARDROBE},disposed=false;
   let hairTail:THREE.Group|null=null,packKnot:THREE.Group|null=null;
+  // The reviewed Blender export joins the original hair into its single SkinnedMesh.
+  // Its dedicated hair atlas island can be hidden on alternative hairstyles without
+  // mutating the shared GLB geometry (the procedural actor has another cloned rig).
+  const skinned=actor.getObjectByProperty('isSkinnedMesh',true) as THREE.SkinnedMesh|undefined;
+  const originalGeometry=skinned?.geometry;
+  let noBaseHair:THREE.BufferGeometry|null=null,hiddenBaseHairFaces=0;
+  function hideSourceHair(hide:boolean){
+    if(!skinned||!originalGeometry)return;
+    if(!hide){skinned.geometry=originalGeometry;return;}
+    if(!noBaseHair){
+      const uv=originalGeometry.getAttribute('uv'),index=originalGeometry.getIndex();
+      if(!uv||!index)return;
+      const kept:number[]=[];
+      const isHair=(i:number)=>uv.getX(i)>.32&&uv.getX(i)<.48&&uv.getY(i)>.78;
+      for(let i=0;i<index.count;i+=3){
+        const a=index.getX(i),b=index.getX(i+1),c=index.getX(i+2);
+        if(isHair(a)&&isHair(b)&&isHair(c)){hiddenBaseHairFaces++;continue;}
+        kept.push(a,b,c);
+      }
+      if(!hiddenBaseHairFaces)return;
+      noBaseHair=resources.own(originalGeometry.clone());
+      noBaseHair.setIndex(kept);
+    }
+    skinned.geometry=noBaseHair;
+  }
   const bone=(name:string)=>bones.get(name)!;
   const cylinder=(top:number,bottom:number,height:number,segments=9)=>
     resources.geometry('wardrobe:cy:'+ [top,bottom,height,segments].join(','),()=>
@@ -129,6 +154,7 @@ export function createCharacterWardrobe(resources:Resources, actor:THREE.Object3
   function apply(next:WardrobeLook){
     if(disposed)return;
     look=resolveWardrobe(next);
+    hideSourceHair(look.hair!=='original');
     for(const p of parts)p.root.visible=look[p.slot]===p.variant;
   }
   apply(DEFAULT_WARDROBE);
@@ -140,12 +166,14 @@ export function createCharacterWardrobe(resources:Resources, actor:THREE.Object3
       if(hairTail)hairTail.rotation.z=look.hair==='ponytail'?swing:0;
       if(packKnot)packKnot.rotation.z=look.back==='pack'?swing*.7:0;
     },
-    stats:()=>({look:{...look},parts:parts.length,disposed}),
+    stats:()=>({look:{...look},parts:parts.length,hiddenBaseHairFaces,disposed}),
     dispose(){
       if(disposed)return;disposed=true;
+      if(skinned&&originalGeometry)skinned.geometry=originalGeometry;
+      if(noBaseHair)resources.releaseOwned(noBaseHair);
       for(const p of parts){p.root.removeFromParent();p.root.clear();}
-      parts.length=0;hairTail=null;packKnot=null;
-      // Geometry and materials are cached by the scene Resources owner.
+      parts.length=0;hairTail=null;packKnot=null;noBaseHair=null;
+      // Other geometries and materials are cached by the scene Resources owner.
     },
   };
 }
