@@ -2,6 +2,7 @@ import { ITEM_ACTIONS, LOCAL_MOTIONS } from '../content/item-behaviors.ts';
 import type { ActionTarget, ActionTrigger, ItemActionDefinition, LocalMotionProfile } from '../content/item-behaviors.ts';
 import type { OwnedItemDefinition } from '../content/owned-item-definitions.ts';
 import { ITEM_CATALOG, isStableId } from './item-catalog.ts';
+import { WORLD } from '../content/world.ts';
 import { itemProperties } from './item-properties.ts';
 import { ITEM_ATTACHMENT_REGISTRY, validateAttachedItems } from './item-attachment-contract.ts';
 import type { AttachmentRegistry } from './item-attachment-contract.ts';
@@ -57,6 +58,10 @@ export const ITEM_BEHAVIOR_REGISTRY = createItemBehaviorRegistry();
 export type ItemActionContext = {
   trigger: ActionTrigger;
   target: ActionTarget;
+  /** Concrete targets come from trusted scene/domain selection, not descriptive tags. */
+  targetPoint?: { x: number; z: number };
+  targetItemId?: string;
+  targetContextId?: string;
   nearby: boolean;
   features: ReadonlySet<string>;
   contexts: ReadonlySet<string>;
@@ -85,6 +90,17 @@ export function itemActionEligibility(
   if (context.trigger !== action.trigger || context.target !== action.target)
     return { available: false, reason: 'Wrong action trigger or target' };
   if (!context.nearby) return { available: false, reason: 'Approach the item or target first' };
+  if (action.target === 'point') {
+    const point = context.targetPoint;
+    if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.z) ||
+        point.x < WORLD.minX || point.x > WORLD.maxX || point.z < WORLD.minZ || point.z > WORLD.maxZ)
+      return { available: false, reason: 'Select a valid world point' };
+  }
+  if (action.target === 'item' && !isStableId(context.targetItemId))
+    return { available: false, reason: 'Select a valid target item' };
+  if (action.target === 'environment' &&
+      (!isStableId(context.targetContextId) || !context.contexts.has(context.targetContextId)))
+    return { available: false, reason: 'Select a real environmental event' };
   if (action.requiredFeatures.some(id => !context.features.has(id)))
     return { available: false, reason: 'Required gameplay system is not available' };
   if (action.requiredContexts.some(id => !context.contexts.has(id)))
@@ -98,7 +114,14 @@ export function itemActionEligibility(
   return { available: true, reason: '' };
 }
 
-export type ItemActionIntent = { instanceId: string; actionId: string; handlerId: string };
+export type ItemActionIntent = {
+  instanceId: string; actionId: string; handlerId: string;
+  target:
+    | {kind: 'none'}
+    | {kind: 'point'; point: {x:number;z:number}}
+    | {kind: 'item'; instanceId: string}
+    | {kind: 'environment'; contextId: string};
+};
 export function prepareItemAction(
   item: OwnedItem, actionId: string, context: ItemActionContext,
   registry: ItemBehaviorRegistry = ITEM_BEHAVIOR_REGISTRY,
@@ -106,7 +129,12 @@ export function prepareItemAction(
   const result = itemActionEligibility(item, actionId, context, registry);
   if (!result.available) throw new Error(result.reason);
   const action = registry.actions.get(actionId)!;
-  return { instanceId: item.instanceId, actionId, handlerId: action.handlerId! };
+  const target: ItemActionIntent['target'] = action.target === 'point'
+    ? {kind:'point',point:{...context.targetPoint!}}
+    : action.target === 'item' ? {kind:'item',instanceId:context.targetItemId!}
+    : action.target === 'environment' ? {kind:'environment',contextId:context.targetContextId!}
+    : {kind:'none'};
+  return { instanceId: item.instanceId, actionId, handlerId: action.handlerId!, target };
 }
 /** For inspection UIs: descriptors may be listed even when not currently operable. */
 export const actionsForItem = (item: OwnedItem, registry: ItemBehaviorRegistry = ITEM_BEHAVIOR_REGISTRY) =>
