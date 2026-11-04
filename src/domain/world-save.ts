@@ -86,7 +86,7 @@ export async function prepareWorldSave(raw: string | null, context: SaveContext)
     requireValue(typeof raw === 'string', 'save', '存储记录不是文本');
     const saved = object(JSON.parse(raw), 'save');
     fields(saved, ['schemaVersion', 'layoutVersion', 'rulesetVersion', 'sequence', 'savedAt', 'world', 'checksum'], 'save');
-    requireValue(saved.schemaVersion === 1 && saved.layoutVersion === WORLD_LAYOUT_VERSION && [5,WORLD_RULESET_VERSION].includes(saved.rulesetVersion as number), 'save', '未来格式或不兼容的世界版本');
+    requireValue(saved.schemaVersion === 1 && saved.layoutVersion === WORLD_LAYOUT_VERSION && [5,6,WORLD_RULESET_VERSION].includes(saved.rulesetVersion as number), 'save', '未来格式或不兼容的世界版本');
     const sequence = integer(saved.sequence, 'save.sequence', 1), savedAt = finite(saved.savedAt, 'save.savedAt');
     requireValue(typeof saved.checksum === 'string' && /^[a-f0-9]{64}$/.test(saved.checksum), 'save.checksum', '校验记录无效');
     const { checksum, ...core } = saved;
