@@ -12,7 +12,7 @@ import {beginUpgrade,approachUpgrade,mountFireTop} from '../domain/upgrades.ts';
 import {beginWorkshop,advanceWorkshop,workshopSnapshot,tradeBlueprint,tradeSupply,workshopBusy} from '../domain/workshop.ts';
 import type {WorkshopSnapshot} from '../domain/workshop.ts';
 import {advanceLocalClock,CLOCK_SPEEDS} from '../domain/local-clock.ts';
-import {advanceFood,foodSnapshot,startDryMushrooms,startMushroomSoup,eatMushroomSoup} from '../domain/food.ts';
+import {advanceFood,foodSnapshot,startDryMushrooms,startMushroomSoup,eatMushroomSoup,eatBlackBread} from '../domain/food.ts';
 import type {FoodGrain} from '../content/food.ts';
 import type {ClockSpeed} from '../domain/local-clock.ts';
 import {workstationColliders,furnitureColliders,placementReason,placeFurniture,packFurniture} from '../domain/furniture-placement.ts';
@@ -405,6 +405,7 @@ export async function createRuntime(
     dryMushrooms(){if(blocked()||placement)return;message=startDryMushrooms(state);view.render(state,0);publishSnapshot();},
     cookSoup(grain:FoodGrain){if(blocked()||placement)return;message=startMushroomSoup(state,grain);view.render(state,0);publishSnapshot();},
     eatSoup(){if(blocked()||placement)return;message=eatMushroomSoup(state);view.render(state,0);publishSnapshot();},
+    eatBread(){if(blocked()||placement)return;message=eatBlackBread(state);view.render(state,0);publishSnapshot();},
     approachMerchant(){if(blocked()||placement)return;cancelPlayerAction(state);state.selected=CAMP_VISITOR.id;
       const target={x:CAMP_VISITOR.x+2,z:CAMP_VISITOR.z+1};
       if(Math.hypot(state.player.x-CAMP_VISITOR.x,state.player.z-CAMP_VISITOR.z)<=3)message='已经在行商身边，可以交换图纸。';
