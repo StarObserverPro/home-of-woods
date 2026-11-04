@@ -57,6 +57,23 @@ export function resolveWardrobe(patch: Partial<WardrobeLook> = {}, base:Wardrobe
   }
   return result;
 }
+type WardrobeItemPresentation = {
+  [K in WardrobeSlot]: {slot:K; slotId:string; variant:WardrobeLook[K]}
+}[WardrobeSlot];
+/** One declared model variant per recognized equipment item. No trait handlers here. */
+export const WARDROBE_ITEM_PRESENTATIONS: Readonly<Record<string,WardrobeItemPresentation>> = {
+  'travel.sun-hat':{slot:'headwear',slotId:'player:headwear',variant:'straw'},
+  'apparel.cloth-cap':{slot:'headwear',slotId:'player:headwear',variant:'cap'},
+  'apparel.beanie':{slot:'headwear',slotId:'player:headwear',variant:'beanie'},
+  'travel.backpack':{slot:'back',slotId:'player:back-gear',variant:'pack'},
+  'apparel.field-shirt':{slot:'top',slotId:'player:upper-body',variant:'field-shirt'},
+  'apparel.canvas-vest':{slot:'top',slotId:'player:upper-body',variant:'canvas-vest'},
+  'apparel.work-jacket':{slot:'top',slotId:'player:upper-body',variant:'work-jacket'},
+  'apparel.field-trousers':{slot:'bottom',slotId:'player:lower-body',variant:'field-trousers'},
+  'apparel.patched-trousers':{slot:'bottom',slotId:'player:lower-body',variant:'patched-trousers'},
+  'apparel.shoes':{slot:'footwear',slotId:'player:footwear',variant:'shoes'},
+  'apparel.work-boots':{slot:'footwear',slotId:'player:footwear',variant:'boots'},
+};
 export function wardrobeForMountedItems(look: WardrobeLook, instances:readonly {
   definitionId:string;
   location:{kind:string;hostId?:string;slotId?:string};
@@ -65,8 +82,9 @@ export function wardrobeForMountedItems(look: WardrobeLook, instances:readonly {
   // A mount is one instance's location, not a duplicate equipment ledger.
   for(const item of instances) {
     if(item.location.kind!=='mounted'||item.location.hostId!=='player')continue;
-    if(item.definitionId==='travel.sun-hat'&&item.location.slotId==='player:headwear')next.headwear='straw';
-    if(item.definitionId==='travel.backpack'&&item.location.slotId==='player:back-gear')next.back='pack';
+    const presentation=WARDROBE_ITEM_PRESENTATIONS[item.definitionId];
+    if(!presentation||presentation.slotId!==item.location.slotId)continue;
+    (next as Record<WardrobeSlot,string>)[presentation.slot]=presentation.variant;
   }
   return next;
 }
