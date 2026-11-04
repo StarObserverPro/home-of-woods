@@ -18,7 +18,7 @@ export const GEOMETRY_TEMPLATES: Readonly<Record<string, GeometryTemplate>> = {
     id: 'stump.round', version: 1, family: 'solid',
     parameters: {
       diameter: { kind: 'number', default: .95, min: .7, max: 1.25, step: .05 },
-      height: { kind: 'number', default: .72, min: .5, max: .95, step: .05 },
+      height: { kind: 'number', default: .7, min: .5, max: .95, step: .05 },
       silhouette: { kind: 'choice', default: 'rounded', choices: ['rounded', 'straight'] },
     },
   },
@@ -52,13 +52,13 @@ export const CRAFT_PROFILES: Readonly<Record<string, CraftProfile>> = {
     blueprintId: 'blueprint.stump-cozy', status: 'active', recipeId: 'recipe.stump-cozy',
     method: 'transform', geometryTemplateId: 'stump.round', rarityTier: 'common',
     steps: [{ id: 'shape', moduleId: 'workbench.preset.v1' }],
-    inputs: [{ typeId: 'wood.log', quantity: 1, handling: 'consume' }],
+    inputs: [{ typeId: 'wood.suitable', quantity: 1, handling: 'consume' }],
   },
   'blueprint.stump-sturdy': {
     blueprintId: 'blueprint.stump-sturdy', status: 'active', recipeId: 'recipe.stump-sturdy',
     method: 'transform', geometryTemplateId: 'stump.round', rarityTier: 'common',
     steps: [{ id: 'shape', moduleId: 'workbench.preset.v1' }],
-    inputs: [{ typeId: 'wood.log', quantity: 1, handling: 'consume' }],
+    inputs: [{ typeId: 'wood.suitable', quantity: 1, handling: 'consume' }],
   },
   'blueprint.bench-guided': {
     blueprintId: 'blueprint.bench-guided', status: 'planned', recipeId: 'recipe.bench-guided',
