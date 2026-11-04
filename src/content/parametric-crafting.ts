@@ -43,7 +43,7 @@ export type CraftProfile = {
   method: CraftMethod; geometryTemplateId: string | null; rarityTier: RarityId;
   steps: readonly CraftStep[];
   /** Registered input roles; a later executor may implement tools, paints and finishing. */
-  inputs: readonly { typeId: string; quantity: number; handling: 'consume' | 'attach' }[];
+  inputs: readonly { typeIds: readonly string[]; quantity: number; handling: 'consume' | 'attach' }[];
 };
 
 /** Active stump recipes use the existing workbench. Guided bench is only a schema fixture for later gameplay. */
@@ -52,13 +52,13 @@ export const CRAFT_PROFILES: Readonly<Record<string, CraftProfile>> = {
     blueprintId: 'blueprint.stump-cozy', status: 'active', recipeId: 'recipe.stump-cozy',
     method: 'transform', geometryTemplateId: 'stump.round', rarityTier: 'common',
     steps: [{ id: 'shape', moduleId: 'workbench.preset.v1' }],
-    inputs: [{ typeId: 'wood.suitable', quantity: 1, handling: 'consume' }],
+    inputs: [{ typeIds: ['wood.log', 'wood.branch', 'wood.small-piece', 'wood.lumber'], quantity: 1, handling: 'consume' }],
   },
   'blueprint.stump-sturdy': {
     blueprintId: 'blueprint.stump-sturdy', status: 'active', recipeId: 'recipe.stump-sturdy',
     method: 'transform', geometryTemplateId: 'stump.round', rarityTier: 'common',
     steps: [{ id: 'shape', moduleId: 'workbench.preset.v1' }],
-    inputs: [{ typeId: 'wood.suitable', quantity: 1, handling: 'consume' }],
+    inputs: [{ typeIds: ['wood.log', 'wood.branch', 'wood.small-piece', 'wood.lumber'], quantity: 1, handling: 'consume' }],
   },
   'blueprint.bench-guided': {
     blueprintId: 'blueprint.bench-guided', status: 'planned', recipeId: 'recipe.bench-guided',
@@ -68,7 +68,7 @@ export const CRAFT_PROFILES: Readonly<Record<string, CraftProfile>> = {
       { id: 'fit', moduleId: 'assembly.guided.future' },
       { id: 'finish', moduleId: 'wood.finishing.future' },
     ],
-    inputs: [{ typeId: 'wood.log', quantity: 2, handling: 'consume' }],
+    inputs: [{ typeIds: ['wood.log', 'wood.lumber'], quantity: 2, handling: 'consume' }],
   },
 };
 
