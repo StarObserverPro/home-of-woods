@@ -161,3 +161,50 @@ test('switching the location core does not discard unrelated future location fie
   assert.deepEqual(world.location,{kind:'world',x:1,z:2,rotation:0,note:'retain-me'});
   assert.deepEqual(canonicalInstances([world])[0],world);
 });
+
+test('planned player wardrobe slots preserve unique item instances, traits and ownership', () => {
+  const state = createState();
+  const head = HOST_ATTACHMENT_SLOTS.find(v => v.slotId === 'player:headwear')!;
+  const back = HOST_ATTACHMENT_SLOTS.find(v => v.slotId === 'player:back-gear')!;
+  assert.equal(head.host.kind, 'character');
+  assert.equal(head.status, 'planned');
+  assert.equal(back.status, 'planned');
+  assert.deepEqual(ITEM_CATALOG.ownedItems.get('travel.sun-hat')?.mountKinds, ['headwear']);
+  assert.deepEqual(ITEM_CATALOG.ownedItems.get('travel.backpack')?.mountKinds, ['back-gear']);
+  assert.equal(ITEM_CATALOG.ownedItems.get('travel.backpack')?.status, 'planned');
+
+  const hat: OwnedItem = {instanceId:'hat-one', definitionId:'travel.sun-hat',
+    blueprintId:'blueprint.test-hat', createdAt:0, rarityId:'epic',
+    traits:[{id:'shade',value:2}], futureColors:{band:'#aabbcc'},
+    location:{kind:'inventory'}};
+  const pack: OwnedItem = {instanceId:'pack-one', definitionId:'travel.backpack',
+    blueprintId:'blueprint.test-pack', createdAt:0, rarityId:'rare',
+    traits:[{id:'step-sway',value:1}], location:{kind:'inventory'}};
+  state.inventory.instances = [hat,pack];
+  assert.throws(() => mountIndependentItem(state.inventory,'hat-one','player','player:headwear'), /not available/);
+  assert.deepEqual(state.inventory.instances, [hat,pack]);
+
+  // Exercise the contract with a temporary active registry, without unlocking actual gameplay.
+  const definitions = new Map(ITEM_CATALOG.ownedItems);
+  for (const id of ['travel.sun-hat','travel.backpack']) {
+    const d = definitions.get(id)!;
+    definitions.set(id,{...d,status:'active'});
+  }
+  const slots = HOST_ATTACHMENT_SLOTS.map(v => ['player:headwear','player:back-gear'].includes(v.slotId)
+    ? {...v,status:'active' as const} : v);
+  const registry = createAttachmentRegistry(slots,definitions);
+  assert.throws(() => mountIndependentItem(state.inventory,'hat-one','camp-visitor','player:headwear',registry), /Wrong character/);
+  assert.throws(() => mountIndependentItem(state.inventory,'pack-one','player','player:headwear',registry), /not available/);
+
+  const h = mountIndependentItem(state.inventory,'hat-one','player','player:headwear',registry);
+  const equipped = mountIndependentItem(h,'pack-one','player','player:back-gear',registry);
+  assert.equal(equipped.instances!.length,2);
+  assert.deepEqual(equipped.instances!.find(v=>v.instanceId==='hat-one')!.traits,hat.traits);
+  assert.deepEqual(equipped.instances!.find(v=>v.instanceId==='hat-one')!.futureColors,hat.futureColors);
+  assert.deepEqual(equipped.instances!.find(v=>v.instanceId==='hat-one')!.location,
+    {kind:'mounted',hostId:'player',slotId:'player:headwear'});
+  assert.deepEqual(mountedItemSources(equipped,'player',registry).map(v=>v.instanceId).sort(),
+    ['hat-one','pack-one']);
+  const recovered=unmountIndependentItem(unmountIndependentItem(equipped,'hat-one',registry),'pack-one',registry);
+  assert.deepEqual(recovered.instances,canonicalInstances([hat,pack]));
+});
