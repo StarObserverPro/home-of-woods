@@ -403,6 +403,11 @@ export async function createRuntime(
       const result=itemTransfers.commit(item,x,y,toWarehouse);message=result.reason;view.render(state,0);publishSnapshot();return result;
     },
     setClockSpeed(speed:ClockSpeed){if(blocked()||!CLOCK_SPEEDS.includes(speed))return;state.clock={speed};publishSnapshot();},
+    returnToTent(){
+      if(blocked()||placement)return;
+      navigate({x:TENT.x+3.8,z:TENT.z+4.5});
+      publishSnapshot();
+    },
     sleepToDawn(){
       if(blocked()||placement||woodcraft.isDropping())return;
       const count=state.dayCycle.nightsSlept;
