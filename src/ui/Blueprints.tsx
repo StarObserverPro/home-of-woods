@@ -26,41 +26,41 @@ export function BlueprintLibrary({view,onSelect}:{view:WorkshopSnapshot;onSelect
         <small>{plan.targetLabel}</small><details><summary>图纸说明</summary><p>{plan.description}</p>
         {upgrade&&<p className="blueprint-cost">{materials?.length?materials.map(material=>`${material.name} ${material.quantity} ${material.unit??'份'}`).join(' · '):'使用原有材料原位整理，无额外耗材'}</p>}
         <p className="blueprint-source">{plan.source}</p></details>
-        {available&&<button className="context-button" onClick={()=>onSelect(upgrade?host:WORKBENCH.id)}>{upgrade?'查看该设施的外部改造':'查看工作台'}</button>}
+        {available&&<button className="context-button" onClick={()=>onSelect(upgrade?host:WORKBENCH.id)}>{upgrade?'查看设施':'查看工作台'}</button>}
       </article>;
     })}
   </section>;
 }
 
-export function UpgradeControls({view,disabled,hasContextActions,onApproach,onUpgrade,onMount,onCancel}:{
-  view:WorkshopSnapshot;disabled:boolean;hasContextActions:boolean;onApproach:(id:string)=>void;
+export function UpgradeControls({view,remote=false,disabled,hasContextActions,onApproach,onUpgrade,onMount,onCancel}:{
+  view:WorkshopSnapshot;remote?:boolean;disabled:boolean;hasContextActions:boolean;onApproach:(id:string)=>void;
   onUpgrade:(id:string)=>void;onMount:(id:string|null)=>void;onCancel:()=>void;
 }){
   const upgrades=view.upgradeOptions.length?view.upgradeOptions:view.upgrade?[view.upgrade]:[];
   if(!upgrades.length)return null;
   return <section className="upgrade-controls" aria-label="外部升级与修缮">
     <header className="upgrade-heading"><h3>{view.upgradeOptions.length?'外部改造':'修缮与改良'}</h3><span>{view.upgradeOptions.filter(u=>u.status==='installed').length} 件已完成</span></header>
-    {view.upgradeOptions.length>0&&<p>这些部件属于当前设施，可以分别制作、安装和保留。火塘上方的配件共用一个安装位置。</p>}
+
     <div className="upgrade-module-list">
       {upgrades.map(upgrade=>{
         const working=view.job?.kind==='upgrade'&&view.job.targetId===upgrade.targetId;
         const installed=upgrade.status==='installed';
         const hasWork=!!view.job;
-        return <article key={upgrade.targetId} className="upgrade-module">
-          <div className="upgrade-heading"><h4>{upgrade.pathName}</h4><span>{installed?upgrade.mountSlot?(upgrade.mounted?'正在使用':'已制作 · 已收起'):'已安装':upgrade.status==='planned'?'尚未开放':upgrade.level>0?'待改良':'待制作'}</span></div>
+        return <details key={upgrade.targetId} name="upgrade-part" className="upgrade-module" open={working||undefined}>
+          <summary className="upgrade-heading"><strong>{upgrade.pathName}</strong><span>{installed?upgrade.mountSlot?(upgrade.mounted?'正在使用':'已制作 · 已收起'):'已安装':upgrade.status==='planned'?'尚未开放':upgrade.level>0?'待改良':'待制作'}</span></summary>
           <p>{upgrade.detail}</p>
           {upgrade.requiredBlueprint&&<p className="blueprint-requirement">图纸 · {upgrade.requiredBlueprint.name} <span>{upgrade.requiredBlueprint.known?'已收录':'尚未获得'}</span></p>}
-          {!!upgrade.materials.length&&<ul className="upgrade-materials">{upgrade.materials.map(material=><li key={material.typeId}><span>{material.name}</span><strong className={material.available<material.required?'is-missing':''}>{material.available} / {material.required}</strong><small>需 {material.required} {material.unit}</small></li>)}</ul>}
-          {working?<><p>正在安装「{upgrade.pathName}」…</p><progress aria-label="改装进度" value={view.job!.progress} max={1}/><button className="context-button" onClick={onCancel}>取消施工 · 不扣材料</button></>:
+          {!!upgrade.materials.length&&<ul className="upgrade-materials">{upgrade.materials.map(material=><li key={material.typeId}><span>{material.name}</span><strong className={material.available<material.required?'is-missing':''}>{material.available} / {material.required}</strong><small>{material.unit}</small></li>)}</ul>}
+          {remote?null:working?<><p>正在安装「{upgrade.pathName}」…</p><progress aria-label="改装进度" value={view.job!.progress} max={1}/><button className="context-button" onClick={onCancel}>取消施工</button></>:
             installed&&upgrade.mountSlot?
-              !upgrade.near?<button className="context-button" disabled={disabled||hasWork} onClick={()=>onApproach(upgrade.targetId)}>走近篝火切换配件</button>:
+              !upgrade.near?<button className="context-button" disabled={disabled||hasWork} onClick={()=>onApproach(upgrade.targetId)}>走到安装位置</button>:
               <button className="context-button" disabled={disabled||hasWork} onClick={()=>onMount(upgrade.mounted?null:upgrade.targetId)}>{upgrade.mounted?'收起这个配件':'装上这个配件'}</button>:
             installed?<p className="upgrade-installed">已安装在原有设施上</p>:
             upgrade.status==='planned'?(<>{!hasContextActions&&!upgrade.near&&<button className="context-button" disabled={disabled||hasWork} onClick={()=>onApproach(upgrade.targetId)}>走近{upgrade.title}</button>}</>):
-            !upgrade.near?<button className="context-button" disabled={disabled||hasWork} onClick={()=>onApproach(upgrade.targetId)}>走近后安装</button>:
-            <button className="context-button" disabled={disabled||hasWork||!upgrade.canStart} onClick={()=>onUpgrade(upgrade.targetId)}>开始制作并安装</button>}
+            !upgrade.near?<button className="context-button" disabled={disabled||hasWork} onClick={()=>onApproach(upgrade.targetId)}>走到安装位置</button>:
+            <button className="context-button" disabled={disabled||hasWork||!upgrade.canStart} onClick={()=>onUpgrade(upgrade.targetId)}>制作并安装</button>}
           {!working&&!installed&&upgrade.reason&&upgrade.status!=='planned'&&upgrade.near&&<p className="action-reason">{upgrade.reason}</p>}
-        </article>;
+        </details>;
       })}
     </div>
   </section>;

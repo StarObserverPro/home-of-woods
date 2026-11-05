@@ -1,0 +1,110 @@
+/* Shared HUD contract: transparent chrome, one foreground panel, 44 px controls. */
+.topbar { align-items:center; gap:12px; z-index:12; }
+.topbar .brand { margin-right:auto; min-width:0; max-width:none; }
+.journey-summary h1 { margin:0 0 3px; font-size:21px; letter-spacing:.04em; }
+.journey-meta { font-size:12px; }
+.brand > svg { width:25px; height:25px; margin-top:2px; }
+.clock-menu { position:relative; }
+.clock-menu > summary { min-width:64px; min-height:44px; display:flex; align-items:center; justify-content:center; gap:5px; cursor:pointer; font-size:13px; list-style:none; }
+.clock-menu > summary::-webkit-details-marker { display:none; }
+.clock-menu .hourglass { position:absolute; top:52px; right:0; margin:0; gap:4px; padding:8px; border:1px solid var(--hud-line); border-radius:12px; background:#18392ee8; }
+.clock-menu .hourglass button { min-width:44px; min-height:44px; background:transparent; color:inherit; border:1px solid transparent; }
+.clock-menu .hourglass button[aria-pressed=true] { background:#dfd8a624; border-color:#e7d6a28c; }
+.evening-sleep { min-height:44px; border:0; border-radius:0; background:none; font-size:12px; padding:4px; }
+.evening-arrival { top:56px; }
+.hud-dock { width:auto; max-width:none; display:flex; z-index:14; }
+.bottom-toolbar { gap:4px; }
+.bottom-toolbar button { width:56px; min-height:48px; }
+.camera-tools { position:absolute; right:0; bottom:64px; display:flex; padding:8px; border:1px solid var(--hud-line); border-radius:12px; background:#18392ee8; }
+.camera-tools button { width:44px; height:44px; }
+.target-card, .panel { background:linear-gradient(120deg,#18382edb,#18382eb8); border:1px solid #e1e9ca40; border-radius:14px; backdrop-filter:blur(4px); }
+.target-card { width:340px; padding:14px 16px; max-height:55dvh; bottom:94px; }
+.target-card:has(.upgrade-controls), .target-card:has(.workshop-controls), .target-card:has(.upgrade-module-list) { max-height:55dvh; }
+.target-top { position:sticky; top:-14px; background:#203c32; z-index:2; margin:-14px -16px 0; padding:5px 16px; border-radius:14px 14px 0 0; }
+.target-top h2 { margin:0; font-size:18px; letter-spacing:.02em; }
+.target-top button { margin:0 -8px 0 0; }
+.target-card .target-tag { margin:2px 0 10px; font-size:11px; color:#d2dec5; }
+.target-card p, .panel p { font-size:12px; line-height:1.6; }
+.target-card .context-button { min-height:44px; border-color:#e6e6ce65; border-radius:8px; font-size:13px; }
+.primary-action { width:100%; background:#d7dabd20; }
+.tree-work { margin-top:9px; padding-top:9px; }
+.tree-facts { font-size:12px; }
+.context-details { margin-top:8px; border-top:1px solid #d9e8ce33; }
+.context-details > summary, .upgrade-module > summary { min-height:44px; padding:10px 0; cursor:pointer; font-size:13px; line-height:1.7; }
+summary:focus-visible, select:focus-visible { outline:2px solid #fff8cf; outline-offset:2px; }
+.target-description > p { color:#d1dcc8; }
+.upgrade-controls { border:0; padding:0; margin:0; }
+.upgrade-module { padding:0 10px; border-radius:8px; background:transparent; }
+.upgrade-module > summary { margin:0; align-items:center; }
+.upgrade-module > summary strong { font-size:13px; font-weight:500; }
+.upgrade-module .context-button { margin-bottom:10px; min-height:44px; }
+.upgrade-materials li small { min-width:24px; }
+.action-message { color:#f3d9a6; }
+.route-section-label { margin:14px 0 7px; font-size:12px; font-weight:400; color:#d9dfc5; }
+.camp-shortcuts { display:grid; grid-template-columns:1fr 1fr; }
+.camp-shortcuts .context-button { min-height:44px; min-width:0; padding:6px; }
+.pause-settings { text-align:left; }
+.warehouse-dock .warehouse-categories { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:3px; overflow:visible; }
+.warehouse-dock .warehouse-categories button { min-width:0; min-height:44px; padding:4px; display:block; font-size:13px; }
+.warehouse-carry-summary { font-size:12px; line-height:1.7; color:#d5dfc8; }
+.material-filter { display:flex; align-items:center; gap:12px; font-size:12px; margin-bottom:10px; }
+.material-filter select { min-height:44px; min-width:0; flex:1; border:1px solid #d9e8ce55; border-radius:8px; padding:0 10px; background:#244335; color:#f8f2df; font:inherit; }
+.warehouse-nearby > summary { min-height:44px; padding:10px 0; }
+.warehouse-nearby .context-button { min-height:44px; }
+.warehouse-is-open .minimap-card, .warehouse-is-open .message { display:none; }
+.warehouse-dock .warehouse-heading h2 { letter-spacing:.04em; font-size:21px; }
+.woodcraft-buttons > details { flex-basis:100%; }
+@media(max-width:700px) {
+  .topbar { display:flex; top:max(12px,env(safe-area-inset-top)); left:14px; right:10px; gap:4px; }
+  .brand { gap:7px; }
+  .brand > svg { display:none; }
+  .journey-summary h1 { font-size:18px; }
+  .journey-meta { font-size:10px; }
+  .topbar .pause { width:44px; }
+  .clock-menu > summary { min-width:54px; font-size:12px; }
+  .evening-sleep { font-size:11px; }
+  .evening-sleep span { display:none; }
+  .minimap-card { top:90px; }
+  .hud-dock { right:12px; bottom:calc(20px + env(safe-area-inset-bottom)); }
+  .bottom-toolbar { gap:0; }
+  .bottom-toolbar button { width:44px; height:48px; }
+  .camera-tools { display:flex; width:236px; bottom:60px; }
+  .camera-tools button:last-child { height:44px; }
+  .target-card, .target-card:has(.upgrade-controls), .target-card:has(.workshop-controls), .target-card:has(.upgrade-module-list) { left:12px; right:12px; width:auto; bottom:calc(140px + env(safe-area-inset-bottom)); max-height:42dvh; padding:12px 14px; }
+  .target-top { top:-12px; margin:-12px -14px 0; padding:4px 14px; }
+  .target-card--pickup-active .target-top { float:none; }
+  .target-card--pickup-active .target-tag, .target-card--pickup-active .target-description { display:none; }
+  .target-card--pickup-active .tree-actions { margin-top:4px; }
+  .route-sheet { top:auto; bottom:140px; max-height:55dvh; }
+  .help-sheet { bottom:140px; max-height:55dvh; }
+  .warehouse-dock { inset:auto 12px 82px; width:calc(100vw - 24px); max-height:52dvh; }
+  .warehouse-dock .warehouse-categories button { font-size:12px; }
+}
+@media(max-height:500px) {
+  .minimap-card { display:none; }
+  .topbar { top:8px; }
+  .hud-dock { bottom:12px; }
+  .target-card, .target-card:has(.upgrade-controls), .target-card:has(.workshop-controls), .target-card:has(.upgrade-module-list) { left:auto; right:16px; width:320px; bottom:76px; max-height:calc(100dvh - 150px); padding:12px 14px; }
+  .target-top { top:-12px; margin:-12px -14px 0; padding:4px 14px; }
+  .route-sheet, .help-sheet { top:auto; bottom:76px; max-height:calc(100dvh - 150px); }
+  .warehouse-dock { inset:70px 12px 76px auto; width:360px; max-height:none; }
+}
+
+/* Shop choices remain readable labels with the same touch targets. */
+.target-card.is-merchant { max-height:55dvh; }
+.merchant-tabs { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; }
+.merchant-tabs button { font-size:12px; min-width:0; min-height:44px; padding:4px; }
+.merchant-help summary { min-width:44px; min-height:44px; line-height:42px; }
+.merchant-quantity button { width:44px; min-width:44px; min-height:44px; }
+@media(max-width:700px) { .target-card.is-merchant { width:auto; max-height:48dvh; } .merchant-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-height:500px) { .target-card.is-merchant { width:360px; max-height:calc(100dvh - 150px); } }
+.upgrade-module > summary::after { content:'+'; flex-shrink:0; font-size:18px; }
+.upgrade-module[open] > summary::after { content:'−'; }
+@media(max-width:359px) {
+  .topbar:has(.evening-clock) { flex-wrap:wrap; }
+  .topbar:has(.evening-clock) .brand { flex:1; }
+  .topbar:has(.evening-clock) .evening-clock { order:4; flex-basis:100%; justify-content:flex-end; }
+}
+.warehouse-dock button, .warehouse-dock .wardrobe-action, .warehouse-dock .wardrobe-choice, .placement-panel button { min-width:44px; min-height:44px; }
+.wood-drop-panel, .placement-panel { border:1px solid #e1e9ca40; border-radius:14px; background:#18382edb; color:#fcfaed; backdrop-filter:blur(4px); }
+.placement-panel button { background:#d7dabd20; color:inherit; border-color:#e6e6ce65; }

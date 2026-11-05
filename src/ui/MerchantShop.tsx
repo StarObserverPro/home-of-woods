@@ -49,11 +49,11 @@ export function MerchantShop({view,disabled,onCheckout}:{
     </header>
     {view.giftAvailable&&<button className="merchant-gift" onClick={()=>checkout({buy:[],sellIds:[],welcome:true})} disabled={disabled} title="第一次见面赠一袋干粮和暖木墩基础图纸">🎁 领取见面礼 <span>干粮 ×1 · 木作图纸</span></button>}
     <div className="merchant-modes" role="group" aria-label="交易模式">
-      <button aria-pressed={mode==='buy'} onClick={()=>setMode('buy')}>🛍 买入</button>
-      <button aria-pressed={mode==='sell'} onClick={()=>setMode('sell')}>🪵 卖出</button>
+      <button aria-pressed={mode==='buy'} onClick={()=>setMode('buy')}>买入</button>
+      <button aria-pressed={mode==='sell'} onClick={()=>setMode('sell')}>卖出</button>
     </div>
     {mode==='buy'&&<nav className="merchant-tabs" aria-label="商品分类">
-      {tabs.map(([id,name,icon])=><button key={id} title={name} aria-label={name} aria-pressed={category===id} onClick={()=>setCategory(id)}>{icon}</button>)}
+      {tabs.map(([id,name])=><button key={id} title={name} aria-label={name} aria-pressed={category===id} onClick={()=>setCategory(id)}>{name}</button>)}
     </nav>}
     <div className="merchant-grid" role="group" aria-label={mode==='buy'?'本次商店货单':'可出售木作'}>
       {mode==='buy'?listings.map(item=>{

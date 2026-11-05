@@ -26,7 +26,7 @@ export type ForestryHost={time:number;player:Point&{facing:number;moving:boolean
 export type ForestrySnapshot={
   wood:number;points:{year:number;available:number;used:number;reserved:number};
   active:{treeId:string;phase:'chopping'|'falling';progress:number;hits:number;totalHits:number}|null;
-  selectedTree:{id:string;individualId:string;status:TreeStatus;statusLabel:string;distance:number;canChop:boolean;canApproach:boolean;cost:number;yield:number;reason:string;progress:number}|null;
+  selectedTree:{id:string;individualId:string;status:TreeStatus;statusLabel:string;distance:number;near:boolean;canChop:boolean;canApproach:boolean;cost:number;yield:number;reason:string;progress:number}|null;
 };
 const clamp=(v:number)=>Math.max(0,Math.min(1,v));
 export const volumePoints=(tree:Tree)=>Math.max(1,Math.ceil(tree.scale*tree.scale*1.6));
@@ -116,7 +116,7 @@ export function forestrySnapshot(host:ForestryHost,trees:ReadonlyMap<string,Tree
   const statusLabel:Record<TreeStatus,string>={standing:'成熟树',chopping:'正在挥斧',falling:'正在倒下',stump:'树桩 · 等待补生',sapling:'幼树 · 生长中'};
   const reason=chopReason(host,t);
   return{wood:inventoryTypeCount(host.inventory,'wood.log',catalog),points:{year:s.ledger.year,available:availablePoints(s),used:s.ledger.used,reserved:s.ledger.reserved},active:a?{treeId:a.treeId,phase:a.phase,progress,hits:a.phase==='falling'?FORESTRY.hits:Math.min(FORESTRY.hits,Math.floor(progress*FORESTRY.hits+.42)),totalHits:FORESTRY.hits}:null,
-    selectedTree:t&&life?{id:t.id,individualId:life.individualId,status:life.status,statusLabel:t.role==='landmark'?'永久保护地标':statusLabel[life.status],distance:Math.hypot(host.player.x-t.x,host.player.z-t.z),canChop:!reason,canApproach:!a&&t.role==='managed'&&life.status==='standing',cost:volumePoints(t),yield:volumePoints(t),reason,progress:a?.treeId===t.id?progress:0}:null};
+    selectedTree:t&&life?{id:t.id,individualId:life.individualId,status:life.status,statusLabel:t.role==='landmark'?'永久保护地标':statusLabel[life.status],distance:Math.hypot(host.player.x-t.x,host.player.z-t.z),near:Math.hypot(host.player.x-t.x,host.player.z-t.z)<=chopRange(t),canChop:!reason,canApproach:!a&&t.role==='managed'&&life.status==='standing',cost:volumePoints(t),yield:volumePoints(t),reason,progress:a?.treeId===t.id?progress:0}:null};
 }
 export function forestryColliders(base:Collider[],trees:ReadonlyMap<string,Tree>,state:ForestryState,now:number):Collider[]{
   return base.map(c=>{
