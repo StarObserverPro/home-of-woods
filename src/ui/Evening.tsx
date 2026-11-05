@@ -4,16 +4,17 @@ import type {dayCycleSnapshot} from '../domain/day-cycle.ts';
 import './evening.css';
 
 type CycleView=ReturnType<typeof dayCycleSnapshot>;
-export function EveningControls({view,disabled,onContinue,onSleep}:{
-  view:CycleView;disabled:boolean;onContinue:()=>void;onSleep:()=>void;
+export function EveningControls({view,disabled,onContinue,onSleep,onReturnToCamp}:{
+  view:CycleView;disabled:boolean;onContinue:()=>void;onSleep:()=>void;onReturnToCamp:()=>void;
 }){
+  const night=view.hour>=18||view.hour<6;
   return <div className="evening-clock" aria-label="晚间与休息">
     {view.eveningStopped&&<div className="evening-arrival" role="status">
       <strong>18:00 · 晚饭时间</strong><span>沙漏已停，可以先做饭、吃饭或看故事。</span>
       <button disabled={disabled} onClick={onContinue}>继续今晚 1×</button>
     </div>}
-    <button className="evening-sleep" disabled={disabled||!view.canSleep} title={view.sleepReason||'睡到下一次日出'} onClick={onSleep}>
-      <span aria-hidden="true">☾</span> 结束一天
+    <button className="evening-sleep" disabled={disabled||!night||(view.nearCamp&&!view.canSleep)} title={view.nearCamp?(view.sleepReason||'睡到下一次日出'):'沿现有小路返回帐篷'} onClick={view.nearCamp?onSleep:onReturnToCamp}>
+      <span aria-hidden="true">☾</span> {view.nearCamp?'结束一天':'回帐篷'}
     </button>
   </div>;
 }
