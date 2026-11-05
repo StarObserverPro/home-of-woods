@@ -1,3 +1,5 @@
+import {wardrobeSnapshot,changeWardrobe} from '../domain/wardrobe.ts';
+import type {WardrobeView,WardrobeIntent} from '../domain/wardrobe.ts';
 import {currentLoad,carryingSnapshot,changeCarrying,approachGround} from '../domain/carrying.ts';
 import type {CarryingSnapshot,CarryIntent} from '../domain/carrying.ts';
 import { createWildlife, advanceWildlife, validateWildlifeRegistry, wildlifeViews } from '../domain/wildlife.ts';
@@ -65,6 +67,7 @@ export type Snapshot = {
   forestry:ForestrySnapshot;
   gathering: GatheringSnapshot;
   warehouse: WarehouseView;
+  wardrobe:WardrobeView;
   save: SaveStatus;
   appearance:SceneAppearance;
 };
@@ -253,6 +256,7 @@ export async function createRuntime(
       gathering: gatheringSnapshot(state,registry,activeColliders()),
       gatheringSources: state.gathering.sources,
       warehouse: warehouseSnapshot(state, registry),
+      wardrobe:wardrobeSnapshot(state.inventory),
       workshop:workshopSnapshot(state),
       placement:placement?structuredClone(placement):null,
       save: persistence.status(),
@@ -279,6 +283,7 @@ export async function createRuntime(
       forestry:forestrySnapshot(state,treeById,registry.catalog),
       gathering: gatheringSnapshot(state,registry,activeColliders()),
       warehouse: warehouseSnapshot(state, registry),
+      wardrobe:wardrobeSnapshot(state.inventory),
       workshop:workshopSnapshot(state),
       placement:placement?structuredClone(placement):null,
       save: persistence.status(),
@@ -386,6 +391,13 @@ export async function createRuntime(
     approachUpgrade(id:string){if(blocked()||placement)return;message=approachUpgrade(state,id,activeColliders());publishSnapshot();},
     upgrade(id:string){if(blocked()||placement)return;message=beginUpgrade(state,id);publishSnapshot();},
     mountExterior(id:string|null){if(blocked()||placement)return;message=mountFireTop(state,id);view.render(state,0);publishSnapshot();},
+    changeWear(intent:WardrobeIntent){
+      // Allow wardrobe transactions while its inventory panel is open, without world time passing.
+      if(destroyed||contextLost||!interfaceOpen)return;
+      try{const next=changeWardrobe(state.inventory,intent);state.inventory=next.inventory;message=next.message;}
+      catch(error){message=error instanceof Error?error.message:'换装没有完成，原来的衣物保持不变。';}
+      view.render(state,0);publishSnapshot();
+    },
     previewTransfer:itemTransfers.preview,
     worldTransferItem:itemTransfers.worldItem,
     transferItem(item:ItemTransferIntent,x:number,y:number,toWarehouse:boolean){

@@ -20,6 +20,8 @@ import { WAYPOINTS, PATH, RIVER_KNOTS, GIANT, HOME, START } from "../content/wor
 import { makeTrees } from "../world/layout.ts";
 import { recordCanvas } from "../app/recorder.ts";
 import { Warehouse } from './Warehouse.tsx';
+import { Wardrobe } from './Wardrobe.tsx';
+import { EMPTY_WARDROBE_VIEW } from '../domain/wardrobe.ts';
 import { SaveControls } from './SaveControls.tsx';
 import { createSaveController, INITIAL_SAVE_STATUS } from '../app/save-controller.ts';
 import type { SaveController } from '../app/save-controller.ts';
@@ -131,6 +133,7 @@ const empty: Snapshot = {
   },
   gathering: { inventory: [], action: null, selectedTarget: null },
   warehouse: { categories: [], items: [], total: 0, occupiedKinds: 0 },
+  wardrobe:EMPTY_WARDROBE_VIEW,
   save: INITIAL_SAVE_STATUS,
   appearance:sceneAppearanceAt(0),
 };
@@ -495,7 +498,8 @@ export function App() {
         onCollect={id=>runtime.current?.transferItem({kind:'loose-wood',id,name:'木料'},0,0,true)}
         onDragStart={itemDrag.start} dragging={!!itemDrag.drag} notice={itemDrag.notice|| (snapshot.woodcraft.loading?'正在准备木料堆…':'')}
         furniture={<OwnedFurniture view={snapshot.workshop} player={{x:snapshot.x,z:snapshot.z}} onDragStart={itemDrag.start} onApproach={id=>leaveWarehouse(()=>runtime.current?.approachTarget(id))} onPlace={id=>leaveWarehouse(()=>runtime.current?.beginPlacement(id))} onPack={id=>runtime.current?.transferItem({kind:'furniture',id,name:'家具'},0,0,true)}/>}
-        blueprints={<BlueprintLibrary view={snapshot.workshop} onSelect={id=>leaveWarehouse(()=>runtime.current?.select(id))}/>}/>
+        blueprints={<BlueprintLibrary view={snapshot.workshop} onSelect={id=>leaveWarehouse(()=>runtime.current?.select(id))}/>}
+        wardrobe={<Wardrobe view={snapshot.wardrobe} onChange={intent=>runtime.current?.changeWear(intent)}/>}/>
       {itemDrag.drag&&<div className={`item-drag-ghost${itemDrag.drag.valid?' is-valid':''}`} style={{left:Math.min(window.innerWidth-230,Math.max(8,itemDrag.drag.x+16)),top:Math.max(8,Math.min(window.innerHeight-86,itemDrag.drag.y-68))}}><strong>{itemDrag.drag.item.name}</strong><span>{itemDrag.drag.reason}</span></div>}
       <WoodDropControls active={snapshot.woodcraft.dropping} onCancel={()=>runtime.current?.cancelWoodDrop()}/>
       <PlacementControls draft={snapshot.placement} onRotate={()=>runtime.current?.rotatePlacement()} onConfirm={()=>runtime.current?.confirmPlacement()} onCancel={()=>runtime.current?.cancelPlacement()}/>

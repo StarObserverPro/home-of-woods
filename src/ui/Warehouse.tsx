@@ -12,10 +12,10 @@ function ItemSymbol({ symbol }: { symbol: 'branch' | 'mushroom' | 'wood' | 'bund
   </svg>;
 }
 
-export function Warehouse({open,view,woodcraft,onClose,onApproach,onFocus,onThrow,onCollect,onDragStart,dragging,notice,furniture,blueprints,carrying,carrySummary}:{
+export function Warehouse({open,view,woodcraft,onClose,onApproach,onFocus,onThrow,onCollect,onDragStart,dragging,notice,furniture,blueprints,wardrobe,carrying,carrySummary}:{
   open:boolean;view:WarehouseView;woodcraft:WoodcraftSnapshot;onClose:()=>void;onApproach:()=>void;onFocus:()=>void;
   onThrow:(key:string)=>void;onCollect:(id:string)=>void;onDragStart:(event:PointerEvent<HTMLElement>,item:ItemTransferIntent)=>void;
-  dragging:boolean;notice:string;furniture:ReactNode;blueprints:ReactNode;carrying:ReactNode;carrySummary:ReactNode;
+  dragging:boolean;notice:string;furniture:ReactNode;blueprints:ReactNode;wardrobe:ReactNode;carrying:ReactNode;carrySummary:ReactNode;
 }) {
   const panel = useRef<HTMLElement>(null);
   const closeRef=useRef(onClose);closeRef.current=onClose;
@@ -26,12 +26,12 @@ export function Warehouse({open,view,woodcraft,onClose,onApproach,onFocus,onThro
   const items = view.items.filter(i => category === 'all' || i.category === category);
   const selected = items.find(i=>i.key===selectedKey) ?? items[0];
   if(!open)return null;
-  const materialTab=!['carrying','furniture','blueprints'].includes(category);
+  const materialTab=!['carrying','furniture','blueprints','wardrobe'].includes(category);
   return <aside ref={panel} tabIndex={-1} role="dialog" aria-modal="false" className={`warehouse-dialog warehouse-dock${dragging?' is-dragging':''}`} aria-labelledby="warehouse-title" data-transfer-target="warehouse">
     <header className="warehouse-heading"><div><span className="eyebrow">林间所得，慢慢积攒</span><h2 id="warehouse-title">仓库</h2><p>{view.occupiedKinds} 类物品 · 合计 {view.total} 份</p></div><button aria-label="关闭仓库" onClick={onClose}>×</button></header>
     <div className="warehouse-carry-summary">{carrySummary}</div>
     <nav className="warehouse-categories" aria-label="仓库分类">
-      {[{id:'carrying',name:'随身'},{id:'all',name:'营地材料'},...view.categories,{id:'furniture',name:'家具'},{id:'blueprints',name:'图纸'},...(view.items.some(i=>!i.recognized)?[{id:'unknown',name:'待识别'}]:[])].map(({id,name})=><button key={id} aria-pressed={category===id} onClick={()=>setCategory(id)}>{name}</button>)}
+      {[{id:'carrying',name:'随身'},{id:'all',name:'营地材料'},...view.categories,{id:'furniture',name:'家具'},{id:'blueprints',name:'图纸'},{id:'wardrobe',name:'穿戴'},...(view.items.some(i=>!i.recognized)?[{id:'unknown',name:'待识别'}]:[])].map(({id,name})=><button key={id} aria-pressed={category===id} onClick={()=>setCategory(id)}>{name}</button>)}
     </nav>
     {materialTab&&<div className="warehouse-context"><span>木料堆 {woodcraft.count} / {WOODCRAFT.maxPieces}</span><button className="context-button" onClick={woodcraft.near?onFocus:onApproach}>{woodcraft.near?'看向木料堆':'走近木料堆'}</button></div>}
     <div className="warehouse-scroll">
@@ -58,6 +58,7 @@ export function Warehouse({open,view,woodcraft,onClose,onApproach,onFocus,onThro
     {category==='carrying'&&carrying}
     {category==='furniture'&&furniture}
     {category==='blueprints'&&blueprints}
+    {category==='wardrobe'&&wardrobe}
     </div>
     <footer className="warehouse-return-zone"><span>{dragging?'拖到这里，收回仓库':'B / Esc 收起 · 拖拽只在松手时移动物品'}</span><p role="status" aria-live="polite">{notice}</p></footer>
   </aside>;
