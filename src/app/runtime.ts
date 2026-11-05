@@ -11,7 +11,8 @@ import type {InteractionAccess,ItemTransferIntent} from '../domain/interaction-a
 import {beginUpgrade,approachUpgrade,mountFireTop} from '../domain/upgrades.ts';
 import {beginWorkshop,advanceWorkshop,workshopSnapshot,tradeBlueprint,tradeSupply,workshopBusy} from '../domain/workshop.ts';
 import type {WorkshopSnapshot} from '../domain/workshop.ts';
-import {advanceLocalClock,CLOCK_SPEEDS} from '../domain/local-clock.ts';
+import {CLOCK_SPEEDS} from '../domain/local-clock.ts';
+import {advanceToEveningStop,sleepUntilSunrise,dayCycleSnapshot} from '../domain/day-cycle.ts';
 import {advanceFood,foodSnapshot,startDryMushrooms,startMushroomSoup,eatMushroomSoup,eatBlackBread} from '../domain/food.ts';
 import type {FoodGrain} from '../content/food.ts';
 import type {ClockSpeed} from '../domain/local-clock.ts';
@@ -54,6 +55,7 @@ export type Snapshot = {
   woodcraft:WoodcraftSnapshot;
   workshop:WorkshopSnapshot;
   food:ReturnType<typeof foodSnapshot>;
+  dayCycle:ReturnType<typeof dayCycleSnapshot>;
   placement:PlacementDraft|null;
   zone: string;
   x: number;
@@ -143,7 +145,8 @@ export async function createRuntime(
     while (accumulator >= MOVEMENT.fixedStep) {
       // An open inventory freezes walking and the world clock, while nearby wood can settle.
       if(interfaceOpen){woodcraft.step(MOVEMENT.fixedStep);accumulator-=MOVEMENT.fixedStep;continue;}
-      advanceLocalClock(state,MOVEMENT.fixedStep);
+      const stoppedAtDinner=advanceToEveningStop(state,MOVEMENT.fixedStep);
+      if(stoppedAtDinner)message='18:00，傍晚到了。沙漏已停下：可以回营地做饭、看故事，或继续夜间探索。';
       let sx =
           stick.x +
           (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) -
@@ -259,6 +262,7 @@ export async function createRuntime(
       warehouse: warehouseSnapshot(state, registry),
       workshop:workshopSnapshot(state),
       food:foodSnapshot(state),
+      dayCycle:dayCycleSnapshot(state),
       placement:placement?structuredClone(placement):null,
       save: persistence.status(),
       appearance:view.getAppearance(),
@@ -286,6 +290,7 @@ export async function createRuntime(
       warehouse: warehouseSnapshot(state, registry),
       workshop:workshopSnapshot(state),
       food:foodSnapshot(state),
+      dayCycle:dayCycleSnapshot(state),
       placement:placement?structuredClone(placement):null,
       save: persistence.status(),
       appearance:view.getAppearance(),
@@ -398,12 +403,31 @@ export async function createRuntime(
       const result=itemTransfers.commit(item,x,y,toWarehouse);message=result.reason;view.render(state,0);publishSnapshot();return result;
     },
     setClockSpeed(speed:ClockSpeed){if(blocked()||!CLOCK_SPEEDS.includes(speed))return;state.clock={speed};publishSnapshot();},
+    sleepToDawn(){
+      if(blocked()||placement||woodcraft.isDropping())return;
+      const count=state.dayCycle.nightsSlept;
+      message=sleepUntilSunrise(state);
+      if(state.dayCycle.nightsSlept!==count){
+        keys.clear();stick.x=stick.z=0;
+        const foodMessage=advanceFood(state);if(foodMessage)message+=' '+foodMessage;
+        const forestryMessage=advanceForestry(state,treeById);if(forestryMessage)message+=' '+forestryMessage;
+        synchronizeGatheringHosts(state,registry);
+        synchronizeWildlife();
+        view.inspectScene(null);
+      }
+      view.render(state,0);publishSnapshot();
+    },
+    setReading(value:boolean){
+      if(destroyed||contextLost)return;
+      if(value&&(manualPause||inspectionOpen||woodcraft.isDropping()))return;
+      view.setReading(value);view.render(state,0);publishSnapshot();
+    },
     offer(){if(blocked()||placement)return;message=beginWorkshop(state,'offering',activeColliders());publishSnapshot();},
     craft(id:string){if(blocked()||placement)return;message=beginWorkshop(state,'craft',activeColliders(),id);publishSnapshot();},
     trade(id:string){if(blocked()||placement)return;message=tradeBlueprint(state,id);publishSnapshot();},
     tradeSupply(id:string){if(blocked()||placement)return;message=tradeSupply(state,id);publishSnapshot();},
     dryMushrooms(){if(blocked()||placement)return;message=startDryMushrooms(state);view.render(state,0);publishSnapshot();},
-    cookSoup(grain:FoodGrain){if(blocked()||placement)return;message=startMushroomSoup(state,grain);view.render(state,0);publishSnapshot();},
+    cookSoup(grain:FoodGrain){if(blocked()||placement)return;const before=state.food.cooking;message=startMushroomSoup(state,grain);if(!before&&state.food.cooking&&state.clock.speed===0)state.clock={speed:1};view.render(state,0);publishSnapshot();},
     eatSoup(){if(blocked()||placement)return;message=eatMushroomSoup(state);view.render(state,0);publishSnapshot();},
     eatBread(){if(blocked()||placement)return;message=eatBlackBread(state);view.render(state,0);publishSnapshot();},
     approachMerchant(){if(blocked()||placement)return;cancelPlayerAction(state);state.selected=CAMP_VISITOR.id;
