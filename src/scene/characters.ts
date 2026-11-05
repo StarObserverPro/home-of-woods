@@ -95,7 +95,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   function update(state:GameState,reducedMotion=false,ambientTime=state.time){
     if(disposed)return;
     player.position.set(state.player.x,heightAt(state.player.x,state.player.z),state.player.z);player.rotation.y=state.player.facing;
-    inspectionProps.visible=inspection!==null;impact=null;body.visible=true;pickedScrap.visible=false;readingBowl.visible=false;body.position.y=bodyY;cutHeight=null;chest.position.y=chestY;procedural.root.visible=false;
+    inspectionProps.visible=inspection!==null;impact=null;body.visible=true;pickedScrap.visible=false;readingBowl.visible=false;readingBowl.position.set(0,.89,.42);readingBowl.rotation.x=0;body.position.y=bodyY;cutHeight=null;chest.position.y=chestY;procedural.root.visible=false;
     if(inspection){
       trunk.visible=inspection==='horizontal';stump.visible=block.visible=inspection==='vertical';player.updateMatrixWorld(true);
       let target:AxeTarget;
@@ -142,6 +142,13 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
         }
         turn('head','x',.10);
         readingBowl.visible=state.food.lastMealDay===calendarAt(state.time).day;
+        if(readingBowl.visible&&!reducedMotion){
+          // A small occasional sip from the bowl, not a new gameplay consume event.
+          const sip=Math.pow(Math.max(0,Math.sin(ambientTime*.46)),8);
+          readingBowl.position.y+=.18*sip;readingBowl.position.z-=.10*sip;readingBowl.rotation.x=-.16*sip;
+          turn('upperarml','x',-.14*sip);turn('upperarmr','x',-.14*sip);
+          turn('head','x',-.09*sip);
+        }
       }
       if(state.workshop.job?.phase==='working'){
         const job=state.workshop.job;procedural.update(job.kind==='offering'?'pray':'pickup',job.kind==='offering'?(state.time-job.startedAt!)*2:1.35);procedural.root.position.set(0,0,0);procedural.root.rotation.set(0,0,0);body.visible=false;procedural.root.visible=true;
