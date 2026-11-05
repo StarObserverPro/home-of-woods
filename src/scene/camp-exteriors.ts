@@ -94,6 +94,13 @@ export function createCampExteriors(r:Resources,tent:THREE.Group,cabin:THREE.Gro
   const hook=part('camp-fire:hook',owners[2]);
   rod(hook,'pot-suspension-chain',[0,2.57,0],[0,1.28,0],.035,'#4e5554');
   rod(hook,'curved-pot-hook',[0,1.27,0],[.26,1.16,0],.065,'#535956');
+  const pot=part('camp-fire:pot',owners[2]);
+  const potBody=new THREE.Mesh(r.own(new THREE.CylinderGeometry(.74,.62,.62,10)),material('#747b75'));
+  potBody.name='cooking-pot-body';potBody.position.y=1.04;potBody.castShadow=potBody.receiveShadow=true;pot.add(potBody);
+  const potRim=new THREE.Mesh(r.own(new THREE.TorusGeometry(.73,.075,4,10)),material('#adb5a6'));
+  potRim.name='cooking-pot-rim';potRim.rotation.x=Math.PI/2;potRim.position.y=1.38;pot.add(potRim);
+  rod(pot,'cooking-pot-bail',[-.70,1.39,0],[0,1.75,0],.045,'#b9bfad');
+  rod(pot,'cooking-pot-bail',[0,1.75,0],[.70,1.39,0],.045,'#b9bfad');
   const grill=part('camp-fire:grill',owners[2]);
   for(const x of [-.92,.92])rod(grill,'grill-frame',[x,1.40,-.90],[x,1.40,.90],.08,'#646b68');
   for(const z of [-.90,.90])rod(grill,'grill-frame',[-.92,1.40,z],[.92,1.40,z],.08,'#646b68');
@@ -111,7 +118,9 @@ export function createCampExteriors(r:Resources,tent:THREE.Group,cabin:THREE.Gro
       if(disposed)return;
       const fitted=(id:string)=>!!workshop.upgrades[id]&&workshop.upgrades[id].level>=1;
       for(const [id,group] of groups){
-        group.visible=fitted(id)&&(!['camp-fire:hook','camp-fire:grill','camp-fire:smoker'].includes(id)||workshop.mounted?.['camp-fire:top']===id);
+        group.visible=fitted(id)&&(id==='camp-fire:pot'
+          ? workshop.mounted?.['camp-fire:top']==='camp-fire:hook'
+          : !['camp-fire:hook','camp-fire:grill','camp-fire:smoker'].includes(id)||workshop.mounted?.['camp-fire:top']===id);
       }
       const changed=fitted('tent:canvas');
       for(const mesh of baseCanvas)mesh.visible=!changed;

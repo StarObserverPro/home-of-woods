@@ -22,5 +22,5 @@ jobs:
       - run: npm run build
       # Test the current clothing feature; old evidence and scene-sandbox
       # regressions are not prototype merge gates.
-      - run: node --experimental-strip-types --test tests/wardrobe.test.ts
+      - run: node --experimental-strip-types --test tests/wardrobe.test.ts tests/character-wardrobe.test.ts tests/merchant.test.ts tests/food-foundation.test.ts tests/day-cycle.test.ts tests/affix-vfx-library.test.ts tests/release-integration.test.ts
         if: ${{ hashFiles('tests/wardrobe.test.ts') != '' }}

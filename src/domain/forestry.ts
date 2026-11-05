@@ -1,4 +1,6 @@
 import {awardGround} from './carrying.ts';
+import {heavyLaborAllowed} from './food.ts';
+import type {FoodState} from './food.ts';
 import {LOG_HARVEST_LENGTH_MM} from '../content/wood-uses.ts';
 import {canStand} from './navigation.ts';
 import {FORESTRY} from '../content/forestry.ts';
@@ -20,7 +22,7 @@ export type ForestryState={
   ledger:{year:number;base:number;used:number;reserved:number};
   slots:Record<string,TreeLife>; active:ChopAction|null; nextAction:number; completedActions:string[];
 };
-export type ForestryHost={time:number;player:Point&{facing:number;moving:boolean};route:Point[];selected:string|null;forestry:ForestryState;inventory:InventoryState};
+export type ForestryHost={time:number;player:Point&{facing:number;moving:boolean};route:Point[];selected:string|null;forestry:ForestryState;inventory:InventoryState;food?:FoodState};
 export type ForestrySnapshot={
   wood:number;points:{year:number;available:number;used:number;reserved:number};
   active:{treeId:string;phase:'chopping'|'falling';progress:number;hits:number;totalHits:number}|null;
@@ -49,6 +51,7 @@ export function chopReason(host:ForestryHost,tree:Tree|undefined):string{
   if(life.status==='sapling')return '幼树尚未成材，请让它继续生长。';
   if(host.forestry.active)return host.forestry.active.phase==='falling'?'树正在倒下，请稍候。':'正在挥斧，可取消或移动离开。';
   if(life.status!=='standing')return '这棵树当前无法砍伐。';
+  if(host.food&&!heavyLaborAllowed(host.food,host.time))return '昨天没有吃饱，今天先采集、散步或做些轻活吧。';
   if(Math.hypot(host.player.x-tree.x,host.player.z-tree.z)>chopRange(tree))return '先走近树干，再开始砍伐。';
   if(availablePoints(host.forestry)<volumePoints(tree))return '本年度可用体量点数不足。';
   return '';

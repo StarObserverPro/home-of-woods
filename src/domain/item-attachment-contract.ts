@@ -21,8 +21,8 @@ export function createAttachmentRegistry(
   for (const slot of slots) {
     if (!isStableId(slot.slotId) || byId.has(slot.slotId) || !isStableId(slot.kind) ||
         !isStableId(slot.anchorId) || !['planned','active'].includes(slot.status) ||
-        !['fixture','item'].includes(slot.host.kind) ||
-        (slot.host.kind === 'fixture' ? !isStableId(slot.host.id) : !isStableId(slot.host.definitionId)) ||
+        !['fixture','item','character'].includes(slot.host.kind) ||
+        (slot.host.kind === 'item' ? !isStableId(slot.host.definitionId) : !isStableId(slot.host.id)) ||
         !Array.isArray(slot.contexts) || slot.contexts.some(v => !isStableId(v)) ||
         new Set(slot.contexts).size !== slot.contexts.length)
       throw new Error('Invalid attachment slot registration');
@@ -41,8 +41,8 @@ export const mountedSlotKey = (hostId: string, slotId: string) => JSON.stringify
 export function resolveSlot(instances: readonly OwnedItem[], hostId: string, slotId: string, registry: AttachmentRegistry) {
   const slot = registry.slots.get(slotId);
   if (!slot) throw new Error('Unrecognized attachment slot: ' + slotId);
-  if (slot.host.kind === 'fixture') {
-    if (slot.host.id !== hostId) throw new Error('Wrong fixture for attachment slot');
+  if (slot.host.kind === 'fixture' || slot.host.kind === 'character') {
+    if (slot.host.id !== hostId) throw new Error('Wrong ' + slot.host.kind + ' for attachment slot');
   } else {
     const host = instances.find(item => item.instanceId === hostId);
     if (!host || host.definitionId !== slot.host.definitionId) throw new Error('Missing or wrong item host');

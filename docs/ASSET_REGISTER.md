@@ -1,5 +1,7 @@
 # 资产登记与批准记录
 
+2026-11-03 行商 PR #16：NPC 继续采用已经登记并保存 CC0 许可证的 KayKit `visitor.glb` / `motions.glb`，现阶段带篷驴车是 `src/scene/merchant-wagon.ts` 的本地原创程序几何，不包含新增下载资产、贴图或模型；外观参考 [Codels Covered Wagon](https://codels.download/models/wagon)，但没有采用其 GLB，因此不能把参考模型冒称为本项目已集成资源。临时进出运动只消费游戏时钟，不参与物品所有权和交易结算；详见 [行商契约](MERCHANT.md)。
+
 2026-11-02 木屋第一阶段修缮复用下表已有的原创 `cabin.glb`：`scene/cabin-repair.ts` 克隆两块屋顶板和两根门边支撑，保留原几何、材质、倒角及比例。源 GLB 字节不变，不新增第三方下载；共享资源仍由 Models 所有者释放。`scene/selection-marker.ts` 是原创四段细线提示，无贴图；篝火仅修改既有锚点。准入及实机范围见 [营地交互](CAMP_INTERACTIONS.md)。
 
 对应 HOW-BASELINE-1.0；准入规则见 [ASSET_PIPELINE](ASSET_PIPELINE.md)，工作清单见 [ART_HUD](ART_HUD.md)。

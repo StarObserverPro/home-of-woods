@@ -19,6 +19,7 @@ export type OwnedItemDefinition = {
 };
 
 export const OWNED_ITEM_DEFINITIONS: readonly OwnedItemDefinition[] = [
+  {definitionId:'blueprint.sheet',name:'图纸副本',category:'blueprint',status:'active',blueprintIds:[],mountKinds:[],presentationId:null},
   ...STARTER_WEAR.map(item => ({
     definitionId:item.definitionId,name:item.name,category:'apparel',status:'active' as const,
     blueprintIds:['blueprint.starter-outfit'],
@@ -35,7 +36,7 @@ export const OWNED_ITEM_DEFINITIONS: readonly OwnedItemDefinition[] = [
   { definitionId:'travel.umbrella', name:'旅行伞', category:'travel-gear',
     status:'planned', blueprintIds:[], mountKinds:[], presentationId:null },
   { definitionId:'travel.sun-hat', name:'旅行帽', category:'travel-gear',
-    status:'planned', blueprintIds:[], mountKinds:[], presentationId:null },
+    status:'planned', blueprintIds:[], mountKinds:['headwear'], presentationId:null },
   { definitionId:'travel.spyglass', name:'望远镜', category:'travel-gear',
     status:'planned', blueprintIds:[], mountKinds:[], presentationId:null },
   { definitionId:'travel.whistle', name:'口哨', category:'travel-gear',
@@ -43,7 +44,27 @@ export const OWNED_ITEM_DEFINITIONS: readonly OwnedItemDefinition[] = [
   { definitionId:'travel.animal-blanket', name:'旅行毯', category:'travel-gear',
     status:'planned', blueprintIds:[], mountKinds:[], presentationId:null },
   { definitionId:'travel.backpack', name:'旅行背包', category:'travel-gear',
-    status:'planned', blueprintIds:[], mountKinds:[], presentationId:null },
+    status:'planned', blueprintIds:[], mountKinds:['back-gear'], presentationId:null },
+  // Real wardrobe pieces are durable items, unlike cosmetic hair choices.
+  // The visual variants already exist for QA; all of these remain non-craftable plans.
+  { definitionId:'apparel.field-shirt', name:'田野衬衣', category:'apparel',
+    status:'planned', blueprintIds:[], mountKinds:['upper-body'], presentationId:'wardrobe.top.field-shirt' },
+  { definitionId:'apparel.canvas-vest', name:'帆布背心', category:'apparel',
+    status:'planned', blueprintIds:[], mountKinds:['upper-body'], presentationId:'wardrobe.top.canvas-vest' },
+  { definitionId:'apparel.work-jacket', name:'劳动外套', category:'apparel',
+    status:'planned', blueprintIds:[], mountKinds:['upper-body'], presentationId:'wardrobe.top.work-jacket' },
+  { definitionId:'apparel.field-trousers', name:'林地长裤', category:'apparel',
+    status:'planned', blueprintIds:[], mountKinds:['lower-body'], presentationId:'wardrobe.bottom.field-trousers' },
+  { definitionId:'apparel.patched-trousers', name:'补丁工裤', category:'apparel',
+    status:'planned', blueprintIds:[], mountKinds:['lower-body'], presentationId:'wardrobe.bottom.patched-trousers' },
+  { definitionId:'apparel.shoes', name:'低帮鞋', category:'apparel',
+    status:'planned', blueprintIds:[], mountKinds:['footwear'], presentationId:'wardrobe.footwear.shoes' },
+  { definitionId:'apparel.work-boots', name:'高帮工作靴', category:'apparel',
+    status:'planned', blueprintIds:[], mountKinds:['footwear'], presentationId:'wardrobe.footwear.boots' },
+  { definitionId:'apparel.cloth-cap', name:'布帽', category:'apparel',
+    status:'planned', blueprintIds:[], mountKinds:['headwear'], presentationId:'wardrobe.headwear.cap' },
+  { definitionId:'apparel.beanie', name:'毛线帽', category:'apparel',
+    status:'planned', blueprintIds:[], mountKinds:['headwear'], presentationId:'wardrobe.headwear.beanie' },
   // Candidate destinations for the "住" item taxonomy; not unlocked, craftable,
   // spawned, rendered or interpreted as approved trait effects in this patch.
   {

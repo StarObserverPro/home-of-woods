@@ -11,20 +11,22 @@ function PlanDrawing({subject}:{subject:'house'|'tent'|'fire'|'craft'}){
 
 export function BlueprintLibrary({view,onSelect}:{view:WorkshopSnapshot;onSelect:(id:string)=>void}){
   return <section className="blueprint-library" aria-label="图纸收藏">
-    <p className="warehouse-note">图纸只需学习一次，安装时再消耗材料。装好的外部部件保留在原设施上，不生成第二个建筑。</p>
+    <details className="warehouse-note"><summary>图纸如何使用？</summary>基础图纸永久掌握；复杂图纸可能只有有限制作次数。材料在实际制作时扣除。</details>
     {BLUEPRINTS.map(plan=>{
       const known=view.blueprints.includes(plan.id);
+      const copies=view.copyUses[plan.id]??[];
+      const available=known||copies.length>0;
       const upgrade=plan.kind==='upgrade';
       const host=upgrade?upgradeHostId(plan.targetId):'';
       const materials=upgrade?findUpgradeProfile(plan.targetId)?.paths.find(path=>path.blueprintId===plan.id)?.materials:[];
       const subject=host==='cabin'?'house':host==='tent'?'tent':host==='camp-fire'?'fire':'craft';
-      return <article className={`blueprint-card${known?'':' is-unknown'}`} key={plan.id}>
+      return <article className={`blueprint-card${available?'':' is-unknown'}`} key={plan.id}>
         <PlanDrawing subject={subject}/>
-        <div className="blueprint-heading"><h3>{plan.name}</h3><span>{known?'已收录':'未获得'}</span></div>
-        <small>{plan.targetLabel}</small><p>{plan.description}</p>
+        <div className="blueprint-heading"><h3>{plan.name}</h3><span>{known?'∞':copies.length?'剩 '+copies.join(' / '):'未获得'}</span></div>
+        <small>{plan.targetLabel}</small><details><summary>图纸说明</summary><p>{plan.description}</p>
         {upgrade&&<p className="blueprint-cost">{materials?.length?materials.map(material=>`${material.name} ${material.quantity} ${material.unit??'份'}`).join(' · '):'使用原有材料原位整理，无额外耗材'}</p>}
-        <p className="blueprint-source">{plan.source}</p>
-        {known&&<button className="context-button" onClick={()=>onSelect(upgrade?host:WORKBENCH.id)}>{upgrade?'查看该设施的外部改造':'查看工作台'}</button>}
+        <p className="blueprint-source">{plan.source}</p></details>
+        {available&&<button className="context-button" onClick={()=>onSelect(upgrade?host:WORKBENCH.id)}>{upgrade?'查看该设施的外部改造':'查看工作台'}</button>}
       </article>;
     })}
   </section>;
