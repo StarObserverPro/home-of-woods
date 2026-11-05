@@ -376,7 +376,7 @@ export function App() {
         </section>
         <Hourglass view={snapshot.workshop} disabled={!ready||snapshot.paused||readerOpen} onSpeed={s=>runtime.current?.setClockSpeed(s)}/>
         <EveningControls view={snapshot.dayCycle} disabled={!ready||snapshot.paused||readerOpen||warehouseOpen}
-          onContinue={()=>runtime.current?.setClockSpeed(1)} onSleep={()=>runtime.current?.sleepToDawn()}/>
+          onContinue={()=>runtime.current?.setClockSpeed(1)} onSleep={()=>runtime.current?.sleepToDawn()} onReturnToCamp={()=>runtime.current?.returnToTent()}/>
         <button
           className="round-button pause"
           aria-label="暂停"
