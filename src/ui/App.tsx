@@ -8,6 +8,8 @@ import {woodcraftDetails,WoodcraftControls,WoodDropControls} from './Woodcraft.t
 import {emptyWoodcraftSnapshot} from '../app/woodcraft-session.ts';
 import {workshopDetails,Hourglass,WorkshopControls,OwnedFurniture,PlacementControls} from './Workshop.tsx';
 import {calendarAt} from '../domain/local-clock.ts';
+import {merchantVisitAt} from '../content/merchant.ts';
+import {MerchantShop} from './MerchantShop.tsx';
 import {WORKBENCH} from '../content/workshop.ts';
 import {CAMP_VISITOR} from '../content/characters.ts';
 import {treeVisual} from '../world/tree-appearance.ts';
@@ -16,16 +18,21 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import { createRuntime } from "../app/runtime.ts";
 import type { Runtime, Snapshot } from "../app/runtime.ts";
 import type { GameState } from "../domain/state.ts";
-import { WAYPOINTS, PATH, RIVER_KNOTS, GIANT, HOME, START } from "../content/world.ts";
+import { WAYPOINTS, PATH, RIVER_KNOTS, GIANT, HOME, START, WORLD_SEED } from "../content/world.ts";
 import { makeTrees } from "../world/layout.ts";
 import { recordCanvas } from "../app/recorder.ts";
 import { Warehouse } from './Warehouse.tsx';
+import {FoodControls} from './FoodControls.tsx';
+import {EveningControls,ForestReader} from './Evening.tsx';
+import { Wardrobe } from './Wardrobe.tsx';
+import { EMPTY_WARDROBE_VIEW } from '../domain/wardrobe.ts';
 import { SaveControls } from './SaveControls.tsx';
 import { createSaveController, INITIAL_SAVE_STATUS } from '../app/save-controller.ts';
 import type { SaveController } from '../app/save-controller.ts';
 import { createBrowserWorldSaveStore } from '../app/world-save-store.ts';
 import { createSaveContext } from '../domain/save-context.ts';
 import {sceneAppearanceAt,scenePropDetails} from '../domain/scene-props.ts';
+import {WardrobeLab} from './WardrobeLab.tsx';
 import {SceneInspector} from './SceneInspector.tsx';
 import {BlueprintLibrary,UpgradeControls} from './Blueprints.tsx';
 import {useItemDrag} from './useItemDrag.ts';
@@ -111,7 +118,10 @@ const empty: Snapshot = {
   carrying:{weight:0,bulk:0,effort:0,speed:1,reason:'',weightLimit:30,bulkLimit:10,method:'hands',items:[],ground:[],storageNear:false,visual:null},
   interaction:null,
   woodcraft:emptyWoodcraftSnapshot(),
-  workshop:{blueprints:[],offers:[],items:[],job:null,lastResponse:'',calendar:calendarAt(0),speed:1,upgrades:{},mounted:{},upgrade:null,upgradeOptions:[],inputs:{craft:false,offering:false,trade:false,canvas:false,hardware:false}},
+  merchant:{...merchantVisitAt(0),coins:100,debt:0,cargoLeft:100,budgetLeft:800,giftAvailable:false,listings:[],saleables:[]},
+  workshop:{blueprints:[],availableBlueprints:[],copyUses:{},offers:[],items:[],job:null,lastResponse:'',calendar:calendarAt(0),speed:1,upgrades:{},mounted:{},upgrade:null,upgradeOptions:[],inputs:{craft:false,offering:false,trade:false,canvas:false,hardware:false,foodSack:false}},
+  food:{today:1,heavyWork:true,nextDayReady:false,counts:{},dryingProgress:null,cookingProgress:null,sacksBought:0,mealsEaten:0},
+  dayCycle:{day:1,hour:14,speed:1,eveningStopped:false,canSleep:false,sleepReason:'傍晚后才能结束一天。',nearCamp:true,lastEveningStopDay:null,nightsSlept:0,wokeAt:null},
   placement:null,
   zone: "山间营地",
   x: START.x,
@@ -131,6 +141,7 @@ const empty: Snapshot = {
   },
   gathering: { inventory: [], action: null, selectedTarget: null },
   warehouse: { categories: [], items: [], total: 0, occupiedKinds: 0 },
+  wardrobe:EMPTY_WARDROBE_VIEW,
   save: INITIAL_SAVE_STATUS,
   appearance:sceneAppearanceAt(0),
 };
@@ -146,11 +157,14 @@ export function App() {
     [mapOpen, setMapOpen] = useState(false),
     [help, setHelp] = useState(false),
     [warehouseOpen, setWarehouseOpen] = useState(false),
+    [readerOpen,setReaderOpen]=useState(false),
+    [dawnFlash,setDawnFlash]=useState(0),
     [reduced, setReduced] = useState(false),
     [mountVersion, setMountVersion] = useState(0),
     [audit, setAudit] = useState<Record<string, unknown>[]>([]);
   const [rarityVfxMode,setRarityVfxMode]=useState(readRarityVfxPreference);
   const rarityModeRef=useRef(rarityVfxMode);
+  const priorNights=useRef<number|null>(null);
   const [displayNotice,setDisplayNotice]=useState('');
   const itemDrag=useItemDrag(
     (item,x,y,toWarehouse)=>runtime.current?.previewTransfer(item,x,y,toWarehouse)??{valid:false,reason:'场景正在准备。'},
@@ -251,15 +265,30 @@ export function App() {
   useEffect(() => {
     runtime.current?.setReducedMotion(reduced);
   }, [reduced, ready]);
-  useEffect(() => { runtime.current?.setInterfaceOpen(warehouseOpen);if(!warehouseOpen)itemDrag.cancel(); },[warehouseOpen,ready]);
+  useEffect(() => {
+    runtime.current?.setReading(readerOpen);
+    runtime.current?.setInterfaceOpen(warehouseOpen||readerOpen);
+    if(!warehouseOpen)itemDrag.cancel();
+  },[warehouseOpen,readerOpen,ready]);
+  useEffect(()=>{
+    if(!ready){priorNights.current=null;return;}
+    const count=snapshot.dayCycle.nightsSlept;
+    if(priorNights.current!==null&&count>priorNights.current)setDawnFlash(v=>v+1);
+    priorNights.current=count;
+  },[ready,snapshot.dayCycle.nightsSlept]);
+  useEffect(()=>{
+    if(!readerOpen)return;
+    const close=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();setReaderOpen(false);}};
+    document.addEventListener('keydown',close,true);return()=>document.removeEventListener('keydown',close,true);
+  },[readerOpen]);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if(e.code!=='KeyB'||e.repeat||e.target instanceof HTMLElement && e.target.closest('input,textarea,select,[contenteditable]'))return;
-      if(!ready||snapshot.paused)return;
+      if(!ready||snapshot.paused||readerOpen)return;
       e.preventDefault();e.stopPropagation();setWarehouseOpen(v=>!v);
     };
     document.addEventListener('keydown',key,true);return()=>document.removeEventListener('keydown',key,true);
-  },[ready,snapshot.paused]);
+  },[ready,snapshot.paused,readerOpen]);
   const selectedTree = snapshot.selected ? treeById.get(snapshot.selected) : undefined;
   const forest = snapshot.forestry;
   const treeAction = forest.selectedTree;
@@ -352,7 +381,9 @@ export function App() {
             </p>
           </div>
         </section>
-        <Hourglass view={snapshot.workshop} disabled={!ready||snapshot.paused} onSpeed={s=>runtime.current?.setClockSpeed(s)}/>
+        <Hourglass view={snapshot.workshop} disabled={!ready||snapshot.paused||readerOpen} onSpeed={s=>runtime.current?.setClockSpeed(s)}/>
+        <EveningControls view={snapshot.dayCycle} disabled={!ready||snapshot.paused||readerOpen||warehouseOpen}
+          onContinue={()=>runtime.current?.setClockSpeed(1)} onSleep={()=>runtime.current?.sleepToDawn()} onReturnToCamp={()=>runtime.current?.returnToTent()}/>
         <button
           className="round-button pause"
           aria-label="暂停"
@@ -495,7 +526,8 @@ export function App() {
         onCollect={id=>runtime.current?.transferItem({kind:'loose-wood',id,name:'木料'},0,0,true)}
         onDragStart={itemDrag.start} dragging={!!itemDrag.drag} notice={itemDrag.notice|| (snapshot.woodcraft.loading?'正在准备木料堆…':'')}
         furniture={<OwnedFurniture view={snapshot.workshop} player={{x:snapshot.x,z:snapshot.z}} onDragStart={itemDrag.start} onApproach={id=>leaveWarehouse(()=>runtime.current?.approachTarget(id))} onPlace={id=>leaveWarehouse(()=>runtime.current?.beginPlacement(id))} onPack={id=>runtime.current?.transferItem({kind:'furniture',id,name:'家具'},0,0,true)}/>}
-        blueprints={<BlueprintLibrary view={snapshot.workshop} onSelect={id=>leaveWarehouse(()=>runtime.current?.select(id))}/>}/>
+        blueprints={<BlueprintLibrary view={snapshot.workshop} onSelect={id=>leaveWarehouse(()=>runtime.current?.select(id))}/>}
+        wardrobe={<Wardrobe view={snapshot.wardrobe} onChange={intent=>runtime.current?.changeWear(intent)}/>}/>
       {itemDrag.drag&&<div className={`item-drag-ghost${itemDrag.drag.valid?' is-valid':''}`} style={{left:Math.min(window.innerWidth-230,Math.max(8,itemDrag.drag.x+16)),top:Math.max(8,Math.min(window.innerHeight-86,itemDrag.drag.y-68))}}><strong>{itemDrag.drag.item.name}</strong><span>{itemDrag.drag.reason}</span></div>}
       <WoodDropControls active={snapshot.woodcraft.dropping} onCancel={()=>runtime.current?.cancelWoodDrop()}/>
       <PlacementControls draft={snapshot.placement} onRotate={()=>runtime.current?.rotatePlacement()} onConfirm={()=>runtime.current?.confirmPlacement()} onCancel={()=>runtime.current?.cancelPlacement()}/>
@@ -511,7 +543,7 @@ export function App() {
         {snapshot.message}
       </div>}
       {selected && !snapshot.woodcraft.dropping && !warehouseOpen && (
-        <aside className={`target-card${gatherAction?.sourceId === gatherTarget?.id && gatherAction?.motionTag === 'gather.pickup' && ['approaching','performing'].includes(gatherAction.phase) ? ' target-card--pickup-active' : ''}`}>
+        <aside className={`target-card${snapshot.selected===CAMP_VISITOR.id?' is-merchant':''}${gatherAction?.sourceId === gatherTarget?.id && gatherAction?.motionTag === 'gather.pickup' && ['approaching','performing'].includes(gatherAction.phase) ? ' target-card--pickup-active' : ''}`}>
           <div className="target-top">
             <span className="eyebrow">{selected.tag}</span>
             <button
@@ -524,13 +556,21 @@ export function App() {
           <h2 className={selectedOwnedItem?'rarity-name':undefined} data-rarity={selectedOwnedItem?itemRarity(selectedOwnedItem).id:undefined} style={selectedOwnedItem?rarityStyle(selectedOwnedItem):undefined}>{selected.title}</h2>
           {['grove-altar','grove-altar:oracle'].includes(snapshot.selected??'') && snapshot.interaction?.near&&<div className="tree-actions"><button className="context-button" onClick={()=>runtime.current?.ritual('prayer')}>合掌祈祷</button><button className="context-button" onClick={()=>runtime.current?.cancelAction()}>取消动作</button></div>}
           {selectedTree && ['tree-slot-r3-hero-0','tree-slot-16-9','tree-slot-13-6','tree-slot-17-11','landmark-elder'].includes(selectedTree.id) && <button className="context-button" onClick={()=>runtime.current?.selectTreeBranches()}>上树采枝</button>}
-          <p>{selected.detail}</p>
+          {snapshot.selected!==CAMP_VISITOR.id&&<p>{selected.detail}</p>}
           <GroundCarryControls id={snapshot.selected} view={snapshot.carrying} onChange={intent=>runtime.current?.carry(intent)} onApproach={id=>runtime.current?.approachMaterial(id)}/>
           <WoodcraftControls selected={snapshot.selected} view={snapshot.woodcraft} message={snapshot.message} disabled={!ready||snapshot.paused||!!snapshot.placement}
             onOpen={()=>runtime.current?.openWoodcraft()} onWarehouse={()=>setWarehouseOpen(true)} onPrepare={()=>runtime.current?.prepareWoodcraft()} onThrow={()=>runtime.current?.beginWoodDrop()} onCollect={id=>runtime.current?.collectWood(id)} onClose={()=>runtime.current?.closeWoodcraft()}/>
-          <WorkshopControls selected={snapshot.selected} view={snapshot.workshop} access={snapshot.interaction} message={snapshot.message} disabled={!ready||snapshot.paused||!!snapshot.placement}
-            onOffer={()=>runtime.current?.offer()} onCraft={id=>runtime.current?.craft(id)} onTrade={id=>runtime.current?.trade(id)} onSupply={id=>runtime.current?.tradeSupply(id)} onApproach={()=>runtime.current?.approachTarget(snapshot.selected!)} onCancel={()=>runtime.current?.cancelAction()} onPlace={id=>runtime.current?.beginPlacement(id)} onPack={id=>runtime.current?.packFurniture(id)}/>
+          {snapshot.selected!==CAMP_VISITOR.id&&<WorkshopControls selected={snapshot.selected} view={snapshot.workshop} access={snapshot.interaction} message={snapshot.message} disabled={!ready||snapshot.paused||!!snapshot.placement}
+            onOffer={()=>runtime.current?.offer()} onCraft={id=>runtime.current?.craft(id)} onTrade={id=>runtime.current?.trade(id)} onSupply={id=>runtime.current?.tradeSupply(id)} onApproach={()=>runtime.current?.approachTarget(snapshot.selected!)} onCancel={()=>runtime.current?.cancelAction()} onPlace={id=>runtime.current?.beginPlacement(id)} onPack={id=>runtime.current?.packFurniture(id)}/>}
+          {snapshot.selected===CAMP_VISITOR.id&&(
+            snapshot.merchant.parked?(snapshot.interaction?.near?
+              <MerchantShop view={snapshot.merchant} disabled={!ready||snapshot.paused||!!snapshot.placement} onCheckout={order=>runtime.current?.merchantCheckout(order)??false}/>:
+              <button className="context-button" onClick={()=>runtime.current?.approachMerchant()}>走近货车</button>):
+              <span className="merchant-empty">{snapshot.merchant.active?'行商正赶着小车过来':'行商暂时不在'}</span>
+          )}
           {snapshot.selected===CAMP_PROPS.logs.id&&<div className="tree-actions">{snapshot.interaction?.near?<><button className="context-button" onClick={()=>setWarehouseOpen(true)}>打开仓库</button><button className="context-button" onClick={()=>runtime.current?.openWoodcraft()}>前往木料堆取放</button></>:<button className="context-button" disabled={!ready||snapshot.paused} onClick={()=>runtime.current?.approachTarget(CAMP_PROPS.logs.id)}>走近原木架</button>}</div>}
+          <FoodControls selected={snapshot.selected} view={snapshot.food} workshop={snapshot.workshop} access={snapshot.interaction} disabled={!ready||snapshot.paused||!!snapshot.placement}
+            onApproach={()=>runtime.current?.approachTarget(snapshot.selected!)} onDry={()=>runtime.current?.dryMushrooms()} onCook={grain=>runtime.current?.cookSoup(grain)} onEat={()=>runtime.current?.eatSoup()} onBread={()=>runtime.current?.eatBread()} onUnpack={()=>runtime.current?.unpackFoodSack()} onRead={()=>setReaderOpen(true)}/>
           <UpgradeControls view={snapshot.workshop} hasContextActions={!!snapshot.interaction} disabled={!ready||snapshot.paused||!!snapshot.placement} onApproach={id=>runtime.current?.approachUpgrade(id)} onUpgrade={id=>runtime.current?.upgrade(id)} onMount={id=>runtime.current?.mountExterior(id)} onCancel={()=>runtime.current?.cancelAction()}/>
           {snapshot.selected==='tent'&&<button className="context-button" onClick={()=>runtime.current?.select(WORKBENCH.id)}>查看帐篷前的工作台</button>}
 
@@ -632,6 +672,7 @@ export function App() {
           </p>
           <p><b>砍树</b>　选中经营树、走近后挥斧。巨木始终受到保护。</p>
           <p><b>采集</b>　点选落枝堆或蘑菇簇，再按“采集 / 走近采集”或 E。移动或切换目标可取消。</p>
+          <p><b>吃饭</b>　在行商处用鲜蘑菇换一袋混合干粮；火塘安装汤锅、晾晒架加工蘑菇。吃下正餐可为次日重体力劳动做准备，不吃饭仍可采集和散步。</p>
           <p><b>木作</b>　向行商换图纸，或在祭坛供奉一份蘑菇；帐篷前工作台用一份木料制作。仓库里的家具可以自由摆放、移动和收回。沙漏切换 1/4/12 倍游戏时间。</p>
           <p><b>仓库</b>　底部“仓库”或 B 查看分类物品与加工方向；Esc 收起后继续巡林。</p>
           <p>
@@ -722,6 +763,7 @@ export function App() {
         <details className="diagnostics">
           <summary>运行检查</summary>
           <SceneInspector key={mountVersion} runtime={()=>runtime.current} active={typeof snapshot.stats.scenePreset==='string'} audits={audit}/>
+          <WardrobeLab key={'wardrobe-'+mountVersion} runtime={()=>runtime.current}/>
           <button
             disabled={capturing}
             onClick={() => {
@@ -790,6 +832,8 @@ export function App() {
           </pre>
         </details>
       )}
+      {readerOpen && <ForestReader day={snapshot.dayCycle.day} seed={WORLD_SEED} onClose={()=>setReaderOpen(false)}/>}
+      {dawnFlash>0 && <div className="sunrise-transition" key={dawnFlash} aria-live="polite"><span>晨光照进森林，新的一天开始了</span></div>}
       {diagnostic && <div className="build-mark">M0 · 山谷初见</div>}
     </main>
   );

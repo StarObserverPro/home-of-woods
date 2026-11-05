@@ -56,6 +56,7 @@ export const EXTERIOR_PROFILES:readonly UpgradeProfile[]=[
   moduleProfile({id:'camp-fire:stones',hostId:'camp-fire',title:'重垒挡风石圈',description:'重新摆放火塘旁现有的散石，垒出较高的外圈；无需额外耗材。',materials:[],stand:fireStand,position:CAMP_PROPS.fire,durationSeconds:3}),
   moduleProfile({id:'camp-fire:support',hostId:'camp-fire',title:'双柱横梁锅架',description:'在火塘外侧立双柱，把承重横梁架在火焰上方；先有架子，才可挂其他烹饪附件。',materials:[log(1),branch(2)],stand:fireStand,position:CAMP_PROPS.fire,requires:['camp-fire:stones']}),
   moduleProfile({id:'camp-fire:hook',hostId:'camp-fire',title:'悬锅吊钩',description:'装在横梁下的吊链和锅钩；锅具本身日后另行制作。',materials:[branch(1)],stand:fireStand,position:CAMP_PROPS.fire,requires:['camp-fire:support'],mountSlot:FIRE_TOP_SLOT}),
+  moduleProfile({id:'camp-fire:pot',hostId:'camp-fire',title:'基础悬挂汤锅',description:'使用行商五金件制成一只可挂在吊钩上的基础汤锅，供营地煮菌汤。',materials:[supplied('supply.hardware','五金包','套')],stand:fireStand,position:CAMP_PROPS.fire,requires:['camp-fire:hook']}),
   moduleProfile({id:'camp-fire:grill',hostId:'camp-fire',title:'可收起的烧烤网',description:'用行商换来的五金件拼出烤网；与吊钩共用同一个火塘上部接口。',materials:[supplied('supply.hardware','五金包','套')],stand:fireStand,position:CAMP_PROPS.fire,requires:['camp-fire:support'],mountSlot:FIRE_TOP_SLOT}),
   moduleProfile({id:'camp-fire:smoker',hostId:'camp-fire',title:'焖烤烟罩',description:'用五金件装一个有出烟口的罩体；暂作外观与安装预留，食谱系统另做。',materials:[supplied('supply.hardware','五金包','套'),branch(1)],stand:fireStand,position:CAMP_PROPS.fire,requires:['camp-fire:support'],mountSlot:FIRE_TOP_SLOT}),
 ];
@@ -63,6 +64,12 @@ export const UPGRADE_PROFILES:readonly UpgradeProfile[]=[
   {id:'cabin',title:'旧木屋',initialLevel:0,position:CABIN,stand:CABIN_REPAIR_STAND,paths:[CABIN_REPAIR],future:'屋顶补板和入口加固已完成；其余墙体、屋面仍待后续图纸修整。'},
   {id:'tent',title:'帐篷',initialLevel:1,position:TENT,stand:tentStand,paths:[],future:'内部床铺、收纳和私人空间以后另行开放。'},
   {id:CAMP_PROPS.fire.id,title:'营地篝火',initialLevel:1,position:CAMP_PROPS.fire,stand:fireStand,paths:[],future:'火塘基座和烹饪附件由外部部件分别改装。'},
+  {id:CAMP_PROPS.dryer.id,title:'蘑菇晾晒架',initialLevel:0,position:CAMP_PROPS.dryer,stand:{x:CAMP_PROPS.dryer.x,z:CAMP_PROPS.dryer.z+2.5},
+    paths:[{id:'upgrade.camp-drying-rack.frame',name:'搭建蘑菇晾晒架',description:'按基础图纸用两份枝杈搭成可晾干菌类的小木架。',
+      completionMessage:'蘑菇晾晒架已搭好，可以挂上鲜菌。',fromLevel:0,toLevel:1,
+      blueprintId:'blueprint.camp-drying-rack',durationSeconds:3,materials:[branch(2)]}],
+    future:'架子已搭好，遮雨布棚等扩展以后再做。'},
+
   ...EXTERIOR_PROFILES,
   {id:CAMP_PROPS.logs.id,title:'原木架',initialLevel:1,position:CAMP_PROPS.logs,stand:{x:CAMP_PROPS.logs.x,z:CAMP_PROPS.logs.z+3.2},paths:[],future:'后续可按图纸增设防雨顶棚和储存空间，升级路径尚未开放。'},
   {id:WOODCRAFT.id,title:'营地木料堆',initialLevel:1,position:WOODCRAFT,stand:WOODCRAFT.stand,paths:[],future:'后续可按图纸改良木料围框和搬运设施，升级路径尚未开放。'},

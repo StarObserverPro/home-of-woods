@@ -1,6 +1,6 @@
 import {VISUAL_DAY_SECONDS} from '../content/scene-props.ts';
 import {WORKSHOP_RULES} from '../content/workshop.ts';
-export const CLOCK_SPEEDS = [1,4,12] as const;
+export const CLOCK_SPEEDS = [0,1,4,12] as const;
 export type ClockSpeed = typeof CLOCK_SPEEDS[number];
 export type LocalClock = {speed:ClockSpeed};
 export const createLocalClock = ():LocalClock => ({speed:1});

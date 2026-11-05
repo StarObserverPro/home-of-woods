@@ -35,6 +35,22 @@
 
 独立道具的去向与它的互动能力是两层不同的事实。行类新增的旅行伞、帽子、望远镜、口哨、旅行毯与背包在同一个 `ITEM_CATALOG.ownedItems` 下作为 **planned 本体**，其基础操作、词条附加动作和局部视觉运动由 [行类交互契约](ITEM_BEHAVIORS.md) 分开注册。安装在宿主上只让道具获得合法环境上下文，不能替代本体用途，也不能把实例词条复制到宿主。当前不新增任何可执行的旅行装备操作。
 
+## 人物作为宿主的计划槽位
+
+角色也是一种**宿主**，但并不是另一份独立库存。计划中的 `player` 宿主提供 headwear、upper-body、lower-body、footwear、back-gear 和左右手 hand-gear 槽，全部保持 `planned`；`anchorId` 是未来场景装配器使用的语义 ID，不代表当前已导出实际换装骨架。已有旅行帽与旅行背包只增加了允许的挂接种类，本体、穿戴动作和携带容量加成都未开放。
+
+穿戴仍使用独立实例的唯一所有权：`inventory.instances[].location={kind:'mounted',hostId:'player',slotId:'player:headwear'}`。同一槽只能安装一个实例，拆卸保留身份、词条、稀有度及未知字段；角色不另存装备副本，也不能把游戏词条与外观资源选项混为一谈。装备真正产生容量、保暖等收益时，必须由业务服务读取已穿戴实例和对应效果，而不是从 `mounted` 这一状态直接推导收益。
+
+外观施工仍待选型。当前 KayKit 原始网格的头、躯干、四肢可独立加工，但本项目的 `tools/build-characters.py` 为简化材质与批处理已把服装与身体网格合并。保留旧资产、重导出分区网格，或换用另一套兼容骨架的开放模型，都不改变这份装备归属协议。动作实现时必须使普通角色动画和 `createActor()` 程序化动作共用一份穿戴状态，避免采集或祈愿时装备消失；背包等负重视觉标签并不等于玩家已经获得可装备背包。
+
+参考来源（只研究合法可复用的技术与资源；不得把公开但无明确授权的原创模型视为 CC0）：
+
+- KayKit 官方 CC0 角色资产：<https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0>
+- SketchpunkLabs 的 CC0 KayKit Three.js 角色/挂点演示：<https://github.com/sketchpunklabs/kaykit_char>
+- Quaternius CC0 模块化服装与基础人物：<https://quaternius.com/packs/modularcharacteroutfitsfantasy.html>、<https://quaternius.com/packs/universalbasecharacters.html>
+- M3 CharacterStudio 的 MIT 换装/服装遮挡管理参考：<https://github.com/M3-org/CharacterStudio>
+- NoLimitNexus 同 KayKit 骨架的模块化实验（**当前未核实其原创代码和模型再利用许可，只作架构参考**）：<https://github.com/NoLimitNexus/game-models>
+
 ## 当前示例与未施工边界
 
 生产注册暂以 `furniture.stump-seat` 为已有独立实例定义，松果门铃、纸条箱、铜壶为 **planned** 示例。计划态无有效图纸、可用模型、效果实现、商人库存，也不会自动产出；对应宿主槽同样是 **planned**，不能靠内部接口安装来绕过制作资格。

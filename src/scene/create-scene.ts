@@ -5,6 +5,7 @@ import type {RarityVfxMode} from '../content/item-vfx.ts';
 import {createWoodcraftPresentation} from './woodcraft-presentation.ts';
 import {WOODCRAFT,insideWoodcraft} from '../content/woodcraft.ts';
 import {createWorkshopPresentation} from './workshop-presentation.ts';
+import {createMerchantWagon} from './merchant-wagon.ts';
 import type {PlacementDraft} from '../domain/furniture-placement.ts';
 import {CAMP_VISITOR} from '../content/characters.ts';
 import {createUnderstory} from './understory.js';
@@ -32,6 +33,7 @@ import type { GatheringRegistry } from '../domain/gathering-registry.ts';
 import {ramp} from './actions/motion.js';
 import {createCharacters} from './characters.ts';
 import type {CharacterInspection} from './characters.ts';
+import type {WardrobeLook} from '../content/wardrobe-preview.ts';
 
 export type SceneIntent =
   | { kind: "wood-drop"; x:number; y:number; z:number }
@@ -90,6 +92,7 @@ export async function createScene(
     destroyed = false,
     reducedMotion = false,
     elapsed = 0,
+    ambientTime = 0,
     mobile = false;
   const overview = new THREE.Vector3(HOME.x + 35, 29, HOME.z + 31);
   const target = new THREE.Vector3(HOME.x + 25, 27, HOME.z + 25);
@@ -176,8 +179,9 @@ export async function createScene(
   });
   const characters=createCharacters(r,models,trees,forest.selections),player=characters.player;
   scene.add(player,characters.visitor);
+  const merchantWagon=createMerchantWagon(r);scene.add(merchantWagon.group);
   const wildlife=createWildlifePresentation(r,models);scene.add(wildlife.group);
-  const workshop=createWorkshopPresentation(r,models);scene.add(workshop.group);workshop.hits.register(characters.visitor,CAMP_VISITOR.id);
+  const workshop=createWorkshopPresentation(r,models);scene.add(workshop.group);workshop.hits.register(characters.visitor,CAMP_VISITOR.id);workshop.hits.register(merchantWagon.group,CAMP_VISITOR.id);
   const woodcraft=createWoodcraftPresentation(r);scene.add(woodcraft.group);
   let woodDropMode=false;
   let placementMode=false;
@@ -258,7 +262,7 @@ export async function createScene(
   };
   const pick = (clientX: number, clientY: number) => {
     screenRay(clientX,clientY);
-    const hit = ray.intersectObjects([...hauling.hits.objects(),...woodcraft.hits.objects(),...workshop.hits.objects(),...forestry.getPickTargets(),...props.values(),...gathering.hits.objects(),...camp.hits.filter(o=>o.userData.propActive!==false)], true)[0],
+    const hit = ray.intersectObjects([...hauling.hits.objects(),...woodcraft.hits.objects(),...workshop.hits.objects(),...forestry.getPickTargets(),...props.values(),...gathering.hits.objects(),...camp.hits.filter(o=>o.userData.propActive!==false)], true).find(hit=>{let o:THREE.Object3D|null=hit.object;while(o){if(!o.visible)return false;o=o.parent;}return true;}),
       terrainHit = ray.intersectObject(ground)[0];
     if(woodDropMode){const drop=ray.intersectObjects([...woodcraft.hits.objects(),ground],true)[0];if(drop)intent({kind:'wood-drop',x:drop.point.x,y:drop.point.y,z:drop.point.z});return;}
     if(placementMode){if(terrainHit)intent({kind:'move',x:terrainHit.point.x,z:terrainHit.point.z});return;}
@@ -401,7 +405,7 @@ export async function createScene(
       const woodId=woodcraft.hits.resolve(hit.object);
       if(woodId)return {kind:'loose-wood' as const,id:woodId};
       const id=workshop.hits.resolve(hit.object);
-      return id?{kind:'furniture' as const,id}:null;
+      return id&&id!==CAMP_VISITOR.id?{kind:'furniture' as const,id}:null;
     },
     setWoodcraftDrop(value:boolean){woodDropMode=value;},
     setPlacement(value:PlacementDraft|null){placementMode=!!value;workshop.setPreview(value);},
@@ -416,10 +420,12 @@ export async function createScene(
     zoomBy(amount: number) {manualCamera();
       zoom = clamp(zoom * amount, CAMERA.minZoom, CAMERA.maxZoom);
     },
+    setReading(value:boolean){characters.setReading(value);view.inspectScene(value?'meal':null);},
     setRarityVfxMode(mode:RarityVfxMode){workshop.setRarityVfxMode(mode);},
     setReducedMotion(value: boolean) {
       reducedMotion = value;
     },
+    setWardrobe(patch:Partial<WardrobeLook>){characters.setWardrobe(patch);},
     inspectCharacter(value:CharacterInspection){
       if(value&&!inspectionCamera){inspectionCamera={yaw,elevation,zoom,target:target.clone()};yaw=player.rotation.y-.6;elevation=.24;zoom=1;}
       if(!value&&inspectionCamera){({yaw,elevation,zoom}=inspectionCamera);target.copy(inspectionCamera.target);inspectionCamera=null;}
@@ -428,19 +434,23 @@ export async function createScene(
     render(state: GameState, dt: number) {
       if (destroyed) return;
       elapsed = state.time;
+      ambientTime += Math.max(0,Math.min(dt,.1));
       appearance={...sceneAppearanceAt(state.time),...(Number.isFinite(auditHour)&&auditHour>=0&&auditHour<=24?{hour:auditHour}:{}),...sceneOverrides};
       if(state.ritual?.startedAt!=null&&state.time-state.ritual.startedAt<8){if(state.ritual.phase==='completed')appearance.altar='resting';else if(state.ritual.phase==='performing'&&state.time-state.ritual.startedAt>3.5)appearance.altar='answering';}
       if((sceneOverrides.hour!==undefined||Number.isFinite(auditHour))&&sceneOverrides.fire===undefined)appearance.fire=daylightAt(appearance.hour).night>.5;
+      // A real cooking job lights the hearth even when the daily decorative fire is off.
+      if(state.food.cooking&&sceneOverrides.fire===undefined)appearance.fire=true;
       const sky=environment.setHour(appearance.hour);
       hemi.color.copy(light.skyColor);hemi.groundColor.copy(light.groundColor);hemi.intensity=light.ambientIntensity;
       sun.color.copy(light.sunColor);sun.intensity=light.sunIntensity;sun.position.copy(sun.target.position).addScaledVector(light.sunDirection,135);
       scene.environmentIntensity=light.environmentIntensity;(scene.fog as THREE.Fog).color.copy(light.haze);
       if(state.workshop.job?.kind==='offering'&&state.workshop.job.phase==='working')appearance.altar='answering';
-      camp.update(elapsed,appearance,state.inventory,sky.night,reducedMotion);
+      camp.update(ambientTime,appearance,state.inventory,sky.night,reducedMotion,!!state.food.drying,(state.workshop.upgrades[CAMP_PROPS.dryer.id]?.level??0)>0);
       const { x, z, facing, moving } = state.player,
         y = heightAt(x, z);
       forestry.update(state,reducedMotion);understory.update(state);
-      characters.update(state,reducedMotion);
+      characters.update(state,reducedMotion,ambientTime);
+      merchantWagon.update(state.time,reducedMotion);
       forestry.alignContact(characters.getImpact());
       gathering.update(state.gathering);
       hauling.update(state.inventory);
@@ -478,9 +488,9 @@ export async function createScene(
       camera.zoom = THREE.MathUtils.lerp(zoom,1,blend) * (mobile ? scenePreset?.8:THREE.MathUtils.lerp(1.45,.9,blend) : 1);
       if(['wildlife','stagVista','goatVista'].includes(scenePreset??'')&&camera.aspect<1)camera.zoom*=camera.aspect;
       camera.updateProjectionMatrix();
-      environment.update(elapsed,dt,camera.position,reducedMotion);
+      environment.update(ambientTime,dt,camera.position,reducedMotion);
       scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);
-      river.update(elapsed,sky.day,reducedMotion,appearance.reflections,host.clientWidth<600||host.clientHeight<500);
+      river.update(ambientTime,sky.day,reducedMotion,appearance.reflections,host.clientWidth<600||host.clientHeight<500);
       const selected = state.selected
         ? (hauling.point(state.selected) ?? woodcraft.point(state.selected) ?? workshop.point(state.selected) ?? (state.selected===CAMP_VISITOR.id?CAMP_VISITOR:null) ?? gatheringRegistry.sources.get(state.selected) ?? treeById.get(state.selected) ??
           (state.selected === "cabin"
@@ -579,6 +589,7 @@ export async function createScene(
       workshop.dispose();
       forestry.dispose();
       characters.dispose();
+      merchantWagon.dispose();
       wildlife.dispose();
       gathering.dispose();
       campExteriors.dispose();

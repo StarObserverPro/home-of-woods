@@ -51,9 +51,9 @@ test('vertical inspector is bounded by the support top and NPC gestures leave le
   assert.equal(JSON.stringify(state),before,'inspection is presentation only');
   characters.setInspection(null);state.player.x=CAMP_VISITOR.x+2;state.player.z=CAMP_VISITOR.z;
   const leg=characters.visitor.getObjectByName('lowerlegl')!,arm=characters.visitor.getObjectByName('upperarmr')!;
-  characters.update(state);const baseline=leg.quaternion.clone(),start=arm.quaternion.clone();
+  state.time=25;characters.update(state);const baseline=leg.quaternion.clone(),start=arm.quaternion.clone();
   let movement=0;
-  for(const time of [.1,.5,1,1.5,2,3]){state.time=time;characters.update(state);assert.ok(leg.quaternion.angleTo(baseline)<1e-7);movement=Math.max(movement,arm.quaternion.angleTo(start));}
+  for(const time of [25.1,25.5,26,26.5,27,28]){state.time=time;characters.update(state);assert.ok(leg.quaternion.angleTo(baseline)<1e-7);movement=Math.max(movement,arm.quaternion.angleTo(start));}
   assert.ok(movement>.1);characters.dispose();resources.dispose();
 });
 

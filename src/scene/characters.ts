@@ -4,6 +4,10 @@ import {canStand} from '../domain/navigation.ts';
 import {makeColliders} from '../world/layout.ts';
 import {createActor} from './actions/actor.js';
 import { CHARACTER, CAMP_VISITOR } from '../content/characters.ts';
+import {merchantVisitAt,MERCHANT_SCENE} from '../content/merchant.ts';
+import {TENT} from '../content/world.ts';
+import {DINING_SEAT} from '../content/scene-props.ts';
+import {calendarAt} from '../domain/local-clock.ts';
 import { FORESTRY } from '../content/forestry.ts';
 import type { GameState } from '../domain/state.ts';
 import type { Tree } from '../world/layout.ts';
@@ -11,10 +15,14 @@ import { heightAt } from '../world/surface.ts';
 import type { Models } from './models.ts';
 import type { Resources } from './resources.ts';
 import { syncTwoHandedAxe } from './character-grip.ts';
+import { createCharacterWardrobe } from './character-wardrobe.ts';
+import { DEFAULT_WARDROBE, resolveWardrobe, wardrobeForMountedItems } from '../content/wardrobe-preview.ts';
+import type { WardrobeLook } from '../content/wardrobe-preview.ts';
+import { createWardrobeVisual } from './wardrobe-visual.ts';
 import { axeHeadSamples, geometryContactTarget, contactClearance, findAxeStop, stoppedStrokeFraction } from './axe-contact.ts';
 import type { AxeTarget, AxeStop } from './axe-contact.ts';
 
-export type CharacterInspection = 'horizontal'|'vertical'|null;
+export type CharacterInspection = 'horizontal'|'vertical'|'wardrobe'|null;
 type Mode='idle'|'walk'|'gather'|'horizontal'|'vertical';
 export type CharacterImpact={treeId:string;point:THREE.Vector3};
 
@@ -41,7 +49,26 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   const waving=need('Waving');
   const partial=new THREE.AnimationClip('Visitor_ArmsAndHead',waving.duration,waving.tracks.filter(t=>/^(upperarm|lowerarm|wrist|hand|head)/.test(t.name)).map(t=>t.clone()));
   const wave=npcMixer.clipAction(partial);wave.play();
+  const npcWalk=npcMixer.clipAction(sourceClips.walk);npcWalk.play();
   const procedural=createActor(models.templates.get('ranger')!,models.animations.get('motions')!);procedural.root.scale.setScalar(1);player.add(procedural.root);procedural.root.visible=false;
+  const standardClothes=createCharacterWardrobe(r,body),actionClothes=createCharacterWardrobe(r,procedural.body);
+  let previewLook:WardrobeLook={...DEFAULT_WARDROBE},lastLookKey='';
+  function updateWardrobe(state:GameState,reducedMotion:boolean){
+    const next=wardrobeForMountedItems(previewLook,state.inventory.instances??[]);
+    const key=JSON.stringify(next);
+    if(key!==lastLookKey){standardClothes.apply(next);actionClothes.apply(next);lastLookKey=key;}
+    standardClothes.update(state.time,state.player.moving,reducedMotion);
+    actionClothes.update(state.time,state.player.moving,reducedMotion);
+  }
+  const readingBowl=new THREE.Group();readingBowl.name='reading-bowl';readingBowl.visible=false;player.add(readingBowl);
+  const bowlBody=new THREE.Mesh(r.geometry('reading-wooden-bowl',()=>new THREE.CylinderGeometry(.23,.16,.16,9)),r.material('#bc8b53',.9));readingBowl.add(bowlBody);
+  const bowlRim=new THREE.Mesh(r.geometry('reading-bowl-rim',()=>new THREE.TorusGeometry(.23,.035,4,9)),r.material('#ead0a0',.92));bowlRim.rotation.x=Math.PI/2;bowlRim.position.y=.09;readingBowl.add(bowlRim);
+  readingBowl.position.set(0,.89,.42);
+  const seatBones=new Map<string,THREE.Bone>();body.traverse(o=>{if(o instanceof THREE.Bone)seatBones.set(o.name.replaceAll('.',''),o);});
+  const bodyY=body.position.y;
+  let reading=false;
+  // Main + procedural action body each have their own cloned skeleton and bone-mounted accessories.
+  const clothing=createWardrobeVisual(r,body),actionClothing=createWardrobeVisual(r,procedural.body);
   const pickedScrap=new THREE.Mesh(r.geometry('held-scrap',()=>new THREE.CylinderGeometry(.025,.04,.38,5)),r.material('#92704a',.9));pickedScrap.rotation.z=Math.PI/2;pickedScrap.visible=false;player.add(pickedScrap);
   const blade=axeHeadSamples(tool),byId=new Map(trees.map(t=>[t.id,t]));
   // Inspector-only solids demonstrate both constraints without inventing a crafting transaction.
@@ -82,11 +109,23 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     }
     lastContact=actual.clearance;
   }
-  function update(state:GameState,reducedMotion=false){
+  function update(state:GameState,reducedMotion=false,ambientTime=state.time){
     if(disposed)return;
+    clothing.update(state.inventory);actionClothing.update(state.inventory);
     player.position.set(state.player.x,heightAt(state.player.x,state.player.z),state.player.z);player.rotation.y=state.player.facing;
-    inspectionProps.visible=inspection!==null;impact=null;body.visible=true;pickedScrap.visible=false;cutHeight=null;chest.position.y=chestY;procedural.root.visible=false;
-    if(inspection){
+    const visit=merchantVisitAt(state.time);
+    visitor.visible=visit.active;
+    if(visit.active){const eased=visit.travel*visit.travel*(3-2*visit.travel);
+      const vx=CAMP_VISITOR.x+MERCHANT_SCENE.entryOffset.x*(1-eased),vz=CAMP_VISITOR.z+MERCHANT_SCENE.entryOffset.z*(1-eased);
+      visitor.position.set(vx,heightAt(vx,vz),vz);
+    }
+    readingBowl.visible=false;readingBowl.position.set(0,.89,.42);readingBowl.rotation.x=0;body.position.y=bodyY;
+    updateWardrobe(state,reducedMotion);
+    inspectionProps.visible=inspection!==null&&inspection!=='wardrobe';impact=null;body.visible=true;pickedScrap.visible=false;cutHeight=null;chest.position.y=chestY;procedural.root.visible=false;
+    if(inspection==='wardrobe'){
+      cutKey='';stop=null;grip=null;lastContact=Infinity;tool.visible=false;
+      setMode('idle');actions.idle.time=0;mixer.update(0);
+    }else if(inspection){
       trunk.visible=inspection==='horizontal';stump.visible=block.visible=inspection==='vertical';player.updateMatrixWorld(true);
       let target:AxeTarget;
       if(inspection==='horizontal')target=geometryContactTarget(trunk.geometry,trunk.matrixWorld);
@@ -106,10 +145,40 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     }else{
       cutKey='';stop=null;lastContact=Infinity;grip=null;tool.visible=false;
       const gather=state.gathering.action;
-      const next:Mode=gather?.phase==='performing'?'gather':state.player.moving&&!reducedMotion?'walk':'idle';setMode(next);
+      const secondsFromDawn=state.dayCycle.wokeAt===null?Infinity:state.time-state.dayCycle.wokeAt;
+      const emerging=!reading&&!state.player.moving&&!reducedMotion&&secondsFromDawn>=0&&secondsFromDawn<2.25;
+      const next:Mode=gather?.phase==='performing'?'gather':(state.player.moving||emerging)&&!reducedMotion?'walk':'idle';setMode(next);
       const clip=sourceClips[mode];
-      actions[mode].time=mode==='gather'?Math.min(.999,gather!.progress)*clip.duration:reducedMotion?.01:(state.time*(mode==='walk'?1.6:1))%clip.duration;
+      actions[mode].time=mode==='gather'?Math.min(.999,gather!.progress)*clip.duration:reducedMotion?.01:(ambientTime*(mode==='walk'?1.6:1))%clip.duration;
       mixer.update(0);
+      // Render-only doorway emergence after sleep. Gameplay position is already at the tent exit.
+      if(emerging){
+        const t=THREE.MathUtils.smoothstep(secondsFromDawn,0,2.25);
+        const fromX=TENT.x+2.1,fromZ=TENT.z+3.3;
+        const wx=THREE.MathUtils.lerp(fromX,state.player.x,t),wz=THREE.MathUtils.lerp(fromZ,state.player.z,t);
+        player.position.set(wx,heightAt(wx,wz),wz);
+        player.rotation.y=Math.atan2(state.player.x-fromX,state.player.z-fromZ);
+      }
+      // A local, render-only sitting pose; the world player remains at the camp interaction point.
+      if(reading){
+        player.position.set(DINING_SEAT.x,heightAt(DINING_SEAT.x,DINING_SEAT.z),DINING_SEAT.z);
+        player.rotation.y=2.85;body.position.y=bodyY-.19;
+        const turn=(id:string,axis:'x'|'y'|'z',angle:number)=>{const bone=seatBones.get(id);if(bone)bone.rotation[axis]+=angle;};
+        const hips=seatBones.get('hips');if(hips)hips.position.y-=.12;
+        for(const side of ['l','r']){
+          turn('upperleg'+side,'x',-1.03);turn('lowerleg'+side,'x',1.29);
+          turn('upperarm'+side,'x',-.42);turn('lowerarm'+side,'x',-.39);
+        }
+        turn('head','x',.10);
+        readingBowl.visible=state.food.lastMealDay===calendarAt(state.time).day;
+        if(readingBowl.visible&&!reducedMotion){
+          // A small occasional sip from the bowl, not a new gameplay consume event.
+          const sip=Math.pow(Math.max(0,Math.sin(ambientTime*.46)),8);
+          readingBowl.position.y+=.18*sip;readingBowl.position.z-=.10*sip;readingBowl.rotation.x=-.16*sip;
+          turn('upperarml','x',-.14*sip);turn('upperarmr','x',-.14*sip);
+          turn('head','x',-.09*sip);
+        }
+      }
       if(state.workshop.job?.phase==='working'){
         const job=state.workshop.job;procedural.update(job.kind==='offering'?'pray':'pickup',job.kind==='offering'?(state.time-job.startedAt!)*2:1.35);procedural.root.position.set(0,0,0);procedural.root.rotation.set(0,0,0);body.visible=false;procedural.root.visible=true;
       }else if(state.ritual?.phase==='performing'){
@@ -141,19 +210,25 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
       const x=state.player.x-dir.x*step,z=state.player.z-dir.z*step;
       if(canStand({x,z},blockers))player.position.set(x,heightAt(x,z),z);
     }
-    const near=Math.hypot(state.player.x-CAMP_VISITOR.x,state.player.z-CAMP_VISITOR.z)<CAMP_VISITOR.waveRange;
-    const localTime=state.time%CAMP_VISITOR.waveInterval;
-    wave.enabled=true;wave.setEffectiveWeight(near&&!reducedMotion&&localTime<partial.duration?1:0);wave.time=Math.min(localTime,partial.duration*.999);npcMixer.update(0);
+    const near=visit.parked&&Math.hypot(state.player.x-CAMP_VISITOR.x,state.player.z-CAMP_VISITOR.z)<CAMP_VISITOR.waveRange;
+    const localTime=ambientTime%CAMP_VISITOR.waveInterval;
+    wave.enabled=true;wave.setEffectiveWeight(near&&!reducedMotion&&localTime<partial.duration?1:0);wave.time=Math.min(localTime,partial.duration*.999);
+    npcWalk.setEffectiveWeight(visit.active&&!visit.parked&&!reducedMotion?1:0);npcWalk.time=state.time%sourceClips.walk.duration;
+    npcMixer.update(0);
   }
   return {
     player,visitor,update,
+    setReading(value:boolean){reading=value;},
     setInspection(value:CharacterInspection){inspection=value;cutKey='';stop=null;},
+    setWardrobe(value:Partial<WardrobeLook>){previewLook=resolveWardrobe(value,previewLook);lastLookKey='';},
     getInspection:()=>inspection,
     getImpact:()=>impact,
-    stats:()=>({model:'KayKit R3',mode,inspection,stopFound:stop?.found??null,stopFraction:stop?.fraction??null,contactClearance:Number.isFinite(lastContact)?lastContact:null,grip,planMs,disposed}),
+    stats:()=>({model:'KayKit R3',mode,inspection,wardrobe:{standard:standardClothes.stats(),action:actionClothes.stats()},stopFound:stop?.found??null,stopFraction:stop?.fraction??null,contactClearance:Number.isFinite(lastContact)?lastContact:null,grip,planMs,disposed}),
     dispose(){
       if(disposed)return;disposed=true;
       for(const m of [mixer,npcMixer]){m.stopAllAction();m.uncacheRoot(m.getRoot());}
+      standardClothes.dispose();actionClothes.dispose();
+      clothing.dispose();actionClothing.dispose();
       procedural.dispose();
       player.removeFromParent();visitor.removeFromParent();player.clear();visitor.clear();byId.clear();
       // Shared geometry, textures/materials and each cloned skeleton belong to Resources.

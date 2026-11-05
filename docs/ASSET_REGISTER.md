@@ -1,5 +1,7 @@
 # 资产登记与批准记录
 
+2026-11-03 行商 PR #16：NPC 继续采用已经登记并保存 CC0 许可证的 KayKit `visitor.glb` / `motions.glb`，现阶段带篷驴车是 `src/scene/merchant-wagon.ts` 的本地原创程序几何，不包含新增下载资产、贴图或模型；外观参考 [Codels Covered Wagon](https://codels.download/models/wagon)，但没有采用其 GLB，因此不能把参考模型冒称为本项目已集成资源。临时进出运动只消费游戏时钟，不参与物品所有权和交易结算；详见 [行商契约](MERCHANT.md)。
+
 2026-11-02 木屋第一阶段修缮复用下表已有的原创 `cabin.glb`：`scene/cabin-repair.ts` 克隆两块屋顶板和两根门边支撑，保留原几何、材质、倒角及比例。源 GLB 字节不变，不新增第三方下载；共享资源仍由 Models 所有者释放。`scene/selection-marker.ts` 是原创四段细线提示，无贴图；篝火仅修改既有锚点。准入及实机范围见 [营地交互](CAMP_INTERACTIONS.md)。
 
 对应 HOW-BASELINE-1.0；准入规则见 [ASSET_PIPELINE](ASSET_PIPELINE.md)，工作清单见 [ART_HUD](ART_HUD.md)。
@@ -127,3 +129,7 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 
 
 2026-11-03「家宅平安」第一批外部装配件由 `src/scene/camp-exteriors.ts` 使用本仓库原创低多边形几何生成（帐篷布面局部复用已登记 `tent.glb` 网格）；不接入外部资产、下载或贴图，不冒标 CC0。新建几何和材质均由 `Resources` 释放，只有顶层 12 个部件状态属于既有营地设施，来源/装配范围见 [家宅平安](CAMP_EXTERIORS.md)。
+
+## HOW-WARDROBE-1（2026-11-04，基础实现候选）
+
+本分支未下载、复制或重贴图库外服装资产；`src/scene/wardrobe-visual.ts` 为新编写的基础程序几何（软檐帽、背包、手套、领巾），依附现有 KayKit 23 骨 `head/chest/handslotl/handslotr`，共享几何材质由 `Resources` 回收。`src/content/wardrobe.ts` 的 78 条为设计版型清单（`design-only`、`meshAssetId=null`），**不是 78 个已可使用的源 GLB**。现有单蒙皮角色的衣裤鞋及腰带尚未独立换网格；不能将该阶段列为整套换装美术验收。后续来源、适配和准入见 [玩家衣柜基础](PLAYER_WARDROBE.md)。
