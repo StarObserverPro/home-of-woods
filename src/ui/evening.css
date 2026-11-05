@@ -26,3 +26,13 @@
 @keyframes how-dawn-title{0%{opacity:0;transform:translateY(8px)}20%{opacity:1;transform:translateY(0)}70%{opacity:1}100%{opacity:0}}
 @media(max-width:680px){.evening-clock{gap:4px}.evening-sleep{font-size:11px;padding:6px}.forest-reader-shell{justify-content:center;align-items:flex-end}.forest-reader{width:calc(100% - 24px);max-height:78vh;margin:12px}.forest-reader-paper{padding:16px;min-height:205px}}
 @media(prefers-reduced-motion:reduce){.sunrise-transition,.sunrise-transition span{animation-duration:.01ms}}
+
+/* The added evening action must not crowd the existing phone-sized time toolbar. */
+@media(max-width:700px){
+  .topbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:start}
+  .topbar .brand{grid-column:1;grid-row:1;max-width:100%;min-width:0}
+  .topbar .pause{grid-column:2;grid-row:1;justify-self:end}
+  .topbar .hourglass{grid-column:1;grid-row:2;margin:0;justify-self:start}
+  .topbar .evening-clock{grid-column:2;grid-row:2;justify-self:end}
+  .minimap-card{top:162px}
+}
