@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {CAMP_PROPS} from '../content/scene-props.ts';
+import {CAMP_PROPS,DINING_SEAT} from '../content/scene-props.ts';
 import type {SceneAppearance} from '../content/scene-props.ts';
 import type {InventoryState} from '../domain/inventory.ts';
 import {logPresentation} from '../domain/scene-props.ts';
@@ -51,6 +51,11 @@ export function createCampProps(r:Resources){
     mesh(dryingMushrooms,new THREE.CylinderGeometry(.022,.022,.38,5),'#c7b690',x,1.77,0);
     mesh(dryingMushrooms,new THREE.ConeGeometry(.17,.16,7),'#ac8764',x,1.57,0);
   }
+  // An unobtrusive stump for voluntary evening reading beside the existing fire.
+  const sitX=DINING_SEAT.x-CAMP_PROPS.fire.x,sitZ=DINING_SEAT.z-CAMP_PROPS.fire.z;
+  mesh(fire,new THREE.CylinderGeometry(.45,.51,.62,9),'#86613e',sitX,.31,sitZ);
+  const seatTop=mesh(fire,new THREE.CylinderGeometry(.43,.43,.04,9),'#c29a62',sitX,.64,sitZ);
+  seatTop.name='evening-reading-stump';
   const coreMat=r.own(new THREE.MeshBasicMaterial({color:'#ffe7a0',transparent:true,opacity:.92,depthWrite:false}));
   const flames=createFlames(r);fire.add(flames.group);
   const fireLight=new THREE.PointLight('#ff9a42',65,18,2);fireLight.position.y=1.4;fire.add(fireLight);
