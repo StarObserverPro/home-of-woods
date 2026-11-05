@@ -4,6 +4,8 @@ import {canStand} from '../domain/navigation.ts';
 import {makeColliders} from '../world/layout.ts';
 import {createActor} from './actions/actor.js';
 import { CHARACTER, CAMP_VISITOR } from '../content/characters.ts';
+import {DINING_SEAT} from '../content/scene-props.ts';
+import {calendarAt} from '../domain/local-clock.ts';
 import { FORESTRY } from '../content/forestry.ts';
 import type { GameState } from '../domain/state.ts';
 import type { Tree } from '../world/layout.ts';
@@ -42,6 +44,13 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   const partial=new THREE.AnimationClip('Visitor_ArmsAndHead',waving.duration,waving.tracks.filter(t=>/^(upperarm|lowerarm|wrist|hand|head)/.test(t.name)).map(t=>t.clone()));
   const wave=npcMixer.clipAction(partial);wave.play();
   const procedural=createActor(models.templates.get('ranger')!,models.animations.get('motions')!);procedural.root.scale.setScalar(1);player.add(procedural.root);procedural.root.visible=false;
+  const readingBowl=new THREE.Group();readingBowl.name='reading-bowl';readingBowl.visible=false;player.add(readingBowl);
+  const bowlBody=new THREE.Mesh(r.geometry('reading-wooden-bowl',()=>new THREE.CylinderGeometry(.23,.16,.16,9)),r.material('#bc8b53',.9));readingBowl.add(bowlBody);
+  const bowlRim=new THREE.Mesh(r.geometry('reading-bowl-rim',()=>new THREE.TorusGeometry(.23,.035,4,9)),r.material('#ead0a0',.92));bowlRim.rotation.x=Math.PI/2;bowlRim.position.y=.09;readingBowl.add(bowlRim);
+  readingBowl.position.set(0,.89,.42);
+  const seatBones=new Map<string,THREE.Bone>();body.traverse(o=>{if(o instanceof THREE.Bone)seatBones.set(o.name.replaceAll('.',''),o);});
+  const bodyY=body.position.y;
+  let reading=false;
   const pickedScrap=new THREE.Mesh(r.geometry('held-scrap',()=>new THREE.CylinderGeometry(.025,.04,.38,5)),r.material('#92704a',.9));pickedScrap.rotation.z=Math.PI/2;pickedScrap.visible=false;player.add(pickedScrap);
   const blade=axeHeadSamples(tool),byId=new Map(trees.map(t=>[t.id,t]));
   // Inspector-only solids demonstrate both constraints without inventing a crafting transaction.
@@ -82,10 +91,10 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     }
     lastContact=actual.clearance;
   }
-  function update(state:GameState,reducedMotion=false){
+  function update(state:GameState,reducedMotion=false,ambientTime=state.time){
     if(disposed)return;
     player.position.set(state.player.x,heightAt(state.player.x,state.player.z),state.player.z);player.rotation.y=state.player.facing;
-    inspectionProps.visible=inspection!==null;impact=null;body.visible=true;pickedScrap.visible=false;cutHeight=null;chest.position.y=chestY;procedural.root.visible=false;
+    inspectionProps.visible=inspection!==null;impact=null;body.visible=true;pickedScrap.visible=false;readingBowl.visible=false;body.position.y=bodyY;cutHeight=null;chest.position.y=chestY;procedural.root.visible=false;
     if(inspection){
       trunk.visible=inspection==='horizontal';stump.visible=block.visible=inspection==='vertical';player.updateMatrixWorld(true);
       let target:AxeTarget;
@@ -108,8 +117,21 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
       const gather=state.gathering.action;
       const next:Mode=gather?.phase==='performing'?'gather':state.player.moving&&!reducedMotion?'walk':'idle';setMode(next);
       const clip=sourceClips[mode];
-      actions[mode].time=mode==='gather'?Math.min(.999,gather!.progress)*clip.duration:reducedMotion?.01:(state.time*(mode==='walk'?1.6:1))%clip.duration;
+      actions[mode].time=mode==='gather'?Math.min(.999,gather!.progress)*clip.duration:reducedMotion?.01:(ambientTime*(mode==='walk'?1.6:1))%clip.duration;
       mixer.update(0);
+      // A local, render-only sitting pose; the world player remains at the camp interaction point.
+      if(reading){
+        player.position.set(DINING_SEAT.x,heightAt(DINING_SEAT.x,DINING_SEAT.z),DINING_SEAT.z);
+        player.rotation.y=2.85;body.position.y=bodyY-.19;
+        const turn=(id:string,axis:'x'|'y'|'z',angle:number)=>{const bone=seatBones.get(id);if(bone)bone.rotation[axis]+=angle;};
+        const hips=seatBones.get('hips');if(hips)hips.position.y-=.12;
+        for(const side of ['l','r']){
+          turn('upperleg'+side,'x',-1.03);turn('lowerleg'+side,'x',1.29);
+          turn('upperarm'+side,'x',-.42);turn('lowerarm'+side,'x',-.39);
+        }
+        turn('head','x',.10);
+        readingBowl.visible=state.food.lastMealDay===calendarAt(state.time).day;
+      }
       if(state.workshop.job?.phase==='working'){
         const job=state.workshop.job;procedural.update(job.kind==='offering'?'pray':'pickup',job.kind==='offering'?(state.time-job.startedAt!)*2:1.35);procedural.root.position.set(0,0,0);procedural.root.rotation.set(0,0,0);body.visible=false;procedural.root.visible=true;
       }else if(state.ritual?.phase==='performing'){
@@ -142,11 +164,12 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
       if(canStand({x,z},blockers))player.position.set(x,heightAt(x,z),z);
     }
     const near=Math.hypot(state.player.x-CAMP_VISITOR.x,state.player.z-CAMP_VISITOR.z)<CAMP_VISITOR.waveRange;
-    const localTime=state.time%CAMP_VISITOR.waveInterval;
+    const localTime=ambientTime%CAMP_VISITOR.waveInterval;
     wave.enabled=true;wave.setEffectiveWeight(near&&!reducedMotion&&localTime<partial.duration?1:0);wave.time=Math.min(localTime,partial.duration*.999);npcMixer.update(0);
   }
   return {
     player,visitor,update,
+    setReading(value:boolean){reading=value;},
     setInspection(value:CharacterInspection){inspection=value;cutKey='';stop=null;},
     getInspection:()=>inspection,
     getImpact:()=>impact,
