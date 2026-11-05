@@ -7,9 +7,9 @@ import type {WorkshopSnapshot} from '../domain/workshop.ts';
 import type {foodSnapshot} from '../domain/food.ts';
 
 type FoodView=ReturnType<typeof foodSnapshot>;
-export function FoodControls({selected,view,workshop,access,disabled,onApproach,onDry,onCook,onEat,onBread}:{
+export function FoodControls({selected,view,workshop,access,disabled,onApproach,onDry,onCook,onEat,onBread,onRead}:{
   selected:string|null;view:FoodView;workshop:WorkshopSnapshot;access:InteractionAccess|null;disabled:boolean;
-  onApproach:()=>void;onDry:()=>void;onCook:(grain:FoodGrain)=>void;onEat:()=>void;onBread:()=>void;
+  onApproach:()=>void;onDry:()=>void;onCook:(grain:FoodGrain)=>void;onEat:()=>void;onBread:()=>void;onRead:()=>void;
 }){
   const fire=selected===CAMP_PROPS.fire.id,dryer=selected===CAMP_PROPS.dryer.id;
   if(!fire&&!dryer)return null;
@@ -36,6 +36,7 @@ export function FoodControls({selected,view,workshop,access,disabled,onApproach,
       <div className="recipe-row"><div><strong>吃一碗</strong><small>吃过正餐，下一游戏日可以正常采伐成熟树木</small></div>
         <button className="context-button" disabled={disabled||!(c['forest-soup']>0)} onClick={onEat}>享用正餐</button></div>
       <div className="recipe-row"><div><strong>简单吃一份干粮</strong><small>无需锅具 · 用掉一份行商硬黑面包，也能准备明天的重活</small></div><button className="context-button" disabled={disabled||!(c['food-black-bread']>0)} onClick={onBread}>吃黑面包</button></div>
+      <div className="recipe-row"><div><strong>篝火边的林间故事</strong><small>坐在木墩上读几页，时间会停下来等你。</small></div><button className="context-button" disabled={disabled} onClick={onRead}>坐下读故事</button></div>
       <p>{view.heavyWork?'今天可以正常进行重体力劳动。':'今天只适合散步、拾枝、采菌等轻活。'}{view.nextDayReady?' 明天的重体力劳动已准备好。':''}</p>
     </>}
     {dryer&&<>
