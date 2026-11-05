@@ -1,3 +1,5 @@
+import {makeTrees} from '../src/world/layout.ts';
+import {heightAt} from '../src/world/surface.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -26,7 +28,9 @@ test('actual admitted GLBs share resources, keep source identities through deple
   const sources=[...registry.sources.values()];
   assert.equal(p.hits.size,sources.length);p.group.updateMatrixWorld(true);
   for(const source of sources)for(const patch of source.patches??[source.targetAnchor]){
-    const ray=new THREE.Raycaster(new THREE.Vector3(patch.x,patch.y+4,patch.z),new THREE.Vector3(0,-1,0));
+    const host=source.hostRef&&makeTrees().find(t=>t.id===source.hostRef!.slotId),climb=registry.definitions.get(source.definitionId)!.motionTag==='gather.climb'&&host;
+    const point=climb?{x:host.x,y:heightAt(host.x,host.z)+3*host.scale,z:host.z}:patch;
+    const ray=new THREE.Raycaster(new THREE.Vector3(point.x,point.y+4,point.z),new THREE.Vector3(0,-1,0));
     const hit=ray.intersectObjects(p.hits.objects(),true)[0];assert.ok(hit);
     assert.equal(p.hits.resolve(hit.object),source.sourceId,'all circle patches share the source while adjacent trees keep their own IDs');
   }

@@ -133,3 +133,13 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 ## HOW-WARDROBE-1（2026-11-04，基础实现候选）
 
 本分支未下载、复制或重贴图库外服装资产；`src/scene/wardrobe-visual.ts` 为新编写的基础程序几何（软檐帽、背包、手套、领巾），依附现有 KayKit 23 骨 `head/chest/handslotl/handslotr`，共享几何材质由 `Resources` 回收。`src/content/wardrobe.ts` 的 78 条为设计版型清单（`design-only`、`meshAssetId=null`），**不是 78 个已可使用的源 GLB**。现有单蒙皮角色的衣裤鞋及腰带尚未独立换网格；不能将该阶段列为整套换装美术验收。后续来源、适配和准入见 [玩家衣柜基础](PLAYER_WARDROBE.md)。
+
+## 东岸林地与跨溪木桥（2026-11-05）
+
+| 内容 | 来源与修改 | 运行时与所有者 |
+| --- | --- | --- |
+| 跨溪木桥 | 项目原创程序几何；木梁、铺板、栏杆和桥头牌沿既有玩具木色绘制，无外部资源下载，不改标 CC0。桥板顶面消费同一桥面高程；静态梁按材质合并为两批。 | src/scene/creek-bridge.ts；建成主体 3 批绘制，桥头牌和未建桩另计。几何/材质/牌面纹理由 Resources 统一释放，点击注册由适配器撤销。 |
+| 东岸林相与采集 | 复用已准入地形、8 类树形、林下与 Kenney 采集物产；从既有固定景观树位开放东岸经营，不重抽原身份或坐标。桥头通道内的三棵景观树停止绘制，名册保留。 | 原 Models / Resources 缓存；source、slot、individual 分开，区块卸载不改资源池或库存。 |
+| 林区远近表现 | 原创区块管理，近处 Mesh、远处共享实例；按可见数量压缩批次，保留受保护巨木作地标。 | src/scene/streamed-forest.ts；原 scene 主循环驱动，反复往返不重复缓存共享形态。 |
+
+实际构建、图像、手机布局与绘制量记录归 [WORLD_EXPANSION](WORLD_EXPANSION.md)。截图存临时验证目录，不入当前源码树。

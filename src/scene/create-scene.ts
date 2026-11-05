@@ -1,3 +1,8 @@
+import {createStreamedForest} from './streamed-forest.ts';
+import {createCreekBridge} from './creek-bridge.ts';
+import {CREEK_BRIDGE} from '../content/regions.ts';
+import {travelAccess} from '../world/regions.ts';
+import {travelHeightAt} from '../world/traversal.ts';
 import {createHaulPresentation} from './haul-presentation.ts';
 import {createWildlifePresentation} from './wildlife-presentation.ts';
 import {wildlifeViews,landmarkInspectionView} from '../domain/wildlife.ts';
@@ -117,19 +122,21 @@ export async function createScene(
   scene.add(sun, sun.target);
   const { ground, water } = createTerrain(r);
   const river=createCreek(r,water),camp=createCampProps(r);
-  scene.add(river.group,camp.group);
+  const bridge=createCreekBridge(r);
+  scene.add(river.group,camp.group,bridge.group);
   const auditParams=new URLSearchParams(window.location.search),auditHour=auditParams.has('inspect')&&auditParams.has('hour')?Number(auditParams.get('hour')):NaN;
   let appearance=sceneAppearanceAt(0),scenePreset:SceneViewPreset|null=null,sceneOverrides:Partial<SceneAppearance>={};
   let sceneCamera:{yaw:number;elevation:number;zoom:number;target:THREE.Vector3}|null=null;
   scene.add(ground, water);
   const scenery = createScenery(r);
   scene.add(scenery.group);
-  const forest = models.createForest(trees);
+  const forest = models.createForest(trees,true);
   scene.add(forest.group);
   // Ground every near and instanced distant tree using the same surface facts.
   for (const t of trees)
     forest.selections.get(t.id)?.position.set(t.x, heightAt(t.x, t.z), t.z);
   const understory=createUnderstory(r,trees,forest.selections);scene.add(understory.group);
+  const streaming=createStreamedForest(forest,trees);
   const props = new Map<string, THREE.Object3D>();
   for (const [name, p] of [
     ["cabin", CABIN],
@@ -194,7 +201,7 @@ export async function createScene(
     { x: -24, z: -37, label: "宅后望台 ↑" },
     { x: -31, z: -74, label: "深山 · 待开放" },
     { x: -31, z: 12, label: "溪谷小径 ↓" },
-    { x: 7, z: 46, label: "对岸林地 · 待开放" },
+    { x: 47, z: 34, label: "东岸林地 →" },
   ];
   for (const p of signs) {
     const sign = createSign(r, p.label);
@@ -262,12 +269,13 @@ export async function createScene(
   };
   const pick = (clientX: number, clientY: number) => {
     screenRay(clientX,clientY);
-    const hit = ray.intersectObjects([...hauling.hits.objects(),...woodcraft.hits.objects(),...workshop.hits.objects(),...forestry.getPickTargets(),...props.values(),...gathering.hits.objects(),...camp.hits.filter(o=>o.userData.propActive!==false)], true).find(hit=>{let o:THREE.Object3D|null=hit.object;while(o){if(!o.visible)return false;o=o.parent;}return true;}),
-      terrainHit = ray.intersectObject(ground)[0];
+    const hit = ray.intersectObjects([...bridge.hits.objects(),...hauling.hits.objects(),...woodcraft.hits.objects(),...workshop.hits.objects(),...forestry.getPickTargets(),...props.values(),...gathering.hits.objects(),...camp.hits.filter(o=>o.userData.propActive!==false)], true).find(hit=>{let o:THREE.Object3D|null=hit.object;while(o){if(!o.visible)return false;o=o.parent;}return true;}),
+      terrainHit = [...ray.intersectObject(ground),...(bridge.built.visible?ray.intersectObject(bridge.built,true):[])].sort((a,b)=>a.distance-b.distance)[0];
     if(woodDropMode){const drop=ray.intersectObjects([...woodcraft.hits.objects(),ground],true)[0];if(drop)intent({kind:'wood-drop',x:drop.point.x,y:drop.point.y,z:drop.point.z});return;}
     if(placementMode){if(terrainHit)intent({kind:'move',x:terrainHit.point.x,z:terrainHit.point.z});return;}
     if(terrainHit&&insideWoodcraft(terrainHit.point,0)&&(!hit||hit.distance>terrainHit.distance+.2)){intent({kind:'select',id:WOODCRAFT.id});return;}
     if (hit && (!terrainHit || hit.distance < terrainHit.distance + 0.2)) {
+      const bridgeId=bridge.hits.resolve(hit.object);if(bridgeId){intent({kind:'select',id:bridgeId});return;}
       const haulId=hauling.hits.resolve(hit.object);if(haulId){intent({kind:'select',id:haulId});return;}
       const looseId=woodcraft.hits.resolve(hit.object);if(looseId){intent({kind:'select',id:looseId});return;}
       const ownedId=workshop.hits.resolve(hit.object);if(ownedId){intent({kind:'select',id:ownedId});return;}
@@ -441,19 +449,21 @@ export async function createScene(
       // A real cooking job lights the hearth even when the daily decorative fire is off.
       if(state.food.cooking&&sceneOverrides.fire===undefined)appearance.fire=true;
       const sky=environment.setHour(appearance.hour);
+      sun.target.position.set(state.player.x,travelHeightAt(state.player.x,state.player.z,travelAccess(state)),state.player.z);
       hemi.color.copy(light.skyColor);hemi.groundColor.copy(light.groundColor);hemi.intensity=light.ambientIntensity;
       sun.color.copy(light.sunColor);sun.intensity=light.sunIntensity;sun.position.copy(sun.target.position).addScaledVector(light.sunDirection,135);
       scene.environmentIntensity=light.environmentIntensity;(scene.fog as THREE.Fog).color.copy(light.haze);
       if(state.workshop.job?.kind==='offering'&&state.workshop.job.phase==='working')appearance.altar='answering';
       camp.update(ambientTime,appearance,state.inventory,sky.night,reducedMotion,!!state.food.drying,(state.workshop.upgrades[CAMP_PROPS.dryer.id]?.level??0)>0);
       const { x, z, facing, moving } = state.player,
-        y = heightAt(x, z);
-      forestry.update(state,reducedMotion);understory.update(state);
+        y = travelHeightAt(x,z,travelAccess(state));
+      streaming.update(state);bridge.update(state);
+      forestry.update(state,reducedMotion);understory.update(state,streaming.activeChunks);
       characters.update(state,reducedMotion,ambientTime);
       merchantWagon.update(state.time,reducedMotion);
       forestry.alignContact(characters.getImpact());
-      gathering.update(state.gathering);
-      hauling.update(state.inventory);
+      gathering.update(state.gathering,streaming.activeChunks);
+      hauling.update(state.inventory,state.player,travelAccess(state));
       cabinRepair.update(state.workshop.upgrades?.cabin?.level??0);
       campExteriors.update(state.workshop);
       const action=state.gathering.action,ritual=state.ritual,craft=state.workshop.job;
@@ -470,7 +480,7 @@ export async function createScene(
       const actionDistance=climbing?THREE.MathUtils.lerp(9,22,ramp(actionTime,2,3.2)):10;
       const framing = Math.min(1, (CAMERA.zoom / zoom) ** 2);
       const inspecting=characters.getInspection()!==null;
-      desired.set(x,y+(inspecting?1.25:1.5),z).lerp(overview,inspecting?0:(mobile ? .12 : .75)*framing);
+      desired.set(x,y+(inspecting?1.25:1.5),z).lerp(overview,inspecting?0:(mobile ? .12 : .75)*framing*clamp(1-(Math.hypot(x-HOME.x,z-HOME.z)-20)/50,0,1));
       if(inspecting)target.copy(desired);else if(scenePreset){target.fromArray(VIEWS[scenePreset].target);if(scenePreset==='altar')target.y=camp.foundation.levelY+1.9;if(scenePreset==='ritual')target.y=camp.foundation.levelY+2.5;}else target.lerp(desired, reducedMotion ? 1 : 1 - Math.exp(-dt * 5));
       desired.copy(player.position).add(new THREE.Vector3(0,climbing?THREE.MathUtils.lerp(.85,2.3,ramp(actionTime,2,3.2)):1,0));target.lerp(desired,blend);if(mobile)target.y-=1.1*blend;
       offset
@@ -492,18 +502,18 @@ export async function createScene(
       scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);
       river.update(ambientTime,sky.day,reducedMotion,appearance.reflections,host.clientWidth<600||host.clientHeight<500);
       const selected = state.selected
-        ? (hauling.point(state.selected) ?? woodcraft.point(state.selected) ?? workshop.point(state.selected) ?? (state.selected===CAMP_VISITOR.id?CAMP_VISITOR:null) ?? gatheringRegistry.sources.get(state.selected) ?? treeById.get(state.selected) ??
+        ? ((state.selected===CREEK_BRIDGE.id?CREEK_BRIDGE.stand:null) ?? hauling.point(state.selected) ?? woodcraft.point(state.selected) ?? workshop.point(state.selected) ?? (state.selected===CAMP_VISITOR.id?CAMP_VISITOR:null) ?? gatheringRegistry.sources.get(state.selected) ?? treeById.get(state.selected) ??
           (state.selected === "cabin"
             ? CABIN
             : state.selected === "tent"
               ? TENT
               : Object.values(CAMP_PROPS).find(p=>p.id===state.selected)??null))
         : null;
-      marker.update(state.selected,selected);
+      marker.update(state.selected,selected,(x,z)=>travelHeightAt(x,z,travelAccess(state)));
       destination.visible = state.route.length > 0;
       if (state.route.length) {
         const p = state.route[state.route.length - 1];
-        destination.position.set(p.x, heightAt(p.x, p.z) + 0.09, p.z);
+        destination.position.set(p.x, travelHeightAt(p.x,p.z,travelAccess(state))+.09, p.z);
       }
       // Project the actual crown bounds; large landmark scale must not trigger early fading.
       // Bark stays opaque. Stable tree coordinates and colliders never change.
@@ -565,6 +575,7 @@ export async function createScene(
         graphicsBackend,
         managedTrees: trees.filter((t) => t.role === "managed").length,
         hauling:hauling.stats(),
+        streaming:streaming.stats(),
         gatheringHits: gathering.hits.size,
         characters:characters.stats(),
         gatheringPresentation: gathering.stats(),
@@ -588,6 +599,7 @@ export async function createScene(
       woodcraft.dispose();
       workshop.dispose();
       forestry.dispose();
+      streaming.dispose();bridge.dispose();
       characters.dispose();
       merchantWagon.dispose();
       wildlife.dispose();

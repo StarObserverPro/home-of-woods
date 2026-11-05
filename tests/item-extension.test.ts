@@ -19,7 +19,7 @@ const context = createSaveContext();
 const load = (raw:string) => { const result=prepareInventoryPersistence(raw);if(!('value' in result))throw Error(result.diagnostics.join(';'));return result.value; };
 
 test('carrying core format preserves the intentional v4 migration; abandoned formats stay protected', async () => {
-  assert.equal(INVENTORY_SCHEMA_VERSION,6);assert.equal(WORLD_RULESET_VERSION,8);assert.equal(WORLD_SAVE_DATABASE,'home-of-woods-save-v2');
+  assert.equal(INVENTORY_SCHEMA_VERSION,6);assert.equal(WORLD_RULESET_VERSION,9);assert.equal(WORLD_SAVE_DATABASE,'home-of-woods-save-v2');
   for(const schemaVersion of [1,2,3,99]) assert.equal(prepareInventoryPersistence(JSON.stringify({schemaVersion,stacks:[]})).decision,'protected');
   assert.equal(prepareInventoryPersistence(JSON.stringify({version:1,quantities:{wood:3}})).decision,'protected');
   assert.equal(prepareInventoryPersistence(null).decision,'no-save');

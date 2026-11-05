@@ -14,7 +14,7 @@ export function transportLocation(item: Record<string,unknown>): TransportLocati
 }
 export const isStored = (item:Record<string,unknown>) => transportLocation(item)===undefined;
 export const isCarried = (item:Record<string,unknown>) => transportLocation(item)?.kind==='carried';
-export const isAvailableMaterial = (item:Record<string,unknown>) => transportLocation(item)?.kind!=='ground';
+export const isAvailableMaterial = (item:Record<string,unknown>) => !item.harvest&&transportLocation(item)?.kind!=='ground';
 export function carryMethod(raw:unknown):CarryMethod {
   if(raw===undefined)return 'hands';
   if(raw==='hands'||raw==='bundle')return raw;

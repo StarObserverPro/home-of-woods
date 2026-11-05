@@ -17,7 +17,8 @@ import {heightAt} from '../src/world/surface.ts';
 
 test('accepted terrain keeps every previous fixed tree, individual, coordinate and current world save',async()=>{
   const oldTrees=JSON.parse(await readFile(new URL('../evidence/scene-r5/before-trees.json',import.meta.url),'utf8'));
-  assert.deepEqual(makeTrees(),oldTrees);
+  const current=makeTrees();
+  assert.deepEqual(current.map(({regionId,...tree})=>({...tree,role:regionId==='east-woodland'?'scenery':tree.role})),oldTrees,'east promotion retains every fixed identity and coordinate');
   const context=createSaveContext(), state=createState();
   const loaded=await prepareWorldSave(await serializeWorldSave(state,context,{sequence:1,savedAt:1}),context);
   assert.equal(loaded.decision,'restored');if(loaded.decision!=='restored')throw Error('current state failed');

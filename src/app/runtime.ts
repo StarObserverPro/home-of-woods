@@ -1,3 +1,6 @@
+import {travelAccess,regionAt,blessingAt} from '../world/regions.ts';
+import {travelHeightAt} from '../world/traversal.ts';
+import {CREEK_BRIDGE} from '../content/regions.ts';
 import {unpackFoodSack} from '../domain/food.ts';
 import {wardrobeSnapshot,changeWardrobe} from '../domain/wardrobe.ts';
 import type {WardrobeView,WardrobeIntent} from '../domain/wardrobe.ts';
@@ -97,7 +100,7 @@ export async function createRuntime(
   const savedState = await persistence.load();
   const state = initialState ?? savedState ?? createStarterState(trees);
   validateWorldSession(state, saveContext);
-  for (const source of registry.sources.values()) if (!interactionRoute({ player: { ...START, facing: 0, moving: false } }, source, registry, colliders).reachable) throw new Error(`Unreachable source: ${source.sourceId}`);
+
   synchronizeGatheringHosts(state, registry);
   validateWildlifeRegistry(RUNTIME_MODELS.map(a => a.assetId));
   let message = "沿着小路，认识你的新家。",
@@ -118,7 +121,7 @@ export async function createRuntime(
   const navigate = (p: Point) => {
     woodcraft.cancelDrop();view.setWoodcraftDrop(false);view.inspectScene(null);
     const cancelled=cancelPlayerAction(state);if(cancelled)message=cancelled;
-    const route = findPath(state.player, p, activeColliders());
+    const route = findPath(state.player, p, activeColliders(),travelAccess(state));
     state.route = route;
     message = route.length
       ? "沿小路前往目的地"
@@ -190,7 +193,7 @@ export async function createRuntime(
           old,
           dx * MOVEMENT.speed * currentLoad(state.inventory).speed * MOVEMENT.fixedStep,
           dz * MOVEMENT.speed * currentLoad(state.inventory).speed * MOVEMENT.fixedStep,
-          activeColliders(),
+          activeColliders(),travelAccess(state),
         );
       const travelled = Math.hypot(p.x - old.x, p.z - old.z);
       state.player = {
@@ -259,7 +262,8 @@ export async function createRuntime(
       frameMsP95: sorted[Math.floor(sorted.length * 0.95)] ?? 0,
       seed: state.seed,
       routeNodes: state.route.length,
-      player: { ...state.player, y: heightAt(state.player.x, state.player.z) },
+      region:{id:regionAt(state.player.x,state.player.z),openLinks:travelAccess(state).openLinks,blessed:blessingAt(state,state.player)},
+      player: { ...state.player, y: travelHeightAt(state.player.x,state.player.z,travelAccess(state)) },
       gameTime:state.time,
       carrying:carryingSnapshot(state),
       wildlifeState: state.wildlife,
@@ -288,7 +292,7 @@ export async function createRuntime(
       zone: zoneName(state.player.x, state.player.z),
       x: state.player.x,
       z: state.player.z,
-      height: heightAt(state.player.x, state.player.z),
+      height: travelHeightAt(state.player.x,state.player.z,travelAccess(state)),
       selected: state.selected,
       moving: state.player.moving,
       visited: [...state.visited],
@@ -393,6 +397,20 @@ export async function createRuntime(
   const clearPlacement=()=>{placement=null;view.setPlacement(null);};
   loop.setPaused(manualPause || document.hidden);
   publishSnapshot();
+  // DEV inspection advances the existing fixed-step owner between captured frames.
+  // It neither changes movement speed nor creates a second clock/RAF in the shipped game.
+  type InspectionWindow=Window&{__HOW_ADVANCE_SIMULATION__?:(seconds:number)=>void};
+  const inspectionWindow=window as InspectionWindow;
+  let advanceInspection:((seconds:number)=>void)|undefined;
+  if(import.meta.env.DEV&&new URLSearchParams(window.location.search).has('inspect')){
+    advanceInspection=seconds=>{
+      if(blocked()||interfaceOpen||!Number.isFinite(seconds)||seconds<=0||seconds>5)throw new Error('Inspection step unavailable');
+      loop.setPaused(true);
+      try{tick(seconds,performance.now());}
+      finally{loop.setPaused(manualPause||inspectionOpen||contextLost||document.hidden);publishSnapshot();}
+    };
+    inspectionWindow.__HOW_ADVANCE_SIMULATION__=advanceInspection;
+  }
   return {
     carry(intent:CarryIntent){if(transferBlocked())return;try{message=changeCarrying(state,intent,activeColliders());}catch(error){message=error instanceof Error?error.message:'本次搬运未完成。';}view.render(state,0);publishSnapshot();},
     approachMaterial(id:string){if(blocked()||placement||workshopBusy(state))return;cancelPlayerAction(state);message=approachGround(state,id,activeColliders());publishSnapshot();},
@@ -459,7 +477,7 @@ export async function createRuntime(
     approachMerchant(){if(blocked()||placement)return;cancelPlayerAction(state);state.selected=CAMP_VISITOR.id;
       const target={x:CAMP_VISITOR.x+2,z:CAMP_VISITOR.z+1};
       if(Math.hypot(state.player.x-CAMP_VISITOR.x,state.player.z-CAMP_VISITOR.z)<=3)message='已经在行商身边，可以交换图纸。';
-      else{state.route=findPath(state.player,target,activeColliders());message=state.route.length?'走到行商身边。':'暂时无法走到行商身边。';}publishSnapshot();},
+      else{state.route=findPath(state.player,target,activeColliders(),travelAccess(state));message=state.route.length?'走到行商身边。':'暂时无法走到行商身边。';}publishSnapshot();},
     beginPlacement(id:string){if(blocked()||workshopBusy(state)||state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))return;
       const item=state.inventory.instances?.find(i=>i.instanceId===id);if(!item)return;
       state.selected=null;state.route=[];keys.clear();stick.x=stick.z=0;placement={instanceId:id,point:null,rotation:item.location.kind==='world'?item.location.rotation:0,reason:''};view.setPlacement(placement);publishSnapshot();},
@@ -472,10 +490,12 @@ export async function createRuntime(
     navigate(id: string) {
       if (destroyed||manualPause||interfaceOpen||inspectionOpen||contextLost||document.hidden) return;
       clearPlacement();
+      if(id==='east-bank'&&!travelAccess(state).openLinks.includes(CREEK_BRIDGE.id)){state.selected=CREEK_BRIDGE.id;state.route=[];message='先在溪谷修好木桥，才能到东岸。';publishSnapshot();return;}
       const wp = WAYPOINTS.find((p) => p.id === id);
       if (wp) {
         state.selected = null;
         navigate(wp);
+        if(wp.id==='bridge')state.selected=CREEK_BRIDGE.id;
         publishSnapshot();
       }
     },
@@ -499,7 +519,7 @@ export async function createRuntime(
       const blockers=activeColliders();let route:ReturnType<typeof findPath>=[];
       for(const offset of [0,.55,-.55,1.1,-1.1,Math.PI/2,-Math.PI/2,Math.PI]){
         const p={x:tree.x+Math.cos(direction+offset)*radius,z:tree.z+Math.sin(direction+offset)*radius};
-        if(!canStand(p,blockers))continue;route=findPath(state.player,p,blockers);if(route.length)break;
+        if(!canStand(p,blockers,undefined,travelAccess(state)))continue;route=findPath(state.player,p,blockers,travelAccess(state));if(route.length)break;
       }
       state.route=route;message=route.length?'走近树干后，按“砍树”开始挥斧。':'这棵树附近暂时没有可到达的立足点。';publishSnapshot();
     },
@@ -609,6 +629,7 @@ export async function createRuntime(
     destroy() {
       if (destroyed) return;
       destroyed = true;
+      if(import.meta.env.DEV&&inspectionWindow.__HOW_ADVANCE_SIMULATION__===advanceInspection)delete inspectionWindow.__HOW_ADVANCE_SIMULATION__;
       unsubscribeSave();
       void persistence.saveNow(state);
       loop.destroy();

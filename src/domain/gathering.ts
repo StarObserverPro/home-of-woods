@@ -1,3 +1,8 @@
+import {CLOSED_ACCESS,regionOpen} from '../world/regions.ts';
+import type {TravelAccess} from '../world/regions.ts';
+import {travelHeightAt} from '../world/traversal.ts';
+import type {RegionalHost} from '../world/regions.ts';
+import {travelAccess} from '../world/regions.ts';
 import {awardCarried,carryAdditionReason} from './carrying.ts';
 import { BRANCH_HARVEST_SPEC } from '../content/wood-uses.ts';
 import type { Point } from '../content/world.ts';
@@ -26,7 +31,7 @@ export type GatheringState = {
   sources: Record<string, GatheringSourceState>; action: GatherAction | null;
   nextAction: number; settled: Record<string, true>;
 };
-export type GatheringHost = {
+export type GatheringHost = RegionalHost & {
   time: number; selected: string | null; route: Point[]; player: Point & { facing: number; moving: boolean };
   gathering: GatheringState; inventory: InventoryState; forestry: Pick<ForestryState, 'active' | 'slots'>;
 };
@@ -64,26 +69,27 @@ export function synchronizeGatheringHosts(host: GatheringHost, registry: Gatheri
   }
 }
 /** Short interaction segment must stay on the same traversable ground, including obstacles/water. */
-export function canInteract(from: Point, to: Point, blockers: Collider[]) {
-  if (!canStand(from, blockers) || !canStand(to, blockers)) return false;
+export function canInteract(from: Point, to: Point, blockers: Collider[],access:TravelAccess=CLOSED_ACCESS) {
+  if (!canStand(from, blockers,undefined,access) || !canStand(to, blockers,undefined,access)) return false;
   const distance = Math.hypot(from.x - to.x, from.z - to.z), steps = Math.max(1, Math.ceil(distance / .12));
-  for (let i = 1; i <= steps; i++) if (!canStand({ x: from.x + (to.x - from.x) * i / steps, z: from.z + (to.z - from.z) * i / steps }, blockers)) return false;
-  return Math.abs(heightAt(from.x, from.z) - heightAt(to.x, to.z)) <= distance * .9 + .2;
+  for (let i = 1; i <= steps; i++) if (!canStand({ x: from.x + (to.x - from.x) * i / steps, z: from.z + (to.z - from.z) * i / steps }, blockers,undefined,access)) return false;
+  return Math.abs(travelHeightAt(from.x,from.z,access)-travelHeightAt(to.x,to.z,access)) <= distance * .9 + .2;
 }
-export function interactionRoute(host: Pick<GatheringHost, 'player'>, source: GatheringSource, registry: GatheringRegistry, blockers: Collider[]) {
+export function interactionRoute(host: Pick<GatheringHost, 'player'|'workshop'>, source: GatheringSource, registry: GatheringRegistry, blockers: Collider[]) {
   const d = registry.definitions.get(source.definitionId)!;
-  if (Math.hypot(host.player.x - source.x, host.player.z - source.z) <= d.range && canInteract(host.player, source, blockers)) return { reachable: true, route: [] as Point[] };
+  if (Math.hypot(host.player.x - source.x, host.player.z - source.z) <= d.range && canInteract(host.player, source, blockers,travelAccess(host))) return { reachable: true, route: [] as Point[] };
   const angle = Math.atan2(host.player.z - source.z, host.player.x - source.x);
   for (const delta of [0, .55, -.55, 1.1, -1.1, Math.PI / 2, -Math.PI / 2, Math.PI]) {
     const p = { x: source.x + Math.cos(angle + delta) * 1.45, z: source.z + Math.sin(angle + delta) * 1.45 };
-    if (!canInteract(p, source, blockers)) continue;
-    const route = findPath(host.player, p, blockers);
+    if (!canInteract(p, source, blockers,travelAccess(host))) continue;
+    const route = findPath(host.player, p, blockers,travelAccess(host));
     if (route.length) return { reachable: true, route };
   }
   return { reachable: false, route: [] as Point[] };
 }
 export function gatheringReason(host: GatheringHost, source: GatheringSource | undefined) {
   if (!source || !host.gathering.sources[source.sourceId]) return '请先选中林间物产。';
+  if(source.region==='east-woodland'&&!regionOpen('east-woodland',travelAccess(host)))return '先修好跨溪木桥，再去对岸采集。';
   const hostReason = hostResourceReason(host, source); if (hostReason) return hostReason;
   if (host.forestry.active) return '先完成当前采伐，再采集物产。';
   if (gatheringBusy(host.gathering)) return '正在采集，可以取消或移动离开。';
@@ -124,7 +130,7 @@ export function gatherCandidate(host: GatheringHost, registry: GatheringRegistry
   if (!s || !life || life.version !== a.sourceVersion || life.remaining <= 0) return null;
   if (hostResourceReason(host, s)) return null;
   const d = registry.definitions.get(s.definitionId)!;
-  if (host.time < a.startedAt + a.durationSeconds || Math.hypot(host.player.x - s.x, host.player.z - s.z) > d.range || !canInteract(host.player, s, blockers)) return null;
+  if (host.time < a.startedAt + a.durationSeconds || Math.hypot(host.player.x - s.x, host.player.z - s.z) > d.range || !canInteract(host.player, s, blockers,travelAccess(host))) return null;
   if(carryAdditionReason(host.inventory,a.reward,a.reward.quantity))return null;
   const remaining = life.remaining - 1;
   return { actionId: a.actionId, sourceId: s.sourceId, sourceVersion: life.version, inventoryRevision: host.inventory.revision,
@@ -151,7 +157,7 @@ export function advanceGather(host: GatheringHost, registry: GatheringRegistry, 
   if (a.phase === 'approaching') {
     if (host.route.length) return null;
     const d = registry.definitions.get(source.definitionId)!;
-    if (Math.hypot(host.player.x - source.x, host.player.z - source.z) > d.range || !canInteract(host.player, source, blockers)) { cancelGather(host); return null; }
+    if (Math.hypot(host.player.x - source.x, host.player.z - source.z) > d.range || !canInteract(host.player, source, blockers,travelAccess(host))) { cancelGather(host); return null; }
     if(carryAdditionReason(host.inventory,a.reward,a.reward.quantity)){cancelGather(host);return null;}
     a.phase = 'performing'; a.startedAt = host.time; host.player.moving = false;
     host.player.facing = Math.atan2(source.x - host.player.x, source.z - host.player.z);

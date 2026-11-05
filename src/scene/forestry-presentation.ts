@@ -42,6 +42,9 @@ export function createForestryPresentation({models,resources:r,forestGroup,trees
   function update(state:GameState,reducedMotion=false){
     if(disposed)return;
     pickTargets.length=0;
+    for(const [id,parts] of dynamic)if(!selections.has(id)){parts.dispose();dynamic.delete(id);}
+    for(const [id,stump] of stumps)if(!selections.has(id)){stump.removeFromParent();stumps.delete(id);}
+
     let impactTree:Tree|undefined,impactAge=Infinity;
     for(const [id,object] of selections){
       const tree=treeById.get(id)!,life=state.forestry.slots[id];

@@ -1,3 +1,6 @@
+import {BridgeControls} from './Bridge.tsx';
+import {CREEK_BRIDGE} from '../content/regions.ts';
+import {gatheringHostTrees} from '../world/gathering-layout.ts';
 import {CarryingControls,CarryingSummary,carryingDetails,GroundCarryControls} from './Carrying.tsx';
 import {RarityVfxControls} from './RarityVfxControls.tsx';
 import {readRarityVfxPreference,writeRarityVfxPreference} from '../app/display-preferences.ts';
@@ -112,6 +115,7 @@ function Icon({ name }: { name: string }) {
 }
 const trees = makeTrees();
 const treeById = new Map(trees.map(tree=>[tree.id,tree]));
+const branchHosts=new Set(gatheringHostTrees(trees).map(tree=>tree.id));
 const mapX=(x:number)=>(x+90)*.9;
 const mapZ=(z:number)=>(z+85)*.9;
 const mapLine=(p:{x:number;z:number}[])=>p.map(v=>`${mapX(v.x)},${mapZ(v.z)}`).join(' ');
@@ -322,7 +326,9 @@ export function App() {
   const gatherTarget = snapshot.gathering.selectedTarget;
   const gatherAction = snapshot.gathering.action;
   const selectedOwnedItem=snapshot.workshop.items.find(item=>item.instanceId===snapshot.selected);
-  const selected = carryingDetails(snapshot.selected,snapshot.carrying) ?? woodcraftDetails(snapshot.selected,snapshot.woodcraft) ?? workshopDetails(snapshot.selected,snapshot.workshop) ?? gatherTarget ?? scenePropDetails(snapshot.selected,snapshot.appearance,forest.wood) ?? (
+  const bridgeBuilt=(snapshot.workshop.upgrades[CREEK_BRIDGE.id]?.level??0)>0;
+  const bridgeDetails=snapshot.selected===CREEK_BRIDGE.id?{title:CREEK_BRIDGE.name,tag:bridgeBuilt?'两岸已接通':'待修建',detail:bridgeBuilt?'沿木桥可到东岸采集和伐木，原木仍需搬回营地入库。':'图纸已经收在仓库里。备好原木和枝杈，到桥头开工。'}:null;
+  const selected = bridgeDetails ?? carryingDetails(snapshot.selected,snapshot.carrying) ?? woodcraftDetails(snapshot.selected,snapshot.woodcraft) ?? workshopDetails(snapshot.selected,snapshot.workshop) ?? gatherTarget ?? scenePropDetails(snapshot.selected,snapshot.appearance,forest.wood) ?? (
     snapshot.selected === "cabin"
       ? {
           title: "旧木屋",
@@ -433,7 +439,7 @@ export function App() {
           className="minimap"
           viewBox="0 0 180 150"
           role="img"
-          aria-label="营地、巨木、溪谷路线与当前位置"
+          aria-label="营地、巨木、木桥、两岸林地与当前位置"
         >
           <polyline
             points={mapLine(RIVER_KNOTS)}
@@ -454,6 +460,8 @@ export function App() {
             stroke="#f4f8edb3"
             strokeWidth="1.2"
           />
+          <polyline points={mapLine([CREEK_BRIDGE.west,CREEK_BRIDGE.east])} fill="none" stroke="#fff1c9" strokeWidth="2.5" strokeDasharray={bridgeBuilt?undefined:'2 3'}/>
+          <circle cx={mapX(49)} cy={mapZ(38)} r="3" fill={snapshot.visited.includes('east-bank')?'#d4efbd':'#ffffff40'}/>
           <circle cx={mapX(HOME.x)} cy={mapZ(HOME.z)} r="4" fill="#ffe3b0" />
           <circle cx={mapX(GIANT.x)} cy={mapZ(GIANT.z)} r="5" fill="#d4efbd" />
           <circle cx={mapX(3)} cy={mapZ(48)} r="3.3" fill="#a9edee" />
@@ -575,7 +583,7 @@ export function App() {
             <button className="context-button primary-action" disabled={!ready||snapshot.paused||!!snapshot.workshop.job} onClick={approachFacility}>{snapshot.moving?'正在走近…':'走近'}</button>
           </div>:<>
           {['grove-altar','grove-altar:oracle'].includes(snapshot.selected??'') && snapshot.interaction?.near&&<div className="tree-actions"><button className="context-button" onClick={()=>runtime.current?.ritual('prayer')}>合掌祈祷</button></div>}
-          {selectedTree && ['tree-slot-r3-hero-0','tree-slot-16-9','tree-slot-13-6','tree-slot-17-11','landmark-elder'].includes(selectedTree.id) && <button className="context-button" onClick={()=>runtime.current?.selectTreeBranches()}>查看枝杈</button>}
+          {selectedTree && branchHosts.has(selectedTree.id) && <button className="context-button" onClick={()=>runtime.current?.selectTreeBranches()}>查看枝杈</button>}
           <GroundCarryControls id={snapshot.selected} view={snapshot.carrying} onChange={intent=>runtime.current?.carry(intent)} onApproach={id=>runtime.current?.approachMaterial(id)}/>
           <WoodcraftControls selected={snapshot.selected} view={snapshot.woodcraft} message={snapshot.message} disabled={!ready||snapshot.paused||!!snapshot.placement}
             onOpen={()=>runtime.current?.openWoodcraft()} onWarehouse={()=>setWarehouseOpen(true)} onPrepare={()=>runtime.current?.prepareWoodcraft()} onThrow={()=>runtime.current?.beginWoodDrop()} onCollect={id=>runtime.current?.collectWood(id)} onClose={()=>runtime.current?.closeWoodcraft()}/>
@@ -593,6 +601,7 @@ export function App() {
           {snapshot.selected==='tent'&&<button className="context-button" onClick={()=>runtime.current?.select(WORKBENCH.id)}>查看工作台</button>}
 
           </>}
+          {bridgeDetails&&<BridgeControls view={snapshot.workshop} disabled={!ready||snapshot.paused||!!snapshot.placement} onBuild={()=>runtime.current?.upgrade(CREEK_BRIDGE.id)} onCancel={()=>runtime.current?.cancelAction()}/>}
           {gatherTarget && <div className="tree-work">
             <div className="tree-facts"><span>{gatherTarget.status}</span><span>距你 {gatherTarget.distance.toFixed(1)}</span></div>
             {gatherTarget.status === '可以采集' && <p className="tree-cost">可得 {gatherTarget.reward}</p>}
@@ -622,7 +631,7 @@ export function App() {
               </div>
             </div>
           )}
-          {(snapshot.workshop.upgradeOptions.length>0||snapshot.workshop.upgrade)&&<details className="context-details" open={snapshot.workshop.job?.kind==='upgrade'||undefined}>
+          {!bridgeDetails&&(snapshot.workshop.upgradeOptions.length>0||snapshot.workshop.upgrade)&&<details className="context-details" open={snapshot.workshop.job?.kind==='upgrade'||undefined}>
             <summary>改造与修缮</summary>
           <UpgradeControls remote={farFacility} view={snapshot.workshop} hasContextActions={!!snapshot.interaction} disabled={!ready||snapshot.paused||!!snapshot.placement} onApproach={id=>runtime.current?.approachUpgrade(id)} onUpgrade={id=>runtime.current?.upgrade(id)} onMount={id=>runtime.current?.mountExterior(id)} onCancel={()=>runtime.current?.cancelAction()}/>
           </details>}
@@ -668,7 +677,7 @@ export function App() {
                 {snapshot.visited.includes(wp.id) ? "✓" : `0${i + 1}`}
               </span>
               <span>
-                <strong>{wp.name}</strong>
+                <strong>{wp.name}</strong>{wp.id==='east-bank'&&!bridgeBuilt&&<small>先修桥</small>}
               </span>
               <span className="route-arrow">↗</span>
             </button>

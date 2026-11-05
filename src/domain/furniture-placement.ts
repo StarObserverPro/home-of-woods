@@ -1,3 +1,5 @@
+import {onBridge} from '../world/traversal.ts';
+import {travelAccess} from '../world/regions.ts';
 import type {GameState} from './state.ts';
 import type {Point} from '../content/world.ts';
 import type {Collider} from '../world/layout.ts';
@@ -19,12 +21,13 @@ export function placementReason(state:GameState,id:string,p:Point,blockers:Colli
   const item=state.inventory.instances?.find(i=>i.instanceId===id);
   if(!item||item.definitionId!==SEAT_DEFINITION)return '这件物品暂时不能摆放。';
   if(!Number.isFinite(p.x)||!Number.isFinite(p.z))return '请选择有效的位置。';
+  if(onBridge(p.x,p.z))return '桥上要留出搬运通道，请选岸边空地。';
   if(Math.hypot(p.x-state.player.x,p.z-state.player.z)>ITEM_REACH)return '这里离你太远，请先走近再摆放。';
   if(item.location.kind==='world'&&!interactionAccess(state,id)?.near)return '先走近这件家具，再移动它。';
   const r=WORKSHOP_RULES.seatRadius;
-  if(!canStand(p,blockers.filter(c=>c.id!==id),r)||slopeAt(p.x,p.z)>WORKSHOP_RULES.maxPlacementSlope)return '这里有障碍、水面或坡度太陡，请换一块空地。';
+  if(!canStand(p,blockers.filter(c=>c.id!==id),r,travelAccess(state))||slopeAt(p.x,p.z)>WORKSHOP_RULES.maxPlacementSlope)return '这里有障碍、水面或坡度太陡，请换一块空地。';
   const samples=[...Array(8)].map((_,i)=>({x:p.x+Math.cos(i*Math.PI/4)*r,z:p.z+Math.sin(i*Math.PI/4)*r}));
-  if(samples.some(q=>!canStand(q,[],0))||Math.max(...samples.map(q=>heightAt(q.x,q.z)))-Math.min(...samples.map(q=>heightAt(q.x,q.z)))>.2)return '木墩底面需要较平整的地面。';
+  if(samples.some(q=>!canStand(q,[],0,travelAccess(state)))||Math.max(...samples.map(q=>heightAt(q.x,q.z)))-Math.min(...samples.map(q=>heightAt(q.x,q.z)))>.2)return '木墩底面需要较平整的地面。';
   if(Math.hypot(p.x-state.player.x,p.z-state.player.z)<r+.5)return '这里会挡住你，请稍微挪开一点。';
   // Keep the starter crafting/prayer approach usable; no physics simulation is involved.
   if(Math.hypot(p.x-WORKBENCH.stand.x,p.z-WORKBENCH.stand.z)<r+.8)return '请为工作台留出操作位置。';

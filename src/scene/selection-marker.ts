@@ -23,7 +23,7 @@ export function createSelectionMarker(resources:Resources) {
   object.visible = false;
   object.renderOrder = 3;
   let lastId:string|null = null, lastX = NaN, lastZ = NaN;
-  return {object, update(id:string|null, target:Target|null) {
+  return {object, update(id:string|null, target:Target|null,surface:typeof heightAt=heightAt) {
     object.visible = !!target;
     if (!target || (lastId===id && lastX===target.x && lastZ===target.z)) return;
     lastId=id;lastX=target.x;lastZ=target.z;
@@ -43,7 +43,7 @@ export function createSelectionMarker(resources:Resources) {
       const angle=arc*Math.PI/2+ARC_GAP+(segment+end)/SEGMENTS_PER_ARC*(Math.PI/2-2*ARC_GAP);
       const px=Math.cos(angle)*rx,pz=Math.sin(angle)*rz;
       positions[vertex++]=px;
-      positions[vertex++]=heightAt(x+px,z+pz)+.045;
+      positions[vertex++]=surface(x+px,z+pz)+.045;
       positions[vertex++]=pz;
     }
     geometry.attributes.position.needsUpdate=true;

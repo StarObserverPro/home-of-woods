@@ -1,4 +1,5 @@
 import {transportLocation,carryMethod} from './transport-location.ts';
+import {validateHarvest} from './harvest.ts';
 import {validateAttachedItems} from './item-attachment-contract.ts';
 import { assertItemJson, withoutFields } from './item-data.ts';
 import type { ExtensibleRecord } from './item-data.ts';
@@ -35,6 +36,7 @@ export function stackIdentity(stack: StackIdentity): StackIdentity {
   const identity = withoutFields(stack, ['quantity', 'delta']);
   if (Object.hasOwn(stack, 'wood')) identity.wood = validateWood(stack.wood);
   transportLocation(identity);
+  if(Object.hasOwn(identity,'harvest'))identity.harvest=validateHarvest(identity.harvest);
   assertItemJson(identity);
   return structuredClone(identity) as StackIdentity;
 }

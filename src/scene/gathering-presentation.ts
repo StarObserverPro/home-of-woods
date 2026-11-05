@@ -1,3 +1,4 @@
+import {chunkKey} from '../world/regions.ts';
 import * as THREE from 'three';
 import {makeTrees} from '../world/layout.ts';
 import {heightAt} from '../world/surface.ts';
@@ -14,6 +15,7 @@ export function createGatheringPresentation(r: Resources, models: Models, regist
   const proxyMaterial = r.own(new THREE.MeshBasicMaterial({ visible: false }));
   const batches: { mesh: THREE.InstancedMesh; records: { sourceId: string; matrix: THREE.Matrix4 }[]; local: THREE.Matrix4 }[] = [];
   const visibility = new Map<string, boolean>();
+  const proxies=new Map<string,{root:THREE.Group;unregister:(()=>void)|null}>();
   let patchCount = 0;
   for (const definition of registry.definitions.values()) {
     const spec = RUNTIME_MODELS.find(a => a.assetId === definition.assetId)!;
@@ -31,11 +33,11 @@ export function createGatheringPresentation(r: Resources, models: Models, regist
         dummy.rotation.y = patch.rotation; dummy.scale.setScalar(patch.scale); dummy.updateMatrix();
         records.push({ sourceId: source.sourceId, matrix: dummy.matrix.clone() });
         const proxy = new THREE.Mesh(r.geometry(`gather-hit-${definition.definitionId}`,()=>new THREE.SphereGeometry(definition.hitRadius,10,6)),proxyMaterial);
-        proxy.position.set(patch.x-source.x,patch.y-source.targetAnchor.y+.4*patch.scale,patch.z-source.z);
+        proxy.position.set(visual.x-source.x,visual.y-source.targetAnchor.y+.4*patch.scale,visual.z-source.z);
         proxy.scale.set(patch.scale,.55*patch.scale,patch.scale); root.add(proxy);
         patchCount++;
       }
-      group.add(root); hits.register(root,source.sourceId);
+      group.add(root); proxies.set(source.sourceId,{root,unregister:hits.register(root,source.sourceId)});
     }
     template.traverse(object=>{
       if(!(object instanceof THREE.Mesh))return;
@@ -52,11 +54,14 @@ export function createGatheringPresentation(r: Resources, models: Models, regist
   return {
     group, hits,
     stats:()=>({ sources:registry.sources.size,patches:patchCount,batches:batches.length,hits:hits.size }),
-    update(state: GatheringState) {
+    update(state: GatheringState,activeChunks?:Set<string>) {
       if(disposed)return;
       const changed=new Set<string>();
       for(const source of registry.sources.values()){
-        const life=state.sources[source.sourceId],a=state.action,held=a?.sourceId===source.sourceId&&a.phase==='performing'&&a.motionTag==='gather.pickup'&&a.progress*a.durationSeconds>=1.15,visible=(life?.remaining??0)>0&&life.hostAvailable!==false&&!held;
+        const life=state.sources[source.sourceId],a=state.action,held=a?.sourceId===source.sourceId&&a.phase==='performing'&&a.motionTag==='gather.pickup'&&a.progress*a.durationSeconds>=1.15,active=!activeChunks||activeChunks.has(chunkKey(source)),visible=active&&(life?.remaining??0)>0&&life.hostAvailable!==false&&!held;
+        const proxy=proxies.get(source.sourceId)!;
+        if(active&&!proxy.unregister){group.add(proxy.root);proxy.unregister=hits.register(proxy.root,source.sourceId);}
+        else if(!active&&proxy.unregister){proxy.unregister();proxy.unregister=null;proxy.root.removeFromParent();}
         if(visibility.get(source.sourceId)!==visible){visibility.set(source.sourceId,visible);changed.add(source.sourceId);}
       }
       if(!changed.size)return;
@@ -70,6 +75,6 @@ export function createGatheringPresentation(r: Resources, models: Models, regist
       }
     },
     // Pick proxies remain to inspect empty/host-disabled resource pools.
-    dispose(){if(disposed)return;disposed=true;hits.clear();group.clear();visibility.clear();},
+    dispose(){if(disposed)return;disposed=true;hits.clear();group.clear();visibility.clear();proxies.clear();},
   };
 }

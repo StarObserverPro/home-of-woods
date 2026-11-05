@@ -1,3 +1,5 @@
+import {CREEK_BRIDGE} from '../content/regions.ts';
+import {travelAccess} from '../world/regions.ts';
 import {isAvailableMaterial} from './transport-location.ts';
 import type {GameState} from './state.ts';
 import type {Collider} from '../world/layout.ts';
@@ -49,7 +51,7 @@ export function upgradeSnapshot(host:GameState,targetId:string|null){
   const level=host.workshop.upgrades?.[targetId]?.level??profile.initialLevel;
   const path=profile.paths.find(p=>p.fromLevel===level),isNear=near(host,profile.stand);
   if(!path){
-    const installed=!!profile.hostId&&level>profile.initialLevel;
+    const installed=(!!profile.hostId||profile.id===CREEK_BRIDGE.id)&&level>profile.initialLevel;
     return {targetId,hostId,title:profile.title,level,status:installed?'installed' as const:'planned' as const,near:isNear,canStart:false,reason:profile.future,
       pathName:installed?profile.title:'后续升级',detail:profile.future,requiredBlueprint:null,materials:[],stand:profile.stand,mountSlot,mounted};
   }
@@ -74,7 +76,7 @@ export const upgradeOptions=(host:GameState,targetId:string|null)=>{
 export function approachUpgrade(host:GameState,targetId:string,blockers:Collider[]){
   if(busy(host))return '先完成或取消当前动作。';
   const view=upgradeSnapshot(host,targetId);if(!view?.stand)return '这件物品还没有可前往的升级位置。';
-  const route=near(host,view.stand)?[]:findPath(host.player,view.stand,blockers);
+  const route=near(host,view.stand)?[]:findPath(host.player,view.stand,blockers,travelAccess(host));
   if(!near(host,view.stand)&&!route.length)return '暂时无法到达操作位置。';
   host.selected=view.hostId;host.route=route;
   return route.length?`走近${view.title}后，可以查看并执行已开放的操作。`:`已经来到${view.title}旁。`;
