@@ -4,6 +4,7 @@ import {canStand} from '../domain/navigation.ts';
 import {makeColliders} from '../world/layout.ts';
 import {createActor} from './actions/actor.js';
 import { CHARACTER, CAMP_VISITOR } from '../content/characters.ts';
+import {TENT} from '../content/world.ts';
 import {DINING_SEAT} from '../content/scene-props.ts';
 import {calendarAt} from '../domain/local-clock.ts';
 import { FORESTRY } from '../content/forestry.ts';
@@ -115,10 +116,20 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     }else{
       cutKey='';stop=null;lastContact=Infinity;grip=null;tool.visible=false;
       const gather=state.gathering.action;
-      const next:Mode=gather?.phase==='performing'?'gather':state.player.moving&&!reducedMotion?'walk':'idle';setMode(next);
+      const secondsFromDawn=state.dayCycle.wokeAt===null?Infinity:state.time-state.dayCycle.wokeAt;
+      const emerging=!reading&&!state.player.moving&&!reducedMotion&&secondsFromDawn>=0&&secondsFromDawn<2.25;
+      const next:Mode=gather?.phase==='performing'?'gather':(state.player.moving||emerging)&&!reducedMotion?'walk':'idle';setMode(next);
       const clip=sourceClips[mode];
       actions[mode].time=mode==='gather'?Math.min(.999,gather!.progress)*clip.duration:reducedMotion?.01:(ambientTime*(mode==='walk'?1.6:1))%clip.duration;
       mixer.update(0);
+      // Render-only doorway emergence after sleep. Gameplay position is already at the tent exit.
+      if(emerging){
+        const t=THREE.MathUtils.smoothstep(secondsFromDawn,0,2.25);
+        const fromX=TENT.x+2.1,fromZ=TENT.z+3.3;
+        const wx=THREE.MathUtils.lerp(fromX,state.player.x,t),wz=THREE.MathUtils.lerp(fromZ,state.player.z,t);
+        player.position.set(wx,heightAt(wx,wz),wz);
+        player.rotation.y=Math.atan2(state.player.x-fromX,state.player.z-fromZ);
+      }
       // A local, render-only sitting pose; the world player remains at the camp interaction point.
       if(reading){
         player.position.set(DINING_SEAT.x,heightAt(DINING_SEAT.x,DINING_SEAT.z),DINING_SEAT.z);
