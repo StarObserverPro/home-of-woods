@@ -1,3 +1,8 @@
+import {travelHeightAt} from '../world/traversal.ts';
+import {CLOSED_ACCESS,chunkKey,chunkDistance} from '../world/regions.ts';
+import type {TravelAccess} from '../world/regions.ts';
+import type {Point} from '../content/world.ts';
+import {WORLD_STREAMING} from '../content/regions.ts';
 import * as THREE from 'three';
 import {groundStacks,groundId} from '../domain/carrying.ts';
 import {transportLocation} from '../domain/transport-location.ts';
@@ -13,13 +18,13 @@ export function createHaulPresentation(r:Resources,models:Models){
   const placed=new Map<string,{root:THREE.Group;remove:()=>void}>();
   const cylinder=r.geometry('haul-log',()=>new THREE.CylinderGeometry(1,1,1,9));
   const bark=r.material('#875b3c',.7),end=r.material('#ddbd87',.72);
-  let revision=-1;
+  let signature='';
   return {group,hits,
-    update(inventory:InventoryState){
-      if(inventory.revision===revision)return;revision=inventory.revision;
+    update(inventory:InventoryState,player?:Point,access:TravelAccess=CLOSED_ACCESS){
+      const next=`${inventory.revision}:${player?chunkKey(player):'all'}:${access.openLinks.join(',')}`;if(signature===next)return;signature=next;
       const live=new Set<string>(),slots=new Map<string,number>();
       for(const stack of groundStacks(inventory)){
-        const id=groundId(stack),p=transportLocation(stack)! as {x:number;z:number};live.add(id);
+        const id=groundId(stack),p=transportLocation(stack)! as {x:number;z:number};if(player&&chunkDistance(chunkKey(p),player)>WORLD_STREAMING.detailRelease)continue;live.add(id);
         let entry=placed.get(id);
         if(!entry){
           const root=new THREE.Group();root.name=id;
@@ -37,7 +42,7 @@ export function createHaulPresentation(r:Resources,models:Models){
         }
         const spot=`${p.x},${p.z}`,index=slots.get(spot)??0;slots.set(spot,index+1);
         const x=p.x+(index%3-1)*.32,z=p.z+Math.floor(index/3)*.35;
-        entry.root.position.set(x,heightAt(x,z)+.025,z);
+        entry.root.position.set(x,travelHeightAt(x,z,access)+.025,z);
       }
       for(const [id,entry] of placed)if(!live.has(id)){entry.remove();group.remove(entry.root);placed.delete(id);}
     },

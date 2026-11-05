@@ -1,4 +1,5 @@
 import {CABIN,TENT} from './world.ts';
+import {CREEK_BRIDGE} from './regions.ts';
 import type {Point} from './world.ts';
 import {CAMP_PROPS} from './scene-props.ts';
 import {WOODCRAFT} from './woodcraft.ts';
@@ -61,6 +62,9 @@ export const EXTERIOR_PROFILES:readonly UpgradeProfile[]=[
   moduleProfile({id:'camp-fire:smoker',hostId:'camp-fire',title:'焖烤烟罩',description:'用五金件装一个有出烟口的罩体；暂作外观与安装预留，食谱系统另做。',materials:[supplied('supply.hardware','五金包','套'),branch(1)],stand:fireStand,position:CAMP_PROPS.fire,requires:['camp-fire:support'],mountSlot:FIRE_TOP_SLOT}),
 ];
 export const UPGRADE_PROFILES:readonly UpgradeProfile[]=[
+  {id:CREEK_BRIDGE.id,title:CREEK_BRIDGE.name,initialLevel:0,position:CREEK_BRIDGE.west,stand:CREEK_BRIDGE.stand,
+    paths:[{id:'upgrade.creek-bridge.build',name:'修建跨溪木桥',description:'架好木梁、铺上桥板，让采集和搬运有一条能走的路。',completionMessage:'木桥修好了，可以走到东岸林地。',fromLevel:0,toLevel:1,blueprintId:CREEK_BRIDGE.blueprintId,durationSeconds:6,materials:[log(4),branch(3)]}],
+    future:'木桥已接通两岸，可带着材料步行往返。'},
   {id:'cabin',title:'旧木屋',initialLevel:0,position:CABIN,stand:CABIN_REPAIR_STAND,paths:[CABIN_REPAIR],future:'屋顶补板和入口加固已完成；其余墙体、屋面仍待后续图纸修整。'},
   {id:'tent',title:'帐篷',initialLevel:1,position:TENT,stand:tentStand,paths:[],future:'内部床铺、收纳和私人空间以后另行开放。'},
   {id:CAMP_PROPS.fire.id,title:'营地篝火',initialLevel:1,position:CAMP_PROPS.fire,stand:fireStand,paths:[],future:'火塘基座和烹饪附件由外部部件分别改装。'},
@@ -75,7 +79,7 @@ export const UPGRADE_PROFILES:readonly UpgradeProfile[]=[
   {id:WOODCRAFT.id,title:'营地木料堆',initialLevel:1,position:WOODCRAFT,stand:WOODCRAFT.stand,paths:[],future:'后续可按图纸改良木料围框和搬运设施，升级路径尚未开放。'},
   {id:WORKBENCH.id,title:'粗木工作台',initialLevel:1,position:WORKBENCH,stand:WORKBENCH.stand,paths:[],future:'后续可按图纸改善工作台，解锁更多加工方式；升级路径尚未开放。'},
   {id:WORKBENCH_STOOL.id,title:'工作台小凳',initialLevel:1,position:WORKBENCH_STOOL,stand:{x:WORKBENCH_STOOL.x,z:WORKBENCH_STOOL.z+1.7},paths:[],future:'后续可按图纸改良支撑与坐面，升级路径尚未开放。'},
-  {id:CAMP_PROPS.altar.id,title:'林间祭坛',initialLevel:1,position:CAMP_PROPS.altar,stand:{x:CAMP_PROPS.altar.x,z:CAMP_PROPS.altar.z+5},paths:[],future:'后续可依神谕图纸修整供台、增添仪式设施，升级路径尚未开放。'},
+  {id:CAMP_PROPS.altar.id,title:'林间祭坛',initialLevel:1,position:CAMP_PROPS.altar,stand:{x:CAMP_PROPS.altar.x,z:CAMP_PROPS.altar.z+5},paths:[],future:'赐福范围目前限于营地；扩修祭坛后可覆盖近处林地，升级图纸尚未开放。'},
 ];
 export const findUpgradeProfile=(id:string)=>UPGRADE_PROFILES.find(p=>p.id===id);
 export const findUpgradePath=(targetId:string,pathId:string)=>findUpgradeProfile(targetId)?.paths.find(p=>p.id===pathId);

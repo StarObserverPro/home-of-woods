@@ -1,3 +1,5 @@
+import type {RegionalHost} from '../world/regions.ts';
+import {travelAccess} from '../world/regions.ts';
 import {CARRY_ITEMS,CARRY_PROFILES,CARRY_RULES} from '../content/carrying.ts';
 import {heavyLaborAllowed} from './food.ts';
 import type {FoodState} from './food.ts';
@@ -43,6 +45,7 @@ export function carryAdditionReason(inventory:InventoryState,item:StackIdentity,
 export function atLocation(item:StackIdentity,location?:TransportLocation):StackIdentity{
   const result=stackIdentity(item);delete result.transport;
   if(location)result.transport=structuredClone(location);
+  else delete result.harvest; // Arrival at camp completes this harvest; later withdrawals are ordinary stock.
   return result;
 }
 export function awardCarried(inventory:InventoryState,item:StackIdentity,quantity:number){
@@ -56,7 +59,7 @@ export const groundId=(stack:StackIdentity)=>`haul:${stackKey(stack)}`;
 export const groundStacks=(inventory:InventoryState)=>inventory.stacks.filter(s=>transportLocation(s)?.kind==='ground');
 export function groundItem(inventory:InventoryState,id:string|null){return id?groundStacks(inventory).find(s=>groundId(s)===id):undefined;}
 export const storageNear=(point:Point)=>Math.hypot(point.x-CAMP_PROPS.logs.x,point.z-CAMP_PROPS.logs.z)<=CARRY_RULES.storageReach;
-export type CarryHost={inventory:InventoryState;player:Point;selected:string|null;route:Point[];food?:FoodState;time?:number};
+export type CarryHost=RegionalHost&{inventory:InventoryState;player:Point;selected:string|null;route:Point[];food?:FoodState;time?:number};
 export type CarryIntent={kind:'take'|'withdraw'|'drop';key:string;quantity?:number}|{kind:'store'}|{kind:'method';method:CarryMethod};
 /** No mutations until every delta, capacity and distance check has succeeded. */
 export function changeCarrying(host:CarryHost,intent:CarryIntent,blockers:Collider[]):string{
@@ -69,7 +72,7 @@ export function changeCarrying(host:CarryHost,intent:CarryIntent,blockers:Collid
     return method==='bundle'?'已把随身枝料整理成束，重量没有减少。':'已改为双手散拿。';
   }
   if(intent.kind==='store'){
-    if(!storageNear(host.player)||!canInteract(host.player,CAMP_PROPS.logs,blockers.filter(c=>c.id!==CAMP_PROPS.logs.id)))return '先走近原木架，再把随身材料存入营地。';
+    if(!storageNear(host.player)||!canInteract(host.player,CAMP_PROPS.logs,blockers.filter(c=>c.id!==CAMP_PROPS.logs.id),travelAccess(host)))return '先走近原木架，再把随身材料存入营地。';
     const carried=carriedStacks(inventory);if(!carried.length)return '手里没有需要存放的材料。';
     host.inventory=inventoryTransaction(inventory,carried.flatMap(s=>[{...s,delta:-s.quantity},{...atLocation(s),delta:s.quantity}]));
     return '随身材料已全部存入营地。';
@@ -82,16 +85,16 @@ export function changeCarrying(host:CarryHost,intent:CarryIntent,blockers:Collid
   let location:TransportLocation;
   if(intent.kind==='drop'){
     if(!isCarried(item))return '只能放下随身材料。';
-    if(!canStand(host.player,blockers))return '这里不能放下材料，请先走到空地。';
+    if(!canStand(host.player,blockers,undefined,travelAccess(host)))return '这里不能放下材料，请先走到空地。';
     location={kind:'ground',x:host.player.x,z:host.player.z};
   }else{
     if(intent.kind==='withdraw'){
       if(!isStored(item))return '这份材料不在营地。';
-      if(!storageNear(host.player)||!canInteract(host.player,CAMP_PROPS.logs,blockers.filter(c=>c.id!==CAMP_PROPS.logs.id)))return '先走近原木架，再取出材料。';
+      if(!storageNear(host.player)||!canInteract(host.player,CAMP_PROPS.logs,blockers.filter(c=>c.id!==CAMP_PROPS.logs.id),travelAccess(host)))return '先走近原木架，再取出材料。';
     }else{
       const p=transportLocation(item);
       if(p?.kind!=='ground')return '这份材料不在地上。';
-      if(Math.hypot(p.x-host.player.x,p.z-host.player.z)>CARRY_RULES.pickupReach||!canInteract(host.player,p,blockers))return '先走近这堆材料，隔着障碍不能拿取。';
+      if(Math.hypot(p.x-host.player.x,p.z-host.player.z)>CARRY_RULES.pickupReach||!canInteract(host.player,p,blockers,travelAccess(host)))return '先走近这堆材料，隔着障碍不能拿取。';
     }
     const reason=carryAdditionReason(inventory,item,quantity);if(reason)return reason;
     location={kind:'carried'};
@@ -104,11 +107,11 @@ export function approachGround(host:CarryHost,id:string,blockers:Collider[]){
   const item=groundItem(host.inventory,id),p=item&&transportLocation(item);
   if(p?.kind!=='ground')return '这堆材料已经移走。';
   host.selected=id;
-  if(Math.hypot(p.x-host.player.x,p.z-host.player.z)<=CARRY_RULES.pickupReach&&canInteract(host.player,p,blockers))return '已走近，选择拿取的数量。';
+  if(Math.hypot(p.x-host.player.x,p.z-host.player.z)<=CARRY_RULES.pickupReach&&canInteract(host.player,p,blockers,travelAccess(host)))return '已走近，选择拿取的数量。';
   const candidates=[p,...Array.from({length:12},(_,i)=>({x:p.x+1.8*Math.cos(i*Math.PI/6),z:p.z+1.8*Math.sin(i*Math.PI/6)}))];
   for(const candidate of candidates){
-    if(!canStand(candidate,blockers)||!canInteract(candidate,p,blockers))continue;
-    const route=findPath(host.player,candidate,blockers);if(route.length){host.route=route;return '正在走近地上的材料。';}
+    if(!canStand(candidate,blockers,undefined,travelAccess(host))||!canInteract(candidate,p,blockers,travelAccess(host)))continue;
+    const route=findPath(host.player,candidate,blockers,travelAccess(host));if(route.length){host.route=route;return '正在走近地上的材料。';}
   }
   return '这堆材料暂时没有可达的拿取位置。';
 }

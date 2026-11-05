@@ -1,3 +1,5 @@
+import {travelAccess} from '../src/world/regions.ts';
+import {CREEK_BRIDGE} from '../src/content/regions.ts';
 import { inventoryCount } from '../src/domain/inventory.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -34,11 +36,12 @@ test('registry rejects duplicate identities, bad references/strategies/numbers/a
 test('both kinds use the same reachable route, action, inventory candidate and atomic commit',()=>{
   for(const source of registry.sources.values()){
     const state=createState();state.selected=source.sourceId;
+    state.workshop.upgrades[CREEK_BRIDGE.id]={level:1,completedPaths:[],investments:[],updatedAt:0};
     assert.ok(beginGather(state,source.sourceId,registry,blockers).ok);
     for(let i=0;i<3000 && gatheringBusy(state.gathering);i++){
       state.time+=1/60;
       const p=state.route[0];
-      if(p){const d=Math.hypot(p.x-state.player.x,p.z-state.player.z);if(d<.18)state.route.shift();else state.player={...state.player,...move(state.player,(p.x-state.player.x)/d*5.2/60,(p.z-state.player.z)/d*5.2/60,blockers)};}
+      if(p){const d=Math.hypot(p.x-state.player.x,p.z-state.player.z);if(d<.18)state.route.shift();else state.player={...state.player,...move(state.player,(p.x-state.player.x)/d*5.2/60,(p.z-state.player.z)/d*5.2/60,blockers,travelAccess(state))};}
       advancePlayerGather(state,registry,blockers);
     }
     assert.equal(state.gathering.action?.phase,'completed');

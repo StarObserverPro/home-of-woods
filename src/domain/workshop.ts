@@ -1,3 +1,4 @@
+import {travelAccess} from '../world/regions.ts';
 import {isAvailableMaterial} from './transport-location.ts';
 import {tradeFoodSack} from './food.ts';
 import {craftProfile} from '../content/parametric-crafting.ts';
@@ -45,7 +46,7 @@ export function beginWorkshop(host:GameState,kind:'craft'|'offering',blockers:Co
   if(kind==='craft'&&(!blueprintId||!findCraftBlueprint(blueprintId)||!knowsBlueprint(host.inventory,host.workshop.blueprints,blueprintId)))return '先获得可在工作台制作的图纸。';
   if(!workshopInput(host,kind))return kind==='offering'?'需要一份蘑菇。':'需要一份未预留的木料。';
   const target=workshopTarget(kind),near=Math.hypot(host.player.x-target.x,host.player.z-target.z)<.65;
-  const route=near?[]:findPath(host.player,target,blockers);
+  const route=near?[]:findPath(host.player,target,blockers,travelAccess(host));
   if(!near&&!route.length)return '暂时无法到达操作位置。';
   if(!Number.isSafeInteger(host.workshop.nextAction+1))return '动作编号已用尽。';
   const job:WorkshopJob={id:`workshop-${host.workshop.nextAction}`,kind,blueprintId:kind==='craft'?blueprintId:null,phase:'approaching',startedAt:null,durationSeconds:kind==='craft'?WORKSHOP_RULES.craftSeconds:WORKSHOP_RULES.offeringSeconds};
@@ -117,7 +118,7 @@ export function tradeSupply(host:GameState,itemId:string){
   let needed:number=spec.quantity;
   const deltas:InventoryDelta[]=[];
   for(const stack of host.inventory.stacks){
-    if(!recognizedStack(stack)||stack.wood?.reserved||ITEM_CATALOG.items.get(stack.itemId)?.typeId!==spec.inputType)continue;
+    if(!isAvailableMaterial(stack)||!recognizedStack(stack)||stack.wood?.reserved||ITEM_CATALOG.items.get(stack.itemId)?.typeId!==spec.inputType)continue;
     const used=Math.min(stack.quantity,needed);
     if(used){deltas.push({...stackIdentity(stack),delta:-used});needed-=used;}
     if(!needed)break;
@@ -158,7 +159,7 @@ export function workshopSnapshot(host:GameState){
   return {blueprints:[...host.workshop.blueprints],availableBlueprints:[...new Set([...host.workshop.blueprints,...Object.keys(copies)])],copyUses:copies,offers:merchantStock(host),items:structuredClone(host.inventory.instances??[]),upgrades:structuredClone(host.workshop.upgrades),mounted:structuredClone(host.workshop.mounted),upgrade:upgradeSnapshot(host,host.selected),upgradeOptions:upgradeOptions(host,host.selected),
     inputs:{craft:!!workshopInput(host,'craft'),offering:!!workshopInput(host,'offering'),trade:!!workshopInput(host,'trade'),
       foodSack:host.inventory.stacks.filter(s=>s.itemId==='mushroom'&&recognizedStack(s)&&isAvailableMaterial(s)).reduce((n,s)=>n+s.quantity,0)>=2,
-      canvas:inventoryTypeCount(host.inventory,'fungus.fresh')>=2,hardware:host.inventory.stacks.some(s=>recognizedStack(s)&&!s.wood?.reserved&&ITEM_CATALOG.items.get(s.itemId)?.typeId==='wood.log')},
+      canvas:inventoryTypeCount(host.inventory,'fungus.fresh')>=2,hardware:host.inventory.stacks.some(s=>isAvailableMaterial(s)&&recognizedStack(s)&&!s.wood?.reserved&&ITEM_CATALOG.items.get(s.itemId)?.typeId==='wood.log')},
     job:job?{...job,progress:job.phase==='working'?Math.min(1,(host.time-job.startedAt!)/job.durationSeconds):0}:null,
     lastResponse:host.workshop.lastResponse,calendar:calendarAt(host.time),speed:host.clock.speed};
 }

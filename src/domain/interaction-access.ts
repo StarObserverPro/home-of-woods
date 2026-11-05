@@ -1,3 +1,5 @@
+import {CREEK_BRIDGE} from '../content/regions.ts';
+import {travelAccess} from '../world/regions.ts';
 import {CAMP_PROPS} from '../content/scene-props.ts';
 import {CAMP_VISITOR} from '../content/characters.ts';
 import {WORKBENCH,WORKBENCH_STOOL} from '../content/workshop.ts';
@@ -12,7 +14,8 @@ export type InteractionAccess={id:string;name:string;near:boolean;distance:numbe
 /** Distance is independent of inventory/recipe eligibility, so distant targets remain approachable. */
 export function interactionAccess(state:GameState,id:string|null):InteractionAccess|null{
   let target:{name:string;point:Point;stand:Point;reach:number}|null=null;
-  if(id===WOODCRAFT.id||state.woodcraft.pieces.some(p=>p.id===id))target={name:'木料堆',point:WOODCRAFT,stand:WOODCRAFT.stand,reach:WOODCRAFT.reach};
+  if(id===CREEK_BRIDGE.id)target={name:CREEK_BRIDGE.name,point:CREEK_BRIDGE.stand,stand:CREEK_BRIDGE.stand,reach:.8};
+  else if(id===WOODCRAFT.id||state.woodcraft.pieces.some(p=>p.id===id))target={name:'木料堆',point:WOODCRAFT,stand:WOODCRAFT.stand,reach:WOODCRAFT.reach};
   else if(id===CAMP_PROPS.fire.id)target={name:'营地火塘',point:CAMP_PROPS.fire,stand:{x:CAMP_PROPS.fire.x,z:CAMP_PROPS.fire.z+3},reach:3.9};
   else if(id===CAMP_PROPS.dryer.id)target={name:'蘑菇晾晒架',point:CAMP_PROPS.dryer,stand:{x:CAMP_PROPS.dryer.x,z:CAMP_PROPS.dryer.z+2.5},reach:3.2};
   else if(id===CAMP_PROPS.logs.id)target={name:'原木架',point:CAMP_PROPS.logs,stand:{x:CAMP_PROPS.logs.x-3.3,z:CAMP_PROPS.logs.z+1},reach:4.2};
@@ -43,8 +46,8 @@ export function approachInteraction(state:GameState,id:string,blockers:Collider[
     for(const offset of [0,.7,-.7,1.4,-1.4,Math.PI])candidates.push({x:access.point.x+Math.cos(angle+offset)*radius,z:access.point.z+Math.sin(angle+offset)*radius});
   }
   for(const point of candidates){
-    if(!canStand(point,blockers))continue;
-    const route=findPath(state.player,point,blockers);
+    if(!canStand(point,blockers,undefined,travelAccess(state)))continue;
+    const route=findPath(state.player,point,blockers,travelAccess(state));
     if(route.length){state.route=route;return `正在走近${access.name}。到达后再选择操作。`;}
   }
   state.route=[];return `暂时无法走到${access.name}旁，请先留出通路。`;

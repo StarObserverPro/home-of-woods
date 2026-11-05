@@ -38,7 +38,7 @@ test('durable objects share the item catalog; planned accessory is not an unlock
 
 test('mount and unmount move one instance without changing its identity, rarity, affix or metadata', async () => {
   const registry=activeRegistry(),s=savedState(),before=structuredClone(s.inventory.instances![0]);
-  assert.equal(INVENTORY_SCHEMA_VERSION,6);assert.equal(WORLD_RULESET_VERSION,8);
+  assert.equal(INVENTORY_SCHEMA_VERSION,6);assert.equal(WORLD_RULESET_VERSION,9);
   const mounted=mountIndependentItem(s.inventory,'bell-one','cabin','cabin:entry-hanging',registry);
   assert.equal(s.inventory.instances![0].location.kind,'inventory');
   assert.equal(mounted.instances!.length,1);

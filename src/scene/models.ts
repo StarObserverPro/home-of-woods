@@ -1,3 +1,4 @@
+import {CREEK_BRIDGE} from '../content/regions.ts';
 import * as THREE from "three";
 import {createTree} from "./actions/tree.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -139,7 +140,7 @@ export class Models {
       return merged;
     });
   }
-  createForest(trees: Tree[]) {
+  createForest(trees: Tree[],streaming=false) {
     const group = new THREE.Group(),
       selections = new Map<string, THREE.Object3D>();
     const material = this.r.own(
@@ -157,13 +158,14 @@ export class Models {
       }),
     );
     const mappings = new Map<THREE.Object3D, string[]>();
+    const sceneryBatches:{mesh:THREE.InstancedMesh;members:Tree[]}[]=[];
     for (const kind of ["pine", "broadleaf"] as const) {
-      const far = trees.filter(t=>t.kind===kind&&t.role==='scenery');
+      const far = trees.filter(t=>t.kind===kind&&(t.role==='scenery'||streaming&&t.role==='managed')&&!(Math.abs(t.z-CREEK_BRIDGE.west.z)<CREEK_BRIDGE.width/2+2&&t.x>CREEK_BRIDGE.west.x&&t.x<CREEK_BRIDGE.east.x+6));
       const keys=[...new Set(far.map(t=>treeVisual(t).key))];
       for(const key of keys){const members=far.filter(t=>treeVisual(t).key===key);
         const instances=this.r.own(new THREE.InstancedMesh(this.treeGeometry(kind,true,members[0],true),sceneryMaterial,members.length));
         const dummy=new THREE.Object3D();members.forEach((t,i)=>{dummy.position.set(t.x,heightAt(t.x,t.z),t.z);dummy.rotation.y=t.variant*Math.PI*2;dummy.scale.setScalar(t.scale);dummy.updateMatrix();instances.setMatrixAt(i,dummy.matrix);});
-        instances.name=`scenic-shape-${key}`;instances.computeBoundingSphere();group.add(instances);
+        instances.name=`scenic-shape-${key}`;instances.computeBoundingSphere();group.add(instances);sceneryBatches.push({mesh:instances,members});
       }
       const near = trees.filter((t) => t.kind === kind && t.role !== "scenery");
       near.forEach((t) => {
@@ -179,7 +181,7 @@ export class Models {
         mappings.set(mesh, [t.id]);
       });
     }
-    return { group, selections, mappings, material };
+    return { group, selections, mappings, material,sceneryBatches };
   }
 }
 export function createSign(r: Resources, label: string) {
