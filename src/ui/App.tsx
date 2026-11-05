@@ -16,11 +16,12 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import { createRuntime } from "../app/runtime.ts";
 import type { Runtime, Snapshot } from "../app/runtime.ts";
 import type { GameState } from "../domain/state.ts";
-import { WAYPOINTS, PATH, RIVER_KNOTS, GIANT, HOME, START } from "../content/world.ts";
+import { WAYPOINTS, PATH, RIVER_KNOTS, GIANT, HOME, START, WORLD_SEED } from "../content/world.ts";
 import { makeTrees } from "../world/layout.ts";
 import { recordCanvas } from "../app/recorder.ts";
 import { Warehouse } from './Warehouse.tsx';
 import {FoodControls} from './FoodControls.tsx';
+import {EveningControls,ForestReader} from './Evening.tsx';
 import { SaveControls } from './SaveControls.tsx';
 import { createSaveController, INITIAL_SAVE_STATUS } from '../app/save-controller.ts';
 import type { SaveController } from '../app/save-controller.ts';
@@ -113,6 +114,7 @@ const empty: Snapshot = {
   interaction:null,
   woodcraft:emptyWoodcraftSnapshot(),
   food:{today:1,heavyWork:true,nextDayReady:false,counts:{},dryingProgress:null,cookingProgress:null,sacksBought:0,mealsEaten:0},
+  dayCycle:{day:1,hour:14,speed:1,eveningStopped:false,canSleep:false,sleepReason:'傍晚后才能结束一天。',nearCamp:true,lastEveningStopDay:null,nightsSlept:0,wokeAt:null},
   workshop:{blueprints:[],offers:[],items:[],job:null,lastResponse:'',calendar:calendarAt(0),speed:1,upgrades:{},mounted:{},upgrade:null,upgradeOptions:[],inputs:{craft:false,offering:false,trade:false,foodSack:false,canvas:false,hardware:false}},
   placement:null,
   zone: "山间营地",
@@ -148,11 +150,14 @@ export function App() {
     [mapOpen, setMapOpen] = useState(false),
     [help, setHelp] = useState(false),
     [warehouseOpen, setWarehouseOpen] = useState(false),
+    [readerOpen,setReaderOpen]=useState(false),
+    [dawnFlash,setDawnFlash]=useState(0),
     [reduced, setReduced] = useState(false),
     [mountVersion, setMountVersion] = useState(0),
     [audit, setAudit] = useState<Record<string, unknown>[]>([]);
   const [rarityVfxMode,setRarityVfxMode]=useState(readRarityVfxPreference);
   const rarityModeRef=useRef(rarityVfxMode);
+  const priorNights=useRef<number|null>(null);
   const [displayNotice,setDisplayNotice]=useState('');
   const itemDrag=useItemDrag(
     (item,x,y,toWarehouse)=>runtime.current?.previewTransfer(item,x,y,toWarehouse)??{valid:false,reason:'场景正在准备。'},
@@ -253,15 +258,30 @@ export function App() {
   useEffect(() => {
     runtime.current?.setReducedMotion(reduced);
   }, [reduced, ready]);
-  useEffect(() => { runtime.current?.setInterfaceOpen(warehouseOpen);if(!warehouseOpen)itemDrag.cancel(); },[warehouseOpen,ready]);
+  useEffect(() => {
+    runtime.current?.setReading(readerOpen);
+    runtime.current?.setInterfaceOpen(warehouseOpen||readerOpen);
+    if(!warehouseOpen)itemDrag.cancel();
+  },[warehouseOpen,readerOpen,ready]);
+  useEffect(()=>{
+    if(!ready){priorNights.current=null;return;}
+    const count=snapshot.dayCycle.nightsSlept;
+    if(priorNights.current!==null&&count>priorNights.current)setDawnFlash(v=>v+1);
+    priorNights.current=count;
+  },[ready,snapshot.dayCycle.nightsSlept]);
+  useEffect(()=>{
+    if(!readerOpen)return;
+    const close=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();setReaderOpen(false);}};
+    document.addEventListener('keydown',close,true);return()=>document.removeEventListener('keydown',close,true);
+  },[readerOpen]);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if(e.code!=='KeyB'||e.repeat||e.target instanceof HTMLElement && e.target.closest('input,textarea,select,[contenteditable]'))return;
-      if(!ready||snapshot.paused)return;
+      if(!ready||snapshot.paused||readerOpen)return;
       e.preventDefault();e.stopPropagation();setWarehouseOpen(v=>!v);
     };
     document.addEventListener('keydown',key,true);return()=>document.removeEventListener('keydown',key,true);
-  },[ready,snapshot.paused]);
+  },[ready,snapshot.paused,readerOpen]);
   const selectedTree = snapshot.selected ? treeById.get(snapshot.selected) : undefined;
   const forest = snapshot.forestry;
   const treeAction = forest.selectedTree;
@@ -354,7 +374,9 @@ export function App() {
             </p>
           </div>
         </section>
-        <Hourglass view={snapshot.workshop} disabled={!ready||snapshot.paused} onSpeed={s=>runtime.current?.setClockSpeed(s)}/>
+        <Hourglass view={snapshot.workshop} disabled={!ready||snapshot.paused||readerOpen} onSpeed={s=>runtime.current?.setClockSpeed(s)}/>
+        <EveningControls view={snapshot.dayCycle} disabled={!ready||snapshot.paused||readerOpen||warehouseOpen}
+          onContinue={()=>runtime.current?.setClockSpeed(1)} onSleep={()=>runtime.current?.sleepToDawn()}/>
         <button
           className="round-button pause"
           aria-label="暂停"
@@ -534,7 +556,7 @@ export function App() {
             onOffer={()=>runtime.current?.offer()} onCraft={id=>runtime.current?.craft(id)} onTrade={id=>runtime.current?.trade(id)} onSupply={id=>runtime.current?.tradeSupply(id)} onApproach={()=>runtime.current?.approachTarget(snapshot.selected!)} onCancel={()=>runtime.current?.cancelAction()} onPlace={id=>runtime.current?.beginPlacement(id)} onPack={id=>runtime.current?.packFurniture(id)}/>
           {snapshot.selected===CAMP_PROPS.logs.id&&<div className="tree-actions">{snapshot.interaction?.near?<><button className="context-button" onClick={()=>setWarehouseOpen(true)}>打开仓库</button><button className="context-button" onClick={()=>runtime.current?.openWoodcraft()}>前往木料堆取放</button></>:<button className="context-button" disabled={!ready||snapshot.paused} onClick={()=>runtime.current?.approachTarget(CAMP_PROPS.logs.id)}>走近原木架</button>}</div>}
           <FoodControls selected={snapshot.selected} view={snapshot.food} workshop={snapshot.workshop} access={snapshot.interaction} disabled={!ready||snapshot.paused||!!snapshot.placement}
-            onApproach={()=>runtime.current?.approachTarget(snapshot.selected!)} onDry={()=>runtime.current?.dryMushrooms()} onCook={grain=>runtime.current?.cookSoup(grain)} onEat={()=>runtime.current?.eatSoup()} onBread={()=>runtime.current?.eatBread()}/>
+            onApproach={()=>runtime.current?.approachTarget(snapshot.selected!)} onDry={()=>runtime.current?.dryMushrooms()} onCook={grain=>runtime.current?.cookSoup(grain)} onEat={()=>runtime.current?.eatSoup()} onBread={()=>runtime.current?.eatBread()} onRead={()=>setReaderOpen(true)}/>
           <UpgradeControls view={snapshot.workshop} hasContextActions={!!snapshot.interaction} disabled={!ready||snapshot.paused||!!snapshot.placement} onApproach={id=>runtime.current?.approachUpgrade(id)} onUpgrade={id=>runtime.current?.upgrade(id)} onMount={id=>runtime.current?.mountExterior(id)} onCancel={()=>runtime.current?.cancelAction()}/>
           {snapshot.selected==='tent'&&<button className="context-button" onClick={()=>runtime.current?.select(WORKBENCH.id)}>查看帐篷前的工作台</button>}
 
@@ -795,6 +817,8 @@ export function App() {
           </pre>
         </details>
       )}
+      {readerOpen && <ForestReader day={snapshot.dayCycle.day} seed={WORLD_SEED} onClose={()=>setReaderOpen(false)}/>}
+      {dawnFlash>0 && <div className="sunrise-transition" key={dawnFlash} aria-live="polite"><span>晨光照进森林，新的一天开始了</span></div>}
       {diagnostic && <div className="build-mark">M0 · 山谷初见</div>}
     </main>
   );
