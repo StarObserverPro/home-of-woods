@@ -33,7 +33,7 @@ import { heightAt, zoneName } from "../world/surface.ts";
 import { createScene } from "../scene/create-scene.ts";
 import { createLoop } from "./runtime-loop.ts";
 import { RUNTIME_MODELS } from '../content/assets.ts';
-import { START } from '../content/world.ts';
+import { START,TENT } from '../content/world.ts';
 import { createGatheringRegistry } from '../domain/gathering-registry.ts';
 import { interactionRoute, gatheringBusy, synchronizeGatheringHosts } from '../domain/gathering.ts';
 import { gatheringSnapshot } from '../domain/gathering-view.ts';
