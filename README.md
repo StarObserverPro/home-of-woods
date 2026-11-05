@@ -51,6 +51,7 @@ WASD/方向键或点地面移动，拖动旋转、滚轮/按钮缩放，R/按钮
 | [运行时与数据](docs/RENDERING.md) | service、状态、地表、渲染与资源生命周期 |
 | [行类道具交互与局部动态](docs/ITEM_BEHAVIORS.md) | 本体动作、词条附加效果、1–2 处局部动态、地图与搬运前置 |
 | [食物基础闭环](docs/FOOD_FOUNDATION.md) | 行商混合粮袋、鲜菌晾干、菌菇汤、次日劳动资格与二阶段边界 |
+| [晚餐、休息与林间阅读](docs/EVENING_RHYTHM.md) | 18:00 沙漏停靠、可选夜行、06:00 日出和离线短故事 |
 | [独立道具去向与宿主关系](docs/ITEM_DESTINATIONS.md) | 独立 Item、安装槽、词条归属与旧设施外装边界 |
 | [参数化图纸与装配评分](docs/PARAMETRIC_CRAFTING.md) | 首版两类几何、图纸品质档次、偏差评分及未来工序接口 |
 | [物品扩展与存档兼容方案](docs/ITEM_DATA_EVOLUTION.md) | 已实现身份、品质堆叠和库存兼容；细分类与深加工后续接入 |
