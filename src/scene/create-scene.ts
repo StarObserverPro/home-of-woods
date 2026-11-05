@@ -1,3 +1,4 @@
+import {configureForestBark} from './bark-surface.ts';
 import {createHaulPresentation} from './haul-presentation.ts';
 import {createWildlifePresentation} from './wildlife-presentation.ts';
 import {wildlifeViews,landmarkInspectionView} from '../domain/wildlife.ts';
@@ -234,11 +235,7 @@ export async function createScene(
   fadeMat.transparent = true;
   fadeMat.opacity = 0.2;
   fadeMat.depthWrite = false;
-  fadeMat.onBeforeCompile=shader=>{
-    shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',
-      '#include <color_fragment>\n#ifdef USE_COLOR\nif(vColor.r>vColor.g*1.05) diffuseColor.a=1.;\n#endif');
-  };
-  fadeMat.customProgramCacheKey=()=> 'r3-crown-fade-preserve-bark';
+  configureForestBark(fadeMat,models.barkSurface,true);
   const projectedCorner=new THREE.Vector3(), occluderCenter=new THREE.Vector3();
   const occlusionRay=new THREE.Raycaster(),headWorld=new THREE.Vector3(),headDirection=new THREE.Vector3(),localHit=new THREE.Vector3();
   const inverseTreeMatrix=new THREE.Matrix4();
