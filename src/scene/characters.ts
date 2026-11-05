@@ -11,6 +11,7 @@ import { heightAt } from '../world/surface.ts';
 import type { Models } from './models.ts';
 import type { Resources } from './resources.ts';
 import { syncTwoHandedAxe } from './character-grip.ts';
+import { createWardrobeVisual } from './wardrobe-visual.ts';
 import { axeHeadSamples, geometryContactTarget, contactClearance, findAxeStop, stoppedStrokeFraction } from './axe-contact.ts';
 import type { AxeTarget, AxeStop } from './axe-contact.ts';
 
@@ -42,6 +43,8 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   const partial=new THREE.AnimationClip('Visitor_ArmsAndHead',waving.duration,waving.tracks.filter(t=>/^(upperarm|lowerarm|wrist|hand|head)/.test(t.name)).map(t=>t.clone()));
   const wave=npcMixer.clipAction(partial);wave.play();
   const procedural=createActor(models.templates.get('ranger')!,models.animations.get('motions')!);procedural.root.scale.setScalar(1);player.add(procedural.root);procedural.root.visible=false;
+  // Main + procedural action body each have their own cloned skeleton and bone-mounted accessories.
+  const clothing=createWardrobeVisual(r,body),actionClothing=createWardrobeVisual(r,procedural.body);
   const pickedScrap=new THREE.Mesh(r.geometry('held-scrap',()=>new THREE.CylinderGeometry(.025,.04,.38,5)),r.material('#92704a',.9));pickedScrap.rotation.z=Math.PI/2;pickedScrap.visible=false;player.add(pickedScrap);
   const blade=axeHeadSamples(tool),byId=new Map(trees.map(t=>[t.id,t]));
   // Inspector-only solids demonstrate both constraints without inventing a crafting transaction.
@@ -84,6 +87,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   }
   function update(state:GameState,reducedMotion=false){
     if(disposed)return;
+    clothing.update(state.inventory);actionClothing.update(state.inventory);
     player.position.set(state.player.x,heightAt(state.player.x,state.player.z),state.player.z);player.rotation.y=state.player.facing;
     inspectionProps.visible=inspection!==null;impact=null;body.visible=true;pickedScrap.visible=false;cutHeight=null;chest.position.y=chestY;procedural.root.visible=false;
     if(inspection){
@@ -154,6 +158,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     dispose(){
       if(disposed)return;disposed=true;
       for(const m of [mixer,npcMixer]){m.stopAllAction();m.uncacheRoot(m.getRoot());}
+      clothing.dispose();actionClothing.dispose();
       procedural.dispose();
       player.removeFromParent();visitor.removeFromParent();player.clear();visitor.clear();byId.clear();
       // Shared geometry, textures/materials and each cloned skeleton belong to Resources.
