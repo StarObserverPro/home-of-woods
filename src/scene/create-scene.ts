@@ -90,6 +90,7 @@ export async function createScene(
     destroyed = false,
     reducedMotion = false,
     elapsed = 0,
+    ambientTime = 0,
     mobile = false;
   const overview = new THREE.Vector3(HOME.x + 35, 29, HOME.z + 31);
   const target = new THREE.Vector3(HOME.x + 25, 27, HOME.z + 25);
@@ -416,6 +417,7 @@ export async function createScene(
     zoomBy(amount: number) {manualCamera();
       zoom = clamp(zoom * amount, CAMERA.minZoom, CAMERA.maxZoom);
     },
+    setReading(value:boolean){characters.setReading(value);view.inspectScene(value?'meal':null);},
     setRarityVfxMode(mode:RarityVfxMode){workshop.setRarityVfxMode(mode);},
     setReducedMotion(value: boolean) {
       reducedMotion = value;
@@ -428,6 +430,7 @@ export async function createScene(
     render(state: GameState, dt: number) {
       if (destroyed) return;
       elapsed = state.time;
+      ambientTime += Math.max(0,Math.min(dt,.1));
       appearance={...sceneAppearanceAt(state.time),...(Number.isFinite(auditHour)&&auditHour>=0&&auditHour<=24?{hour:auditHour}:{}),...sceneOverrides};
       if(state.ritual?.startedAt!=null&&state.time-state.ritual.startedAt<8){if(state.ritual.phase==='completed')appearance.altar='resting';else if(state.ritual.phase==='performing'&&state.time-state.ritual.startedAt>3.5)appearance.altar='answering';}
       if((sceneOverrides.hour!==undefined||Number.isFinite(auditHour))&&sceneOverrides.fire===undefined)appearance.fire=daylightAt(appearance.hour).night>.5;
@@ -438,11 +441,11 @@ export async function createScene(
       sun.color.copy(light.sunColor);sun.intensity=light.sunIntensity;sun.position.copy(sun.target.position).addScaledVector(light.sunDirection,135);
       scene.environmentIntensity=light.environmentIntensity;(scene.fog as THREE.Fog).color.copy(light.haze);
       if(state.workshop.job?.kind==='offering'&&state.workshop.job.phase==='working')appearance.altar='answering';
-      camp.update(elapsed,appearance,state.inventory,sky.night,reducedMotion,!!state.food.drying,(state.workshop.upgrades[CAMP_PROPS.dryer.id]?.level??0)>0);
+      camp.update(ambientTime,appearance,state.inventory,sky.night,reducedMotion,!!state.food.drying,(state.workshop.upgrades[CAMP_PROPS.dryer.id]?.level??0)>0);
       const { x, z, facing, moving } = state.player,
         y = heightAt(x, z);
       forestry.update(state,reducedMotion);understory.update(state);
-      characters.update(state,reducedMotion);
+      characters.update(state,reducedMotion,ambientTime);
       forestry.alignContact(characters.getImpact());
       gathering.update(state.gathering);
       hauling.update(state.inventory);
@@ -480,9 +483,9 @@ export async function createScene(
       camera.zoom = THREE.MathUtils.lerp(zoom,1,blend) * (mobile ? scenePreset?.8:THREE.MathUtils.lerp(1.45,.9,blend) : 1);
       if(['wildlife','stagVista','goatVista'].includes(scenePreset??'')&&camera.aspect<1)camera.zoom*=camera.aspect;
       camera.updateProjectionMatrix();
-      environment.update(elapsed,dt,camera.position,reducedMotion);
+      environment.update(ambientTime,dt,camera.position,reducedMotion);
       scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);
-      river.update(elapsed,sky.day,reducedMotion,appearance.reflections,host.clientWidth<600||host.clientHeight<500);
+      river.update(ambientTime,sky.day,reducedMotion,appearance.reflections,host.clientWidth<600||host.clientHeight<500);
       const selected = state.selected
         ? (hauling.point(state.selected) ?? woodcraft.point(state.selected) ?? workshop.point(state.selected) ?? (state.selected===CAMP_VISITOR.id?CAMP_VISITOR:null) ?? gatheringRegistry.sources.get(state.selected) ?? treeById.get(state.selected) ??
           (state.selected === "cabin"
