@@ -12,7 +12,7 @@
 - 8 个独立槽位：`player:top` 上衣、`player:legs` 裤装、`player:feet` 鞋靴、`player:head` 帽子、`player:back` 背负、`player:hands` 手套、`player:waist` 腰带、`player:neck` 领巾。可留空；发型和胡须属于下一阶段外观自定义，不作为发放装备的掉落槽。
 - `player` 是既有 attachment 注册中的 `fixture` host；所有新手物品是 `inventory.instances` 中唯一的 owned item，通过 `location.kind='mounted'` 挂到 `hostId='player'`。不会在 `player.equipment` 再保存副本；这样沿用同一套库存 revision、保存校验、物品品级和词条扩展字段。
 - `changeWardrobe` 从背包穿上、卸下、先退下旧件再装备新件，重用现成 `mountIndependentItem / unmountIndependentItem`；无材料成本、无动画耗时、无战斗数值。一次换装只形成最终库存更新，失败不修改原库存。随身/仓库现有入口新增「穿戴」页，可在其中查看 8 槽及可用替换物。
-- 在运行时真正创建新世界时由 `createStarterState` 初始化 8 件 `common`、空词条的新手装。它们是开局赠予，`blueprint.starter-outfit` 只是来源标识，**没有对应可制作的合成配方，也没有出售或刷新的入口**。旧存档按已有记录恢复，不向旧存档强行补发物品，避免更改旧世界库存与编号。
+- 在运行时真正创建新世界时由 `createStarterState` 初始化 8 件 `common`、空词条的新手装。它们是开局赠予，`blueprint.starter-outfit` 只是来源标识，**没有对应可制作的合成配方，也没有出售或刷新的入口**。现阶段仅保证新游戏可穿戴；旧存档若不适配可直接重开，无需另设补发与跨版本迁移。
 - 角色身上的 **帽子/背包/手套/领巾** 通过自制轻量低多边形几何附加到 KayKit 的 head/chest/handslot 骨；同时适用于常态人物与程序化动作替身。卸下后立即隐藏；所有几何/材质仍归现有 `Resources` 托管。这四件是简化视觉占位件，不是已通过 Blender 人工审模的正式服装网格。
 - 现有角色 `player.glb` 是 6418 顶点、7574 三角、**单蒙皮网格**，头发/衣服/裤子/鞋靴等仍烘焙在一个蒙皮网格和贴图中。**上衣、裤装、鞋和腰带目前可穿脱的是物品记录；对应视觉底层仍保留，不能认为已经做到了真正裸身/换版型**。不要把本阶段称为“完整三维自由换装”。
 
@@ -43,4 +43,4 @@
 
 ## 验收与暂缓
 
-已有检查：纯领域库存/装备/保存往返及骨挂创建/隐藏/卸载回归（见 `tests/wardrobe.test.ts`，需 CI 执行确认）。尚未完成：Blender 服装独立源、外部模型二进制采纳、真人审美筛选、手机 GPU 与视觉防穿模验证、装备提升容量或属性、发型自由更换、批量 78 个独立 GLB。未经审验不得声称已完成。
+当前开发检查：专测八槽穿脱、不复制物品、模型显示和构建；旧存档历史兼容与全量证据回放不阻挡此模块。详见 `tests/wardrobe.test.ts`。尚未完成：Blender 服装独立源、外部模型二进制采纳、真人审美筛选、手机 GPU 与视觉防穿模验证、装备提升容量或属性、发型自由更换、批量 78 个独立 GLB。未经审验不得声称已完成。
