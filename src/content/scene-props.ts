@@ -21,6 +21,7 @@ export const VIEWS = {
   hare:{label:'野兔近景',target:[-31,22.05,1],yaw:.5,elevation:.35,distance:6,zoom:1},
 
   woodcraft:{label:'营地木料堆',target:[-29,22,7],yaw:-.65,elevation:.6,distance:14,zoom:1},
+  branches:{label:'树杈与树皮',target:[-20,21.2,27],yaw:2.9,elevation:.16,distance:10,zoom:1},
   understory:{label:'树形与林下',target:[-67,28,10],yaw:-.65,elevation:.36,distance:17,zoom:1},
   overview:{label:'山谷全景',target:[-5,24,15],yaw:-.13,elevation:.28,distance:120,zoom:.76},
   creek:{label:'溪流反光',target:[12,3,48],yaw:2.3,elevation:.36,distance:48,zoom:1},

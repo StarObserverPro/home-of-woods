@@ -1,6 +1,6 @@
+import {harvestBranchTemplate,harvestBranchMatrix} from './harvest-branches.ts';
 import * as THREE from 'three';
 import {makeTrees} from '../world/layout.ts';
-import {heightAt} from '../world/surface.ts';
 import type { Resources } from './resources.ts';
 import type { Models } from './models.ts';
 import type { GatheringRegistry } from '../domain/gathering-registry.ts';
@@ -17,7 +17,8 @@ export function createGatheringPresentation(r: Resources, models: Models, regist
   let patchCount = 0;
   for (const definition of registry.definitions.values()) {
     const spec = RUNTIME_MODELS.find(a => a.assetId === definition.assetId)!;
-    const template = models.templates.get(spec.name)!;
+    const climbing=definition.motionTag==='gather.climb';
+    const template = climbing?harvestBranchTemplate(r,models):models.templates.get(spec.name)!;
     template.updateMatrixWorld(true);
     const records: { sourceId: string; matrix: THREE.Matrix4 }[] = [];
     for (const source of registry.sources.values()) {
@@ -26,13 +27,15 @@ export function createGatheringPresentation(r: Resources, models: Models, regist
       const patches = source.patches ?? [{ ...source.targetAnchor, scale: 1, rotation: 0 }];
       for (const patch of patches) {
         const host=source.hostRef&&trees.get(source.hostRef.slotId),climb=definition.motionTag==='gather.climb'&&host;
-        const visual=climb?{x:host.x,y:heightAt(host.x,host.z)+3*host.scale,z:host.z}:patch;
-        const dummy = new THREE.Object3D(); dummy.position.set(visual.x,visual.y,visual.z);
-        dummy.rotation.y = patch.rotation; dummy.scale.setScalar(patch.scale); dummy.updateMatrix();
+        const dummy = new THREE.Object3D();
+        if(climb){dummy.matrix.copy(harvestBranchMatrix(host,models,source.targetAnchor));dummy.matrix.decompose(dummy.position,dummy.quaternion,dummy.scale);}
+        else{dummy.position.set(patch.x,patch.y,patch.z);dummy.rotation.y=patch.rotation;dummy.scale.setScalar(patch.scale);dummy.updateMatrix();}
         records.push({ sourceId: source.sourceId, matrix: dummy.matrix.clone() });
-        const proxy = new THREE.Mesh(r.geometry(`gather-hit-${definition.definitionId}`,()=>new THREE.SphereGeometry(definition.hitRadius,10,6)),proxyMaterial);
-        proxy.position.set(patch.x-source.x,patch.y-source.targetAnchor.y+.4*patch.scale,patch.z-source.z);
-        proxy.scale.set(patch.scale,.55*patch.scale,patch.scale); root.add(proxy);
+        // Match the visible fork instead of leaving an invisible click target on the ground.
+        const proxy = climbing?new THREE.Mesh((template.children[0] as THREE.Mesh).geometry,proxyMaterial):new THREE.Mesh(r.geometry(`gather-hit-${definition.definitionId}`,()=>new THREE.SphereGeometry(definition.hitRadius,10,6)),proxyMaterial);
+        if(climb){proxy.matrix.copy(dummy.matrix);proxy.matrix.decompose(proxy.position,proxy.quaternion,proxy.scale);proxy.position.sub(root.position);}
+        else{proxy.position.set(patch.x-source.x,patch.y-source.targetAnchor.y+.4*patch.scale,patch.z-source.z);proxy.scale.set(patch.scale,.55*patch.scale,patch.scale);}
+        root.add(proxy);
         patchCount++;
       }
       group.add(root); hits.register(root,source.sourceId);

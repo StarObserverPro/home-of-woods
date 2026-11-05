@@ -8,6 +8,8 @@ import { createGathering } from '../src/domain/gathering.ts';
 import { createGatheringPresentation } from '../src/scene/gathering-presentation.ts';
 import { Resources } from '../src/scene/resources.ts';
 import { Models } from '../src/scene/models.ts';
+import {makeTrees} from '../src/world/layout.ts';
+import {harvestBranchMatrix} from '../src/scene/harvest-branches.ts';
 import { RUNTIME_MODELS } from '../src/content/assets.ts';
 
 test('actual admitted GLBs share resources, keep source identities through depletion and release hit mappings on unload',async()=>{
@@ -26,13 +28,19 @@ test('actual admitted GLBs share resources, keep source identities through deple
   const sources=[...registry.sources.values()];
   assert.equal(p.hits.size,sources.length);p.group.updateMatrixWorld(true);
   for(const source of sources)for(const patch of source.patches??[source.targetAnchor]){
-    const ray=new THREE.Raycaster(new THREE.Vector3(patch.x,patch.y+4,patch.z),new THREE.Vector3(0,-1,0));
+    let ray=new THREE.Raycaster(new THREE.Vector3(patch.x,patch.y+4,patch.z),new THREE.Vector3(0,-1,0));
+    if(source.definitionId==='forage.branch-pile'){
+      const tree=makeTrees().find(t=>t.id===source.hostRef!.slotId)!;
+      const transform=harvestBranchMatrix(tree,models,source.targetAnchor);
+      const point=new THREE.Vector3(.36,.135,0).applyMatrix4(transform);
+      ray=new THREE.Raycaster(point.clone().add(new THREE.Vector3(0,1,0)),new THREE.Vector3(0,-1,0));
+    }
     const hit=ray.intersectObjects(p.hits.objects(),true)[0];assert.ok(hit);
     assert.equal(p.hits.resolve(hit.object),source.sourceId,'all circle patches share the source while adjacent trees keep their own IDs');
   }
   const batches=p.group.children.filter((o):o is THREE.InstancedMesh=>o instanceof THREE.InstancedMesh);
-  assert.equal(batches.length,6,'two parts per definition; circles do not multiply draw batches');
-  assert.ok(batches.every(mesh=>watched.has(mesh.geometry)),'batches borrow the cache-owned geometry');
+  assert.equal(batches.length,5,'one procedural branch batch plus the existing ground batches');
+  assert.ok(batches.slice(1).every(mesh=>watched.has(mesh.geometry)),'ground batches still borrow the admitted cache-owned geometry');
   const firstBranch=batches[0],matrix=new THREE.Matrix4();
   firstBranch.getMatrixAt(0,matrix);assert.ok(Math.abs(matrix.determinant())>0);
   state.sources[sources[0].sourceId].remaining=0;p.update(state);

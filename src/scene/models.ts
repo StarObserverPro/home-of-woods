@@ -10,12 +10,14 @@ import { ENABLED_RUNTIME_MODELS } from '../content/assets.ts';
 import type { Tree } from "../world/layout.ts";
 import type { Resources } from "./resources.ts";
 import {makeTree} from './forest-shapes.js';
+import {barkUV,createBarkSurface,configureForestBark} from './bark-surface.ts';
 import {treeVisual} from '../world/tree-appearance.ts';
 export class Models {
+  barkSurface:ReturnType<typeof createBarkSurface>;
   shapeTemplates=new Map<string,THREE.Group>();
   sourceForTree(tree:Tree,distant=false){
     const visual=treeVisual(tree),key=`${visual.key}-${distant}`;let source=this.shapeTemplates.get(key);
-    if(!source){source=makeTree(visual.species,visual.seed,distant?1:2);source.traverse(o=>{if(o instanceof THREE.Mesh){this.r.own(o.geometry);const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>this.r.own(m));}});this.shapeTemplates.set(key,source);}
+    if(!source){source=makeTree(visual.species,visual.seed,distant?1:2);source.traverse(o=>{if(o instanceof THREE.Mesh){this.r.own(o.geometry);if(!distant&&o.name==='trunk'){const m=o.material as THREE.MeshStandardMaterial;m.map=this.barkSurface.map;m.normalMap=this.barkSurface.normalMap;}const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>this.r.own(m));}});this.shapeTemplates.set(key,source);}
     return source;
   }
   templates = new Map<string, THREE.Group>();
@@ -23,6 +25,7 @@ export class Models {
   private r: Resources;
   constructor(r: Resources) {
     this.r = r;
+    this.barkSurface=createBarkSurface(r);
   }
   async load() {
     const loader = new GLTFLoader();
@@ -122,7 +125,10 @@ export class Models {
         let shown=true;for(let parent:THREE.Object3D|null=o;parent;parent=parent.parent)shown=shown&&parent.visible;
         if (shown && o instanceof THREE.Mesh) {
           const g = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()).applyMatrix4(o.matrixWorld);
-          g.deleteAttribute("uv");
+          const isBark=!!(o.material as THREE.MeshStandardMaterial).map;
+          if(distant)g.deleteAttribute("uv");
+          else {barkUV(g,isBark);
+          g.setAttribute('barkWeight',new THREE.BufferAttribute(new Float32Array(g.attributes.position.count).fill(isBark?1:0),1));}
           const color = new THREE.Color(
             (o.material as THREE.MeshStandardMaterial).color,
           );
@@ -149,6 +155,7 @@ export class Models {
         metalness: 0,
       }),
     );
+    configureForestBark(material,this.barkSurface);
     const sceneryMaterial = this.r.own(
       new THREE.MeshStandardMaterial({
         vertexColors: true,

@@ -171,3 +171,6 @@ Models 的固定树形缓存同时提供静态合并与动作 source，远景按
 ## 最终动物表现
 
 `domain/wildlife` 决定会话内出入场；`scene/wildlife-presentation` 只消费视图、现有相机和时钟。最终四种模型由 Models 可选加载；私有骨架／材质退出时释放，共享模型归 Resources。主循环、物理岛固定步长、三档稀有特效和原存档写入者均不另建副本。当前范围与组合验证见 [最终动物接入](WILDLIFE_GUIDE.md)。
+
+## 树皮与可采树杈
+2026-11-05 表现升级见 [树木表面审计](TREE_SURFACE_AUDIT.md)。Models/Resources 共享两张 128² 树皮贴图，动作树只借用；静态合批通过 barkWeight 区分木质/冠叶，scenery 不绑定纹理。harvest-branches 按真实宿主几何解析枝条挂点，gathering-presentation 共用变换绘制与拾取；地面行动点、库存事务与唯一主循环不变。
