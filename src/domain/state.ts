@@ -45,11 +45,18 @@ export function createState(trees:Tree[]=makeTrees()): GameState {
     seed: WORLD_SEED,
     time:0,
     forestry:createForestry(trees),
-    inventory: { ...createInventory(), instances: starterWardrobeItems() },
+    inventory: createInventory(),
     gathering: createGathering(createGatheringRegistry({ assetIds: RUNTIME_MODELS.map(a => a.assetId) })),
     player: { ...START, facing: 0, moving: false },
     selected: null,
     route: [],
     visited: ["home"],
   };
+}
+
+/** Only the actual new-game entry grants starter clothes; generic states and legacy saves stay unchanged. */
+export function createStarterState(trees:Tree[]=makeTrees()):GameState {
+  const state=createState(trees);
+  state.inventory={...state.inventory,instances:starterWardrobeItems()};
+  return state;
 }

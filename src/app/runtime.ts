@@ -22,7 +22,7 @@ import {beginRitual,advanceRitual,ritualBusy} from '../domain/ritual.ts';
 import { MOVEMENT, WAYPOINTS } from "../content/world.ts";
 import {FORESTRY} from '../content/forestry.ts';
 import type { Point } from "../content/world.ts";
-import { createState } from "../domain/state.ts";
+import { createStarterState } from "../domain/state.ts";
 import type {GameState} from '../domain/state.ts';
 import {startChop,cancelChop,advanceForestry,forestrySnapshot,forestryColliders} from '../domain/forestry.ts';
 import type {ForestrySnapshot} from '../domain/forestry.ts';
@@ -85,7 +85,7 @@ export async function createRuntime(
   const saveContext = createSaveContext(trees, registry);
   const persistence = saveOwner ?? createSaveController(createBrowserWorldSaveStore(), saveContext);
   const savedState = await persistence.load();
-  const state = initialState ?? savedState ?? createState(trees);
+  const state = initialState ?? savedState ?? createStarterState(trees);
   validateWorldSession(state, saveContext);
   for (const source of registry.sources.values()) if (!interactionRoute({ player: { ...START, facing: 0, moving: false } }, source, registry, colliders).reachable) throw new Error(`Unreachable source: ${source.sourceId}`);
   synchronizeGatheringHosts(state, registry);

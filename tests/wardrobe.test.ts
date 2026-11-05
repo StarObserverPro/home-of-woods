@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {createState} from '../src/domain/state.ts';
+import {createState,createStarterState} from '../src/domain/state.ts';
 import {WARDROBE_SLOTS,STARTER_WEAR,WARDROBE_DESIGN_LIBRARY} from '../src/content/wardrobe.ts';
 import {changeWardrobe,wardrobeSnapshot} from '../src/domain/wardrobe.ts';
 import {validateInventory} from '../src/domain/inventory.ts';
@@ -11,7 +11,8 @@ import {createWardrobeVisual} from '../src/scene/wardrobe-visual.ts';
 import {Resources} from '../src/scene/resources.ts';
 
 test('new world grants exactly one common starter item in each wearable slot',()=>{
-  const s=createState(),instances=s.inventory.instances??[];
+  assert.equal(createState().inventory.instances,undefined,'generic state must stay empty for old tests and migration');
+  const s=createStarterState(),instances=s.inventory.instances??[];
   assert.doesNotThrow(()=>validateInventory(s.inventory));
   assert.equal(WARDROBE_SLOTS.length,8);
   assert.equal(instances.length,8);
@@ -41,7 +42,7 @@ test('design variants are 78 distinct silhouettes; no unapproved 3D files are cl
   assert.equal(new Set(WARDROBE_DESIGN_LIBRARY.map(s=>s.designId)).size,78);
 });
 test('unequip and equip use one ownership ledger, conserve identities, and survive persistence',()=>{
-  const state=createState(),original=state.inventory;
+  const state=createStarterState(),original=state.inventory;
   const initialHat=wardrobeSnapshot(original).slots.find(s=>s.slotId==='player:head')!.equipped!;
   const removed=changeWardrobe(original,{kind:'unequip',slotId:'player:head'}).inventory;
   assert.notEqual(removed,original);assert.equal(original.revision,0);
@@ -57,7 +58,7 @@ test('unequip and equip use one ownership ledger, conserve identities, and survi
   assert.equal(worn.revision,2);
 });
 test('replacement moves old clothes to inventory, preserves traits, rejects wrong slots atomically',()=>{
-  const s=createState(),before=structuredClone(s.inventory);
+  const s=createStarterState(),before=structuredClone(s.inventory);
   const top=before.instances!.find(v=>v.definitionId===STARTER_WEAR[0].definitionId)!;
   const replacement={...structuredClone(top),instanceId:'extra-work-shirt',traits:[{id:'color',value:3}],location:{kind:'inventory' as const}};
   const augmented={...s.inventory,instances:[...s.inventory.instances!,replacement]};
