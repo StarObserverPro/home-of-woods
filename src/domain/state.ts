@@ -18,6 +18,8 @@ import {createWorkshop} from './workshop.ts';
 import type {WorkshopState} from './workshop.ts';
 import {createLocalClock} from './local-clock.ts';
 import type {LocalClock} from './local-clock.ts';
+import {createDayCycle} from './day-cycle.ts';
+import type {DayCycleState} from './day-cycle.ts';
 import {createFoodState} from './food.ts';
 import type {FoodState} from './food.ts';
 export type GameState = {
@@ -26,6 +28,7 @@ export type GameState = {
   woodcraft:WoodcraftState;
   workshop:WorkshopState;
   clock:LocalClock;
+  dayCycle:DayCycleState;
   food:FoodState;
   ritual: RitualAction | null;
   seed: number;
@@ -44,6 +47,7 @@ export function createState(trees:Tree[]=makeTrees()): GameState {
     ritual: null,
     workshop:createWorkshop(),
     clock:createLocalClock(),
+    dayCycle:createDayCycle(),
     food:createFoodState(),
     seed: WORLD_SEED,
     time:0,
