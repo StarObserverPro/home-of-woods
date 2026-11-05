@@ -1,3 +1,4 @@
+import { STARTER_WEAR, WARDROBE_SLOTS } from './wardrobe.ts';
 /**
  * Unique, durable items share the existing inventory.instances ownership ledger.
  * A fixture fitting is not automatically a durable item: only explicitly
@@ -18,6 +19,12 @@ export type OwnedItemDefinition = {
 };
 
 export const OWNED_ITEM_DEFINITIONS: readonly OwnedItemDefinition[] = [
+  ...STARTER_WEAR.map(item => ({
+    definitionId:item.definitionId,name:item.name,category:'apparel',status:'active' as const,
+    blueprintIds:['blueprint.starter-outfit'],
+    mountKinds:[WARDROBE_SLOTS.find(slot=>slot.slotId===item.slotId)!.kind],
+    presentationId:item.rendering==='embedded'?'wardrobe.kaykit-underlayer':'wardrobe.starter-overlay',
+  })),
   {
     definitionId: 'furniture.stump-seat', name: '整木坐墩', category: 'furniture',
     status: 'active', blueprintIds: ['blueprint.stump-cozy', 'blueprint.stump-sturdy'],

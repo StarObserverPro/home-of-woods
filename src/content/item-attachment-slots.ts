@@ -1,3 +1,4 @@
+import { WARDROBE_SLOTS } from './wardrobe.ts';
 /**
  * Hosts expose attachment points, not a second owner or a copy of the item's
  * rarity, traits, effects, blueprint, model or inventory record.
@@ -18,6 +19,10 @@ export type AttachmentSlotDefinition = {
   requires?: { upgradeId: string; activeLegacySlot?: string; activeLegacyPart?: string };
 };
 export const HOST_ATTACHMENT_SLOTS: readonly AttachmentSlotDefinition[] = [
+  ...WARDROBE_SLOTS.map(slot => ({
+    slotId:slot.slotId, host:{kind:'fixture' as const,id:'player'}, kind:slot.kind,
+    status:'active' as const,anchorId:slot.anchorId,contexts:slot.contexts,
+  })),
   {
     slotId: 'cabin:entry-hanging', host: { kind: 'fixture', id: 'cabin' },
     kind: 'entrance-hanging', status: 'planned',

@@ -1,3 +1,4 @@
+import { starterWardrobeItems } from '../content/wardrobe.ts';
 import type {WildlifeState} from './wildlife.ts';
 import {createWoodcraft} from './woodcraft.ts';
 import type {WoodcraftState} from './woodcraft.ts';
@@ -44,7 +45,7 @@ export function createState(trees:Tree[]=makeTrees()): GameState {
     seed: WORLD_SEED,
     time:0,
     forestry:createForestry(trees),
-    inventory: createInventory(),
+    inventory: { ...createInventory(), instances: starterWardrobeItems() },
     gathering: createGathering(createGatheringRegistry({ assetIds: RUNTIME_MODELS.map(a => a.assetId) })),
     player: { ...START, facing: 0, moving: false },
     selected: null,
