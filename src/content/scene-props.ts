@@ -7,6 +7,7 @@ export const CAMP_PROPS = {
   dryer: {id:'camp-drying-rack',x:-40,z:18,radius:1.3},
   altar: {id:'grove-altar',x:-10,z:45,radius:3.35},
 } as const;
+export const DINING_SEAT = {x:CAMP_PROPS.fire.x+2.6,z:CAMP_PROPS.fire.z+2.1} as const;
 export const ALTAR_STATES = ['dormant','ready','answering','resting'] as const;
 export type AltarState = typeof ALTAR_STATES[number];
 export type SceneAppearance = {hour:number;fire:boolean;altar:AltarState;offering:OfferingMode;reflections:boolean};
@@ -24,6 +25,7 @@ export const VIEWS = {
   overview:{label:'山谷全景',target:[-5,24,15],yaw:-.13,elevation:.28,distance:120,zoom:.76},
   creek:{label:'溪流反光',target:[12,3,48],yaw:2.3,elevation:.36,distance:48,zoom:1},
   camp:{label:'营地篝火',target:[-35,22,3],yaw:-.75,elevation:.38,distance:38,zoom:1},
+  meal:{label:'篝火边读故事',target:[DINING_SEAT.x,22.5,DINING_SEAT.z],yaw:-.55,elevation:.30,distance:11,zoom:1},
   fire:{label:'火焰近景',target:[CAMP_PROPS.fire.x,22.6,CAMP_PROPS.fire.z],yaw:-.75,elevation:.30,distance:11,zoom:1},
   altar:{label:'林间祭坛',target:[-10,9.5,45],yaw:-.25,elevation:.54,distance:27,zoom:1},
   ritual:{label:'祭品与神谕',target:[-9.7,13,45.1],yaw:-.30,elevation:.30,distance:16,zoom:1.05},
