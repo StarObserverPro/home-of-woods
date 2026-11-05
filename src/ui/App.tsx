@@ -36,6 +36,7 @@ import {WardrobeLab} from './WardrobeLab.tsx';
 import {SceneInspector} from './SceneInspector.tsx';
 import {BlueprintLibrary,UpgradeControls} from './Blueprints.tsx';
 import {useItemDrag} from './useItemDrag.ts';
+import {WOODCRAFT} from '../content/woodcraft.ts';
 import {CAMP_PROPS} from '../content/scene-props.ts';
 
 function Leaf({ size = 24 }: { size?: number }) {
@@ -150,11 +151,14 @@ export function App() {
     runtime = useRef<Runtime | null>(null),
     sessionState = useRef<GameState | null>(null),
     saveOwner = useRef<SaveController | null>(null),
-    pauseDialog = useRef<HTMLDialogElement>(null);
+    pauseDialog = useRef<HTMLDialogElement>(null),
+    cameraToggle = useRef<HTMLButtonElement>(null);
   const [snapshot, setSnapshot] = useState(empty),
     [ready, setReady] = useState(false),
     [error, setError] = useState(""),
     [mapOpen, setMapOpen] = useState(false),
+    [cameraOpen,setCameraOpen]=useState(false),
+    [messageVisible,setMessageVisible]=useState(false),
     [help, setHelp] = useState(false),
     [warehouseOpen, setWarehouseOpen] = useState(false),
     [readerOpen,setReaderOpen]=useState(false),
@@ -289,6 +293,28 @@ export function App() {
     };
     document.addEventListener('keydown',key,true);return()=>document.removeEventListener('keydown',key,true);
   },[ready,snapshot.paused,readerOpen]);
+  useEffect(()=>{setCameraOpen(false);},[snapshot.selected]);
+  useEffect(()=>{
+    if(warehouseOpen){setMapOpen(false);setHelp(false);setCameraOpen(false);}
+  },[warehouseOpen]);
+  useEffect(()=>{
+    setMessageVisible(true);
+    const timer=window.setTimeout(()=>setMessageVisible(false),4500);
+    return()=>window.clearTimeout(timer);
+  },[snapshot.message]);
+  useEffect(()=>{
+    const close=(e:KeyboardEvent)=>{
+      if(e.code!=='Escape'||snapshot.paused||readerOpen||warehouseOpen||snapshot.placement||snapshot.woodcraft.dropping)return;
+      if(!mapOpen&&!help&&!cameraOpen&&!snapshot.selected)return;
+      e.preventDefault();e.stopPropagation();
+      if(cameraOpen){setCameraOpen(false);cameraToggle.current?.focus();}
+      else if(mapOpen)setMapOpen(false);
+      else if(help)setHelp(false);
+      else runtime.current?.select(null);
+    };
+    document.addEventListener('keydown',close,true);
+    return()=>document.removeEventListener('keydown',close,true);
+  },[mapOpen,help,cameraOpen,warehouseOpen,readerOpen,snapshot.paused,snapshot.selected,snapshot.placement,snapshot.woodcraft.dropping]);
   const selectedTree = snapshot.selected ? treeById.get(snapshot.selected) : undefined;
   const forest = snapshot.forestry;
   const treeAction = forest.selectedTree;
@@ -333,6 +359,15 @@ export function App() {
                     : "枝叶在春光里铺展开。沿小路走近，看看它粗壮的树干。",
             }
           : null);
+  const upgradeAccess=snapshot.workshop.upgradeOptions[0]??snapshot.workshop.upgrade;
+  const farFacility=snapshot.selected!==CAMP_VISITOR.id && (snapshot.interaction
+    ? !snapshot.interaction.near
+    : !!upgradeAccess?.stand&&!upgradeAccess.near);
+  const approachFacility=()=>{
+    if(snapshot.selected===WOODCRAFT.id)runtime.current?.openWoodcraft();
+    else if(snapshot.interaction)runtime.current?.approachTarget(snapshot.selected!);
+    else if(upgradeAccess)runtime.current?.approachUpgrade(upgradeAccess.targetId);
+  };
   const stickOrigin = useRef<{ x: number; y: number; id: number } | null>(null),
     [stick, setStick] = useState({ x: 0, y: 0 });
   const stickDown = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -371,13 +406,10 @@ export function App() {
         <section className="brand" aria-label="当前位置">
           <Leaf size={30} />
           <div className="journey-summary">
-            <span className="brand-name">森林之家</span>
             <h1>{snapshot.zone}</h1>
             <p className="journey-meta">
               <span>{snapshot.workshop.calendar.season} · 第 {snapshot.workshop.calendar.dayOfSeason} 天 · {String(Math.floor(snapshot.appearance.hour)).padStart(2,'0')}:00</span>
-              <span>风景 {snapshot.visited.length}/4</span>
-              <span>原木 {forest.wood}</span>
-              {snapshot.gathering.inventory.map(item => <span key={item.typeId}>{item.name} {item.quantity}</span>)}
+
             </p>
           </div>
         </section>
@@ -392,7 +424,7 @@ export function App() {
           <Icon name="pause" />
         </button>
       </header>
-      <aside className="minimap-card" aria-label="山谷地图" hidden={mapOpen || help || !!selected}>
+      <aside className="minimap-card" aria-label="山谷地图" hidden={mapOpen || help || warehouseOpen || readerOpen || !!selected}>
         <div className="map-heading">
           <span>山谷手记</span>
           <span className="north">N ↑</span>
@@ -448,7 +480,7 @@ export function App() {
         </button>
       </aside>
       <div className="hud-dock">
-      <div className="camera-tools" aria-label="镜头控制">
+      {cameraOpen&&<div className="camera-tools" aria-label="镜头控制">
         <button
           aria-label="镜头左转"
           onClick={() => runtime.current?.camera("left")}
@@ -478,25 +510,13 @@ export function App() {
         >
           <Icon name="reset" />
         </button>
-      </div>
-      <span className="dock-divider" aria-hidden="true" />
+      </div>}
       <nav className="bottom-toolbar" aria-label="探索工具">
-        <button
-          className={!mapOpen && !help ? "active" : ""}
-          aria-pressed={!mapOpen && !help}
-          onClick={() => {
-            setMapOpen(false);
-            setHelp(false);
-            runtime.current?.select(null);
-          }}
-        >
-          <Icon name="walk" />
-          <span>漫步</span>
-        </button>
         <button
           className={mapOpen ? "active" : ""}
           aria-pressed={mapOpen}
           onClick={() => {
+            closeWarehouse();setCameraOpen(false);
             runtime.current?.select(null);
             setMapOpen((v) => !v);
             setHelp(false);
@@ -505,11 +525,13 @@ export function App() {
           <Icon name="map" />
           <span>路线</span>
         </button>
-        <button aria-label="打开仓库" aria-pressed={warehouseOpen} onClick={()=>setWarehouseOpen(true)}><Icon name="warehouse"/><span>随身 / 仓库</span></button>
+        <button aria-label="打开仓库" aria-pressed={warehouseOpen} onClick={()=>setWarehouseOpen(true)}><Icon name="warehouse"/><span>物品</span></button>
+        <button ref={cameraToggle} aria-label="镜头" aria-expanded={cameraOpen} className={cameraOpen?'active':''} onClick={()=>setCameraOpen(v=>!v)}><Icon name="reset"/><span>镜头</span></button>
         <button
           className={help ? "active" : ""}
           aria-pressed={help}
           onClick={() => {
+            closeWarehouse();setCameraOpen(false);
             runtime.current?.select(null);
             setHelp((v) => !v);
             setMapOpen(false);
@@ -532,20 +554,14 @@ export function App() {
       <WoodDropControls active={snapshot.woodcraft.dropping} onCancel={()=>runtime.current?.cancelWoodDrop()}/>
       <PlacementControls draft={snapshot.placement} onRotate={()=>runtime.current?.rotatePlacement()} onConfirm={()=>runtime.current?.confirmPlacement()} onCancel={()=>runtime.current?.cancelPlacement()}/>
 
-      <button className="save-indicator" aria-label="查看世界存档" title={snapshot.save.message} onClick={() => runtime.current?.pause(true)}>
-        <span className="save-label">存档 · </span>{({loading:'读取中',ready:'待保存',saving:'保存中',saved:'已保存',protected:'受保护',conflict:'需重读',failed:'未保存'} as const)[snapshot.save.state]}
-      </button>
       {['protected','conflict','failed'].includes(snapshot.save.state) && <aside className="save-warning" role="alert">{snapshot.save.message}</aside>}
-      <div className="input-hint">
-        <kbd>W A S D</kbd> 移动 <i /> 点地面前往 <i /> 拖动转镜头 · 滚轮缩放
-      </div>
-      {!selected && !mapOpen && !help && !activeAction && <div className="message" role="status" aria-live="polite">
+      {!selected && !mapOpen && !help && !activeAction && !warehouseOpen && !readerOpen && messageVisible && <div className="message" role="status" aria-live="polite">
         {snapshot.message}
       </div>}
       {selected && !snapshot.woodcraft.dropping && !warehouseOpen && (
-        <aside className={`target-card${snapshot.selected===CAMP_VISITOR.id?' is-merchant':''}${gatherAction?.sourceId === gatherTarget?.id && gatherAction?.motionTag === 'gather.pickup' && ['approaching','performing'].includes(gatherAction.phase) ? ' target-card--pickup-active' : ''}`}>
+        <aside key={snapshot.selected} className={`target-card${snapshot.selected===CAMP_VISITOR.id?' is-merchant':''}${gatherAction?.sourceId === gatherTarget?.id && gatherAction?.motionTag === 'gather.pickup' && ['approaching','performing'].includes(gatherAction.phase) ? ' target-card--pickup-active' : ''}`}>
           <div className="target-top">
-            <span className="eyebrow">{selected.tag}</span>
+            <h2 className={selectedOwnedItem?'rarity-name':undefined} data-rarity={selectedOwnedItem?itemRarity(selectedOwnedItem).id:undefined} style={selectedOwnedItem?rarityStyle(selectedOwnedItem):undefined}>{selected.title}</h2>
             <button
               aria-label="关闭目标详情"
               onClick={() => runtime.current?.select(null)}
@@ -553,10 +569,13 @@ export function App() {
               ×
             </button>
           </div>
-          <h2 className={selectedOwnedItem?'rarity-name':undefined} data-rarity={selectedOwnedItem?itemRarity(selectedOwnedItem).id:undefined} style={selectedOwnedItem?rarityStyle(selectedOwnedItem):undefined}>{selected.title}</h2>
-          {['grove-altar','grove-altar:oracle'].includes(snapshot.selected??'') && snapshot.interaction?.near&&<div className="tree-actions"><button className="context-button" onClick={()=>runtime.current?.ritual('prayer')}>合掌祈祷</button><button className="context-button" onClick={()=>runtime.current?.cancelAction()}>取消动作</button></div>}
-          {selectedTree && ['tree-slot-r3-hero-0','tree-slot-16-9','tree-slot-13-6','tree-slot-17-11','landmark-elder'].includes(selectedTree.id) && <button className="context-button" onClick={()=>runtime.current?.selectTreeBranches()}>上树采枝</button>}
-          {snapshot.selected!==CAMP_VISITOR.id&&<p>{selected.detail}</p>}
+
+          <p className="target-tag">{selected.tag}</p>
+          {farFacility?<div className="facility-approach">
+            <button className="context-button primary-action" disabled={!ready||snapshot.paused||!!snapshot.workshop.job} onClick={approachFacility}>{snapshot.moving?'正在走近…':'走近'}</button>
+          </div>:<>
+          {['grove-altar','grove-altar:oracle'].includes(snapshot.selected??'') && snapshot.interaction?.near&&<div className="tree-actions"><button className="context-button" onClick={()=>runtime.current?.ritual('prayer')}>合掌祈祷</button></div>}
+          {selectedTree && ['tree-slot-r3-hero-0','tree-slot-16-9','tree-slot-13-6','tree-slot-17-11','landmark-elder'].includes(selectedTree.id) && <button className="context-button" onClick={()=>runtime.current?.selectTreeBranches()}>查看枝杈</button>}
           <GroundCarryControls id={snapshot.selected} view={snapshot.carrying} onChange={intent=>runtime.current?.carry(intent)} onApproach={id=>runtime.current?.approachMaterial(id)}/>
           <WoodcraftControls selected={snapshot.selected} view={snapshot.woodcraft} message={snapshot.message} disabled={!ready||snapshot.paused||!!snapshot.placement}
             onOpen={()=>runtime.current?.openWoodcraft()} onWarehouse={()=>setWarehouseOpen(true)} onPrepare={()=>runtime.current?.prepareWoodcraft()} onThrow={()=>runtime.current?.beginWoodDrop()} onCollect={id=>runtime.current?.collectWood(id)} onClose={()=>runtime.current?.closeWoodcraft()}/>
@@ -571,14 +590,13 @@ export function App() {
           {snapshot.selected===CAMP_PROPS.logs.id&&<div className="tree-actions">{snapshot.interaction?.near?<><button className="context-button" onClick={()=>setWarehouseOpen(true)}>打开仓库</button><button className="context-button" onClick={()=>runtime.current?.openWoodcraft()}>前往木料堆取放</button></>:<button className="context-button" disabled={!ready||snapshot.paused} onClick={()=>runtime.current?.approachTarget(CAMP_PROPS.logs.id)}>走近原木架</button>}</div>}
           <FoodControls selected={snapshot.selected} view={snapshot.food} workshop={snapshot.workshop} access={snapshot.interaction} disabled={!ready||snapshot.paused||!!snapshot.placement}
             onApproach={()=>runtime.current?.approachTarget(snapshot.selected!)} onDry={()=>runtime.current?.dryMushrooms()} onCook={grain=>runtime.current?.cookSoup(grain)} onEat={()=>runtime.current?.eatSoup()} onBread={()=>runtime.current?.eatBread()} onUnpack={()=>runtime.current?.unpackFoodSack()} onRead={()=>setReaderOpen(true)}/>
-          <UpgradeControls view={snapshot.workshop} hasContextActions={!!snapshot.interaction} disabled={!ready||snapshot.paused||!!snapshot.placement} onApproach={id=>runtime.current?.approachUpgrade(id)} onUpgrade={id=>runtime.current?.upgrade(id)} onMount={id=>runtime.current?.mountExterior(id)} onCancel={()=>runtime.current?.cancelAction()}/>
-          {snapshot.selected==='tent'&&<button className="context-button" onClick={()=>runtime.current?.select(WORKBENCH.id)}>查看帐篷前的工作台</button>}
+          {snapshot.selected==='tent'&&<button className="context-button" onClick={()=>runtime.current?.select(WORKBENCH.id)}>查看工作台</button>}
 
+          </>}
           {gatherTarget && <div className="tree-work">
             <div className="tree-facts"><span>{gatherTarget.status}</span><span>距你 {gatherTarget.distance.toFixed(1)}</span></div>
             {gatherTarget.status === '可以采集' && <p className="tree-cost">可得 {gatherTarget.reward}</p>}
             {gatherTarget.reason && <p className="action-reason">{gatherTarget.reason}</p>}
-            <p className="action-message" role="status" aria-live="polite">{snapshot.message}</p>
             {gatherAction?.sourceId === gatherTarget.id && ['approaching','performing'].includes(gatherAction.phase) && <p className="gather-progress">{gatherAction.phase === 'approaching' ? '正在走近…' : '正在采集…'}</p>}
             <div className="tree-actions">{gatherTarget.actions.map(action => <button key={action.id} className="context-button" disabled={!action.enabled} onClick={()=>runtime.current?.targetAction(action.id)}>{action.label}</button>)}</div>
           </div>}
@@ -591,20 +609,25 @@ export function App() {
               {selectedTree?.role === "managed" && treeAction.status === "standing" && (
                 <p className="tree-cost">耗 {treeAction.cost} 点额度 · 可得 {treeAction.yield} 份木材<span>可用 {forest.points.available} 点</span></p>
               )}
-              {!treeAction.canChop && treeAction.reason && <p className="action-reason">{treeAction.reason}</p>}
-              <p className="action-message" role="status" aria-live="polite">{snapshot.message}</p>
-              {activeAction?.treeId === treeAction.id && (
+              {!treeAction.canChop && (treeAction.near||!treeAction.canApproach) && treeAction.reason && <p className="action-reason">{treeAction.reason}</p>}
+                {activeAction?.treeId === treeAction.id && (
                 <div className="work-progress" role="progressbar" aria-label={activeAction.phase === "chopping" ? "砍树进度" : "倒树进度"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(activeAction.progress * 100)}>
                   <span style={{width:`${activeAction.progress*100}%`}} />
                 </div>
               )}
               <div className="tree-actions">
-                {treeAction.canApproach && <button className="context-button" onClick={()=>runtime.current?.approachSelected()}><Icon name="walk" />{treeAction.canChop?'调整站位':'走近'}</button>}
-                {selectedTree?.role === "managed" && treeAction.status === "standing" && <button className="context-button" disabled={!treeAction.canChop} onClick={()=>runtime.current?.chopSelected()}><Icon name="axe" />砍树</button>}
+                {treeAction.canApproach && !treeAction.near && <button className="context-button" onClick={()=>runtime.current?.approachSelected()}><Icon name="walk" />{snapshot.moving?'正在走近…':'走近'}</button>}
+                {selectedTree?.role === "managed" && treeAction.status === "standing" && treeAction.near && <button className="context-button" disabled={!treeAction.canChop} onClick={()=>runtime.current?.chopSelected()}><Icon name="axe" />砍树</button>}
                 {activeAction?.treeId === treeAction.id && activeAction.phase === "chopping" && <button className="context-button" onClick={()=>runtime.current?.cancelChop()}>停止挥斧</button>}
               </div>
             </div>
           )}
+          {(snapshot.workshop.upgradeOptions.length>0||snapshot.workshop.upgrade)&&<details className="context-details" open={snapshot.workshop.job?.kind==='upgrade'||undefined}>
+            <summary>改造与修缮</summary>
+          <UpgradeControls remote={farFacility} view={snapshot.workshop} hasContextActions={!!snapshot.interaction} disabled={!ready||snapshot.paused||!!snapshot.placement} onApproach={id=>runtime.current?.approachUpgrade(id)} onUpgrade={id=>runtime.current?.upgrade(id)} onMount={id=>runtime.current?.mountExterior(id)} onCancel={()=>runtime.current?.cancelAction()}/>
+          </details>}
+          {messageVisible&&<p className="action-message" role="status" aria-live="polite">{snapshot.message}</p>}
+          {snapshot.selected!==CAMP_VISITOR.id&&<details className="context-details target-description"><summary>详情</summary><p>{selected.detail}</p></details>}
           {diagnostic && selectedTree && (
             <span className="tree-identity">
               树位 {selectedTree.id.replace("tree-slot-", "")} · 个体 {treeAction?.individualId ?? selectedTree.individualId}
@@ -622,16 +645,16 @@ export function App() {
         <aside className="route-sheet panel">
           <div className="panel-heading">
             <div>
-              <span className="eyebrow">TAKE THE SCENIC ROUTE</span>
-              <h2>去山谷走走</h2>
+              <h2>路线</h2>
             </div>
             <button aria-label="收起路线" onClick={() => setMapOpen(false)}>
               ×
             </button>
           </div>
-          <p>选一处风景，沿途慢慢走。方向键可以随时接过移动。</p>
-          <div className="camp-shortcuts"><button className="context-button" onClick={()=>{runtime.current?.openWoodcraft();setMapOpen(false);}}>营地木料堆</button><button className="context-button" onClick={()=>{runtime.current?.select(WORKBENCH.id);setMapOpen(false);}}>营地工作台</button><button className="context-button" onClick={()=>{runtime.current?.select(CAMP_VISITOR.id);setMapOpen(false);}}>林间行商</button><button className="context-button" onClick={()=>{runtime.current?.select('grove-altar');setMapOpen(false);}}>林间祭坛</button></div>
+          <h3 className="route-section-label">营地 · 查看</h3>
+          <div className="camp-shortcuts"><button className="context-button" onClick={()=>{runtime.current?.select(WOODCRAFT.id);setMapOpen(false);}}>营地木料堆</button><button className="context-button" onClick={()=>{runtime.current?.select(WORKBENCH.id);setMapOpen(false);}}>营地工作台</button><button className="context-button" onClick={()=>{runtime.current?.select(CAMP_VISITOR.id);setMapOpen(false);}}>林间行商</button><button className="context-button" onClick={()=>{runtime.current?.select('grove-altar');setMapOpen(false);}}>林间祭坛</button></div>
 
+          <h3 className="route-section-label">风景 · 前往</h3>
           {WAYPOINTS.map((wp, i) => (
             <button
               className="route-stop"
@@ -646,7 +669,6 @@ export function App() {
               </span>
               <span>
                 <strong>{wp.name}</strong>
-                <small>{wp.note}</small>
               </span>
               <span className="route-arrow">↗</span>
             </button>
@@ -656,7 +678,7 @@ export function App() {
       {help && (
         <aside className="help-sheet panel">
           <div className="panel-heading">
-            <h2>在山谷里，自在一点</h2>
+            <h2>操作</h2>
             <button aria-label="关闭操作说明" onClick={() => setHelp(false)}>
               ×
             </button>
@@ -671,13 +693,12 @@ export function App() {
             <b>认识目标</b>　点击树、帐篷或木屋查看详情。
           </p>
           <p><b>砍树</b>　选中经营树、走近后挥斧。巨木始终受到保护。</p>
-          <p><b>采集</b>　点选落枝堆或蘑菇簇，再按“采集 / 走近采集”或 E。移动或切换目标可取消。</p>
-          <p><b>吃饭</b>　在行商处用鲜蘑菇换一袋混合干粮；火塘安装汤锅、晾晒架加工蘑菇。吃下正餐可为次日重体力劳动做准备，不吃饭仍可采集和散步。</p>
-          <p><b>木作</b>　向行商换图纸，或在祭坛供奉一份蘑菇；帐篷前工作台用一份木料制作。仓库里的家具可以自由摆放、移动和收回。沙漏切换 1/4/12 倍游戏时间。</p>
-          <p><b>仓库</b>　底部“仓库”或 B 查看分类物品与加工方向；Esc 收起后继续巡林。</p>
-          <p>
-            <b>歇一会</b>　Esc 或右上角暂停。离开页面时，山谷也会等你。
-          </p>
+          <p><b>采集</b>　点选树上枝杈、地面碎柴或蘑菇，再按采集或 E。移动或切换目标可取消。</p>
+          <p><b>物品</b>　B 打开，Esc 收起。随身材料带回原木架存放。</p>
+          <details className="context-details"><summary>营地生活</summary>
+            <p>工作台制作，火塘煮汤，行商买卖。点选设施后走近，再选择操作。</p>
+            <p>吃过正餐，第二天能做重活。傍晚可以回帐篷休息。</p>
+          </details>
           <label className="reduced">
             <input
               type="checkbox"
@@ -714,15 +735,8 @@ export function App() {
         }}
       >
         <Leaf size={39} />
-        <span className="eyebrow">A LITTLE BREATHING ROOM</span>
         <h2>山谷会等你</h2>
-        <p>歇一会儿，再继续散步。</p>
-        <RarityVfxControls mode={rarityVfxMode} onChange={changeRarityVfxMode} disabled={!ready} notice={displayNotice}/>
-        <SaveControls status={snapshot.save}
-          onSave={() => runtime.current?.saveWorld() ?? Promise.resolve(false)}
-          onReload={() => runtime.current?.reloadWorld() ?? Promise.resolve(false)}
-          onRestore={() => runtime.current?.restoreWorldCopy() ?? Promise.resolve(false)}
-          onExport={which => runtime.current?.exportWorldRecord(which) ?? Promise.resolve(null)}/>
+
         <button
           className="primary-button"
           autoFocus
@@ -739,6 +753,14 @@ export function App() {
         >
           复位镜头并继续
         </button>
+        <details className="context-details pause-settings"><summary>显示与存档</summary>
+        <RarityVfxControls mode={rarityVfxMode} onChange={changeRarityVfxMode} disabled={!ready} notice={displayNotice}/>
+        <SaveControls status={snapshot.save}
+          onSave={() => runtime.current?.saveWorld() ?? Promise.resolve(false)}
+          onReload={() => runtime.current?.reloadWorld() ?? Promise.resolve(false)}
+          onRestore={() => runtime.current?.restoreWorldCopy() ?? Promise.resolve(false)}
+          onExport={which => runtime.current?.exportWorldRecord(which) ?? Promise.resolve(null)}/>
+        </details>
       </dialog>
       {!ready && !error && (
         <div className="loading">

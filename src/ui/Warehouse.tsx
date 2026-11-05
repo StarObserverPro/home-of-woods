@@ -21,20 +21,21 @@ export function Warehouse({open,view,woodcraft,onClose,onApproach,onFocus,onThro
   const closeRef=useRef(onClose);closeRef.current=onClose;
   const [category,setCategory] = useState('carrying');
   const [selectedKey,setSelectedKey] = useState('');
-  const tabIcon:Record<string,string>={carrying:'🎒',all:'📦',wood:'🪵','forest-produce':'🍄','camp-supplies':'🧰',provisions:'🥖','daily-consumables':'🧼',furniture:'🪑',blueprints:'📜',unknown:'❔'};
+  const [materialFilter,setMaterialFilter]=useState('all');
   useEffect(()=>{if(!open)return;const previous=document.activeElement as HTMLElement|null;panel.current?.focus();return()=>previous?.focus?.({preventScroll:true});},[open]);
   useEffect(()=>{if(!open)return;const key=(event:KeyboardEvent)=>{if(event.key==='Escape'&&!event.defaultPrevented){event.preventDefault();closeRef.current();}};window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);},[open]);
-  const items = view.items.filter(i => category === 'all' || i.category === category);
+  const items = view.items.filter(i => materialFilter === 'all' || i.category === materialFilter);
   const selected = items.find(i=>i.key===selectedKey) ?? items[0];
   if(!open)return null;
-  const materialTab=!['carrying','furniture','blueprints','wardrobe'].includes(category);
+  const materialTab=category==='all';
   return <aside ref={panel} tabIndex={-1} role="dialog" aria-modal="false" className={`warehouse-dialog warehouse-dock${dragging?' is-dragging':''}`} aria-labelledby="warehouse-title" data-transfer-target="warehouse">
-    <header className="warehouse-heading"><div><h2 id="warehouse-title">仓库</h2><p>{view.occupiedKinds} 类物品 · 合计 {view.total} 份</p></div><button aria-label="关闭仓库" onClick={onClose}>×</button></header>
-    <div className="warehouse-carry-summary">{carrySummary}</div>
+    <header className="warehouse-heading"><div><h2 id="warehouse-title">物品</h2></div><button aria-label="关闭仓库" onClick={onClose}>×</button></header>
+    {category==='carrying'&&<div className="warehouse-carry-summary">{carrySummary}</div>}
     <nav className="warehouse-categories" aria-label="仓库分类">
-      {[{id:'carrying',name:'随身'},{id:'all',name:'营地材料'},...view.categories,{id:'furniture',name:'家具'},{id:'blueprints',name:'图纸'},{id:'wardrobe',name:'穿戴'},...(view.items.some(i=>!i.recognized)?[{id:'unknown',name:'待识别'}]:[])].map(({id,name})=><button key={id} title={name} aria-label={name} aria-pressed={category===id} onClick={()=>setCategory(id)}><span className="warehouse-tab-icon" aria-hidden="true">{tabIcon[id]??"▦"}</span><span className="warehouse-tab-caption">{name}</span></button>)}
+      {[{id:'carrying',name:'随身'},{id:'all',name:'营地材料'},{id:'furniture',name:'家具'},{id:'blueprints',name:'图纸'},{id:'wardrobe',name:'穿戴'}].map(({id,name})=><button key={id} aria-label={name} aria-pressed={category===id} onClick={()=>setCategory(id)}>{id==='all'?'营地':name}</button>)}
     </nav>
-    {materialTab&&<div className="warehouse-context"><span>木料堆 {woodcraft.count} / {WOODCRAFT.maxPieces}</span><button className="context-button" onClick={woodcraft.near?onFocus:onApproach}>{woodcraft.near?'看向木料堆':'走近木料堆'}</button></div>}
+    {materialTab&&<label className="material-filter">分类<select aria-label="材料分类" value={materialFilter} onChange={e=>setMaterialFilter(e.target.value)}><option value="all">全部材料</option>{view.categories.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}{view.items.some(i=>!i.recognized)&&<option value="unknown">待识别</option>}</select></label>}
+    {materialTab&&(materialFilter==='all'||materialFilter==='wood')&&<div className="warehouse-context"><span>木料堆 {woodcraft.count} / {WOODCRAFT.maxPieces}</span><button className="context-button" onClick={woodcraft.near?onFocus:onApproach}>{woodcraft.near?'看向木料堆':'走近木料堆'}</button></div>}
     <div className="warehouse-scroll">
     {materialTab&&<><div className="warehouse-content">
       <div className="warehouse-grid" role="group" aria-label="仓库物品">
@@ -51,10 +52,9 @@ export function Warehouse({open,view,woodcraft,onClose,onApproach,onFocus,onThro
         </details>}
       </section>}
     </div>
-    <section className="warehouse-nearby" aria-label="附近的木料">
-      <h3>地上的木料 <small>{woodcraft.count} / {WOODCRAFT.maxPieces}</small></h3>
+    <details className="warehouse-nearby"><summary>地上的木料 · {woodcraft.count}</summary>
       {woodcraft.near?<><div className="nearby-wood-grid">{woodcraft.items.map(item=><div className="nearby-wood-card" key={item.id}><button className="is-draggable" onPointerDown={event=>onDragStart(event,{kind:'loose-wood',id:item.id,name:item.name})} aria-label={`拖回${item.name} ${item.id}`}><ItemSymbol symbol="wood"/><span>{item.name}</span><small>#{item.id.split('-').at(-1)}</small></button><button className="context-button" onClick={()=>onCollect(item.id)}>收回</button></div>)}</div>{!woodcraft.items.length&&<p>这里还没有木料。从仓库拖一根进去试试。</p>}</>:<p>远处可以查看库存，走近后取放木料。</p>}
-    </section></>}
+    </details></>}
     {category==='carrying'&&carrying}
     {category==='furniture'&&furniture}
     {category==='blueprints'&&blueprints}

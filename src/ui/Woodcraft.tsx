@@ -11,18 +11,16 @@ export function WoodcraftControls({selected,view,message,disabled,onOpen,onWareh
   return <section className="woodcraft-controls" aria-label="营地木料堆操作">
     <p>库存可搬 {view.available} 根 · 木料区 {view.count}/{WOODCRAFT.maxPieces}{view.queued?` · 还有 ${view.queued} 根待放下`:''}</p>
     {!view.near&&<button className="context-button" disabled={disabled} onClick={onOpen}>走近木料堆</button>}
-    {view.loading&&<p role="status">正在准备物理模块，尚未扣除材料。</p>}
-    {view.error&&<><p role="alert">物理模块暂不可用，材料仍然保留。</p><button className="context-button" disabled={disabled} onClick={onOpen}>重试</button></>}
+    {view.loading&&<p role="status">正在准备木料堆…</p>}
+    {view.error&&<><p role="alert">木料堆暂不可用，请重试。</p><button className="context-button" disabled={disabled} onClick={onOpen}>重试</button></>}
     {view.near&&<div className="woodcraft-buttons">
-      <button className="context-button" disabled={disabled} onClick={onWarehouse}>打开仓库 · 拖拽取放</button>
-      <button className="context-button" disabled={disabled||!view.near||!view.ready||view.available<2||view.count>=WOODCRAFT.maxPieces-1} onClick={onPrepare}>搬入木料，留一根</button>
-      <button className="context-button" disabled={disabled||!view.near||!view.ready||!view.available||view.count>=WOODCRAFT.maxPieces||view.queued>0} onClick={onThrow}>拿一根 · 点击投放</button>
+      <button className="context-button" disabled={disabled} onClick={onWarehouse}>打开仓库</button>
+      <details className="context-details"><summary>批量搬入</summary><button className="context-button" disabled={disabled||!view.near||!view.ready||view.available<2||view.count>=WOODCRAFT.maxPieces-1} onClick={onPrepare}>搬入木料，留一根</button></details>
+      <button className="context-button" disabled={disabled||!view.near||!view.ready||!view.available||view.count>=WOODCRAFT.maxPieces||view.queued>0} onClick={onThrow}>放下一根</button>
       {selected!==WOODCRAFT.id&&<button className="context-button" disabled={disabled||!view.near||!view.ready} onClick={()=>onCollect(selected!)}>收回这根木料</button>}
     </div>}
     {view.near&&!view.available&&<p>仓库里没有可搬的原木或枝杈。</p>}
     {view.near&&view.count>=WOODCRAFT.maxPieces&&<p>木料堆已满，先收回几根再放。</p>}
-    <button className="context-button" onClick={onClose}>回到行走</button>
-    <p className="action-message" role="status">{message}</p>
   </section>;
 }
 export function WoodDropControls({active,onCancel}:{active:boolean;onCancel:()=>void}) {

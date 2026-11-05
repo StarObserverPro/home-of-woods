@@ -8,10 +8,11 @@ export function EveningControls({view,disabled,onContinue,onSleep,onReturnToCamp
   view:CycleView;disabled:boolean;onContinue:()=>void;onSleep:()=>void;onReturnToCamp:()=>void;
 }){
   const night=view.hour>=18||view.hour<6;
+  if(!night&&!view.eveningStopped)return null;
   return <div className="evening-clock" aria-label="晚间与休息">
     {view.eveningStopped&&<div className="evening-arrival" role="status">
-      <strong>18:00 · 晚饭时间</strong><span>沙漏已停，可以先做饭、吃饭或看故事。</span>
-      <button disabled={disabled} onClick={onContinue}>继续今晚 1×</button>
+      <strong>18:00 · 晚饭时间</strong><span>沙漏已停。</span>
+      <button disabled={disabled} onClick={onContinue}>继续时间</button>
     </div>}
     <button className="evening-sleep" disabled={disabled||!night||(view.nearCamp&&!view.canSleep)} title={view.nearCamp?(view.sleepReason||'睡到下一次日出'):'沿现有小路返回帐篷'} onClick={view.nearCamp?onSleep:onReturnToCamp}>
       <span aria-hidden="true">☾</span> {view.nearCamp?'结束一天':'回帐篷'}
@@ -39,7 +40,7 @@ export function ForestReader({day,seed,onClose}:{day:number;seed:number;onClose:
         <button disabled={page===0} onClick={()=>setPage(v=>Math.max(0,v-1))}>上一页</button>
         <button onClick={advance}>{page+1===story.pages.length?'换一个故事':'下一页'}</button>
       </nav>
-      <p className="forest-reader-hint">人物在篝火边歇息，阅读期间世界时间暂停。故事来自本地文库，无需联网。</p>
+      <p className="forest-reader-hint">阅读时暂停时间。</p>
       <button className="forest-reader-close" onClick={onClose}>合上书，继续活动</button>
     </section>
   </div>;

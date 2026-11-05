@@ -53,3 +53,12 @@ test('fixed-step simulation and a later due-time audit settle the same committed
   b.time=6;advanceForestry(b,byId);
   assert.deepEqual(a.forestry,b.forestry);
 });
+
+test('HUD distance remains independent of exhausted harvest eligibility',()=>{
+  const s=nearState();s.forestry.ledger.used=FORESTRY.basePoints;
+  const near=forestrySnapshot(s,byId).selectedTree!;
+  assert.equal(near.near,true);assert.equal(near.canChop,false);
+  s.player.x+=20;
+  const far=forestrySnapshot(s,byId).selectedTree!;
+  assert.equal(far.near,false);assert.equal(far.canChop,false);assert.equal(far.canApproach,true);
+});
