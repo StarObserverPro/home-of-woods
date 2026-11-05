@@ -34,10 +34,9 @@ export function createWardrobeVisual(resources:Resources,body:THREE.Object3D){
   }
   chest.add(backpack);appearance.set('player:back',backpack);
 
-  const gloves=new THREE.Group();gloves.name='starter-work-gloves';
   for(const anchor of [left,right]){
     const mitten=mesh('gloves',()=>new THREE.BoxGeometry(.105,.10,.145),'#a59069');mitten.position.y=-.025;
-    anchor.add(mitten);gloves.add(new THREE.Object3D()); // group is a visibility controller; see toggling below
+    anchor.add(mitten);
     appearance.set(anchor===left?'player:hands-left':'player:hands-right',mitten);
   }
   const scarf=new THREE.Group();scarf.name='starter-linen-scarf';
@@ -46,18 +45,21 @@ export function createWardrobeVisual(resources:Resources,body:THREE.Object3D){
   scarf.add(knot,fall);chest.add(scarf);appearance.set('player:neck',scarf);
 
   // Starter visuals are keyed by the equipped item definition, not by the occupied slot alone.
-  let previous='';
+  let previous:string|null=null;
   function update(inventory:InventoryState){
-    const worn=(inventory.instances??[]).filter(item=>item.location.kind==='mounted'&&item.location.hostId==='player');
-    const signature=worn.map(item=>item.instanceId+':'+item.definitionId+':'+item.location.slotId).sort().join('|');
+    const worn=new Map<string,string>();
+    for(const item of inventory.instances??[]){
+      if(item.location.kind==='mounted'&&item.location.hostId==='player')worn.set(item.location.slotId,item.definitionId);
+    }
+    const signature=[...worn.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([slot,id])=>slot+':'+id).join('|');
     if(signature===previous)return;previous=signature;
-    const owned=new Map(worn.map(item=>[item.location.slotId,item.definitionId]));
+    const owned=worn;
     for(const item of STARTER_WEAR){
       const visible=owned.get(item.slotId)===item.definitionId;
       if(item.slotId==='player:hands'){
         appearance.get('player:hands-left')!.visible=visible;
         appearance.get('player:hands-right')!.visible=visible;
-      }else appearance.get(item.slotId) && (appearance.get(item.slotId)!.visible=visible);
+      }else { const model=appearance.get(item.slotId);if(model)model.visible=visible; }
     }
   }
   return {update,dispose(){

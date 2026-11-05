@@ -127,3 +127,7 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 
 
 2026-11-03「家宅平安」第一批外部装配件由 `src/scene/camp-exteriors.ts` 使用本仓库原创低多边形几何生成（帐篷布面局部复用已登记 `tent.glb` 网格）；不接入外部资产、下载或贴图，不冒标 CC0。新建几何和材质均由 `Resources` 释放，只有顶层 12 个部件状态属于既有营地设施，来源/装配范围见 [家宅平安](CAMP_EXTERIORS.md)。
+
+## HOW-WARDROBE-1（2026-11-04，基础实现候选）
+
+本分支未下载、复制或重贴图库外服装资产；`src/scene/wardrobe-visual.ts` 为新编写的基础程序几何（软檐帽、背包、手套、领巾），依附现有 KayKit 23 骨 `head/chest/handslotl/handslotr`，共享几何材质由 `Resources` 回收。`src/content/wardrobe.ts` 的 78 条为设计版型清单（`design-only`、`meshAssetId=null`），**不是 78 个已可使用的源 GLB**。现有单蒙皮角色的衣裤鞋及腰带尚未独立换网格；不能将该阶段列为整套换装美术验收。后续来源、适配和准入见 [玩家衣柜基础](PLAYER_WARDROBE.md)。
