@@ -18,7 +18,7 @@ export function workshopDetails(selected:string|null,view:WorkshopSnapshot){
   return item?{title:findBlueprint(item.blueprintId)?.name??'待识别家具',tag:`${itemRarity(item).name} · 已摆放的木作`,detail:itemProperties(item).traits.map(t=>`${traitLabel(t.id)} ${t.value}`).join(' · ')}:null;
 }
 export function Hourglass({view,onSpeed,disabled}:{view:WorkshopSnapshot;onSpeed:(s:ClockSpeed)=>void;disabled:boolean}){
-  return <div className="hourglass" role="group" aria-label="本地沙漏"><span aria-hidden="true">⌛</span>{CLOCK_SPEEDS.map(s=><button key={s} disabled={disabled} aria-pressed={view.speed===s} aria-label={`沙漏 ${s} 倍速`} onClick={()=>onSpeed(s)}>{s}×</button>)}</div>;
+  return <div className="hourglass" role="group" aria-label="本地沙漏"><span aria-hidden="true">⌛</span>{CLOCK_SPEEDS.map(s=><button key={s} disabled={disabled} aria-pressed={view.speed===s} aria-label={s===0?'停住沙漏':`沙漏 ${s} 倍速`} onClick={()=>onSpeed(s)}>{s===0?'停':`${s}×`}</button>)}</div>;
 }
 export function WorkshopControls({selected,view,access,message,disabled,onOffer,onCraft,onTrade,onSupply,onApproach,onCancel,onPlace,onPack}:{selected:string|null;view:WorkshopSnapshot;access:InteractionAccess|null;message:string;disabled:boolean;onOffer:()=>void;onCraft:(id:string)=>void;onTrade:(id:string)=>void;onSupply:(id:string)=>void;onApproach:()=>void;onCancel:()=>void;onPlace:(id:string)=>void;onPack:(id:string)=>void}){
   const altar=['grove-altar','grove-altar:oracle'].includes(selected??''),bench=selected===WORKBENCH.id,merchant=selected===CAMP_VISITOR.id,item=view.items.find(i=>i.instanceId===selected);
