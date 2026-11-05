@@ -80,7 +80,7 @@ test('starter overlays use named bones and hide instantly when independently une
   const visual=createWardrobeVisual(resources,body);
   const hats=body.getObjectByName('starter-soft-cap')!;
   const pack=body.getObjectByName('starter-small-pack')!;
-  let s=createState();
+  let s=createStarterState();
   visual.update(s.inventory);
   assert.equal(hats.visible,true);
   assert.equal(pack.visible,true);
