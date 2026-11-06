@@ -1,10 +1,21 @@
 import {unpackFoodSack} from '../domain/food.ts';
+import {housingSnapshot,learnHousingBlueprint,beginHousingCraft,mountHousingItem,detachHousingItem,ringHousingBell,safeBenchReadingSpot,safeDiningReadingSpot,seatingColliders} from '../domain/housing.ts';
+import {isHousingBlueprint} from '../content/housing.ts';
+import {WORKBENCH_BRACING} from '../content/workshop-series.ts';
+import {guidedWorkshopSnapshot,learnWorkshopPlan,beginGuidedCraft,setGuidedCraftDimensions,adjustGuidedPart,submitGuidedPart,finishGuidedCraft,cancelGuidedCraft} from '../domain/workshop-guided.ts';
+import type {GuidedPartAdjustment} from '../domain/workshop-guided.ts';
+import {potFoundationSnapshot,learnPotFoundation} from '../domain/pot-foundation.ts';
+import {mealVesselsSnapshot,learnMealVessel,beginMealVesselCraft} from '../domain/meal-vessels.ts';
+import {broomSnapshot,learnBroomBlueprint,beginBroomCraft,approachBroomPatch,useBroom} from '../domain/broom.ts';
+import {itemOracleSnapshot,beginItemOracle} from '../domain/item-oracle.ts';
 import {wardrobeSnapshot,changeWardrobe} from '../domain/wardrobe.ts';
 import type {WardrobeView,WardrobeIntent} from '../domain/wardrobe.ts';
 import {currentLoad,carryingSnapshot,changeCarrying,approachGround} from '../domain/carrying.ts';
 import type {CarryingSnapshot,CarryIntent} from '../domain/carrying.ts';
 import { createWildlife, advanceWildlife, validateWildlifeRegistry, wildlifeViews } from '../domain/wildlife.ts';
 import type {RarityVfxMode} from '../content/item-vfx.ts';
+import {isWhimsyMode} from '../content/whimsy-display.ts';
+import type {WhimsyMode} from '../content/whimsy-display.ts';
 import {createWoodcraftSession} from './woodcraft-session.ts';
 import type {WoodcraftSnapshot} from './woodcraft-session.ts';
 import {WOODCRAFT} from '../content/woodcraft.ts';
@@ -17,11 +28,12 @@ import {merchantSnapshot,exchangeMerchant} from '../domain/merchant.ts';
 import type {MerchantOrder,MerchantSnapshot} from '../domain/merchant.ts';
 import type {WorkshopSnapshot} from '../domain/workshop.ts';
 import {CLOCK_SPEEDS} from '../domain/local-clock.ts';
-import {advanceToEveningStop,sleepUntilSunrise,dayCycleSnapshot} from '../domain/day-cycle.ts';
-import {advanceFood,foodSnapshot,startDryMushrooms,startMushroomSoup,eatMushroomSoup,eatBlackBread} from '../domain/food.ts';
+import {advanceToEveningStop,sleepUntilSunrise,dayCycleSnapshot,readingReason,campExitPoint} from '../domain/day-cycle.ts';
+import {advanceFood,foodSnapshot,startDryMushrooms,startMushroomSoup,startGrainPorridge,consumeMeal} from '../domain/food.ts';
+import {FOOD_SOUP_ITEM_ID,FOOD_PORRIDGE_ITEM_ID} from '../content/food.ts';
 import type {FoodGrain} from '../content/food.ts';
 import type {ClockSpeed} from '../domain/local-clock.ts';
-import {workstationColliders,furnitureColliders,placementReason,placeFurniture,packFurniture} from '../domain/furniture-placement.ts';
+import {workstationColliders,furnitureColliders,placementReason,placeFurniture,packFurniture,suggestFurniturePlacement} from '../domain/furniture-placement.ts';
 import type {PlacementDraft} from '../domain/furniture-placement.ts';
 import {CAMP_VISITOR} from '../content/characters.ts';
 import type {WardrobeLook} from '../content/wardrobe-preview.ts';
@@ -41,7 +53,7 @@ import { createLoop } from "./runtime-loop.ts";
 import { RUNTIME_MODELS } from '../content/assets.ts';
 import { START,TENT } from '../content/world.ts';
 import { createGatheringRegistry } from '../domain/gathering-registry.ts';
-import { interactionRoute, gatheringBusy, synchronizeGatheringHosts } from '../domain/gathering.ts';
+import { gatheringBusy, synchronizeGatheringHosts } from '../domain/gathering.ts';
 import { gatheringSnapshot } from '../domain/gathering-view.ts';
 import type { GatheringSnapshot } from '../domain/gathering-view.ts';
 import { cancelPlayerAction, startPlayerChop, startPlayerGather, advancePlayerGather } from './player-actions.ts';
@@ -63,6 +75,13 @@ export type Snapshot = {
   merchant:MerchantSnapshot;
   food:ReturnType<typeof foodSnapshot>;
   dayCycle:ReturnType<typeof dayCycleSnapshot>;
+  housing:ReturnType<typeof housingSnapshot>;
+  guidedWorkshop:ReturnType<typeof guidedWorkshopSnapshot>;
+  potFoundation:ReturnType<typeof potFoundationSnapshot>;
+  mealVessels:ReturnType<typeof mealVesselsSnapshot>;
+  broom:ReturnType<typeof broomSnapshot>;
+  itemOracle:ReturnType<typeof itemOracleSnapshot>;
+  life:{mealPlaying:boolean;broomPlaying:boolean};
   placement:PlacementDraft|null;
   zone: string;
   x: number;
@@ -87,6 +106,7 @@ export async function createRuntime(
   initialState?:GameState,
   saveOwner?: SaveController,
   initialRarityVfxMode:RarityVfxMode = 'full',
+  initialWhimsyMode:WhimsyMode = 'full',
 ) {
   const trees = makeTrees(),
     treeById=new Map(trees.map(t=>[t.id,t])),
@@ -97,7 +117,8 @@ export async function createRuntime(
   const savedState = await persistence.load();
   const state = initialState ?? savedState ?? createStarterState(trees);
   validateWorldSession(state, saveContext);
-  for (const source of registry.sources.values()) if (!interactionRoute({ player: { ...START, facing: 0, moving: false } }, source, registry, colliders).reachable) throw new Error(`Unreachable source: ${source.sourceId}`);
+  // Source registration is validated above; compute navigation when the player
+  // chooses an action instead of synchronously auditing every source on startup.
   synchronizeGatheringHosts(state, registry);
   validateWildlifeRegistry(RUNTIME_MODELS.map(a => a.assetId));
   let message = "沿着小路，认识你的新家。",
@@ -109,12 +130,19 @@ export async function createRuntime(
     accumulator = 0,
     reportTime = 0;
   let placement:PlacementDraft|null=null;
+  let reading=false;
   let captureAt:number|null=null;
   const keys = new Set<string>(),
     stick = { x: 0, z: 0 };
   const woodcraft=createWoodcraftSession(state,m=>{message=m;});
   if(state.selected===WOODCRAFT.id||state.woodcraft.pieces.some(p=>p.id===state.selected))woodcraft.activate();
-  const activeColliders=()=>[...((state.workshop.upgrades[CAMP_PROPS.dryer.id]?.level??0)>0?[{id:CAMP_PROPS.dryer.id,x:CAMP_PROPS.dryer.x,z:CAMP_PROPS.dryer.z,radius:.95}]:[]),{id:WOODCRAFT.id,x:WOODCRAFT.x,z:WOODCRAFT.z,halfX:WOODCRAFT.halfX+.2,halfZ:WOODCRAFT.halfZ+.2},...forestryColliders(colliders,treeById,state.forestry,state.time),...workstationColliders(),...furnitureColliders(state)];
+  const activeColliders=()=>[...((state.workshop.upgrades[CAMP_PROPS.dryer.id]?.level??0)>0?[{id:CAMP_PROPS.dryer.id,x:CAMP_PROPS.dryer.x,z:CAMP_PROPS.dryer.z,radius:.95}]:[]),{id:WOODCRAFT.id,x:WOODCRAFT.x,z:WOODCRAFT.z,halfX:WOODCRAFT.halfX+.2,halfZ:WOODCRAFT.halfZ+.2},...forestryColliders(colliders,treeById,state.forestry,state.time),...workstationColliders(),...furnitureColliders(state),...seatingColliders()];
+  // Recover this prototype's previous waking point if it left the player inside
+  // the tent collision. Preserve the earned world, clock and all inventories.
+  if(state.dayCycle.wokeAt!==null&&Math.hypot(state.player.x-TENT.x,state.player.z-TENT.z)<8&&!canStand(state.player,activeColliders())){
+    const exit=campExitPoint(activeColliders());
+    if(exit){state.player={...state.player,...exit,moving:false};state.route=[];message='已经走到帐篷出口，可以继续探索。';}
+  }
   const navigate = (p: Point) => {
     woodcraft.cancelDrop();view.setWoodcraftDrop(false);view.inspectScene(null);
     const cancelled=cancelPlayerAction(state);if(cancelled)message=cancelled;
@@ -141,6 +169,7 @@ export async function createRuntime(
     }
   }, registry);
   view.setRarityVfxMode(initialRarityVfxMode);
+  view.setWhimsyMode(initialWhimsyMode);
   const synchronizeWildlife = () => {
     state.wildlife ??= createWildlife(state.time);
     advanceWildlife(state.wildlife, state.time, state.seed, state.player, activeColliders(), view.wildlifeAvailable(), view.wildlifeObserved());
@@ -251,6 +280,7 @@ export async function createRuntime(
     const sceneStats=view.stats();
     return {
       ...sceneStats,
+      presentations:{broom:sceneStats.broom,life:sceneStats.life},
       rarityVfx:sceneStats.workshop.surfaces,
       physics:woodcraft.stats(),
       loop: loop.stats(),
@@ -273,6 +303,13 @@ export async function createRuntime(
       merchant:merchantSnapshot(state),
       food:foodSnapshot(state),
       dayCycle:dayCycleSnapshot(state),
+      housing:housingSnapshot(state),
+      guidedWorkshop:guidedWorkshopSnapshot(state),
+      potFoundation:potFoundationSnapshot(state),
+      mealVessels:mealVesselsSnapshot(state),
+      broom:broomSnapshot(state,activeColliders()),
+      itemOracle:itemOracleSnapshot(state),
+      life:{mealPlaying:view.isMealPlaying(),broomPlaying:view.isBroomPlaying()},
       placement:placement?structuredClone(placement):null,
       save: persistence.status(),
       appearance:view.getAppearance(),
@@ -303,6 +340,13 @@ export async function createRuntime(
       merchant:merchantSnapshot(state),
       food:foodSnapshot(state),
       dayCycle:dayCycleSnapshot(state),
+      housing:housingSnapshot(state),
+      guidedWorkshop:guidedWorkshopSnapshot(state),
+      potFoundation:potFoundationSnapshot(state),
+      mealVessels:mealVesselsSnapshot(state),
+      broom:broomSnapshot(state,activeColliders()),
+      itemOracle:itemOracleSnapshot(state),
+      life:{mealPlaying:view.isMealPlaying(),broomPlaying:view.isBroomPlaying()},
       placement:placement?structuredClone(placement):null,
       save: persistence.status(),
       appearance:view.getAppearance(),
@@ -388,6 +432,18 @@ export async function createRuntime(
   view.canvas.addEventListener("webglcontextrestored", restored);
   view.render(state, 0);
   const blocked=()=>destroyed||manualPause||interfaceOpen||inspectionOpen||contextLost||document.hidden;
+  const prepareDiningSeat=()=>{
+    const access=safeDiningReadingSpot(state,activeColliders());
+    if(access.code==='ready')return true;
+    message=access.code==='approach'?approachInteraction(state,CAMP_PROPS.fire.id,activeColliders(),'sit'):access.reason;
+    publishSnapshot();return false;
+  };
+  const performMeal=(itemId:string,bowlId?:string)=>{
+    if(blocked()||placement||view.isMealPlaying()||!prepareDiningSeat())return;
+    const result=consumeMeal(state,itemId,bowlId);message=result.message;
+    if(result.ok&&result.committed){state.route=[];state.player.moving=false;view.presentMeal(result.committed.kind,result.committed);}
+    view.render(state,0);publishSnapshot();
+  };
   const transferBlocked=()=>destroyed||manualPause||inspectionOpen||contextLost||document.hidden||!!placement||workshopBusy(state)||!!state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state);
   const itemTransfers=createItemTransfers(state,woodcraft,view,activeColliders,transferBlocked);
   const clearPlacement=()=>{placement=null;view.setPlacement(null);};
@@ -424,14 +480,18 @@ export async function createRuntime(
     setClockSpeed(speed:ClockSpeed){if(blocked()||!CLOCK_SPEEDS.includes(speed))return;state.clock={speed};publishSnapshot();},
     returnToTent(){
       if(blocked()||placement)return;
-      navigate({x:TENT.x+3.8,z:TENT.z+4.5});
+      const exit=campExitPoint(activeColliders());
+      if(!exit){message='帐篷门前暂时没有可走的出口，请先挪开附近家具。';publishSnapshot();return;}
+      navigate(exit);
       publishSnapshot();
     },
     sleepToDawn(){
       if(blocked()||placement||woodcraft.isDropping())return;
+      if(view.isMealPlaying()){message='先慢慢吃完这一口，再结束一天。';publishSnapshot();return;}
       const count=state.dayCycle.nightsSlept;
-      message=sleepUntilSunrise(state);
+      message=sleepUntilSunrise(state,activeColliders());
       if(state.dayCycle.nightsSlept!==count){
+        view.cancelBroom();
         keys.clear();stick.x=stick.z=0;
         const foodMessage=advanceFood(state);if(foodMessage)message+=' '+foodMessage;
         const forestryMessage=advanceForestry(state,treeById);if(forestryMessage)message+=' '+forestryMessage;
@@ -441,28 +501,61 @@ export async function createRuntime(
       }
       view.render(state,0);publishSnapshot();
     },
-    setReading(value:boolean){
-      if(destroyed||contextLost)return;
-      if(value&&(manualPause||inspectionOpen||woodcraft.isDropping()))return;
-      view.setReading(value);view.render(state,0);publishSnapshot();
+    setReading(value:boolean,seatId?:string):boolean{
+      if(destroyed||contextLost)return false;
+      if(value){
+        if(reading)return true;
+        if(manualPause||inspectionOpen||interfaceOpen||woodcraft.isDropping()||placement){message='先放下手头的活，再坐下来。';publishSnapshot();return false;}
+        const access=seatId?safeBenchReadingSpot(state,seatId,activeColliders()):safeDiningReadingSpot(state,activeColliders());
+        if(access.code==='approach'){message=approachInteraction(state,seatId??CAMP_PROPS.fire.id,activeColliders(),'sit');publishSnapshot();return false;}
+        const seatItem=seatId?state.inventory.instances?.find(i=>i.instanceId===seatId):null;
+        const reason=access.reason||(seatId?(access.spot&&seatItem?.location.kind==='world'?readingReason(state,seatItem.location):'先把长凳摆好，再坐下来。'):readingReason(state));
+        if(reason||!access.spot){message=reason||'这里暂时不适合坐下。';publishSnapshot();return false;}
+        state.route=[];state.player.moving=false;keys.clear();stick.x=stick.z=0;
+        reading=true;view.setReading(true,access.spot.seat);
+      }else if(reading){reading=false;view.setReading(false);}
+      view.render(state,0);publishSnapshot();return true;
     },
     offer(){if(blocked()||placement)return;message=beginWorkshop(state,'offering',activeColliders());publishSnapshot();},
-    craft(id:string){if(blocked()||placement)return;message=beginWorkshop(state,'craft',activeColliders(),id);publishSnapshot();},
+    learnHousing(id:string){if(blocked()||placement)return;message=learnHousingBlueprint(state,id);publishSnapshot();},
+    learnWorkshopPlan(id:string){if(blocked()||placement)return;message=learnWorkshopPlan(state,id);publishSnapshot();},
+    learnPotFoundation(id:string){if(blocked()||placement)return;message=learnPotFoundation(state,id);publishSnapshot();},
+    learnMealVessel(id:string){if(blocked()||placement)return;message=learnMealVessel(state,id);publishSnapshot();},
+    craftMealVessel(id:string){if(blocked()||placement)return;message=beginMealVesselCraft(state,id,activeColliders());if(state.workshop.job&&state.clock.speed===0)state.clock={speed:1};view.render(state,0);publishSnapshot();},
+    learnBroom(){if(blocked()||placement)return;message=learnBroomBlueprint(state);publishSnapshot();},
+    craftBroom(mark:boolean){if(blocked()||placement)return;message=beginBroomCraft(state,{mark:mark?'leaf':null});if(state.workshop.job&&state.clock.speed===0)state.clock={speed:1};view.render(state,0);publishSnapshot();},
+    approachBroomPatch(patchId:string){if(blocked()||placement||view.isBroomPlaying())return;message=approachBroomPatch(state,patchId,activeColliders());publishSnapshot();},
+    sweepBroom(id:string,patchId:string){if(blocked()||placement||view.isBroomPlaying()||view.isMealPlaying())return;const result=useBroom(state,id,patchId,activeColliders());message=result.message;if(result.ok&&result.event)view.presentBroom(result.event);view.render(state,0);publishSnapshot();},
+    offerItemOracle(id:string,riteId:string){if(blocked()||placement)return;message=beginItemOracle(state,id,riteId);if(state.workshop.job&&state.clock.speed===0)state.clock={speed:1};view.render(state,0);publishSnapshot();},
+    braceWorkbench(){if(blocked()||placement)return;message=beginUpgrade(state,WORKBENCH_BRACING.id);if(state.workshop.job&&state.clock.speed===0)state.clock={speed:1};publishSnapshot();},
+    beginGuidedCraft(id:string,parameters:Readonly<Record<string,unknown>>={}){if(blocked()||placement)return;message=beginGuidedCraft(state,id,parameters);if(state.workshop.job&&state.clock.speed===0)state.clock={speed:1};view.render(state,0);publishSnapshot();},
+    setGuidedCraftDimensions(parameters:Readonly<Record<string,unknown>>){if(blocked()||placement)return;message=setGuidedCraftDimensions(state,parameters);view.render(state,0);publishSnapshot();},
+    adjustGuidedPart(action:GuidedPartAdjustment){if(blocked()||placement)return;message=adjustGuidedPart(state,action);view.render(state,0);publishSnapshot();},
+    fitGuidedPart(){if(blocked()||placement)return;message=submitGuidedPart(state);view.render(state,0);publishSnapshot();},
+    finishGuidedCraft(){if(blocked()||placement)return;message=finishGuidedCraft(state);if(state.workshop.job?.assembly?.phase==='finishing'&&state.clock.speed===0)state.clock={speed:1};view.render(state,0);publishSnapshot();},
+    cancelGuidedCraft(){if(blocked()||placement)return;message=cancelGuidedCraft(state);view.render(state,0);publishSnapshot();},
+    craft(id:string){if(blocked()||placement)return;message=isHousingBlueprint(id)?beginHousingCraft(state,id,activeColliders()):beginWorkshop(state,'craft',activeColliders(),id);if(state.workshop.job&&state.clock.speed===0)state.clock={speed:1};publishSnapshot();},
+    mountHousing(id:string){if(blocked()||placement)return;message=mountHousingItem(state,id);view.render(state,0);publishSnapshot();},
+    detachHousing(id:string){if(blocked()||placement)return;message=detachHousingItem(state,id);view.render(state,0);publishSnapshot();},
+    ringHousing(id:string){if(blocked()||placement)return;message=ringHousingBell(state,id);if(message.startsWith('叮咚'))view.ringHousingBell(id);view.render(state,0);publishSnapshot();},
     trade(id:string){if(blocked()||placement)return;message=tradeBlueprint(state,id);publishSnapshot();},
     tradeSupply(id:string){if(blocked()||placement)return;message=tradeSupply(state,id);publishSnapshot();},
     merchantCheckout(order:MerchantOrder){if(blocked()||placement)return false;const result=exchangeMerchant(state,order);message=result.message;publishSnapshot();return result.ok;},
     dryMushrooms(){if(blocked()||placement)return;message=startDryMushrooms(state);view.render(state,0);publishSnapshot();},
     cookSoup(grain:FoodGrain){if(blocked()||placement)return;const before=state.food.cooking;message=startMushroomSoup(state,grain);if(!before&&state.food.cooking&&state.clock.speed===0)state.clock={speed:1};view.render(state,0);publishSnapshot();},
-    eatSoup(){if(blocked()||placement)return;message=eatMushroomSoup(state);view.render(state,0);publishSnapshot();},
+    cookPorridge(grain:FoodGrain){if(blocked()||placement)return;const before=state.food.cooking;message=startGrainPorridge(state,grain);if(!before&&state.food.cooking&&state.clock.speed===0)state.clock={speed:1};view.render(state,0);publishSnapshot();},
+    eatSoup(bowlId?:string){performMeal(FOOD_SOUP_ITEM_ID,bowlId);},
+    eatPorridge(bowlId?:string){performMeal(FOOD_PORRIDGE_ITEM_ID,bowlId);},
     unpackFoodSack(){if(blocked()||placement)return;message=unpackFoodSack(state);view.render(state,0);publishSnapshot();},
-    eatBread(){if(blocked()||placement)return;message=eatBlackBread(state);view.render(state,0);publishSnapshot();},
+    eatBread(){performMeal('food-black-bread');},
     approachMerchant(){if(blocked()||placement)return;cancelPlayerAction(state);state.selected=CAMP_VISITOR.id;
       const target={x:CAMP_VISITOR.x+2,z:CAMP_VISITOR.z+1};
       if(Math.hypot(state.player.x-CAMP_VISITOR.x,state.player.z-CAMP_VISITOR.z)<=3)message='已经在行商身边，可以交换图纸。';
       else{state.route=findPath(state.player,target,activeColliders());message=state.route.length?'走到行商身边。':'暂时无法走到行商身边。';}publishSnapshot();},
     beginPlacement(id:string){if(blocked()||workshopBusy(state)||state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))return;
       const item=state.inventory.instances?.find(i=>i.instanceId===id);if(!item)return;
-      state.selected=null;state.route=[];keys.clear();stick.x=stick.z=0;placement={instanceId:id,point:null,rotation:item.location.kind==='world'?item.location.rotation:0,reason:''};view.setPlacement(placement);publishSnapshot();},
+      view.cancelMeal();view.cancelBroom();
+      state.selected=null;state.route=[];keys.clear();stick.x=stick.z=0;const point=suggestFurniturePlacement(state,id,activeColliders());placement={instanceId:id,point,rotation:item.location.kind==='world'?item.location.rotation:0,reason:''};view.setPlacement(placement);view.render(state,0);publishSnapshot();},
     rotatePlacement(){if(blocked()||!placement)return;placement={...placement,rotation:placement.rotation+Math.PI/4};view.setPlacement(placement);publishSnapshot();},
     cancelPlacement(){clearPlacement();publishSnapshot();},
     confirmPlacement(){if(blocked()||!placement?.point)return;const reason=placementReason(state,placement.instanceId,placement.point,activeColliders());
@@ -537,17 +630,25 @@ export async function createRuntime(
       if(source){cancelPlayerAction(state);state.selected=source.sourceId;state.route=[];publishSnapshot();}
     },
     getState:()=>state,
+    stepReviewSimulation(seconds:number){
+      if(!import.meta.env.DEV||!new URLSearchParams(window.location.search).has('inspect')||blocked()||placement||!Number.isFinite(seconds)||seconds<=0||seconds>20)return;
+      // Reuse the sole fixed-step simulation, including walking, calendar stops
+      // and ordinary transactions; no direct position or material assignments.
+      tick(seconds,performance.now());publishSnapshot();
+    },
     saveWorld: () => persistence.saveNow(state),
     exportWorldRecord: (which: 'primary' | 'backup') => persistence.exportRaw(which),
     async reloadWorld() {
       const loaded = await persistence.reload();
       if (!loaded || destroyed) return false;
+      reading=false;view.setReading(false);view.resetPresentationHistory();
       woodcraft.reset();view.setWoodcraftDrop(false);clearPlacement();delete state.wildlife;Object.assign(state, loaded);synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
       manualPause = true; keys.clear(); stick.x = stick.z = 0; syncPause(); view.render(state, 0); return true;
     },
     async restoreWorldCopy() {
       const loaded = await persistence.restoreValidCopy();
       if (!loaded || destroyed) return false;
+      reading=false;view.setReading(false);view.resetPresentationHistory();
       woodcraft.reset();view.setWoodcraftDrop(false);clearPlacement();delete state.wildlife;Object.assign(state, loaded);synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
       manualPause = true; keys.clear(); stick.x = stick.z = 0; syncPause(); view.render(state,0); return true;
     },
@@ -599,6 +700,11 @@ export async function createRuntime(
     setRarityVfxMode(mode:RarityVfxMode){
       if(destroyed)return;
       view.setRarityVfxMode(mode);
+      if(!contextLost){view.render(state,0);publishSnapshot();}
+    },
+    setWhimsyMode(mode:WhimsyMode){
+      if(destroyed||!isWhimsyMode(mode))return;
+      view.setWhimsyMode(mode);
       if(!contextLost){view.render(state,0);publishSnapshot();}
     },
     setReducedMotion(value: boolean) {

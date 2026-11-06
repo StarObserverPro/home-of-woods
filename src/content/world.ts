@@ -17,6 +17,8 @@ export const HOME = { x: -36, z: -4 };
 export const START = { x: -35, z: 2 };
 export const CABIN = { x: -31, z: -16 };
 export const TENT = { x: -44, z: 6 };
+/** Tent exit lies on a navigation grid node, outside the expanded canvas collision. */
+export const CAMP_EXIT = { x: TENT.x + 5, z: TENT.z + 4.5 };
 export const GIANT = { x: -1, z: 43 };
 const PATH_KNOTS: Point[] = [
   { x: -27, z: -70 }, { x: -22, z: -46 }, { x: -14, z: -27 },

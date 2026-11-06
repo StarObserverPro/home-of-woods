@@ -1,0 +1,1277 @@
+{
+  "batch": "HOW-UI-ART-R1",
+  "source": "Built-in imagegen; original prompts and generated sheets retained in sandbox/ui-art-r1.",
+  "rights": "AI-generated artwork. Not CC0. No third-party image inputs.",
+  "files": [
+    {
+      "id": "scrap-fuel",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/scrap-fuel-64.png",
+      "bytes": 5790,
+      "sha256": "c112955a872ec0ec3fcef63172fc5066a47c230e2b04415ec30689938d9a7426",
+      "sourceBatch": "01-materials"
+    },
+    {
+      "id": "scrap-fuel",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/scrap-fuel-128.png",
+      "bytes": 19961,
+      "sha256": "7e7e80425e54ac0f60ae314a5d832a104874c9c8a76694df3d54bce7fc457c5a",
+      "sourceBatch": "01-materials"
+    },
+    {
+      "id": "branch",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/branch-64.png",
+      "bytes": 4432,
+      "sha256": "9a2491df22ba6a1e62fc64ce4c6dcd59fdfdd759c7626231ca42cebe95d8ef6d",
+      "sourceBatch": "01-materials"
+    },
+    {
+      "id": "branch",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/branch-128.png",
+      "bytes": 15022,
+      "sha256": "4045e5e9a357ec85b6800955358a553075e7d260e0604e6ff4569546fdd00e60",
+      "sourceBatch": "01-materials"
+    },
+    {
+      "id": "wood-log",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/wood-log-64.png",
+      "bytes": 6053,
+      "sha256": "91d8ee172978aa00c635201ea43f8af0f2333b14416ab485776dda6eceeebf23",
+      "sourceBatch": "01-materials"
+    },
+    {
+      "id": "wood-log",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/wood-log-128.png",
+      "bytes": 20832,
+      "sha256": "6fd2e02d38756fec902d382f1f3891be67df97a363671b8db637d418654a034e",
+      "sourceBatch": "01-materials"
+    },
+    {
+      "id": "small-wood",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/small-wood-64.png",
+      "bytes": 6499,
+      "sha256": "b88b6d3233df2599e2fca685ea8cfbad27544f4b393e021c22a22e314a222943",
+      "sourceBatch": "01-materials"
+    },
+    {
+      "id": "small-wood",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/small-wood-128.png",
+      "bytes": 23083,
+      "sha256": "2568f76cf28065ca164fe6eecfe5bd724af6c6a0919ff3ea3e942852a1018a1f",
+      "sourceBatch": "01-materials"
+    },
+    {
+      "id": "canvas-roll",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/canvas-roll-64.png",
+      "bytes": 6226,
+      "sha256": "134cd0778f17c97b3c8d51e7f0753e63830e49bb39c4a94fa2653b3fcfb3ff74",
+      "sourceBatch": "01-materials"
+    },
+    {
+      "id": "canvas-roll",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/canvas-roll-128.png",
+      "bytes": 21279,
+      "sha256": "3bfafb8e82a3c09f4c45b4c805d9914c851293a1af8d45730664b8b5485b9f9a",
+      "sourceBatch": "01-materials"
+    },
+    {
+      "id": "hardware-kit",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/hardware-kit-64.png",
+      "bytes": 7779,
+      "sha256": "16ca13ad76a79ba87b5ffa20b11d34db63a474ffa5d609a751fbd0ae43053bf4",
+      "sourceBatch": "01-materials"
+    },
+    {
+      "id": "hardware-kit",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/hardware-kit-128.png",
+      "bytes": 27294,
+      "sha256": "9d648f2c3585f9925f62f6d15b99f10982415feca7320788cd04c729ed38d7fb",
+      "sourceBatch": "01-materials"
+    },
+    {
+      "id": "copper-coins",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/copper-coins-64.png",
+      "bytes": 7429,
+      "sha256": "e08f8b0f0c146bc2a04d5b142a349be885b6115d7c34577ffb3d15e7381d597e",
+      "sourceBatch": "01-materials"
+    },
+    {
+      "id": "copper-coins",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/copper-coins-128.png",
+      "bytes": 26495,
+      "sha256": "4f1614668558144364408075f3de6ce5b8f845ecf6f2b73ddadc247740f427d9",
+      "sourceBatch": "01-materials"
+    },
+    {
+      "id": "merchant-soap",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/merchant-soap-64.png",
+      "bytes": 6725,
+      "sha256": "896f10f356164c493c1fb577dfef61df2dbdd8a2cf6e4ed13aa6209cebe89d58",
+      "sourceBatch": "01-materials"
+    },
+    {
+      "id": "merchant-soap",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/merchant-soap-128.png",
+      "bytes": 23815,
+      "sha256": "ad9cccc68e15cf47ee72129480fb1d4f39f2dcaf6f151c5d0c5386169b36ac1c",
+      "sourceBatch": "01-materials"
+    },
+    {
+      "id": "bath-salt",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/bath-salt-64.png",
+      "bytes": 7185,
+      "sha256": "7ac36d0b90a9647670bcc9e6fb348e19b83b065f22d804ac2d5ead33352dc406",
+      "sourceBatch": "01-materials"
+    },
+    {
+      "id": "bath-salt",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/bath-salt-128.png",
+      "bytes": 25754,
+      "sha256": "170381cc347ccd49745d46e1e83097c56ff3131cc65efa8a0c2123ebc1cff89a",
+      "sourceBatch": "01-materials"
+    },
+    {
+      "id": "paper-ink",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/paper-ink-64.png",
+      "bytes": 6506,
+      "sha256": "53addd85433b1358eef6bb394efd84c86eb164fa28091e456fdb974a3409c146",
+      "sourceBatch": "01-materials"
+    },
+    {
+      "id": "paper-ink",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/paper-ink-128.png",
+      "bytes": 21835,
+      "sha256": "249326eacad5a84bb5cc48f5f3100b93a592bb8c12eed60b090a05e311f964b5",
+      "sourceBatch": "01-materials"
+    },
+    {
+      "id": "mushroom",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/mushroom-64.png",
+      "bytes": 7776,
+      "sha256": "21cdbdd7fd1c10a0ceeb57969c30bb2505250f73d0524a2fae43ab302ddb0295",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "mushroom",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/mushroom-128.png",
+      "bytes": 28110,
+      "sha256": "f46e98038141479fa8f5e6759989b83d2faec24e57e2a1058059de62b42ffa39",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "dried-mushroom",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/dried-mushroom-64.png",
+      "bytes": 6656,
+      "sha256": "7a2aa8edc7ba81d110792aaf1ce9f1e1c426c371b0ac3f41cc84e68ba201accc",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "dried-mushroom",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/dried-mushroom-128.png",
+      "bytes": 24171,
+      "sha256": "925a288cda4254170bf7d0134dd2d0b4d286fa9ea8e0f3c7d0b13c0508b78b10",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "trail-rations",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/trail-rations-64.png",
+      "bytes": 7756,
+      "sha256": "db6cc63fa519df0c253d155bc3cedf2c9ed10b634afb1f5451d18ce457f874f4",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "trail-rations",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/trail-rations-128.png",
+      "bytes": 28005,
+      "sha256": "3e307d613d792e0ec808205302d06a6fa165e7255ea3ba825267f38a77813ebf",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "black-bread",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/black-bread-64.png",
+      "bytes": 6549,
+      "sha256": "0e55c1c59b94683577da75d845f9ae28f432d8387ba3f053331558fb248f996a",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "black-bread",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/black-bread-128.png",
+      "bytes": 23454,
+      "sha256": "39f7ac06e39670ea24a5e4229393528b01659a72d7bdcd977aebea8e635da9cb",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "beans",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/beans-64.png",
+      "bytes": 5886,
+      "sha256": "49df6b73c14e7ba690ed7be784399c774380fc04d12fab4065c2bfd672a5fbaf",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "beans",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/beans-128.png",
+      "bytes": 21091,
+      "sha256": "8279b3696966ab5f51d8a49574ad9237093f8c45356018b144131dfc1e63e290",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "oats",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/oats-64.png",
+      "bytes": 5828,
+      "sha256": "02305af5208b878d82564ac2e9152b12be9969ef10c83a5849412b878385cbc4",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "oats",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/oats-128.png",
+      "bytes": 19492,
+      "sha256": "5696f31b197850e1345eca782d209ec8d43e24ff4a426cd695b31c05f7d73e57",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "rice",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/rice-64.png",
+      "bytes": 7842,
+      "sha256": "39ed22411a19e532a8cd4e62f195b21ae2dadfecb30f22d2ed657b4434372066",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "rice",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/rice-128.png",
+      "bytes": 27510,
+      "sha256": "09c9f641ede6d4c8bd81fb36442f7ea77678a21295adf1f7f270fa9a4836cf49",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "cooking-salt",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/cooking-salt-64.png",
+      "bytes": 7320,
+      "sha256": "9ffbbf8f5c5bb0075091521a128881b70bb6af886fecddc0be81d59149034425",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "cooking-salt",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/cooking-salt-128.png",
+      "bytes": 25339,
+      "sha256": "884289f556f7785367fd37157f203b9e6c5d95e64c1b22f784af45bc707ab76f",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "spice",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/spice-64.png",
+      "bytes": 6545,
+      "sha256": "17dd28d771b29f3902dce070eaf56d2b34a89fb9666b4240c5d1c24f113765a5",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "spice",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/spice-128.png",
+      "bytes": 23390,
+      "sha256": "5ae791aee396a733f1542ea50b6de9743223fba71395957fdaa64da0745e8349",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "forest-soup",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/forest-soup-64.png",
+      "bytes": 7438,
+      "sha256": "aad33ab853136cffdc399cb8047fbba11ff42e1cc548820bf95a31f50a846b63",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "forest-soup",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/forest-soup-128.png",
+      "bytes": 26308,
+      "sha256": "d437a4999701bc76bdf609f4ec5805e9b62471113ec0309034caaaf87f8a971b",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "wooden-bowl",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/wooden-bowl-64.png",
+      "bytes": 6668,
+      "sha256": "e7df018404f7d66196bb653c841ba17dfb414282fde48ccb86fe90adcf4a869e",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "wooden-bowl",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/wooden-bowl-128.png",
+      "bytes": 22314,
+      "sha256": "afe6001f245e2602505ed94d0782e4703bdff67013784ac9efca82096e30aa87",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "soup-pot",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/soup-pot-64.png",
+      "bytes": 6382,
+      "sha256": "9d13eef9bd30ac3b4ad633ce3f814d9ef917bf20720ac9fe1deacc8b2ea28be7",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "soup-pot",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/soup-pot-128.png",
+      "bytes": 21482,
+      "sha256": "58efd4e9c4d0d01bb2517179501d7f6bd527f3c7d8bc87e17c6df3f6bcdd049d",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "copper-kettle",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/copper-kettle-64.png",
+      "bytes": 7119,
+      "sha256": "9a880e8e887493ec9a850b9a5a1dbd9135d6065dbb97cd33371d6f6794e4a774",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "copper-kettle",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/copper-kettle-128.png",
+      "bytes": 24490,
+      "sha256": "a75c8a33452d48387586ac61454352728126a34ad9d906e8da62635df7f306a7",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "grill",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/grill-64.png",
+      "bytes": 5109,
+      "sha256": "7a8f917ba400b916c8bc2b39a1edc5eea048861b277305d89b69b6dc5fc2cb48",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "grill",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/grill-128.png",
+      "bytes": 17415,
+      "sha256": "ef2684168564183da32f0a92532916410ce2481e2e76b7f511954bbb0cd457d1",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "smoker",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/smoker-64.png",
+      "bytes": 5829,
+      "sha256": "4d29ee81ad70b95fb8b6656af4dd250953ab16bb393de706e431f74c5dad35b9",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "smoker",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/smoker-128.png",
+      "bytes": 20002,
+      "sha256": "48597d37d394ea2c378673917eeb61d45304fc3e8922c9b4cf139dd139b7b27c",
+      "sourceBatch": "02-food"
+    },
+    {
+      "id": "work-shirt",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/work-shirt-64.png",
+      "bytes": 6105,
+      "sha256": "d77778c002229f1561e656daf53bc1eda1ee483b9b4461eb87e502653f317e2d",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "work-shirt",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/work-shirt-128.png",
+      "bytes": 21185,
+      "sha256": "4a5eaef8122a72c28303a267fd9842e667de29acf73975de0177ce80ca003adf",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "canvas-trousers",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/canvas-trousers-64.png",
+      "bytes": 6554,
+      "sha256": "9a4118c3a4fb700b0d9aa6291165d349e7a2bbff437fb624af32395893d945c3",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "canvas-trousers",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/canvas-trousers-128.png",
+      "bytes": 22861,
+      "sha256": "e10f5e21523e89a7b534d36f0757724dfc2af070e1de703bcebfde0696ebbdd9",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "trail-boots",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/trail-boots-64.png",
+      "bytes": 7064,
+      "sha256": "36cc6989b1186799edc39b8370f5702d4a3b3bffd97d4855a48723b40168e5cd",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "trail-boots",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/trail-boots-128.png",
+      "bytes": 25215,
+      "sha256": "906ff25435ca8233a4558668ad6ac24fbccc0b461106edf661bb8c4464641b03",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "soft-cap",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/soft-cap-64.png",
+      "bytes": 5189,
+      "sha256": "485cbd9396fd02c4e61662a52aa999d7449110a89d31bb00cf02b2235b6fc62e",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "soft-cap",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/soft-cap-128.png",
+      "bytes": 17481,
+      "sha256": "da711ac6c0c657c8c32ad1ebc06e1795549e182f28152e559c520fbbedacf424",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "small-pack",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/small-pack-64.png",
+      "bytes": 7983,
+      "sha256": "e15ad75906578d0d89cceb37d445493c8ca8db81bd531eb56cb910e39090c31a",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "small-pack",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/small-pack-128.png",
+      "bytes": 27489,
+      "sha256": "59d8811cdfa081f2db04e226acd913f15bf07c0477fdd34ba51b323e1b3ffa90",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "work-gloves",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/work-gloves-64.png",
+      "bytes": 6587,
+      "sha256": "cf34f0a4aa26918b8e5e86492d367263d3dbbfa17c9883d66cc0cda0c336c8a2",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "work-gloves",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/work-gloves-128.png",
+      "bytes": 22845,
+      "sha256": "70879bc93630ca659dd7bfe71881bba8b7f8d509ead2f270e4049ec8cb9154fc",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "canvas-belt",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/canvas-belt-64.png",
+      "bytes": 5438,
+      "sha256": "f4fc5987231e991319635e82be4a883eeaa926e197261c37e5d3f6e0cd8b1fcc",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "canvas-belt",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/canvas-belt-128.png",
+      "bytes": 19363,
+      "sha256": "4a2fd740fd455e1c791d01f91bdc29ca8f53386c781fe38d35af1819b0762d18",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "linen-scarf",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/linen-scarf-64.png",
+      "bytes": 6674,
+      "sha256": "845baf7a793fc622dd07864f9661b8b687d3b87c7a20d8ecbdd0a40806d420c4",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "linen-scarf",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/linen-scarf-128.png",
+      "bytes": 22521,
+      "sha256": "ab98800da782ab797f47ab0bb8a90cda0565a46bb2652af11579f696182409f9",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "canvas-vest",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/canvas-vest-64.png",
+      "bytes": 7215,
+      "sha256": "a907425bcf64422713fab9b269a48ac508d2a43441f72f77e503ab624c402c08",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "canvas-vest",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/canvas-vest-128.png",
+      "bytes": 25239,
+      "sha256": "cba259170a89ed3a9977ecf7678d957123e81c8273cf85747e54a97f1367cc15",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "work-jacket",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/work-jacket-64.png",
+      "bytes": 6058,
+      "sha256": "b5191d235cd7992ad91313a98808192c1a77b1b530d8a600bd9fd5f650523418",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "work-jacket",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/work-jacket-128.png",
+      "bytes": 20539,
+      "sha256": "162b0cff7bd0b3feee6f491126b9e0bd202fe0dfbd3b567fb5cefcca82189857",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "patched-trousers",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/patched-trousers-64.png",
+      "bytes": 6075,
+      "sha256": "148be9b21705460088f2a5b04b8f4901abef4cf2cea1cf6fd433ecef469025e3",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "patched-trousers",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/patched-trousers-128.png",
+      "bytes": 20762,
+      "sha256": "da8ace0772b9b91f49d6d561f66237cf4ebb26a87d16a6986ced84bd45952625",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "beanie",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/beanie-64.png",
+      "bytes": 6851,
+      "sha256": "cb7ef2fedd686691865cd109333023b3fa6995ba42861c7f2fc8aba988b867c3",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "beanie",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/beanie-128.png",
+      "bytes": 23856,
+      "sha256": "7993dcae170b4cf04f81456fd2e34f40baa00a69a67db1c7c6240bc0314da8eb",
+      "sourceBatch": "03-wardrobe"
+    },
+    {
+      "id": "tent",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/tent-64.png",
+      "bytes": 5775,
+      "sha256": "a76da163bbe01566fd94052261492cc56d228978677b12024338ec0ca0d26d6e",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "tent",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/tent-128.png",
+      "bytes": 20031,
+      "sha256": "8e0a570af0e5f7b2d52fc59f36866cf3336cc6fa2d12e2c29351927e3aed8d42",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "cabin",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/cabin-64.png",
+      "bytes": 7527,
+      "sha256": "7f7da1545799aca10dc2c4af6878cf6d61e7f3927272c51adab4b738b942b4f9",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "cabin",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/cabin-128.png",
+      "bytes": 26990,
+      "sha256": "18a1c9711181521dbe66a554fd4e075c90d863e8174b6058cfaa67e3f9af2725",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "workbench",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/workbench-64.png",
+      "bytes": 6622,
+      "sha256": "bcbb90ca96238ffc92fd6ee170760f0280edd0507f6235ba24e805b5691b4f32",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "workbench",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/workbench-128.png",
+      "bytes": 23098,
+      "sha256": "ebece3692ca0c87cc4441f77195eb9a5616556d526403a863db0111b80a64163",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "log-rack",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/log-rack-64.png",
+      "bytes": 6199,
+      "sha256": "1ce68da683fbefb6132a976a29a7c3c91e0c9a3d640d4ec7ba57119a25e13006",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "log-rack",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/log-rack-128.png",
+      "bytes": 21968,
+      "sha256": "1ee5f5adac726b051be74a4de759c2381de46f9026c8d62af2eceae4a0cc1b91",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "campfire",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/campfire-64.png",
+      "bytes": 6407,
+      "sha256": "a613cdcddb06f465cd92f194d14d909e39f738249dbbd533fbf393a23943dc33",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "campfire",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/campfire-128.png",
+      "bytes": 23056,
+      "sha256": "3da8127f43eda558d528fb62d53019cdb276d735adbc5826a44406f344c866b1",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "drying-rack",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/drying-rack-64.png",
+      "bytes": 5632,
+      "sha256": "db84ab55f6a07abf5a7b916cc065b1c4009304cd86b0e50aaf567c5f724b6975",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "drying-rack",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/drying-rack-128.png",
+      "bytes": 19429,
+      "sha256": "b26bd8da2669200200771160c35517c9f55cc1ac769dddba5af2218e08b31b9d",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "stump-seat",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/stump-seat-64.png",
+      "bytes": 6557,
+      "sha256": "bf645577e25c9f5001360577ea9191af66ae24754c1329200471e3225b85e518",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "stump-seat",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/stump-seat-128.png",
+      "bytes": 22382,
+      "sha256": "fcd22b1284cdb5828aba1c55b4c483570b2559284d8d0773a48beff509425dec",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "guest-bench",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/guest-bench-64.png",
+      "bytes": 6500,
+      "sha256": "75c8ad5ccabda9bd8a933cc24809fa719a2d586dff9be5be80ed64ac79ea3efc",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "guest-bench",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/guest-bench-128.png",
+      "bytes": 21741,
+      "sha256": "ec8cdcc1b0cee3cea9e2b5d59c8135b6950dfb83a7fec7bf2af3de4dce024a71",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "prep-table",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/prep-table-64.png",
+      "bytes": 7267,
+      "sha256": "9e52e0d8df19b9aecdb317a84aa2405ac121caae24ba1cd6049487e2241a72b1",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "prep-table",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/prep-table-128.png",
+      "bytes": 25188,
+      "sha256": "8d60a7dc928d76c5cb4e78af96da2a1f82f001853ae88414d2fc05ae379087d3",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "pinecone-doorbell",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/pinecone-doorbell-64.png",
+      "bytes": 4957,
+      "sha256": "f527d30324e7fb3e1364e532c5789689d26d1adadd3831823f888929f13b152e",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "pinecone-doorbell",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/pinecone-doorbell-128.png",
+      "bytes": 17236,
+      "sha256": "f042ee7cd8a2dd01a551b596da55ef63e0b139ce01a5776b783ff469ae49166b",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "branch-broom",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/branch-broom-64.png",
+      "bytes": 3585,
+      "sha256": "b6442d24504cdd148117b54bcc98b3e31e8fe73faf98b40f81c274dbf27f1e1a",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "branch-broom",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/branch-broom-128.png",
+      "bytes": 12354,
+      "sha256": "f87b50e0bb305cfde2d50c92b8c806a99201e4eaa827897e813d7276289a7a69",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "note-box",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/note-box-64.png",
+      "bytes": 6660,
+      "sha256": "d5729ae7c1ba103bede0f5503d5df77cbd163ffc11abb2714f6aac28653977eb",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "note-box",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/note-box-128.png",
+      "bytes": 22982,
+      "sha256": "9227fe342e449c729d6412db9eb20f9085b033ecd8e7f31b5ae72b0808ed09db",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "altar",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/altar-64.png",
+      "bytes": 7075,
+      "sha256": "9258ba3093891e591fe2aada5203bd74591699c30fd0a4d8eb37fca772e4e4e9",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "altar",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/altar-128.png",
+      "bytes": 24774,
+      "sha256": "827133c378ec30c61dfc2b3cbc65f0c8fdde0b774ceacd1ec4dc339cfab9df7b",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "blueprint",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/blueprint-64.png",
+      "bytes": 7163,
+      "sha256": "d8cd4760647d8c1ae3a77a9d2da3bbe3e84a4a5f5107b34a0c9459342c6e02a1",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "blueprint",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/blueprint-128.png",
+      "bytes": 24443,
+      "sha256": "bb7abda7ef6e799505248819428469a10f3a417bccd9b1b19aba65077f5531c3",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "entry-canopy",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/entry-canopy-64.png",
+      "bytes": 5188,
+      "sha256": "26635b18bd8a354a6c4a31cd5b104c77b41ae55376f0a3ebbdf2360882826adb",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "entry-canopy",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/entry-canopy-128.png",
+      "bytes": 17718,
+      "sha256": "c7a48c0e497829594e0a110601d3f10cd7f65a570f63ac2bc4d619202074f959",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "window-shutters",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/window-shutters-64.png",
+      "bytes": 7334,
+      "sha256": "8d4d7a46996a2f5da25d59a52e2717b9ca304dc4c777dc4e2f83c1166dec1b65",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "window-shutters",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/window-shutters-128.png",
+      "bytes": 25252,
+      "sha256": "a282be95ea23103e4cf60d55d66f1847aa44f2c452bfeb5e3b618e5583a99a85",
+      "sourceBatch": "04-camp"
+    },
+    {
+      "id": "route",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/route-64.png",
+      "bytes": 6463,
+      "sha256": "1a43882a3e33035ff33f6b9c9190e8792eaacb57b34b92b4e8a857b25c137f86",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "route",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/route-128.png",
+      "bytes": 21350,
+      "sha256": "23d5fc416d1edf61b1c7673dbc6d0f9a2ad585d8a510f4b1c65f06fa6a252d59",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "inventory",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/inventory-64.png",
+      "bytes": 8253,
+      "sha256": "dac35f8a48643c39f45d80eb414d1e589c33e6424a385f2745e7f758d6d90f33",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "inventory",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/inventory-128.png",
+      "bytes": 28296,
+      "sha256": "309a2d5d444e056738177bf7f198fc544544465d55229857cba211660c94dc11",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "camera",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/camera-64.png",
+      "bytes": 8081,
+      "sha256": "27acb3133a8cdcc1f8773d9707fedd3e1623a6324f9ed3fbb0a4ca01ca296d08",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "camera",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/camera-128.png",
+      "bytes": 27181,
+      "sha256": "7b25e5775d7d88bdf2a763857048fafa3da82e48a36a156cc4234f8c50d81f2c",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "settings",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/settings-64.png",
+      "bytes": 6630,
+      "sha256": "ef2e67a264361434a251b488aebf7e8564071e2d76635756c71f59e457f1dcb0",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "settings",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/settings-128.png",
+      "bytes": 22552,
+      "sha256": "bd063aefe0b676794157c55c329bfcbdbd01d4f4161b9c02160c21595d74a654",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "hourglass",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/hourglass-64.png",
+      "bytes": 6325,
+      "sha256": "be9bc878f7d6803e62c44b879b1354ecef72928e436fd76ab9b6efdc0aa2b2a4",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "hourglass",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/hourglass-128.png",
+      "bytes": 22332,
+      "sha256": "0a848542427463cbd59b1208553febe43b927e8f497fe8ef21768b2a39e04d38",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "pause",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/pause-64.png",
+      "bytes": 6051,
+      "sha256": "e5c0fd0568e389a1072084f67a1892a7823ebb59c04c64dcc25dd3c917a835e4",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "pause",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/pause-128.png",
+      "bytes": 20337,
+      "sha256": "817bfa1d9dea50df11b03e629d600177d64aa29019a87f2135e9679492c97cb9",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "play",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/play-64.png",
+      "bytes": 4138,
+      "sha256": "9e62377158963d7e8710dd719809b712511df10e90bf1754480e8eec0c7f7984",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "play",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/play-128.png",
+      "bytes": 13800,
+      "sha256": "7a3215c21ea287364aa760022dd7974daa0127d8da008b21215f4c9d71e5186d",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "rest",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/rest-64.png",
+      "bytes": 6010,
+      "sha256": "ac2df6aacabcf21d459b2a510d11058a8cd0841a316a86a58e16a273ef13f9ea",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "rest",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/rest-128.png",
+      "bytes": 20304,
+      "sha256": "982baeb79eef94a502df40624c0f2d5d12ced98022eecb71df6daf52d972c50c",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "craft",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/craft-64.png",
+      "bytes": 6070,
+      "sha256": "a77f520879309bb4f7cfeee886ee5eafc91e7efaf09e090c915f32d1f11b2511",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "craft",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/craft-128.png",
+      "bytes": 20313,
+      "sha256": "c2284ffc6a003249828915b96c66668a58c82d2be0144d10975644f038b1ba01",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "wardrobe",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/wardrobe-64.png",
+      "bytes": 5964,
+      "sha256": "dbf55b3b8de2fa468f7069fe85366132eea6dd4a395a260b41691cab71149299",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "wardrobe",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/wardrobe-128.png",
+      "bytes": 20239,
+      "sha256": "cb4a5def52eb672c6eb2b453518e4cb4cb0d8e9e79f1ed2169006111e8703bf3",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "trade",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/trade-64.png",
+      "bytes": 5810,
+      "sha256": "c73eba261193756797b7876284e5b6bbcd81f5cd631e4a185ea36891d64996a1",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "trade",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/trade-128.png",
+      "bytes": 19469,
+      "sha256": "eb77f53e891a170631ab62d582e3af3528ed2f29f7112078486a951e289c56bd",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "read",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/read-64.png",
+      "bytes": 5375,
+      "sha256": "f0b9a7d25cbaa8ca3d7fa13b9c873c46eac4c1a414a7a7385303b84783fe95ed",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "read",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/read-128.png",
+      "bytes": 18115,
+      "sha256": "35776b84b09843351b378a3777060008ae31db8f85283155087e9cc0dbd9f4b1",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "axe",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/axe-64.png",
+      "bytes": 4974,
+      "sha256": "9df14a4754d599c459f711673c944615a389e2fd248fed7d89938705c8d16b51",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "axe",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/axe-128.png",
+      "bytes": 16578,
+      "sha256": "ad9e68c2540f197ff9a3bb4fad89d4ddd766912d8b18bde85d8279a033f0e256",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "gather",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/gather-64.png",
+      "bytes": 6300,
+      "sha256": "86d5c1f8809bdfb42371b1304e9b7cbea64a8a2665d4aecff8b2b7435c3048bb",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "gather",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/gather-128.png",
+      "bytes": 20907,
+      "sha256": "701a0b11b83025a8166481ee5323d6e8b6fe1a7e74f08593ac63327d3bd4ce49",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "repair",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/repair-64.png",
+      "bytes": 5404,
+      "sha256": "cf005154f4a95410d43952e17aafbcdf5009754bd7b6f35d8aa19157f3fff89a",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "repair",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/repair-128.png",
+      "bytes": 17843,
+      "sha256": "55719f4e9de49fe4db7dc9e6f9a2c63bc1ec0ecae59b13ceb9e311bc2bff8994",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "oracle",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/oracle-64.png",
+      "bytes": 6573,
+      "sha256": "ea378176aaadd38e9bfa66f9e8e18a87052cc67550149ee9b7173a31b49a8d0b",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "oracle",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/oracle-128.png",
+      "bytes": 21593,
+      "sha256": "142244588ddc0a2c255fef2b8013f532841c58d34d4bb67793e6a13954da9dfd",
+      "sourceBatch": "05-functions"
+    },
+    {
+      "id": "blueprint-common",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/blueprint-common-64.png",
+      "bytes": 6941,
+      "sha256": "caf7104e7612cc51404bad49d11cadcc43d91efbbdf72e61a9dac98ebb509f3f",
+      "sourceBatch": "09-rarity-families"
+    },
+    {
+      "id": "blueprint-common",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/blueprint-common-128.png",
+      "bytes": 23723,
+      "sha256": "a5ea25cd658c120c83dd0594d229b1c8f0cd08dff52617188918e5a1a9a8a208",
+      "sourceBatch": "09-rarity-families"
+    },
+    {
+      "id": "blueprint-uncommon",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/blueprint-uncommon-64.png",
+      "bytes": 6818,
+      "sha256": "e796d9d85e987b43a3c898704b7552f13a6035dbfc745c72c5185841f74b348e",
+      "sourceBatch": "09-rarity-families"
+    },
+    {
+      "id": "blueprint-uncommon",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/blueprint-uncommon-128.png",
+      "bytes": 23784,
+      "sha256": "136743153bf068f14575143a5a9ab9145f71a746be3b464ea949e0b4aa4202ea",
+      "sourceBatch": "09-rarity-families"
+    },
+    {
+      "id": "blueprint-rare",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/blueprint-rare-64.png",
+      "bytes": 6925,
+      "sha256": "71143b2f3cb316c265ec975ac4e5811063d3d99f2142250b5bca6af7631b91e8",
+      "sourceBatch": "09-rarity-families"
+    },
+    {
+      "id": "blueprint-rare",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/blueprint-rare-128.png",
+      "bytes": 23767,
+      "sha256": "5e4cb469313cf2435bf41de2797d7732f1243f0f0a77b3cbb5cd6aa29d335825",
+      "sourceBatch": "09-rarity-families"
+    },
+    {
+      "id": "blueprint-epic",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/blueprint-epic-64.png",
+      "bytes": 7308,
+      "sha256": "e5b502ea5a56fa207656c8b7e46699fc4678a9b02421f141a364a3af298fc4c2",
+      "sourceBatch": "09-rarity-families"
+    },
+    {
+      "id": "blueprint-epic",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/blueprint-epic-128.png",
+      "bytes": 25524,
+      "sha256": "3d3ae074c85fb868af0760f835a317f23c7bb409da6aa91e994440348cb238f5",
+      "sourceBatch": "09-rarity-families"
+    },
+    {
+      "id": "blueprint-legendary",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/blueprint-legendary-64.png",
+      "bytes": 6867,
+      "sha256": "9abe2e575a95f62695e8d7dc22f713bff792a20529e30a596aeccce4e10f6290",
+      "sourceBatch": "09-rarity-families"
+    },
+    {
+      "id": "blueprint-legendary",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/blueprint-legendary-128.png",
+      "bytes": 23956,
+      "sha256": "1b4e86744fa13553474722c2cfc4eab69268f13633b869f1f0e30c846acd025f",
+      "sourceBatch": "09-rarity-families"
+    },
+    {
+      "id": "stump-common",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/stump-common-64.png",
+      "bytes": 8679,
+      "sha256": "c5728281de5bd2f5ad7ac51e8fd16d789286ae25743de39facd791a6ca22555c",
+      "sourceBatch": "09-rarity-families"
+    },
+    {
+      "id": "stump-common",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/stump-common-128.png",
+      "bytes": 30316,
+      "sha256": "43ca017b8cb5a2ecd937437d87a8e98b881de3133d98c0a2ac55b18ad6300fcb",
+      "sourceBatch": "09-rarity-families"
+    },
+    {
+      "id": "stump-uncommon",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/stump-uncommon-64.png",
+      "bytes": 8752,
+      "sha256": "34f88dc6e9fdc56133cee3c06fe274f1b699b65a468a2ebbcfa340be8ca023b7",
+      "sourceBatch": "09-rarity-families"
+    },
+    {
+      "id": "stump-uncommon",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/stump-uncommon-128.png",
+      "bytes": 30407,
+      "sha256": "e8425a56a17921c38a5cfebf9c1dc0ff59badb60f3202f45e9c148c116b03c38",
+      "sourceBatch": "09-rarity-families"
+    },
+    {
+      "id": "stump-rare",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/stump-rare-64.png",
+      "bytes": 8497,
+      "sha256": "97ed8e6341770dbd9c314d6ec5e305e29a9d74d539a4989715de26de5efde978",
+      "sourceBatch": "09-rarity-families"
+    },
+    {
+      "id": "stump-rare",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/stump-rare-128.png",
+      "bytes": 29807,
+      "sha256": "2fda8f792f3795db0b841559ece5ea8a8d0a547624dd5835a36520090387fd42",
+      "sourceBatch": "09-rarity-families"
+    },
+    {
+      "id": "stump-epic",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/stump-epic-64.png",
+      "bytes": 8600,
+      "sha256": "9b6640926f01f2a9036b536feb9864dd48762777ae611139613af39e3eb2bf00",
+      "sourceBatch": "09-rarity-families"
+    },
+    {
+      "id": "stump-epic",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/stump-epic-128.png",
+      "bytes": 29797,
+      "sha256": "1fe45f64a74e046c91610442e57970ec1a5722425da700f00ee0944c44574a67",
+      "sourceBatch": "09-rarity-families"
+    },
+    {
+      "id": "stump-legendary",
+      "size": 64,
+      "file": "public/assets/ui-r1/icons/stump-legendary-64.png",
+      "bytes": 8462,
+      "sha256": "c7380c7a71913e2be55771a30834c99c7267417087efec1bf15fe93c11385941",
+      "sourceBatch": "09-rarity-families"
+    },
+    {
+      "id": "stump-legendary",
+      "size": 128,
+      "file": "public/assets/ui-r1/icons/stump-legendary-128.png",
+      "bytes": 30298,
+      "sha256": "51775e1c7696fff55636c68d040bd0ecf274f526f8ae2a5ec5b6714aed35e6a3",
+      "sourceBatch": "09-rarity-families"
+    },
+    {
+      "id": "inventory-slot",
+      "file": "public/assets/ui-r1/inventory-slot.png",
+      "bytes": 143805,
+      "sha256": "9720c9fad6e4a35366da49b937990a69c02c8b9187be9aaf869284a9d453bbe5"
+    }
+  ]
+}

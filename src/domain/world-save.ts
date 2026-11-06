@@ -6,6 +6,9 @@ import {CLOCK_SPEEDS} from './local-clock.ts';
 import {createDayCycle,validateDayCycle} from './day-cycle.ts';
 import {createFoodState,validateFoodState} from './food.ts';
 import {canonicalInstances} from './owned-items.ts';
+import {HOUSING,isHousingItem} from '../content/housing.ts';
+import {ITEM_CATALOG} from './item-catalog.ts';
+import {isOracleHouseholdItem} from '../content/household-affixes.ts';
 import { WAYPOINTS, WORLD_LAYOUT_VERSION, WORLD_RULESET_VERSION, WORLD_SEED } from '../content/world.ts';
 import type { GameState } from './state.ts';
 import type { SaveContext } from './save-context.ts';
@@ -59,7 +62,11 @@ export function validateWorldState(raw: unknown, context: SaveContext, mode: 'ru
     }
   }
   requireValue((inventory.instances??[]).every(i=>i.createdAt<=time),'inventory.instances','物品生成时间晚于世界时间');
-  requireValue(world.selected===null || typeof world.selected==='string' && (context.selectable.has(world.selected)||!!groundItem(inventory,world.selected)||woodcraft.pieces.some(p=>p.id===world.selected)||(inventory.instances??[]).some(i=>i.instanceId===world.selected&&i.location.kind==='world')),'world.selected','未知目标引用');
+  const selectedOwned=(inventory.instances??[]).find(item=>item.instanceId===world.selected);
+  const selectedHousingInInventory=selectedOwned?.location.kind==='inventory'&&
+    ITEM_CATALOG.ownedItems.get(selectedOwned.definitionId)?.status==='active'&&
+    (isHousingItem(selectedOwned.definitionId)||isOracleHouseholdItem(selectedOwned.definitionId));
+  requireValue(world.selected===null || typeof world.selected==='string' && (context.selectable.has(world.selected)||!!groundItem(inventory,world.selected)||woodcraft.pieces.some(p=>p.id===world.selected)||selectedHousingInInventory||selectedOwned?.location.kind==='world'||selectedOwned?.definitionId===HOUSING.doorbell.definitionId&&selectedOwned.location.kind==='mounted'&&selectedOwned.location.hostId===HOUSING.doorbell.hostId),'world.selected','未知目标引用');
   const forestry = validateSavedForestry(world.forestry, context, time);
   if (forestry.active?.phase === 'chopping') requireValue(world.selected === forestry.active.treeId, 'world.selected', '采伐目标冲突');
   const gathering = validateSavedGathering(world.gathering, context, forestry, time, world.selected as string | null);

@@ -1,0 +1,9 @@
+.housing-controls { margin-top:10px; border-top:1px solid #d9e8ce33; }
+.housing-controls summary { min-height:44px; padding:12px 0; cursor:pointer; font-size:13px; }
+.housing-recipe { display:grid; gap:7px; margin:4px 0 12px; padding:10px; border:1px solid #d9e8ce33; border-radius:10px; }
+.housing-recipe strong,.housing-actions span { font-size:13px; }
+.housing-recipe span,.housing-recipe small { color:#d5dfc8; font-size:12px; }
+.housing-actions { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
+.housing-actions span { flex-basis:100%; }
+.housing-icon { height:40px; color:#dbba7c; font-size:34px; }
+.housing-controls .context-button,.owned-furniture .context-button { min-height:44px; }

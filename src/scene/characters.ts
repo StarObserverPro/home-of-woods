@@ -6,7 +6,9 @@ import {createActor} from './actions/actor.js';
 import { CHARACTER, CAMP_VISITOR } from '../content/characters.ts';
 import {merchantVisitAt,MERCHANT_SCENE} from '../content/merchant.ts';
 import {TENT} from '../content/world.ts';
-import {DINING_SEAT} from '../content/scene-props.ts';
+import {diningReadingSpot} from '../domain/housing.ts';
+import {applySeatedLegPose,SEATED_SKIN_CLEARANCE} from './seated-pose.ts';
+import type {SeatContact} from './seated-pose.ts';
 import {calendarAt} from '../domain/local-clock.ts';
 import { FORESTRY } from '../content/forestry.ts';
 import type { GameState } from '../domain/state.ts';
@@ -60,13 +62,11 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     standardClothes.update(state.time,state.player.moving,reducedMotion);
     actionClothes.update(state.time,state.player.moving,reducedMotion);
   }
-  const readingBowl=new THREE.Group();readingBowl.name='reading-bowl';readingBowl.visible=false;player.add(readingBowl);
-  const bowlBody=new THREE.Mesh(r.geometry('reading-wooden-bowl',()=>new THREE.CylinderGeometry(.23,.16,.16,9)),r.material('#bc8b53',.9));readingBowl.add(bowlBody);
-  const bowlRim=new THREE.Mesh(r.geometry('reading-bowl-rim',()=>new THREE.TorusGeometry(.23,.035,4,9)),r.material('#ead0a0',.92));bowlRim.rotation.x=Math.PI/2;bowlRim.position.y=.09;readingBowl.add(bowlRim);
-  readingBowl.position.set(0,.89,.42);
   const seatBones=new Map<string,THREE.Bone>();body.traverse(o=>{if(o instanceof THREE.Bone)seatBones.set(o.name.replaceAll('.',''),o);});
+  const readingPoseBase=new Map<THREE.Bone,{p:THREE.Vector3;q:THREE.Quaternion}>();
   const bodyY=body.position.y;
   let reading=false;
+  let readingSeat:SeatContact|null=null;
   // Main + procedural action body each have their own cloned skeleton and bone-mounted accessories.
   const clothing=createWardrobeVisual(r,body),actionClothing=createWardrobeVisual(r,procedural.body);
   const pickedScrap=new THREE.Mesh(r.geometry('held-scrap',()=>new THREE.CylinderGeometry(.025,.04,.38,5)),r.material('#92704a',.9));pickedScrap.rotation.z=Math.PI/2;pickedScrap.visible=false;player.add(pickedScrap);
@@ -111,6 +111,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   }
   function update(state:GameState,reducedMotion=false,ambientTime=state.time){
     if(disposed)return;
+    for(const [bone,base] of readingPoseBase){bone.position.copy(base.p);bone.quaternion.copy(base.q);}readingPoseBase.clear();
     clothing.update(state.inventory);actionClothing.update(state.inventory);
     player.position.set(state.player.x,heightAt(state.player.x,state.player.z),state.player.z);player.rotation.y=state.player.facing;
     const visit=merchantVisitAt(state.time);
@@ -119,7 +120,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
       const vx=CAMP_VISITOR.x+MERCHANT_SCENE.entryOffset.x*(1-eased),vz=CAMP_VISITOR.z+MERCHANT_SCENE.entryOffset.z*(1-eased);
       visitor.position.set(vx,heightAt(vx,vz),vz);
     }
-    readingBowl.visible=false;readingBowl.position.set(0,.89,.42);readingBowl.rotation.x=0;body.position.y=bodyY;
+    body.position.y=bodyY;
     updateWardrobe(state,reducedMotion);
     inspectionProps.visible=inspection!==null&&inspection!=='wardrobe';impact=null;body.visible=true;pickedScrap.visible=false;cutHeight=null;chest.position.y=chestY;procedural.root.visible=false;
     if(inspection==='wardrobe'){
@@ -161,23 +162,18 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
       }
       // A local, render-only sitting pose; the world player remains at the camp interaction point.
       if(reading){
-        player.position.set(DINING_SEAT.x,heightAt(DINING_SEAT.x,DINING_SEAT.z),DINING_SEAT.z);
-        player.rotation.y=2.85;body.position.y=bodyY-.19;
+        for(const bone of seatBones.values())readingPoseBase.set(bone,{p:bone.position.clone(),q:bone.quaternion.clone()});
+        const seat=readingSeat??diningReadingSpot().seat;
+        const surfaceY=seat.surfaceY??heightAt(seat.x,seat.z)+(seat.height??0);
+        player.position.set(seat.x,surfaceY+SEATED_SKIN_CLEARANCE,seat.z);
+        player.rotation.y=seat.facing;body.position.y=bodyY-.19;
         const turn=(id:string,axis:'x'|'y'|'z',angle:number)=>{const bone=seatBones.get(id);if(bone)bone.rotation[axis]+=angle;};
         const hips=seatBones.get('hips');if(hips)hips.position.y-=.12;
         for(const side of ['l','r']){
-          turn('upperleg'+side,'x',-1.03);turn('lowerleg'+side,'x',1.29);
           turn('upperarm'+side,'x',-.42);turn('lowerarm'+side,'x',-.39);
         }
+        applySeatedLegPose(player,seatBones);
         turn('head','x',.10);
-        readingBowl.visible=state.food.lastMealDay===calendarAt(state.time).day;
-        if(readingBowl.visible&&!reducedMotion){
-          // A small occasional sip from the bowl, not a new gameplay consume event.
-          const sip=Math.pow(Math.max(0,Math.sin(ambientTime*.46)),8);
-          readingBowl.position.y+=.18*sip;readingBowl.position.z-=.10*sip;readingBowl.rotation.x=-.16*sip;
-          turn('upperarml','x',-.14*sip);turn('upperarmr','x',-.14*sip);
-          turn('head','x',-.09*sip);
-        }
       }
       if(state.workshop.job?.phase==='working'){
         const job=state.workshop.job;procedural.update(job.kind==='offering'?'pray':'pickup',job.kind==='offering'?(state.time-job.startedAt!)*2:1.35);procedural.root.position.set(0,0,0);procedural.root.rotation.set(0,0,0);body.visible=false;procedural.root.visible=true;
@@ -218,7 +214,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   }
   return {
     player,visitor,update,
-    setReading(value:boolean){reading=value;},
+    setReading(value:boolean,seat?:SeatContact){reading=value;readingSeat=value&&seat?seat:null;},
     setInspection(value:CharacterInspection){inspection=value;cutKey='';stop=null;},
     setWardrobe(value:Partial<WardrobeLook>){previewLook=resolveWardrobe(value,previewLook);lastLookKey='';},
     getInspection:()=>inspection,

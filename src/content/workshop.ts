@@ -1,10 +1,18 @@
+import {HOUSING_BLUEPRINTS} from './housing.ts';
+import {WORKSHOP_SERIES_BLUEPRINTS,WORKBENCH_BRACING_BLUEPRINT} from './workshop-series.ts';
+import {BROOM_BLUEPRINTS} from './broom.ts';
+import {MEAL_VESSEL_BLUEPRINTS} from './meal-vessels.ts';
+import {POT_FOUNDATION_TARGETS} from './food.ts';
+export {HOUSING_BLUEPRINTS} from './housing.ts';
 /** Prototype costs and durations; not the final economy. */
 export const WORKBENCH = {id:'camp-workbench', x:-44, z:12.6, halfX:1.7, halfZ:.7, tier:1, stand:{x:-44,z:14.4}} as const;
 export const WORKBENCH_STOOL = {id:'camp-workbench-stool',x:-47,z:12.8,radius:.6,tier:1} as const;
 export const WORKSHOP_RULES = {offeringSeconds:1.8,craftSeconds:3,seatRadius:.65,maxPlacementSlope:.22,daysPerSeason:7} as const;
 export const CRAFT_BLUEPRINTS = [
-  {id:'blueprint.stump-cozy',kind:'craft',name:'暖木墩',description:'圆润的原木坐墩，适合围着篝火坐一会儿。',source:'向行商交换，或在祭坛供奉蘑菇。',targetLabel:'工作台 · 制作家具',traitId:'comfort',traitName:'舒适',value:2},
-  {id:'blueprint.stump-sturdy',kind:'craft',name:'稳木墩',description:'同样的原木轮廓，保留更厚实的支撑。',source:'向行商交换，或在祭坛供奉蘑菇。',targetLabel:'工作台 · 制作家具',traitId:'stability',traitName:'稳固',value:2},
+  {id:'blueprint.stump-cozy',kind:'craft',name:'暖木墩',definitionId:'furniture.stump-seat',description:'圆润的原木坐墩，适合围着篝火坐一会儿。',source:'向行商交换，或在祭坛供奉蘑菇。',targetLabel:'工作台 · 制作家具',traitId:'comfort',traitName:'舒适',value:2},
+  {id:'blueprint.stump-sturdy',kind:'craft',name:'稳木墩',definitionId:'furniture.stump-seat',description:'同样的原木轮廓，保留更厚实的支撑。',source:'向行商交换，或在祭坛供奉蘑菇。',targetLabel:'工作台 · 制作家具',traitId:'stability',traitName:'稳固',value:2},
+  ...HOUSING_BLUEPRINTS,
+  ...BROOM_BLUEPRINTS,...MEAL_VESSEL_BLUEPRINTS,
 ] as const;
 export const CABIN_REPAIR_BLUEPRINT = {
   id:'blueprint.cabin-repair',kind:'upgrade',name:'木屋修缮·第一阶段',
@@ -13,7 +21,7 @@ export const CABIN_REPAIR_BLUEPRINT = {
 } as const;
 const exteriorPlan=(id:string,name:string,description:string,targetId:string,targetLabel:string,starter=false)=>({
   id,kind:'upgrade' as const,name,description,targetId,targetLabel,
-  source:starter?'营地旧物箱中留存的基础装配图纸。':'林间行商常备的外部改造图纸，可用一份木料交换。',
+  source:(POT_FOUNDATION_TARGETS as readonly string[]).includes(targetId)?'走近营地工作台，展开基础炊具图纸学习；行商也可能出售同一图纸。':starter?'营地旧物箱中留存的基础装配图纸。':'林间行商常备的外部改造图纸，可用一份木料交换。',
 });
 /** A blueprint learns a fitting method; physical materials are consumed only when installing. */
 export const CAMP_EXTERIOR_BLUEPRINTS=[
@@ -32,7 +40,7 @@ export const CAMP_EXTERIOR_BLUEPRINTS=[
   exteriorPlan('blueprint.camp-fire-grill','可收起的烧烤网','从行商换五金包，再做可收起的网架。','camp-fire:grill','篝火 · 可换上部件'),
   exteriorPlan('blueprint.camp-fire-smoker','焖烤烟罩','从行商换五金包，再做可拆的带烟口罩。','camp-fire:smoker','篝火 · 可换上部件'),
 ] as const;
-export const BLUEPRINTS = [...CRAFT_BLUEPRINTS,CABIN_REPAIR_BLUEPRINT,...CAMP_EXTERIOR_BLUEPRINTS] as const;
+export const BLUEPRINTS = [...CRAFT_BLUEPRINTS,...WORKSHOP_SERIES_BLUEPRINTS,WORKBENCH_BRACING_BLUEPRINT,CABIN_REPAIR_BLUEPRINT,...CAMP_EXTERIOR_BLUEPRINTS] as const;
 export const STARTER_BLUEPRINTS = [CABIN_REPAIR_BLUEPRINT.id,'blueprint.tent-ropes','blueprint.camp-fire-stones','blueprint.camp-drying-rack'] as const;
 export const SEAT_DEFINITION = 'furniture.stump-seat';
 export const findBlueprint = (id:string) => BLUEPRINTS.find(b=>b.id===id);

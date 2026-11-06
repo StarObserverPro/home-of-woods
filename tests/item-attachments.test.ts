@@ -28,11 +28,16 @@ const activeRegistry = () => {
 };
 const savedState = () => { const s=createState();s.inventory.instances=[createBell()];return s; };
 
-test('durable objects share the item catalog; planned accessory is not an unlocked recipe or a new stack', () => {
+test('durable objects share the catalog; the ordinary doorbell is active while unimplemented accessories remain planned', () => {
   assert.equal(ITEM_CATALOG.ownedItems.get('furniture.stump-seat')?.status,'active');
-  assert.equal(ITEM_CATALOG.ownedItems.get('accessory.pinecone-doorbell')?.status,'planned');
+  assert.equal(ITEM_CATALOG.ownedItems.get('accessory.pinecone-doorbell')?.status,'active');
+  assert.deepEqual(ITEM_CATALOG.ownedItems.get('accessory.pinecone-doorbell')?.blueprintIds,['blueprint.pinecone-doorbell']);
   assert.equal(ITEM_CATALOG.items.has('accessory.pinecone-doorbell'),false);
   assert.equal(ITEM_CATALOG.ownedItems.get('accessory.pinecone-doorbell')?.mountKinds.includes('entrance-hanging'),true);
+  assert.ok(!createState().workshop.blueprints.includes('blueprint.pinecone-doorbell'),'an available recipe still needs to be learned at the workbench');
+  assert.equal(ITEM_CATALOG.ownedItems.get('accessory.note-box')?.status,'planned');
+  assert.deepEqual(ITEM_CATALOG.ownedItems.get('accessory.note-box')?.blueprintIds,[]);
+  assert.equal(ITEM_CATALOG.items.has('accessory.note-box'),false);
   assert.ok(!createState().workshop.blueprints.includes('blueprint.test-bell'));
 });
 
@@ -64,8 +69,11 @@ test('mount and unmount move one instance without changing its identity, rarity,
 });
 
 test('default planned slots cannot be used to mint a playable accessory', () => {
-  const s=savedState(),unchanged=structuredClone(s.inventory);
-  assert.throws(()=>mountIndependentItem(s.inventory,'bell-one','cabin','cabin:entry-hanging'),/not available/);
+  const s=createState();
+  s.inventory.instances=[{...createBell('note-one'),definitionId:'accessory.note-box',blueprintId:'blueprint.test-note-box'}];
+  assert.equal(HOST_ATTACHMENT_SLOTS.find(slot=>slot.slotId==='cabin:message-hook')?.status,'planned');
+  const unchanged=structuredClone(s.inventory);
+  assert.throws(()=>mountIndependentItem(s.inventory,'note-one','cabin','cabin:message-hook'),/not available/);
   assert.deepEqual(s.inventory,unchanged);
 });
 

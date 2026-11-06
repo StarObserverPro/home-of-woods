@@ -81,6 +81,8 @@ export function move(
   return { x, z };
 }
 const GRID = 1.5;
+/** The grid owner exposes its anchor so precise interaction targets can avoid blocked snaps. */
+export const navigationGridPoint=(point:Point):Point=>({x:Math.round(point.x/GRID)*GRID,z:Math.round(point.z/GRID)*GRID});
 const key = (x: number, z: number) => `${x},${z}`;
 export function findPath(
   from: Point,

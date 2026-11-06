@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CRAFT_PROFILES, GEOMETRY_TEMPLATES, BLUEPRINT_QUALITY_BANDS } from '../src/content/parametric-crafting.ts';
 import { CRAFT_BLUEPRINTS } from '../src/content/workshop.ts';
+import { WORKSHOP_SERIES_BLUEPRINTS } from '../src/content/workshop-series.ts';
 import { RARITIES } from '../src/content/rarities.ts';
 import { createGeometrySpec, verifiedGeometrySpec, geometryParts, assemblyGuides, assessAssembly } from '../src/domain/parametric-crafting.ts';
 import { blueprintRarityProbabilities, rollBlueprintRarity } from '../src/domain/blueprint-rarity.ts';
@@ -13,15 +14,28 @@ import { serializeWorldSave, prepareWorldSave } from '../src/domain/world-save.t
 import { createSaveContext } from '../src/domain/save-context.ts';
 
 test('active workbench blueprints have typed recipes; unrelated camp upgrades are not forced into an assembly shape', () => {
-  for (const plan of CRAFT_BLUEPRINTS) {
+  const presetIds=new Set<string>(CRAFT_BLUEPRINTS.map(plan=>plan.id));
+  for (const plan of [...CRAFT_BLUEPRINTS,...WORKSHOP_SERIES_BLUEPRINTS]) {
     const profile = CRAFT_PROFILES[plan.id];
     assert.equal(profile?.status, 'active');
-    assert.equal(profile?.method, 'transform');
-    assert.equal(GEOMETRY_TEMPLATES[profile.geometryTemplateId!]?.family, 'solid');
-    assert.equal(profile.steps.length, 1);
+    assert.equal(profile.blueprintId,plan.id);
+    assert.equal(profile.method,presetIds.has(plan.id)?'transform':'assemble');
+    const template=GEOMETRY_TEMPLATES[profile.geometryTemplateId!];
+    assert.ok(template,`${plan.id} needs a registered geometry generator`);
+    assert.equal(template.family,['furniture.guest-bench','furniture.prep-side-table'].includes(plan.definitionId)?'supported-surface':'solid');
+    const geometry=createGeometrySpec(template.id);
+    assert.deepEqual(verifiedGeometrySpec(geometry),geometry);
+    assert.equal(geometry.family,template.family);
+    const parts=geometryParts(geometry);
+    assert.ok(parts.length>0&&parts.every(part=>Object.values(part.dimensions).every(value=>Number.isFinite(value)&&value>0)),'each opened recipe produces actual positive-size geometry');
+    assert.equal(profile.steps.length,presetIds.has(plan.id)?1:3);
+    if(profile.method==='assemble'){
+      const guides=assemblyGuides(geometry);assert.ok(guides.length>0,'an opened assembly recipe needs usable fitting guides');
+      assert.equal(assessAssembly(geometry,guides.map(guide=>({id:guide.id,...guide.target}))).valid,true);
+    }
   }
   assert.equal(CRAFT_PROFILES['blueprint.cabin-repair'], undefined);
-  assert.equal(CRAFT_PROFILES['blueprint.bench-guided'].status, 'planned');
+  assert.equal(CRAFT_PROFILES['blueprint.bench-guided'].status, 'active');
   assert.equal(CRAFT_PROFILES['blueprint.bench-guided'].method, 'assemble');
 });
 

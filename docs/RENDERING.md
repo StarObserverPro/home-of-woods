@@ -1,5 +1,7 @@
 # 运行时、数据与资源管理
 
+2026-11-05 营地生活代表功能已回接本地主体；当前制作/住房/饮食/清扫、坐立接触与恢复合同见 [CAMP_LIFE_INTEGRATION](CAMP_LIFE_INTEGRATION.md)。继续使用下述唯一 GameState、循环、地表与资源所有者；原 R4 证据保留其历史范围。
+
 对应 HOW-BASELINE-1.0。M0 与有限采伐的 R4 实现已获用户授权回接工作分支，已通过 PR #3/#4 合并至 main，未部署；原 R4 验证与主体回接验证分开记录。本文保留后续 M1/M2 的契约，并标明当前已经存在的所有者。参考水晶花园的库存事务、主循环、道具生命周期和交互注册，不移植其他项目业务或私有记录。
 
 ## 当前实现
@@ -17,7 +19,7 @@
 | src/content/upgrades.ts、domain/upgrades.ts | 图纸升级路径、操作点、材料校验、实际投入账本和阶段；共用 workshop 任务与唯一世界存档 |
 | src/domain/interaction-access.ts、ui/useItemDrag.ts | 分离距离资格与材料资格；鼠标/触控发送同类取放意图，app 在松手时复核并调用原事务 |
 
-当前已有现有世界的 IndexedDB 存档与事务备份；完整日历、通用制作/交易/建筑事务模块及在线服务尚未实现。下面涉及这些功能的类型、service 与存档键是后续实现契约，不应作为已有接口调用。实际有限林业合同见 [forestry-r4](forestry-r4.md)，参数见 [PARAMETERS](../PARAMETERS.md)，回接状态见 [scope](scopes/m0-walkable-valley.md)。
+当前已有 IndexedDB 存档与事务备份、本地日历、营地制作/加工、行商和生活节律；完整通用建筑与在线服务仍不在本轮范围。下面的原 M1/M2 规划表保留职责方向，实际已开放接口以各模块合同及当前源码为准。实际有限林业合同见 [forestry-r4](forestry-r4.md)，参数见 [PARAMETERS](../PARAMETERS.md)，回接状态见 [scope](scopes/m0-walkable-valley.md)。
 
 ## 分层
 
@@ -69,7 +71,7 @@ Service 为纯本地规则模块，不设首版在线经济、账号或微服务
 
 TreeSlot 与 TreeIndividual 分开；实体 ID 不取自实例绘制索引。可用 worldSeed + slotId + generation 派生个体 seed，并保存身份/结果及布局版本，版本迁移不能静默重抽已存在个体。
 
-存档统一包含 schemaVersion、布局版本和所有玩法切片，独立键 home-of-woods-save-v1。写入前做全状态校验；失败保留上一份有效数据，损坏/未知版本先保留原字节再报告，不擅自覆盖新档。库存与额度不得分别恢复。
+存档统一包含 schemaVersion、布局版本和所有玩法切片，当前数据库为 `home-of-woods-save-v2`，版本与备份合同见 [WORLD_SAVE](WORLD_SAVE.md)。写入前做全状态校验；失败保留上一份有效数据，损坏/未知版本先保留原字节再报告，不擅自覆盖新档。库存与额度不得分别恢复。
 
 物产细分、普通/精品堆叠、旧泛品保留、目录未知项与加工结果版本见 [物品扩展与存档兼容方案](ITEM_DATA_EVOLUTION.md)。身份、品质堆叠、库存切片 JSON 读写及旧会话适配已经实现；库存 schemaVersion 与运行时 revision 分开，原木已归统一库存。domain/inventory-persistence 对未知目录保留记录，对未来结构和损坏数据返回 protected 且保留原数据；app/inventory-session 在场景创建前整笔校验旧库存与旧林业余额。当前完整世界存档由 app/save-controller 经 app/world-save-store 的单笔 IndexedDB 事务写入主档和备份，包含版本和 SHA-256 摘要；损坏与未来数据受到保护。加工执行后续按 M1 接入，详见 [世界存档与目录](WORLD_SAVE.md)。
 
@@ -171,3 +173,11 @@ Models 的固定树形缓存同时提供静态合并与动作 source，远景按
 ## 最终动物表现
 
 `domain/wildlife` 决定会话内出入场；`scene/wildlife-presentation` 只消费视图、现有相机和时钟。最终四种模型由 Models 可选加载；私有骨架／材质退出时释放，共享模型归 Resources。主循环、物理岛固定步长、三档稀有特效和原存档写入者均不另建副本。当前范围与组合验证见 [最终动物接入](WILDLIFE_GUIDE.md)。
+
+## 营地生活表现与姿态交接（2026-11-05）
+
+`domain/housing` 与 `interaction-access` 共享座面、正前起身位、脚下地形及身体/书碗通道预检；侧后方接近先绕过真实碰撞。场景只借用座点，世界玩家保留合法站位。`characters` 恢复上一坐姿基态再采样动作，`seated-pose` 保持骨长，`life-presentation` / `broom-presentation` 在其后施加有限持物表现；结束、移动和新动作释放控制权。开始摆放先取消饭/扫帚表现并 `render(state,0)`。
+
+`housing-presentation`、`supported-surface-presentation` 与 `workshop-assembly-presentation` 读取真实实例几何和同一制作任务。用餐/扫叶先由 domain 一次提交，再显式交给场景；场景无经济回调、独立 RAF 或存档写入。几何、材质、实例和骨架归既有 Resources owner；F100 仅借用现场原物，结束/取消恢复原 transform。世界替换后清理事件去重历史，普通取消保留去重。
+
+稀有度与奇趣偏好分别为 `home-of-woods.rarity-vfx`、`home-of-woods.whimsy`；均不属于世界经济状态。具体玩法与本轮验证见 [营地生活接入](CAMP_LIFE_INTEGRATION.md)。

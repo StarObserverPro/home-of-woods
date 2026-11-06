@@ -202,18 +202,22 @@ export function createEnvironment(resources:Resources,options:{renderer?:THREE.W
     finally{generator.dispose();capture.clear();u.showSunDisc.value=1;}
   }
   let disposed=false,visualTime=0;
+  const moonDirection=new THREE.Vector3(.45,.7,.65).normalize();
   return{
     setHour(hour:number){
       const {day,night,warm,altitude}=daylightAt(hour);
       sunDirection.set(-.6,Math.max(.08,altitude),-.32).normalize();
       u.sunPosition.value.copy(sunDirection);u.reviewNight.value=night;
+      // Keep a soft moon-side fill above the camp so ordinary night actions
+      // remain readable even on the shaded front of the cabin.
+      sunDirection.lerp(moonDirection,night).normalize();
       u.pnwSkyTint.value.setRGB(.68+warm*.30,.84-warm*.2,1-warm*.42);
       lighting.sunColor.set('#fff1d3').lerp(new THREE.Color('#f4a46c'),warm*.75).lerp(new THREE.Color('#9aafff'),night);
-      lighting.sunIntensity=.30*night+2.1*day;
+      lighting.sunIntensity=.65*night+2.1*day;
       lighting.skyColor.set('#a3bfd5').lerp(new THREE.Color('#5d76ac'),night);
       lighting.groundColor.set('#71784f').lerp(new THREE.Color('#17273e'),night);
-      lighting.ambientIntensity=.43+day*.62;
-      lighting.environmentIntensity=.065+day*.235;
+      lighting.ambientIntensity=.62+day*.43;
+      lighting.environmentIntensity=.15+day*.15;
       lighting.haze.set('#819eaf').lerp(new THREE.Color('#171f39'),night);
       airUniforms.pnwSnowDiffuseFloor.value.fromArray(ENVIRONMENT_STYLE.snowDiffuseFloor).multiplyScalar(.12+.88*day);
       airUniforms.pnwIceDiffuseFloor.value.fromArray(ENVIRONMENT_STYLE.iceDiffuseFloor).multiplyScalar(.12+.88*day);

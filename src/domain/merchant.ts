@@ -7,6 +7,8 @@ import {canonicalInstances} from './owned-items.ts';
 import type {OwnedItem} from './owned-items.ts';
 import {BLUEPRINT_SHEET,createBlueprintSheet} from './blueprint-copies.ts';
 import type {GameState} from './state.ts';
+import {gatheringBusy} from './gathering.ts';
+import {ritualBusy} from './ritual.ts';
 
 export type MerchantReceipt = {
   visitIndex:number; at:number; soldIds:string[];
@@ -24,6 +26,7 @@ export const createMerchant=():MerchantState=>({
 });
 const safeInt=(v:unknown,min=0,max=Number.MAX_SAFE_INTEGER)=>
   Number.isSafeInteger(v)&&(v as number)>=min&&(v as number)<=max;
+const simulationTime=(v:unknown)=>typeof v==='number'&&Number.isFinite(v)&&v>=0;
 const safeCounts=(x:unknown):x is Record<string,number> =>
   isRecord(x)&&Object.entries(x).every(([k,v])=>isStableId(k)&&safeInt(v));
 export function validateMerchant(raw:unknown):MerchantState {
@@ -37,7 +40,7 @@ export function validateMerchant(raw:unknown):MerchantState {
     !safeInt(raw.budgetSpent,0,MERCHANT_CAPACITY.buyBudget)||
     !Array.isArray(raw.receipts)||raw.receipts.length>20)throw new Error('Invalid merchant economy state');
   for(const receipt of raw.receipts){
-    if(!isRecord(receipt)||!safeInt(receipt.visitIndex)||!safeInt(receipt.at)||
+    if(!isRecord(receipt)||!safeInt(receipt.visitIndex)||!simulationTime(receipt.at)||
       !safeInt(receipt.coinsEarned)||!safeInt(receipt.coinsSpent)||
       !Array.isArray(receipt.soldIds)||!receipt.soldIds.every(isStableId)||
       !Array.isArray(receipt.purchases)||!receipt.purchases.every((line:unknown)=>
@@ -84,7 +87,7 @@ export function exchangeMerchant(host:GameState,order:MerchantOrder):MerchantTra
     Math.hypot(host.player.x-CAMP_VISITOR.x,host.player.z-CAMP_VISITOR.z)>3)return failed('走近货车后再交易。');
   const visit=merchantVisitAt(host.time);
   if(!visit.parked)return failed('行商尚未停稳，或已经离开。');
-  if(host.workshop.job||host.forestry.active||host.gathering.action||host.ritual)return failed('先完成手上的动作。');
+  if(host.workshop.job||host.forestry.active||gatheringBusy(host.gathering)||ritualBusy(host))return failed('先完成手上的动作。');
   if(!Array.isArray(order.buy)||!Array.isArray(order.sellIds)||order.buy.length>30||order.sellIds.length>100||
     order.buy.some(line=>!line||!isStableId(line.id)||!safeInt(line.quantity,1,100))||
     order.sellIds.some(id=>!isStableId(id))||

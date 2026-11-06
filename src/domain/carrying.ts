@@ -114,7 +114,7 @@ export function approachGround(host:CarryHost,id:string,blockers:Collider[]){
 }
 export function carryingSnapshot(host:CarryHost){
   const load=currentLoad(host.inventory),items=carriedStacks(host.inventory);
-  const describe=(s:InventoryStack)=>({key:stackKey(s),name:ITEM_CATALOG.items.get(s.itemId)?.name??s.itemId,quantity:s.quantity});
+  const describe=(s:InventoryStack)=>({key:stackKey(s),itemId:s.itemId,name:ITEM_CATALOG.items.get(s.itemId)?.name??s.itemId,quantity:s.quantity});
   const ground=groundStacks(host.inventory).map(s=>{
     const p=transportLocation(s)! as {kind:'ground';x:number;z:number};
     const distance=Math.hypot(host.player.x-p.x,host.player.z-p.z);

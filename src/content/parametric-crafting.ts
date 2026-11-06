@@ -1,4 +1,5 @@
 import type { RarityId } from './rarities.ts';
+import {MEAL_VESSEL_GEOMETRY_TEMPLATES,MEAL_VESSEL_PROFILES} from './meal-vessels.ts';
 
 /** Geometry families are independent of item taxonomy and item rarity. */
 export type GeometryFamily = 'solid' | 'supported-surface';
@@ -14,6 +15,22 @@ export type GeometryTemplate = {
 
 /** Only two generators are implemented. Future mechanical models register a new family. */
 export const GEOMETRY_TEMPLATES: Readonly<Record<string, GeometryTemplate>> = {
+  ...MEAL_VESSEL_GEOMETRY_TEMPLATES,
+  'broom.bundle':{
+    id:'broom.bundle',version:1,family:'solid',parameters:{
+      diameter:{kind:'number',default:.5,min:.4,max:.6,step:.05},
+      height:{kind:'number',default:1.5,min:1.3,max:1.7,step:.05},
+      silhouette:{kind:'choice',default:'broom',choices:['broom']},
+    },
+  },
+  'doorbell.pinecone': {
+    id:'doorbell.pinecone',version:1,family:'solid',
+    parameters:{
+      diameter:{kind:'number',default:.55,min:.3,max:.7,step:.05},
+      height:{kind:'number',default:1.15,min:.8,max:1.5,step:.05},
+      silhouette:{kind:'choice',default:'pinecone',choices:['pinecone']},
+    },
+  },
   'stump.round': {
     id: 'stump.round', version: 1, family: 'solid',
     parameters: {
@@ -27,7 +44,7 @@ export const GEOMETRY_TEMPLATES: Readonly<Record<string, GeometryTemplate>> = {
     parameters: {
       length: { kind: 'number', default: 1.8, min: 1.2, max: 2.4, step: .1 },
       width: { kind: 'number', default: .65, min: .45, max: .9, step: .05 },
-      height: { kind: 'number', default: .7, min: .45, max: .95, step: .05 },
+      height: { kind: 'number', default: .7, min: .45, max: 1.25, step: .05 },
       seatThickness: { kind: 'number', default: .15, min: .1, max: .25, step: .05 },
       supportCount: { kind: 'integer', default: 2, min: 2, max: 4, step: 1 },
       supportInset: { kind: 'number', default: .2, min: .1, max: .35, step: .05 },
@@ -46,8 +63,25 @@ export type CraftProfile = {
   inputs: readonly { typeIds: readonly string[]; quantity: number; handling: 'consume' | 'attach' }[];
 };
 
-/** Active stump recipes use the existing workbench. Guided bench is only a schema fixture for later gameplay. */
+/** Preset handwork and guided assemblies share recipes and versioned geometry. */
 export const CRAFT_PROFILES: Readonly<Record<string, CraftProfile>> = {
+  ...MEAL_VESSEL_PROFILES,
+  'blueprint.branch-broom':{
+    blueprintId:'blueprint.branch-broom',status:'active',recipeId:'recipe.branch-broom',method:'transform',geometryTemplateId:'broom.bundle',rarityTier:'common',
+    steps:[{id:'bundle',moduleId:'workbench.preset.v1'}],inputs:[{typeIds:['wood.branch'],quantity:2,handling:'consume'}],
+  },
+  'blueprint.pinecone-doorbell':{
+    blueprintId:'blueprint.pinecone-doorbell',status:'active',recipeId:'recipe.pinecone-doorbell',
+    method:'transform',geometryTemplateId:'doorbell.pinecone',rarityTier:'common',
+    steps:[{id:'shape',moduleId:'workbench.preset.v1'}],
+    inputs:[{typeIds:['wood.branch'],quantity:2,handling:'consume'}],
+  },
+  'blueprint.guest-bench':{
+    blueprintId:'blueprint.guest-bench',status:'active',recipeId:'recipe.guest-bench',
+    method:'transform',geometryTemplateId:'bench.supported',rarityTier:'common',
+    steps:[{id:'shape',moduleId:'workbench.preset.v1'}],
+    inputs:[{typeIds:['wood.log'],quantity:2,handling:'consume'}],
+  },
   'blueprint.stump-cozy': {
     blueprintId: 'blueprint.stump-cozy', status: 'active', recipeId: 'recipe.stump-cozy',
     method: 'transform', geometryTemplateId: 'stump.round', rarityTier: 'common',
@@ -61,14 +95,20 @@ export const CRAFT_PROFILES: Readonly<Record<string, CraftProfile>> = {
     inputs: [{ typeIds: ['wood.log', 'wood.branch', 'wood.small-piece', 'wood.lumber'], quantity: 1, handling: 'consume' }],
   },
   'blueprint.bench-guided': {
-    blueprintId: 'blueprint.bench-guided', status: 'planned', recipeId: 'recipe.bench-guided',
-    method: 'assemble', geometryTemplateId: 'bench.supported', rarityTier: 'rare',
+    blueprintId: 'blueprint.bench-guided', status: 'active', recipeId: 'recipe.bench-guided',
+    method: 'assemble', geometryTemplateId: 'bench.supported', rarityTier: 'common',
     steps: [
-      { id: 'prepare', moduleId: 'wood.preparation.future' },
-      { id: 'fit', moduleId: 'assembly.guided.future' },
-      { id: 'finish', moduleId: 'wood.finishing.future' },
+      { id: 'prepare', moduleId: 'workbench.braced.prepare.v1' },
+      { id: 'fit', moduleId: 'workbench.braced.guides.v1' },
+      { id: 'finish', moduleId: 'workbench.braced.finish.v1' },
     ],
-    inputs: [{ typeIds: ['wood.log', 'wood.lumber'], quantity: 2, handling: 'consume' }],
+    inputs: [{ typeIds: ['wood.log'], quantity: 2, handling: 'consume' },{typeIds:['wood.branch'],quantity:1,handling:'consume'}],
+  },
+  'blueprint.prep-side-table': {
+    blueprintId:'blueprint.prep-side-table',status:'active',recipeId:'recipe.prep-side-table',
+    method:'assemble',geometryTemplateId:'bench.supported',rarityTier:'common',
+    steps:[{id:'prepare',moduleId:'workbench.braced.prepare.v1'},{id:'fit',moduleId:'workbench.braced.guides.v1'},{id:'finish',moduleId:'workbench.braced.finish.v1'}],
+    inputs:[{typeIds:['wood.log'],quantity:2,handling:'consume'},{typeIds:['wood.branch'],quantity:2,handling:'consume'}],
   },
 };
 
