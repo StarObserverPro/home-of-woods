@@ -8,6 +8,7 @@ import {InteractionRegistry} from './interaction-registry.ts';
 import {WORKBENCH,WORKBENCH_STOOL,SEAT_DEFINITION,WORKSHOP_RULES} from '../content/workshop.ts';
 import {heightAt} from '../world/surface.ts';
 import type {PlacementDraft} from '../domain/furniture-placement.ts';
+import {createWorkshopAssemblyPresentation} from './workshop-assembly-presentation.ts';
 
 /** CC0 Kenney log cribs support authored rough planks. Meshes never settle gameplay. */
 export function createWorkshopPresentation(r:Resources,models:Models){
@@ -25,6 +26,7 @@ export function createWorkshopPresentation(r:Resources,models:Models){
   }
   for(let i=0;i<3;i++){const m=new THREE.Mesh(plank,i===1?endgrain:wood);m.position.set(i===1?.05:0,1.16+(i%2)*.025,(i-1)*.43);m.rotation.y=(i-1)*.012;m.castShadow=m.receiveShadow=true;bench.add(m);}
   bench.position.set(WORKBENCH.x,heightAt(WORKBENCH.x,WORKBENCH.z)-.08,WORKBENCH.z);group.add(bench);hits.register(bench,WORKBENCH.id);
+  const assembly=createWorkshopAssemblyPresentation(r,bench);
   const stool=seat();stool.name=WORKBENCH_STOOL.id;stool.scale.set(.85,.85,.85);stool.position.set(WORKBENCH_STOOL.x,heightAt(WORKBENCH_STOOL.x,WORKBENCH_STOOL.z)-.06,WORKBENCH_STOOL.z);group.add(stool);hits.register(stool,WORKBENCH_STOOL.id);
   const placed=new Map<string,{root:THREE.Group;unregister:()=>void}>();
   const ghost=seat();const ghostMaterial=r.own(new THREE.MeshStandardMaterial({color:'#d4edab',transparent:true,opacity:.48,depthWrite:false}));
@@ -38,6 +40,7 @@ export function createWorkshopPresentation(r:Resources,models:Models){
   return {group,hits,setRarityVfxMode:(mode:RarityVfxMode)=>surfaces.setMode(mode),setPreview(value:PlacementDraft|null){preview=value;},
     update(state:GameState,camera:THREE.Camera,dt=0,reducedMotion=false,night=0){
       surfaces.update(dt,reducedMotion,night);
+      assembly.update(state,reducedMotion);
       const current=new Set<string>();
       for(const item of state.inventory.instances??[]){
         if(item.definitionId!==SEAT_DEFINITION||item.location.kind!=='world')continue;
@@ -49,10 +52,15 @@ export function createWorkshopPresentation(r:Resources,models:Models){
       for(const [id,item] of placed)if(!current.has(id)){item.unregister();surfaces.release(item.root);group.remove(item.root);placed.delete(id);}
       ghost.visible=!!preview?.point;if(preview?.point){ghost.position.set(preview.point.x,heightAt(preview.point.x,preview.point.z)-.06,preview.point.z);ghost.rotation.y=preview.rotation;ghostMaterial.color.set(preview.reason?'#d97563':'#d4edab');ringMaterial.color.copy(ghostMaterial.color);}
       const job=state.workshop.job;progress.visible=job?.phase==='working';
-      if(job?.phase==='working'){const p=Math.min(1,(state.time-job.startedAt!)/job.durationSeconds);progress.position.set(state.player.x,heightAt(state.player.x,state.player.z)+2.4,state.player.z);progress.quaternion.copy(camera.quaternion);fill.scale.x=1.8*p;fill.position.x=-.9+.9*p;}
+      if(job?.phase==='working'){
+        const guided=job.assembly,partCount=assembly.stats().parts;
+        const timed=Math.min(1,(state.time-job.startedAt!)/job.durationSeconds);
+        const p=guided?(guided.phase==='preparing'?.15*timed:guided.phase==='finishing'?.9+.1*timed:.15+.75*guided.placements.length/Math.max(1,partCount)):timed;
+        progress.position.set(state.player.x,heightAt(state.player.x,state.player.z)+2.8,state.player.z);progress.quaternion.copy(camera.quaternion);fill.scale.x=1.8*p;fill.position.x=-.9+.9*p;
+      }
     },
     point(id:string){if(id===WORKBENCH.id)return WORKBENCH;if(id===WORKBENCH_STOOL.id)return WORKBENCH_STOOL;const root=placed.get(id)?.root;return root?{x:root.position.x,z:root.position.z}:null;},
-    stats(){return {placed:placed.size,hits:hits.size,preview:!!preview,surfaces:surfaces.stats()};},
-    dispose(){surfaces.dispose();placed.forEach(p=>p.unregister());placed.clear();hits.clear();group.clear();preview=null;},
+    stats(){return {placed:placed.size,hits:hits.size,preview:!!preview,surfaces:surfaces.stats(),assembly:assembly.stats()};},
+    dispose(){assembly.dispose();surfaces.dispose();placed.forEach(p=>p.unregister());placed.clear();hits.clear();group.clear();preview=null;},
   };
 }

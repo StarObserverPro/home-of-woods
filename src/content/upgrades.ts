@@ -3,6 +3,7 @@ import type {Point} from './world.ts';
 import {CAMP_PROPS} from './scene-props.ts';
 import {WOODCRAFT} from './woodcraft.ts';
 import {CABIN_REPAIR_BLUEPRINT,WORKBENCH,WORKBENCH_STOOL} from './workshop.ts';
+import {WORKBENCH_BRACING,WORKBENCH_BRACING_BLUEPRINT} from './workshop-series.ts';
 
 export type UpgradeMaterial={typeId:string;name:string;quantity:number;unit?:string};
 export type UpgradePath={
@@ -73,7 +74,12 @@ export const UPGRADE_PROFILES:readonly UpgradeProfile[]=[
   ...EXTERIOR_PROFILES,
   {id:CAMP_PROPS.logs.id,title:'原木架',initialLevel:1,position:CAMP_PROPS.logs,stand:{x:CAMP_PROPS.logs.x,z:CAMP_PROPS.logs.z+3.2},paths:[],future:'后续可按图纸增设防雨顶棚和储存空间，升级路径尚未开放。'},
   {id:WOODCRAFT.id,title:'营地木料堆',initialLevel:1,position:WOODCRAFT,stand:WOODCRAFT.stand,paths:[],future:'后续可按图纸改良木料围框和搬运设施，升级路径尚未开放。'},
-  {id:WORKBENCH.id,title:'粗木工作台',initialLevel:1,position:WORKBENCH,stand:WORKBENCH.stand,paths:[],future:'后续可按图纸改善工作台，解锁更多加工方式；升级路径尚未开放。'},
+  {id:WORKBENCH.id,title:'粗木工作台',initialLevel:1,position:WORKBENCH,stand:WORKBENCH.stand,paths:[],future:'可加装支架与定位靠山，继续使用原工作台完成装配。'},
+  {id:WORKBENCH_BRACING.id,hostId:WORKBENCH.id,title:WORKBENCH_BRACING_BLUEPRINT.name,initialLevel:0,position:WORKBENCH,stand:WORKBENCH.stand,
+    paths:[{id:WORKBENCH_BRACING.pathId,name:WORKBENCH_BRACING_BLUEPRINT.name,description:WORKBENCH_BRACING_BLUEPRINT.description,
+      completionMessage:'工作台支架与定位靠山已经装好，可以按尺寸对齐支撑和面板。',fromLevel:0,toLevel:1,
+      blueprintId:WORKBENCH_BRACING.blueprintId,durationSeconds:3,materials:[log(2),branch(2)]}],
+    future:'支架与定位靠山已安装，量身长凳和备餐边桌可在这里装配。'},
   {id:WORKBENCH_STOOL.id,title:'工作台小凳',initialLevel:1,position:WORKBENCH_STOOL,stand:{x:WORKBENCH_STOOL.x,z:WORKBENCH_STOOL.z+1.7},paths:[],future:'后续可按图纸改良支撑与坐面，升级路径尚未开放。'},
   {id:CAMP_PROPS.altar.id,title:'林间祭坛',initialLevel:1,position:CAMP_PROPS.altar,stand:{x:CAMP_PROPS.altar.x,z:CAMP_PROPS.altar.z+5},paths:[],future:'后续可依神谕图纸修整供台、增添仪式设施，升级路径尚未开放。'},
 ];

@@ -38,7 +38,12 @@ test('fuel-only scraps cannot silently become crafting or barter material',()=>{
 test('one-mushroom offerings have deterministic varied responses, duplicates and no-plan outcomes',()=>{
  const a=stocked(),b=stocked();const messages=new Set<string>();
  for(let i=0;i<30;i++)for(const s of [a,b]){Object.assign(s.player,workshopTarget('offering'));beginWorkshop(s,'offering',[]);advanceWorkshop(s);s.time+=1.81;messages.add(advanceWorkshop(s)!);}
- assert.deepEqual(a,b);assert.equal(inventoryCount(a.inventory,'mushroom'),20);assert.equal(a.workshop.prayerCount,30);assert.deepEqual(new Set(a.workshop.blueprints),new Set([...STARTER_BLUEPRINTS,...CRAFT_BLUEPRINTS.map(p=>p.id)]));assert.ok([...messages].some(m=>m.includes('这次没有')));assert.ok([...messages].some(m=>m.includes('已经学会')));
+ assert.deepEqual(a,b);assert.equal(inventoryCount(a.inventory,'mushroom'),20);assert.equal(a.workshop.prayerCount,30);
+ const offeringPlans=['blueprint.stump-cozy','blueprint.stump-sturdy'];
+ for(const id of offeringPlans)assert.equal(CRAFT_BLUEPRINTS.find(plan=>plan.id===id)?.definitionId,SEAT_DEFINITION);
+ assert.deepEqual(new Set(a.workshop.blueprints),new Set([...STARTER_BLUEPRINTS,...offeringPlans]));
+ for(const plan of CRAFT_BLUEPRINTS.filter(plan=>!offeringPlans.includes(plan.id)))assert.equal(a.workshop.blueprints.includes(plan.id),false,'ordinary workbench learning is not replaced by random offerings');
+ assert.ok([...messages].some(m=>m.includes('这次没有')));assert.ok([...messages].some(m=>m.includes('已经学会')));
  assert.equal(advanceWorkshop(a),null);assert.equal(inventoryCount(a.inventory,'mushroom'),20);
 });
 test('merchant fixed stock survives same-day remount; exchange requires proximity, stock and one debit',()=>{

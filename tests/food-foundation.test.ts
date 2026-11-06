@@ -66,30 +66,30 @@ test('dried or fresh mushrooms with any listed grain yield a traceable consumed 
   assert.equal(inventoryCount(state.inventory,'forest-soup'),1);
   const soup=state.inventory.stacks.find(s=>s.itemId==='forest-soup');
   assert.deepEqual(soup?.food,{series:'mushroom-grain-soup',grain:'food-oats',fungus:'dried-mushroom'});
-  assert.match(eatMushroomSoup(state),/明天/);
+  assert.match(eatMushroomSoup(state),/下次日出/);
   assert.equal(inventoryCount(state.inventory,'forest-soup'),0);
   assert.equal(state.food.lastMealDay,1);
   assert.equal(foodSnapshot(state).nextDayReady,true);
-  state.time=600;
+  state.time=800; // The next life day begins at sunrise, not at midnight.
   assert.equal(heavyLaborAllowed(state.food,state.time),true);
-  state.time=1800;
+  state.time=2000;
   assert.equal(heavyLaborAllowed(state.food,state.time),false);
 });
 test('uncooked black bread breaks the no-pot/no-logging dependency after the first day',()=>{
   const state=createState();
-  state.time=600;
+  state.time=800;
   assert.equal(heavyLaborAllowed(state.food,state.time),false);
   at(state,CAMP_PROPS.fire.id,CAMP_PROPS.fire);
   grant(state,'food-black-bread',1);
-  assert.match(eatBlackBread(state),/明天/);
+  assert.match(eatBlackBread(state),/下次日出/);
   assert.equal(inventoryCount(state.inventory,'food-black-bread'),0);
   assert.equal(heavyLaborAllowed(state.food,state.time),false);
-  state.time=1800;
+  state.time=2000;
   assert.equal(heavyLaborAllowed(state.food,state.time),true);
 });
 test('an unfed day permits small material carrying but refuses new large logs',()=>{
   const state=createState();
-  state.time=600;
+  state.time=800;
   at(state,CAMP_PROPS.logs.id,CAMP_PROPS.logs);
   grant(state,'wood',1);grant(state,'branch',1);
   const log=state.inventory.stacks.find(v=>v.itemId==='wood')!;
@@ -98,7 +98,7 @@ test('an unfed day permits small material carrying but refuses new large logs',(
   assert.match(changeCarrying(state,{kind:'withdraw',key:stackKey(branch)},[]),/已拿起/);
   assert.equal(inventoryCount(state.inventory,'wood'),1);
   changeCarrying(state,{kind:'store'},[]);
-  state.time=1800;state.food.lastMealDay=2;
+  state.time=2000;state.food.lastMealDay=2;
   assert.match(changeCarrying(state,{kind:'withdraw',key:stackKey(log)},[]),/已拿起/);
 });
 test('world save accepts optional legacy food and rejects malformed added state',()=>{

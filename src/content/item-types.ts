@@ -27,7 +27,7 @@ export const ITEM_TAXONOMY: ItemTaxonomy = {
     { useGroupId: 'forest-goods', name: '林产交换', resourceLines: ['forest-produce'], status: 'planned' },
     { useGroupId:'camp-fitting',name:'营地外部改造',resourceLines:['trade-good'],status:'planned' },
     { useGroupId:'food-staple',name:'野炊主食',resourceLines:['trade-good'],status:'planned' },
-    { useGroupId:'food-meal',name:'享用正餐',resourceLines:['forest-produce'],status:'planned' },
+    { useGroupId:'food-meal',name:'享用正餐',resourceLines:['forest-produce','trade-good'],status:'planned' },
   ],
   types: [
     { typeId: 'wood.scrap', categoryId: 'wood', name: '碎柴', formId: 'scrap', resourceLine: 'small-wood', useGroupIds: ['fuel'] },
@@ -50,5 +50,6 @@ export const ITEM_TAXONOMY: ItemTaxonomy = {
     {typeId:'food.salt',categoryId:'food',name:'盐',formId:'salt',resourceLine:'trade-good',useGroupIds:['food-staple']},
     {typeId:'food.spice',categoryId:'food',name:'香料',formId:'spice',resourceLine:'trade-good',useGroupIds:['food-staple']},
     {typeId:'food.mushroom-soup',categoryId:'food',name:'菌菇杂粮汤',formId:'soup',resourceLine:'forest-produce',useGroupIds:['food-meal']},
+    {typeId:'food.grain-porridge',categoryId:'food',name:'谷物粥',formId:'soup',resourceLine:'trade-good',useGroupIds:['food-meal']},
   ],
 };

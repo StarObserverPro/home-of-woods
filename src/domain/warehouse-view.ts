@@ -1,4 +1,5 @@
 import {isStored} from './transport-location.ts';
+import {preparedFoodLabel} from '../content/food.ts';
 import type { GatheringRegistry } from './gathering-registry.ts';
 import type { InventoryState, InventoryStack } from './inventory.ts';
 import { recognizedStack, stackKey } from './inventory.ts';
@@ -20,11 +21,12 @@ export function warehouseSnapshot(state: { inventory: InventoryState }, registry
     const item = registry.items.get(stack.itemId), quality = registry.catalog.qualities.get(stack.qualityId);
     const recognized = recognizedStack(stack, registry.catalog);
     const type = item && registry.catalog.types.get(item.typeId);
+    const prepared=recognized?preparedFoodLabel(stack.itemId,stack.food):null;
     return {
-    specification: item?.category !== 'wood' ? '' : stack.itemId === 'scrap-fuel' ? '燃料份数，不作单件规格用料' : stack.wood?.spec ? `${stack.wood.spec.lengthMm} mm 长 · ${stack.wood.spec.thicknessMm} mm 直径 · ${{straight:'顺直',curved:'弯曲',crooked:'曲折'}[stack.wood.spec.straightness]}` : '长度、粗细、顺直程度未测定',
+    specification: prepared?.ingredients??(item?.category !== 'wood' ? '' : stack.itemId === 'scrap-fuel' ? '燃料份数，不作单件规格用料' : stack.wood?.spec ? `${stack.wood.spec.lengthMm} mm 长 · ${stack.wood.spec.thicknessMm} mm 直径 · ${{straight:'顺直',curved:'弯曲',crooked:'曲折'}[stack.wood.spec.straightness]}` : '长度、粗细、顺直程度未测定'),
     key: stackKey(stack), itemId: stack.itemId, qualityId: stack.qualityId,
     qualityName: quality?.name ?? '未知品质', recognized,
-    name: item?.name ?? '未识别物品', icon: item?.icon ?? '？', symbol: item?.symbol ?? 'unknown',
+    name: prepared?.name??item?.name ?? '未识别物品', icon: item?.icon ?? '？', symbol: item?.symbol ?? 'unknown',
     category: recognized ? item!.category : 'unknown',
     typeName: recognized ? type!.name : '待识别',
     materialName: recognized ? registry.catalog.materials.get(item!.materialId)!.name : '',

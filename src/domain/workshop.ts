@@ -1,6 +1,7 @@
 import {isAvailableMaterial} from './transport-location.ts';
 import {tradeFoodSack} from './food.ts';
 import {craftProfile} from '../content/parametric-crafting.ts';
+import {HOUSING} from '../content/housing.ts';
 import {resolveCraftOutcome} from './crafting-result.ts';
 import {rarityDefinition} from '../content/rarities.ts';
 import type {GameState} from './state.ts';
@@ -8,7 +9,7 @@ import type {Collider} from '../world/layout.ts';
 import {random} from '../world/layout.ts';
 import {CAMP_PROPS} from '../content/scene-props.ts';
 import {CAMP_VISITOR} from '../content/characters.ts';
-import {WORKBENCH,WORKSHOP_RULES,CRAFT_BLUEPRINTS,CAMP_EXTERIOR_BLUEPRINTS,STARTER_BLUEPRINTS,SEAT_DEFINITION,findBlueprint,findCraftBlueprint} from '../content/workshop.ts';
+import {WORKBENCH,WORKSHOP_RULES,CRAFT_BLUEPRINTS,CAMP_EXTERIOR_BLUEPRINTS,STARTER_BLUEPRINTS,findBlueprint,findCraftBlueprint} from '../content/workshop.ts';
 import {findUpgradeProfile,findUpgradePath,upgradeHostId} from '../content/upgrades.ts';
 import {advanceUpgrade,upgradeSnapshot,upgradeOptions,validateUpgrades,validateMounted} from './upgrades.ts';
 import type {UpgradeLedger} from './upgrades.ts';
@@ -22,10 +23,23 @@ import type {InventoryState} from './inventory.ts';
 import {findPath} from './navigation.ts';
 import {gatheringBusy} from './gathering.ts';
 import {ritualBusy} from './ritual.ts';
+import {craftMaterialDebits} from './craft-inputs.ts';
+export {craftMaterialDebits} from './craft-inputs.ts';
+import {advanceGuidedWorkshop,validateGuidedAssembly} from './workshop-guided.ts';
+import type {GuidedAssembly} from './workshop-guided.ts';
+import {isGuidedBlueprint,WORKBENCH_BRACING} from '../content/workshop-series.ts';
+import {BROOM} from '../content/broom.ts';
+import {itemOracleRite} from '../content/household-affixes.ts';
+import {advanceItemOracle} from './item-oracle.ts';
+import type {ItemOracleJob} from './item-oracle.ts';
+import {validateSweptLeaves} from './leaf-patches.ts';
+import type {SweptLeaves} from './leaf-patches.ts';
+import {validateAffixComposition} from '../content/affix-vfx-library.ts';
+import {HOUSEHOLD_AFFIX_DEFINITIONS} from '../content/household-affixes.ts';
 
-export type WorkshopJob={id:string;kind:'offering'|'craft'|'upgrade';blueprintId:string|null;phase:'approaching'|'working';startedAt:number|null;durationSeconds:number;targetId?:string;pathId?:string};
-export type WorkshopState={nextAction:number;nextInstance:number;prayerCount:number;blueprints:string[];upgrades:UpgradeLedger;mounted:Record<string,string>;job:WorkshopJob|null;lastResponse:string};
-export const createWorkshop=():WorkshopState=>({nextAction:1,nextInstance:1,prayerCount:0,blueprints:[...STARTER_BLUEPRINTS],upgrades:{},mounted:{},job:null,lastResponse:''});
+export type WorkshopJob={id:string;kind:'offering'|'craft'|'upgrade';blueprintId:string|null;phase:'approaching'|'working';startedAt:number|null;durationSeconds:number;targetId?:string;pathId?:string;assembly?:GuidedAssembly;oracle?:ItemOracleJob;broomCraft?:{mark:'leaf'|null}};
+export type WorkshopState={nextAction:number;nextInstance:number;prayerCount:number;blueprints:string[];upgrades:UpgradeLedger;mounted:Record<string,string>;job:WorkshopJob|null;lastResponse:string;sweptLeaves?:SweptLeaves};
+export const createWorkshop=():WorkshopState=>({nextAction:1,nextInstance:1,prayerCount:0,blueprints:[...STARTER_BLUEPRINTS],upgrades:{},mounted:{},job:null,lastResponse:'',sweptLeaves:{}});
 export const workshopBusy=(host:Pick<GameState,'workshop'>)=>host.workshop.job!==null;
 export const workshopTarget=(kind:WorkshopJob['kind'],targetId?:string)=>kind==='upgrade'?findUpgradeProfile(targetId??'')!.stand:kind==='craft'?WORKBENCH.stand:{x:CAMP_PROPS.altar.x,z:CAMP_PROPS.altar.z+5};
 export const workshopTargetId=(kind:WorkshopJob['kind'],targetId?:string)=>kind==='upgrade'?upgradeHostId(targetId??''):kind==='craft'?WORKBENCH.id:CAMP_PROPS.altar.id;
@@ -43,7 +57,7 @@ export function merchantStock(host:Pick<GameState,'seed'|'time'>){
 export function beginWorkshop(host:GameState,kind:'craft'|'offering',blockers:Collider[],blueprintId:string|null=null){
   if(busy(host))return '先完成或取消当前动作。';
   if(kind==='craft'&&(!blueprintId||!findCraftBlueprint(blueprintId)||!knowsBlueprint(host.inventory,host.workshop.blueprints,blueprintId)))return '先获得可在工作台制作的图纸。';
-  if(!workshopInput(host,kind))return kind==='offering'?'需要一份蘑菇。':'需要一份未预留的木料。';
+  if(kind==='craft'?!craftMaterialDebits(host,blueprintId!):!workshopInput(host,kind))return kind==='offering'?'需要一份蘑菇。':'图纸所需材料不足，请先查看用料。';
   const target=workshopTarget(kind),near=Math.hypot(host.player.x-target.x,host.player.z-target.z)<.65;
   const route=near?[]:findPath(host.player,target,blockers);
   if(!near&&!route.length)return '暂时无法到达操作位置。';
@@ -60,6 +74,8 @@ export function cancelWorkshop(host:GameState){
 export function advanceWorkshop(host:GameState):string|null{
   const job=host.workshop.job;if(!job)return null;
   if(job.kind==='upgrade')return advanceUpgrade(host);
+  if(job.oracle)return advanceItemOracle(host);
+  if(job.assembly)return advanceGuidedWorkshop(host);
   if(host.selected!==workshopTargetId(job.kind)||host.forestry.active||gatheringBusy(host.gathering)||ritualBusy(host)){cancelWorkshop(host);return '木作或供奉已取消，材料未扣除。';}
   const target=workshopTarget(job.kind);
   if(job.phase==='approaching'){
@@ -70,8 +86,10 @@ export function advanceWorkshop(host:GameState):string|null{
   }
   if(Math.hypot(host.player.x-target.x,host.player.z-target.z)>.8){cancelWorkshop(host);return '离开了操作位置，材料未扣除。';}
   if(host.time-job.startedAt!<job.durationSeconds)return null;
-  const input=workshopInput(host,job.kind);if(!input){cancelWorkshop(host);return '材料已不足，本次未扣料。';}
-  let nextInventory=inventoryTransaction(host.inventory,[{...input,delta:-1}]);
+  const input=job.kind==='offering'?workshopInput(host,'offering'):null;
+  const debits=job.kind==='craft'?craftMaterialDebits(host,job.blueprintId!):input?[{...stackIdentity(input),delta:-1}]:null;
+  if(!debits){cancelWorkshop(host);return '材料已不足，本次未扣料。';}
+  let nextInventory=inventoryTransaction(host.inventory,debits);
   const nextWorkshop={...host.workshop,job:null,blueprints:[...host.workshop.blueprints]};let result:string;
   if(job.kind==='offering'){
     if(!Number.isSafeInteger(nextWorkshop.prayerCount+1)){cancelWorkshop(host);return '供奉计数已用尽，未扣料。';}
@@ -87,8 +105,10 @@ export function advanceWorkshop(host:GameState):string|null{
     nextInventory=consumeBlueprintUse(nextInventory,nextWorkshop.blueprints,plan.id);
     const instanceId=`crafted-${host.seed}-${nextWorkshop.nextInstance}`;
     // The preset workbench currently supplies neutral quality. A later action module will submit guided fitting evidence.
-    const {rarityId,geometry,crafting}=resolveCraftOutcome(plan.id,host.seed,nextWorkshop.nextInstance,{mode:'preset'});
-    nextInventory.instances=canonicalInstances([...(nextInventory.instances??[]),{instanceId,definitionId:SEAT_DEFINITION,blueprintId:plan.id,createdAt:host.time,rarityId,traits:[{id:plan.traitId,value:plan.value}],geometry,crafting,location:{kind:'inventory'}}]);
+    const {rarityId,geometry,crafting}=resolveCraftOutcome(plan.id,host.seed,nextWorkshop.nextInstance,{mode:'preset',...(plan.definitionId===HOUSING.guestBench.definitionId?{geometryParameters:HOUSING.guestBench.geometry}:{})});
+    const traits=job.broomCraft?.mark==='leaf'?[{id:BROOM.markTraitId,value:1,markId:'leaf'}]:plan.traitId?[{id:plan.traitId,value:plan.value}]:[];
+    if(plan.definitionId===BROOM.definitionId)validateAffixComposition(traits.map(trait=>trait.id),HOUSEHOLD_AFFIX_DEFINITIONS);
+    nextInventory.instances=canonicalInstances([...(nextInventory.instances??[]),{instanceId,definitionId:plan.definitionId,blueprintId:plan.id,createdAt:host.time,rarityId,traits,geometry,crafting,location:{kind:'inventory'}}]);
     nextWorkshop.nextInstance++;result=`做好了「${rarityDefinition(rarityId).name} · ${plan.name}」，已放入仓库。`;
   }
   nextWorkshop.lastResponse=result;Object.assign(host,{inventory:nextInventory,workshop:nextWorkshop});return result;
@@ -131,26 +151,42 @@ export function validateWorkshop(raw:unknown,time:number,inventory?:InventorySta
   if(!isRecord(raw))throw new Error('Invalid workshop');
   const legacy=!Object.hasOwn(raw,'upgrades');
   const legacyMount=!Object.hasOwn(raw,'mounted');
-  exactKeys(raw,['nextAction','nextInstance','prayerCount','blueprints','job','lastResponse',...(legacy?[]:['upgrades']),...(legacyMount?[]:['mounted'])]);
+  exactKeys(raw,['nextAction','nextInstance','prayerCount','blueprints','job','lastResponse',...(legacy?[]:['upgrades']),...(legacyMount?[]:['mounted']),...(Object.hasOwn(raw,'sweptLeaves')?['sweptLeaves']:[])]);
   for(const key of ['nextAction','nextInstance','prayerCount'])if(!Number.isSafeInteger(raw[key])||(raw[key] as number)<(key==='prayerCount'?0:1))throw new Error('Invalid workshop counter');
   if(!Array.isArray(raw.blueprints)||raw.blueprints.some(id=>!isStableId(id))||new Set(raw.blueprints).size!==raw.blueprints.length||typeof raw.lastResponse!=='string'||raw.lastResponse.length>500)throw new Error('Invalid blueprint knowledge');
   const upgrades=validateUpgrades(raw.upgrades,time),mounted=validateMounted(raw.mounted,upgrades);
+  const sweptLeaves=validateSweptLeaves(raw.sweptLeaves,time);
   for(const targetId of Object.keys(upgrades)){
     const profile=findUpgradeProfile(targetId);
     if(profile?.requires?.some(id=>(upgrades[id]?.level??findUpgradeProfile(id)?.initialLevel??0)<1))throw new Error('Missing prerequisite for installed fitting');
   }
-  if(raw.job!==null){const j=raw.job;if(!isRecord(j))throw new Error('Invalid workshop job');exactKeys(j,['id','kind','blueprintId','phase','startedAt','durationSeconds',...(j.kind==='upgrade'?['targetId','pathId']:[])]);
+  if(raw.job!==null){const j=raw.job;if(!isRecord(j))throw new Error('Invalid workshop job');exactKeys(j,['id','kind','blueprintId','phase','startedAt','durationSeconds',...(j.kind==='upgrade'?['targetId','pathId']:[]),...(Object.hasOwn(j,'assembly')?['assembly']:[]),...(Object.hasOwn(j,'oracle')?['oracle']:[]),...(Object.hasOwn(j,'broomCraft')?['broomCraft']:[])]);
     if(!isStableId(j.id)||!['craft','offering','upgrade'].includes(j.kind as string)||!['approaching','working'].includes(j.phase as string)||typeof j.durationSeconds!=='number'||!Number.isFinite(j.durationSeconds)||j.durationSeconds<=0||j.durationSeconds>86400)throw new Error('Invalid workshop action');
     if(j.phase==='approaching'?j.startedAt!==null:typeof j.startedAt!=='number'||!Number.isFinite(j.startedAt)||j.startedAt<0||j.startedAt>time)throw new Error('Invalid workshop timestamp');
     if(j.kind==='offering'?j.blueprintId!==null:!isStableId(j.blueprintId)||!(raw.blueprints.includes(j.blueprintId)||inventory&&knowsBlueprint(inventory,raw.blueprints as string[],j.blueprintId as string)))throw new Error('Invalid workshop recipe');
     if(j.kind==='craft'&&findBlueprint(j.blueprintId as string)?.kind==='upgrade')throw new Error('Upgrade blueprint cannot craft a furniture item');
+    if(Object.hasOwn(j,'oracle')){
+      if(!isRecord(j.oracle))throw new Error('Invalid item oracle job');exactKeys(j.oracle,['riteId','instanceId']);
+      const oracle=j.oracle,rite=typeof oracle.riteId==='string'?itemOracleRite(oracle.riteId):undefined;
+      const target=inventory?.instances?.find(item=>item.instanceId===oracle.instanceId);
+      if(j.kind!=='offering'||j.phase!=='working'||!rite||!isStableId(oracle.instanceId)||j.durationSeconds!==rite.durationSeconds||Object.hasOwn(j,'assembly')||Object.hasOwn(j,'broomCraft')||inventory&&(!target||target.definitionId!==rite.ownerDefinitionId||target.location.kind!=='inventory'))throw new Error('Invalid item oracle target or rite');
+    }
+    if(Object.hasOwn(j,'broomCraft')){
+      if(j.kind!=='craft'||j.blueprintId!==BROOM.blueprintId||!isRecord(j.broomCraft)||Object.hasOwn(j,'assembly')||Object.hasOwn(j,'oracle'))throw new Error('Invalid broom craft options');
+      exactKeys(j.broomCraft,['mark']);if(j.broomCraft.mark!==null&&j.broomCraft.mark!=='leaf')throw new Error('Unknown broom maker mark');
+    }
+    if(Object.hasOwn(j,'assembly')){
+      if(j.kind!=='craft'||j.phase!=='working'||!isGuidedBlueprint(j.blueprintId as string)||(upgrades[WORKBENCH_BRACING.id]?.level??0)<1)throw new Error('Guided assembly requires the improved workbench');
+      const assembly=validateGuidedAssembly(j.assembly,j.blueprintId as string);
+      if(j.durationSeconds!==(assembly.phase==='finishing'?WORKBENCH_BRACING.finishSeconds:WORKBENCH_BRACING.prepareSeconds))throw new Error('Invalid assembly stage duration');
+    }else if(j.kind==='craft'&&isGuidedBlueprint(j.blueprintId as string))throw new Error('Guided craft lacks assembly evidence');
     if(j.kind==='upgrade'){
       if(!isStableId(j.targetId)||!isStableId(j.pathId)||j.phase!=='working')throw new Error('Invalid upgrade action');
       const profile=findUpgradeProfile(j.targetId),path=findUpgradePath(j.targetId,j.pathId);
       if(!profile||!path||path.blueprintId!==j.blueprintId||(upgrades[j.targetId]?.level??profile.initialLevel)!==path.fromLevel)throw new Error('Invalid upgrade path');
     }
   }
-  return {...structuredClone(raw),upgrades,mounted,blueprints:legacy||legacyMount?[...new Set([...raw.blueprints,...STARTER_BLUEPRINTS])]:[...raw.blueprints]} as WorkshopState;
+  return {...structuredClone(raw),upgrades,mounted,sweptLeaves,blueprints:legacy||legacyMount?[...new Set([...raw.blueprints,...STARTER_BLUEPRINTS])]:[...raw.blueprints]} as WorkshopState;
 }
 export function workshopSnapshot(host:GameState){
   const job=host.workshop.job;

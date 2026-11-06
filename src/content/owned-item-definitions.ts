@@ -1,4 +1,6 @@
 import { STARTER_WEAR, WARDROBE_SLOTS } from './wardrobe.ts';
+import {BROOM} from './broom.ts';
+import {MEAL_VESSEL_DEFINITIONS} from './meal-vessels.ts';
 /**
  * Unique, durable items share the existing inventory.instances ownership ledger.
  * A fixture fitting is not automatically a durable item: only explicitly
@@ -19,6 +21,8 @@ export type OwnedItemDefinition = {
 };
 
 export const OWNED_ITEM_DEFINITIONS: readonly OwnedItemDefinition[] = [
+  ...MEAL_VESSEL_DEFINITIONS,
+  {definitionId:BROOM.definitionId,name:'枝扫帚',category:'household-tool',status:'active',blueprintIds:[BROOM.blueprintId],mountKinds:[],presentationId:BROOM.presentationId},
   {definitionId:'blueprint.sheet',name:'图纸副本',category:'blueprint',status:'active',blueprintIds:[],mountKinds:[],presentationId:null},
   ...STARTER_WEAR.map(item => ({
     definitionId:item.definitionId,name:item.name,category:'apparel',status:'active' as const,
@@ -30,6 +34,14 @@ export const OWNED_ITEM_DEFINITIONS: readonly OwnedItemDefinition[] = [
     definitionId: 'furniture.stump-seat', name: '整木坐墩', category: 'furniture',
     status: 'active', blueprintIds: ['blueprint.stump-cozy', 'blueprint.stump-sturdy'],
     mountKinds: [], presentationId: null,
+  },
+  {
+    definitionId:'furniture.guest-bench',name:'会客长凳',category:'furniture',status:'active',
+    blueprintIds:['blueprint.guest-bench','blueprint.bench-guided'],mountKinds:[],presentationId:'housing.guest-bench',
+  },
+  {
+    definitionId:'furniture.prep-side-table',name:'备餐边桌',category:'furniture',status:'active',
+    blueprintIds:['blueprint.prep-side-table'],mountKinds:[],presentationId:'housing.prep-side-table',
   },
   // The travel review distinguishes a usable tool from an affix attached later.
   // All candidates below are planned, with no crafting recipe or equipped slot.
@@ -69,7 +81,7 @@ export const OWNED_ITEM_DEFINITIONS: readonly OwnedItemDefinition[] = [
   // spawned, rendered or interpreted as approved trait effects in this patch.
   {
     definitionId: 'accessory.pinecone-doorbell', name: '松果门铃', category: 'residential-accessory',
-    status: 'planned', blueprintIds: [], mountKinds: ['entrance-hanging'], presentationId: null,
+    status: 'active', blueprintIds: ['blueprint.pinecone-doorbell'], mountKinds: ['entrance-hanging'], presentationId: 'housing.pinecone-doorbell',
   },
   {
     definitionId: 'accessory.note-box', name: '纸条箱', category: 'residential-accessory',

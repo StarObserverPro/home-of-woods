@@ -117,6 +117,7 @@ export function mountFireTop(host:GameState,partId:string|null){
   const profile=partId?findUpgradeProfile(partId):null;
   if(host.selected!=='camp-fire'||!near(host,findUpgradeProfile('camp-fire')!.stand))return '请先走近篝火，再更换上部配件。';
   if(busy(host))return '先完成或取消当前动作。';
+  if(host.food.cooking)return '汤锅还在煮饭，做好这一锅后再更换上部配件。';
   if(partId&&(!profile||profile.mountSlot!==FIRE_TOP_SLOT||!built(host,partId)))return '还没有制作这个上部配件。';
   const mounted={...host.workshop.mounted};if(partId)mounted[FIRE_TOP_SLOT]=partId;else delete mounted[FIRE_TOP_SLOT];
   const label=partId?profile!.title:'全部上部配件';

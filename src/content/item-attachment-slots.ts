@@ -41,7 +41,7 @@ export const HOST_ATTACHMENT_SLOTS: readonly AttachmentSlotDefinition[] = [
   })),
   {
     slotId: 'cabin:entry-hanging', host: { kind: 'fixture', id: 'cabin' },
-    kind: 'entrance-hanging', status: 'planned',
+    kind: 'entrance-hanging', status: 'active',
     anchorId: 'cabin.entry.hanging', contexts: ['visitor-arrival', 'wind', 'night'],
   },
   {

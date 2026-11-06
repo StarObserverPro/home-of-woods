@@ -13,7 +13,9 @@ export const INITIAL_SAVE_STATUS: SaveStatus = { state: 'loading', message: '正
 type ValidSave = Extract<WorldLoadResult, { decision: 'restored' | 'migrated' }>;
 
 function checkpointToken(state: GameState) {
-  return JSON.stringify([state.inventory.revision, state.forestry.ledger,
+  return JSON.stringify([state.clock.speed, state.inventory.revision, state.forestry.ledger,
+    state.inventory.instances, state.workshop.blueprints, state.workshop.job,
+    state.workshop.upgrades, state.workshop.mounted, state.food, state.dayCycle,
     state.forestry.active?.id, state.forestry.active?.phase,
     state.gathering.action?.actionId, state.gathering.action?.phase,
     Object.values(state.gathering.sources).map(source => source.version),

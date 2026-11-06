@@ -53,8 +53,10 @@ export function createCampProps(r:Resources){
   }
   // An unobtrusive stump for voluntary evening reading beside the existing fire.
   const sitX=DINING_SEAT.x-CAMP_PROPS.fire.x,sitZ=DINING_SEAT.z-CAMP_PROPS.fire.z;
-  mesh(fire,new THREE.CylinderGeometry(.45,.51,.62,9),'#86613e',sitX,.31,sitZ);
-  const seatTop=mesh(fire,new THREE.CylinderGeometry(.43,.43,.04,9),'#c29a62',sitX,.64,sitZ);
+  const seatGround=heightAt(DINING_SEAT.x,DINING_SEAT.z)-heightAt(CAMP_PROPS.fire.x,CAMP_PROPS.fire.z);
+  const capThickness=.04,stumpHeight=DINING_SEAT.height-capThickness;
+  mesh(fire,new THREE.CylinderGeometry(.45,.51,stumpHeight,9),'#86613e',sitX,seatGround+stumpHeight/2,sitZ).name='evening-reading-stump-body';
+  const seatTop=mesh(fire,new THREE.CylinderGeometry(.43,.43,capThickness,9),'#c29a62',sitX,seatGround+DINING_SEAT.height-capThickness/2,sitZ);
   seatTop.name='evening-reading-stump';
   const coreMat=r.own(new THREE.MeshBasicMaterial({color:'#ffe7a0',transparent:true,opacity:.92,depthWrite:false}));
   const flames=createFlames(r);fire.add(flames.group);

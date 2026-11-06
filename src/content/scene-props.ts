@@ -7,7 +7,7 @@ export const CAMP_PROPS = {
   dryer: {id:'camp-drying-rack',x:-40,z:18,radius:1.3},
   altar: {id:'grove-altar',x:-10,z:45,radius:3.35},
 } as const;
-export const DINING_SEAT = {x:CAMP_PROPS.fire.x+2.6,z:CAMP_PROPS.fire.z+2.1} as const;
+export const DINING_SEAT = {x:CAMP_PROPS.fire.x+2.6,z:CAMP_PROPS.fire.z+2.1,height:.64,facing:2.85} as const;
 export const ALTAR_STATES = ['dormant','ready','answering','resting'] as const;
 export type AltarState = typeof ALTAR_STATES[number];
 export type SceneAppearance = {hour:number;fire:boolean;altar:AltarState;offering:OfferingMode;reflections:boolean};

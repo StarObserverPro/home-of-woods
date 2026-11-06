@@ -1,0 +1,15 @@
+.guided-presets,.guided-adjust { display:flex; flex-wrap:wrap; gap:6px; }
+.guided-presets button[aria-pressed=true] { background:#d3b378; color:#263327; }
+.guided-presets button { flex:1; }
+.guided-adjust button { min-width:44px; flex:1; }
+.guided-job { display:grid; gap:8px; padding:8px 0 4px; }
+.guided-job p { margin:0; font-size:13px; }
+.guided-job small { color:#d5dfc8; font-size:12px; }
+.guided-job progress { width:100%; accent-color:#d7be83; }
+.guided-dimensions { display:grid; gap:4px; padding:6px 0; }
+.guided-dimensions label { display:grid; grid-template-columns:50px 1fr; align-items:center; gap:8px; font-size:12px; }
+.guided-dimensions input { min-height:44px; min-width:0; width:100%; accent-color:#d7be83; }
+@media (max-height:480px) and (orientation:landscape) {
+  .guided-job { gap:5px; }
+  .guided-job .tree-actions { flex-wrap:wrap; }
+}

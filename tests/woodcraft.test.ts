@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createState} from '../src/domain/state.ts';
 import {inventoryTransaction,woodBatch,canonicalStacks} from '../src/domain/inventory.ts';
-import {createWoodcraft,availableWoodCount,transferWood,collectWood,validateWoodcraft} from '../src/domain/woodcraft.ts';
+import {createWoodcraft,woodShape,availableWoodCount,transferWood,collectWood,validateWoodcraft} from '../src/domain/woodcraft.ts';
 import {createWoodPhysics} from '../src/physics/woodcraft.ts';
 import {createWoodcraftSession} from '../src/app/woodcraft-session.ts';
 import {createSaveContext} from '../src/domain/save-context.ts';
@@ -41,7 +41,7 @@ test('world save round trip includes queued material ownership and selected piec
 test('damaged current and future saves are protected rather than reset',async()=>{const s=stock();transferWood(s,'prepare');const raw=await serializeWorldSave(s,context,{sequence:1,savedAt:10});for(const mutate of [(v:any)=>delete v.world.woodcraft,(v:any)=>v.world.woodcraft.pieces[0].source.quantity=9,(v:any)=>v.rulesetVersion=999]){const bad=await rehash(raw,mutate);const loaded=await prepareWorldSave(bad,context);assert.equal(loaded.decision,'protected');if(loaded.decision==='protected')assert.equal(loaded.raw,bad);}});
 test('real Rapier gravity settles a mixed pile, reaches sleep and skips idle solver steps',async()=>{
   const s=stock();transferWood(s,'prepare');const physics=await createWoodPhysics();
-  try{for(let i=0;i<2400;i++)assert.deepEqual(physics.step(s.woodcraft,dt),[]);assert.equal(physics.stats().bodies,11);assert.equal(physics.stats().awake,0);assert.ok(s.woodcraft.pieces.some(p=>p.position.y>22));assert.ok(s.woodcraft.pieces.every(p=>p.position.y>=heightAt(p.position.x,p.position.z)+.04));validateWoodcraft(s.woodcraft);const steps=physics.stats().steps;for(let i=0;i<120;i++)physics.step(s.woodcraft,dt);assert.equal(physics.stats().steps,steps);}finally{physics.dispose();physics.dispose();}assert.equal(physics.stats().bodies,0);assert.equal(physics.stats().colliders,0);
+  try{for(let i=0;i<2400;i++)assert.deepEqual(physics.step(s.woodcraft,dt),[]);assert.equal(physics.stats().bodies,11);assert.equal(physics.stats().awake,0);assert.ok(s.woodcraft.pieces.some(p=>p.position.y>heightAt(p.position.x,p.position.z)+2*woodShape(p.source).radius));assert.ok(s.woodcraft.pieces.every(p=>p.position.y>=heightAt(p.position.x,p.position.z)+.04));validateWoodcraft(s.woodcraft);const steps=physics.stats().steps;for(let i=0;i<120;i++)physics.step(s.woodcraft,dt);assert.equal(physics.stats().steps,steps);}finally{physics.dispose();physics.dispose();}assert.equal(physics.stats().bodies,0);assert.equal(physics.stats().colliders,0);
 });
 test('removing a lower support wakes and resettles the upper log',async()=>{
   const s=stock(4,0);transferWood(s,'prepare');const r=.23,y=heightAt(WOODCRAFT.x,WOODCRAFT.z),q={x:0,y:0,z:Math.SQRT1_2,w:Math.SQRT1_2};

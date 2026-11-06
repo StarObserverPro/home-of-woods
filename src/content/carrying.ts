@@ -21,6 +21,7 @@ export const CARRY_ITEMS: Readonly<Record<string, CarrySize>> = {
   'food-salt': {weight: .2, bulk: .2, bundleFactor: 1},
   'food-spice': {weight: .1, bulk: .2, bundleFactor: 1},
   'forest-soup': {weight: .8, bulk: 1.2, bundleFactor: 1},
+  'grain-porridge': {weight: .8, bulk: 1.2, bundleFactor: 1},
 };
 export type CarryMethod = 'hands' | 'bundle';
 export type CarryProfile = {

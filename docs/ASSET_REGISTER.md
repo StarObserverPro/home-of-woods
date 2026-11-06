@@ -1,12 +1,26 @@
 # 资产登记与批准记录
 
+## 营地生活程序资产回接（2026-11-05）
+
+以下代表表现已获用户授权接入本地主体；没有新增下载模型、贴图、字体或许可包，也没有修改原 GLB 字节。本地集成与主线验证分开记录，当前结果见 [CAMP_LIFE_INTEGRATION](CAMP_LIFE_INTEGRATION.md)。
+
+| 对象 | 来源、运行入口与适配 | 资源/状态边界 |
+| --- | --- | --- |
+| 松果门铃 | 项目原创程序几何及 WebAudio 短木音；`scene/housing-presentation.ts`、`bell-audio.ts`，挂在原木屋真实锚点 | 同一实例装卸；手动响铃解锁声音，卸载关闭 AudioContext |
+| 长凳/边桌与工坊引导 | 项目原创 `supported-surface-presentation.ts`、`workshop-assembly-presentation.ts`；共用几何 parts、尺寸缓存与材质，边桌为空碗/板/勺陈设 | 长凳3/边桌4个基础网格批次，实际尺寸入模型；固定陈设不发食物/库存 |
+| 书、碗、面包与坐姿 | 原创程序道具；`life-presentation.ts`、`seated-pose.ts`、`characters.ts` 复用已准入 KayKit 骨架和真实手掌挂点 | 骨长不变，当前角色/衣装接触单独验证；不新增人体或动作 GLB |
+| 枝扫帚与有限落叶 | 原创 `broom-study.ts` / `broom-presentation.ts`；本体3网格/244三角形、可选叶形线段印记；36叶片为3个实例批次/72三角形 | 共享缓存5种几何；三处有限叶堆不增生资源，原物神谕不复制实例 |
+| F100 短谢幕 | 复用原持碗、已建且挂载的汤锅/吊钩、真实附近边桌木勺 | 不召唤缺席器具；有限表现后恢复原 transform，无新增网格/经济结算 |
+
+共享 GPU 资源仍归 Resources/Models；实例装卸撤销模型和命中。稀有度光效与阴影可能增加实际绘制次数，上表是本批基础几何预算。主体原模型许可与通知保持；上述项目原创程序几何不改标第三方 CC0。
+
 2026-11-03 行商 PR #16：NPC 继续采用已经登记并保存 CC0 许可证的 KayKit `visitor.glb` / `motions.glb`，现阶段带篷驴车是 `src/scene/merchant-wagon.ts` 的本地原创程序几何，不包含新增下载资产、贴图或模型；外观参考 [Codels Covered Wagon](https://codels.download/models/wagon)，但没有采用其 GLB，因此不能把参考模型冒称为本项目已集成资源。临时进出运动只消费游戏时钟，不参与物品所有权和交易结算；详见 [行商契约](MERCHANT.md)。
 
 2026-11-02 木屋第一阶段修缮复用下表已有的原创 `cabin.glb`：`scene/cabin-repair.ts` 克隆两块屋顶板和两根门边支撑，保留原几何、材质、倒角及比例。源 GLB 字节不变，不新增第三方下载；共享资源仍由 Models 所有者释放。`scene/selection-marker.ts` 是原创四段细线提示，无贴图；篝火仅修改既有锚点。准入及实机范围见 [营地交互](CAMP_INTERACTIONS.md)。
 
 对应 HOW-BASELINE-1.0；准入规则见 [ASSET_PIPELINE](ASSET_PIPELINE.md)，工作清单见 [ART_HUD](ART_HUD.md)。
 
-**当前记录：R4 基础场景、两项采集及 HOW-CHARACTERS-1 已接入本地实现分支。当前 10 个运行模型，原 ranger 仅归档；manifest 共登记 11 个 GLB。** PR合并和发布另行记录；旧PR #1资产不因历史存在而准入。
+**R4 / HOW-CHARACTERS-1 当时记录：基础场景、两项采集及角色已接入本地实现分支，当时 10 个运行模型、manifest 登记 11 个 GLB，原 ranger 归档。当前资产集合以运行时 manifest 和后续各批登记为准。** PR合并和发布另行记录；旧PR #1资产不因历史存在而准入。
 
 ## R5d 场景回接（2026-10-30）
 
@@ -133,3 +147,13 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 ## HOW-WARDROBE-1（2026-11-04，基础实现候选）
 
 本分支未下载、复制或重贴图库外服装资产；`src/scene/wardrobe-visual.ts` 为新编写的基础程序几何（软檐帽、背包、手套、领巾），依附现有 KayKit 23 骨 `head/chest/handslotl/handslotr`，共享几何材质由 `Resources` 回收。`src/content/wardrobe.ts` 的 78 条为设计版型清单（`design-only`、`meshAssetId=null`），**不是 78 个已可使用的源 GLB**。现有单蒙皮角色的衣裤鞋及腰带尚未独立换网格；不能将该阶段列为整套换装美术验收。后续来源、适配和准入见 [玩家衣柜基础](PLAYER_WARDROBE.md)。
+
+## HOW-UI-ART-R1（2026-11-05，用户批准采用）
+
+来源是本轮内置 imagegen 生成的森林生活图标及界面母版；后续母版只以第一张生成图作风格参考，无外部参考图片、图标包或字体输入。生成图不标为 CC0。用户审阅风格后要求增加细分，随后明确要求将这些图标用于现有菜单。
+
+采用 79 个语义图标的 64／128 px PNG 和 1 张空白物品格，共 159 个 PNG，约 2.35 MiB；逐文件路径、字节数、SHA256 与母版批次记录在 `public/assets/ui-r1/manifest.json`。母版、实际提示词、透明修订及裁切元数据保留在本地独立设计沙盒 `sandbox/ui-art-r1/`，不随本生产合批提供；当时的预览检查保留为[历史记录](history/ui-art-r1-2026-11-05/VERIFICATION.md)。加工包括透明底噪清理、按透明间隙校正裁切、留边及尺寸重采样，无第三方许可证改写。
+
+接入入口为 `src/ui/GameIcon.tsx`、`art-icons.ts` 和 `menu-art.css`，用于常驻工具、仓库、随身、行商、图纸、衣柜、木作与营地日用品。等级色仍由既有物品规则控制，图标本身不新增物品、树种材料账本或等级规则。只采用小尺寸图标和空格皮肤，母版、512px 插值图及整套候选不进入生产目录。图片由浏览器按菜单实际出现加载，无 Three.js 几何／纹理缓存或场景命中对象；关闭菜单后 DOM 释放，原图缓存由浏览器管理。
+
+[tools/prepare-ui-art.mjs](../tools/prepare-ui-art.mjs) 是可选的本地取用工具，需要另有本地设计母版所派生的 `sandbox/ui-art-r1/manifest.json` 和对应 PNG 导出物；这些输入不在本生产包内。构建和 CI 直接使用已提交的正式 PNG 与 manifest，不依赖或自动运行该工具。`verify:assets` 已增加 UI 文件的路径、哈希、PNG 头和尺寸校验。实际游戏菜单操作与手机视口结果见 [接入 scope](scopes/menu-clarity-art-r1.md)。

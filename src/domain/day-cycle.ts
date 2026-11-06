@@ -1,11 +1,17 @@
-import {VISUAL_DAY_SECONDS} from '../content/scene-props.ts';
-import {TENT} from '../content/world.ts';
-import {calendarAt,advanceLocalClock} from './local-clock.ts';
+import {VISUAL_DAY_SECONDS,CAMP_PROPS} from '../content/scene-props.ts';
+import {TENT,CAMP_EXIT,START} from '../content/world.ts';
+import type {Point} from '../content/world.ts';
+import {CAMP_VISITOR} from '../content/characters.ts';
+import {WORKBENCH} from '../content/workshop.ts';
+import {makeColliders,makeTrees} from '../world/layout.ts';
+import type {Collider} from '../world/layout.ts';
+import {canStand,findPath} from './navigation.ts';
+import {calendarAt,lifeDayAt,advanceLocalClock,LIFE_DAY_START_HOUR} from './local-clock.ts';
 import type {GameState} from './state.ts';
 import {isRecord} from './inventory.ts';
 
 /** The world already starts at 14:00. Each day has one meal-time stop and one sunrise. */
-export const DAY_RHYTHM={eveningHour:18,sunriseHour:6,campSleepRadius:14} as const;
+export const DAY_RHYTHM={eveningHour:18,sunriseHour:LIFE_DAY_START_HOUR,campSleepRadius:14} as const;
 export type DayCycleState={
   lastEveningStopDay:number|null;
   nightsSlept:number;
@@ -57,20 +63,47 @@ export function sleepReason(host:GameState):string {
   if(!Number.isFinite(nextSunriseTime(host.time)))return '时间已超出可处理范围。';
   return '';
 }
+/** Reading is voluntary and local. It never grants a meal or cancels unfinished work. */
+export function readingReason(host:GameState,seat:{x:number;z:number}=CAMP_PROPS.fire,reach=4.2):string{
+  if(Math.hypot(host.player.x-seat.x,host.player.z-seat.z)>reach)return '先走近座位，再坐下读故事。';
+  if(host.forestry.active||host.workshop.job||
+    (host.gathering.action&&['approaching','performing'].includes(host.gathering.action.phase))||
+    (host.ritual&&['approaching','performing'].includes(host.ritual.phase)))
+    return '先完成或取消当前动作，再坐下来。';
+  return '';
+}
+/**
+ * Bounded, grid-aligned exits around the tent entrance. A placed bench may
+ * occupy the first one; a safe wake point must still connect to camp activity.
+ */
+export function campExitPoint(blockers:Collider[]):Point|null{
+  const exits=[
+    [0,0],[1.5,0],[3,0],[1.5,1.5],[3,1.5],
+    [0,-1.5],[1.5,-1.5],[3,-1.5],[0,-3],[1.5,-3],[3,-3],
+  ];
+  const destinations=[START,WORKBENCH.stand,{x:CAMP_VISITOR.x+2,z:CAMP_VISITOR.z+1}];
+  for(const [dx,dz] of exits){
+    const point={x:CAMP_EXIT.x+dx,z:CAMP_EXIT.z+dz};
+    if(canStand(point,blockers)&&destinations.some(target=>findPath(point,target,blockers).length>0))return point;
+  }
+  return null;
+}
 /** Explicit player action; do not run offline, skip a second day, or grant an unearned meal. */
-export function sleepUntilSunrise(host:GameState):string{
+export function sleepUntilSunrise(host:GameState,blockers?:Collider[]):string{
   const reason=sleepReason(host);if(reason)return reason;
+  const exit=campExitPoint(blockers??makeColliders(makeTrees(host.seed)));
+  if(!exit)return '帐篷门前的通道被挡住了，请先挪开家具，再结束一天。';
   const wake=nextSunriseTime(host.time);
   host.time=wake;host.clock={speed:1};
   host.dayCycle={...host.dayCycle,nightsSlept:host.dayCycle.nightsSlept+1,wokeAt:wake};
-  host.player={x:TENT.x+3.8,z:TENT.z+4.5,facing:0,moving:false};
+  host.player={...exit,facing:0,moving:false};
   host.selected=null;host.route=[];
   return '夜色退去，清晨的阳光照在帐篷门前。新的一天开始了。';
 }
 export function dayCycleSnapshot(host:GameState){
   const day=calendarAt(host.time),reason=sleepReason(host);
-  return {day:day.day,hour:day.hour,speed:host.clock.speed,
-    eveningStopped:host.clock.speed===0&&host.dayCycle.lastEveningStopDay===day.day,
+  return {day:lifeDayAt(host.time),hour:day.hour,speed:host.clock.speed,
+    eveningStopped:host.clock.speed===0&&host.dayCycle.lastEveningStopDay===day.day&&Math.abs(day.hour-DAY_RHYTHM.eveningHour)<1e-7,
     canSleep:reason==='',sleepReason:reason,
     nearCamp:Math.hypot(host.player.x-TENT.x,host.player.z-TENT.z)<=DAY_RHYTHM.campSleepRadius,
     lastEveningStopDay:host.dayCycle.lastEveningStopDay,nightsSlept:host.dayCycle.nightsSlept,

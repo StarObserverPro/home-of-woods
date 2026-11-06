@@ -104,3 +104,9 @@ Copyright Dimforge and contributors. Licensed under Apache License 2.0.
 Unmodified upstream runtime, bundled locally and loaded only for Woodcraft.
 Complete license: /licenses/rapier-LICENSE.txt
 Source: https://github.com/dimforge/rapier.js
+
+Home of Woods UI artwork — HOW-UI-ART-R1 (2026-11-05)
+AI-generated with built-in imagegen from project-authored prompts; later batches
+reference only artwork generated in the same batch. No third-party image inputs.
+These generated UI images are not designated CC0. Their provenance and exact
+file hashes are recorded in /assets/ui-r1/manifest.json.

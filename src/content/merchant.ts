@@ -53,9 +53,13 @@ const namedBlueprint = (id:string, name:string, icon:string, price:number, uses:
 /** Stable stock for one visit. No refresh by opening a shop or changing game speed. */
 export function merchantListings(seed:number,index:number):MerchantListing[] {
   if(index<0)return [];
-  const craft=CRAFT_BLUEPRINTS[index%CRAFT_BLUEPRINTS.length];
+  const tradeCraft=CRAFT_BLUEPRINTS.filter(plan=>plan.definitionId==='furniture.stump-seat');
+  const craft=tradeCraft[index%tradeCraft.length];
   const exterior=CAMP_EXTERIOR_BLUEPRINTS.filter(plan=>!['blueprint.tent-ropes','blueprint.camp-fire-stones'].includes(plan.id));
-  const first=exterior[(index*3+seed)%exterior.length],second=exterior[(index*3+seed+5)%exterior.length];
+  // A unit step visits every plan regardless of catalogue length. Opposite
+  // slots cover both halves without aliasing when the plan count is even.
+  const first=exterior[(index+seed)%exterior.length];
+  const second=exterior[(index+seed+Math.ceil(exterior.length/2))%exterior.length];
   const extras=consumables.filter((_,i)=>(i+index)%consumables.length===0||(i+index)%consumables.length===2);
   return [
     ...fixed,

@@ -20,7 +20,32 @@ jobs:
       - run: npm ci
       - run: npm run verify:assets
       - run: npm run build
-      # Test the current clothing feature; old evidence and scene-sandbox
-      # regressions are not prototype merge gates.
-      - run: node --experimental-strip-types --test tests/wardrobe.test.ts tests/character-wardrobe.test.ts tests/merchant.test.ts tests/food-foundation.test.ts tests/day-cycle.test.ts tests/affix-vfx-library.test.ts tests/release-integration.test.ts
-        if: ${{ hashFiles('tests/wardrobe.test.ts') != '' }}
+      # Current gameplay and ownership checks are required. Archived evidence
+      # audits run separately on request.
+      - name: Core gameplay
+        run: >-
+          node --experimental-strip-types --test
+          tests/wardrobe.test.ts tests/character-wardrobe.test.ts
+          tests/merchant.test.ts tests/food-foundation.test.ts
+          tests/day-cycle.test.ts tests/affix-vfx-library.test.ts
+          tests/release-integration.test.ts
+      - name: Clock, meals and camp life
+        run: >-
+          node --experimental-strip-types --test
+          tests/local-clock-resume.test.ts tests/clock-time-label.test.ts
+          tests/evening-p2.test.ts
+          tests/camp-exit.test.ts tests/food-p3.test.ts
+          tests/food-sunrise.test.ts tests/pot-foundation.test.ts
+          tests/food-supply-audit.test.ts tests/meal-curtain.test.ts
+          tests/meal-curtain-scene.test.ts tests/whimsy-preferences.test.ts
+      - name: Housing, seating and assembly
+        run: >-
+          node --experimental-strip-types --test
+          tests/housing.test.ts tests/housing-contact.test.ts
+          tests/bench-seating-access.test.ts tests/seated-skin-contact.test.ts
+          tests/guided-workshop.test.ts tests/supported-furniture-scene.test.ts
+          tests/workshop-assembly-scene.test.ts tests/save-checkpoints.test.ts
+      - name: Ordinary and whimsical broom use
+        run: >-
+          node --experimental-strip-types --test
+          tests/broom-oracle.test.ts tests/broom-presentation.test.ts

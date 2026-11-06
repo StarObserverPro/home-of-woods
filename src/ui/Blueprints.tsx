@@ -1,39 +1,37 @@
+import {useState} from 'react';
 import {BLUEPRINTS,WORKBENCH} from '../content/workshop.ts';
 import type {WorkshopSnapshot} from '../domain/workshop.ts';
 import {findUpgradeProfile,upgradeHostId} from '../content/upgrades.ts';
-
-function PlanDrawing({subject}:{subject:'house'|'tent'|'fire'|'craft'}){
-  return <svg className="blueprint-drawing" viewBox="0 0 240 130" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M14 20h212M14 45h212M14 70h212M14 95h212M14 120h212M30 10v110M65 10v110M100 10v110M135 10v110M170 10v110M205 10v110" opacity=".12" strokeWidth="1"/>
-    {subject==='house'?<><path d="m46 64 74-46 74 46M59 56v58h122V56M88 114V77h32v23h-32zM137 77h26v23h-26z"/><path d="m73 47 18-11 15 9-19 12zm63-19 18 11-15 10-18-12" stroke="#f6d28e" strokeWidth="4"/></>:subject==='tent'?<><path d="M37 100 120 22 204 100ZM120 22v78M37 100l-15 14M204 100l15 14M82 100l38-78 38 78" strokeLinejoin="round"/><path d="M22 114h197M54 100v14m132-14v14" opacity=".5"/></>:subject==='fire'?<><ellipse cx="120" cy="89" rx="58" ry="25"/><path d="M62 89v10c0 14 116 14 116 0V89M75 78 120 66 165 78M84 67v-38m72 38v-38M84 29h72M120 29v27" strokeLinejoin="round"/><path d="m112 81 7-17 9 16" stroke="#f6d28e"/></>:<><ellipse cx="120" cy="50" rx="46" ry="24"/><path d="M74 50v47c0 13 92 13 92 0V50M96 72v29m46-30v31"/><ellipse cx="120" cy="50" rx="24" ry="12" opacity=".5"/></>}
-  </svg>;
-}
+import {GameIcon} from './GameIcon.tsx';
+import {blueprintSubjectIcon} from './art-icons.ts';
 
 export function BlueprintLibrary({view,onSelect}:{view:WorkshopSnapshot;onSelect:(id:string)=>void}){
-  return <section className="blueprint-library" aria-label="图纸收藏">
-    <details className="warehouse-note"><summary>图纸如何使用？</summary>基础图纸永久掌握；复杂图纸可能只有有限制作次数。材料在实际制作时扣除。</details>
-    {BLUEPRINTS.map(plan=>{
-      const known=view.blueprints.includes(plan.id);
-      const copies=view.copyUses[plan.id]??[];
-      const available=known||copies.length>0;
-      const upgrade=plan.kind==='upgrade';
-      const host=upgrade?upgradeHostId(plan.targetId):'';
-      const materials=upgrade?findUpgradeProfile(plan.targetId)?.paths.find(path=>path.blueprintId===plan.id)?.materials:[];
-      const subject=host==='cabin'?'house':host==='tent'?'tent':host==='camp-fire'?'fire':'craft';
-      return <article className={`blueprint-card${available?'':' is-unknown'}`} key={plan.id}>
-        <PlanDrawing subject={subject}/>
-        <div className="blueprint-heading"><h3>{plan.name}</h3><span>{known?'∞':copies.length?'剩 '+copies.join(' / '):'未获得'}</span></div>
-        <small>{plan.targetLabel}</small><details><summary>图纸说明</summary><p>{plan.description}</p>
-        {upgrade&&<p className="blueprint-cost">{materials?.length?materials.map(material=>`${material.name} ${material.quantity} ${material.unit??'份'}`).join(' · '):'使用原有材料原位整理，无额外耗材'}</p>}
-        <p className="blueprint-source">{plan.source}</p></details>
-        {available&&<button className="context-button" onClick={()=>onSelect(upgrade?host:WORKBENCH.id)}>{upgrade?'查看设施':'查看工作台'}</button>}
-      </article>;
-    })}
+  const [filter,setFilter]=useState('available'),[selectedId,setSelectedId]=useState(''),[detailOpen,setDetailOpen]=useState(false);
+  const available=(id:string)=>view.availableBlueprints.includes(id);
+  const plans=BLUEPRINTS.filter(p=>filter==='all'||filter==='available'&&available(p.id)||filter==='craft'&&p.kind==='craft'||filter==='upgrade'&&p.kind==='upgrade');
+  const selected=BLUEPRINTS.find(p=>p.id===selectedId)??plans[0];
+  const count=view.availableBlueprints.length;
+  return <section className={'blueprint-library'+(detailOpen?' show-blueprint-detail':'')} aria-label="图纸收藏">
+    <div className="menu-section-heading"><h3>图纸收藏</h3><span>可用 {count} 张</span></div>
+    <nav className="menu-filter-tabs" aria-label="图纸筛选">{[['available','可使用'],['all','全部'],['craft','木作'],['upgrade','设施改造']].map(([id,name])=><button key={id} aria-pressed={filter===id} onClick={()=>{setFilter(id);setSelectedId('');setDetailOpen(false);}}>{name}</button>)}</nav>
+    <div className="blueprint-layout"><div className="blueprint-grid" role="group" aria-label="图纸列表">
+      {plans.map(plan=>{const known=view.blueprints.includes(plan.id),uses=view.copyUses[plan.id]??[],ready=available(plan.id);return <button className={'blueprint-card'+(!ready?' is-unknown':'')} key={plan.id} aria-pressed={selected?.id===plan.id} onClick={()=>{setSelectedId(plan.id);setDetailOpen(true);}}>
+        <span className="blueprint-subject"><GameIcon name={blueprintSubjectIcon(plan.id)} size={64}/><GameIcon name="blueprint" size={25} className="blueprint-badge"/></span><strong>{plan.name}</strong><small>{known?'已掌握 · 永久':uses.length?'可制作 '+uses.reduce((n,v)=>n+v,0)+' 次':'尚未获得'}</small>
+      </button>;})}
+      {!plans.length&&<div className="menu-empty"><GameIcon name="blueprint" size={60}/><h3>还没有可用图纸</h3><p>向行商换取，或在祭坛供奉蘑菇。</p><button className="context-button" onClick={()=>setFilter('all')}>看看全部图纸</button></div>}
+    </div>{selected&&<section className="blueprint-detail" aria-label="图纸详情"><button className="item-detail-back subtle-button" onClick={()=>setDetailOpen(false)}>← 返回图纸列表</button><GameIcon name={blueprintSubjectIcon(selected.id)} size={64}/><span className="location-label">{selected.kind==='craft'?'木作图纸':'设施改造图纸'}</span><h3>{selected.name}</h3>
+      {available(selected.id)?<button className="context-button primary-action" onClick={()=>onSelect(selected.kind==='upgrade'?upgradeHostId(selected.targetId):WORKBENCH.id)}>{selected.kind==='craft'?'查看工作台 · 去制作':'查看设施 · 去改造'}</button>:<p className="action-reason">尚未获得 · {selected.source}</p>}
+      <p>{selected.description}</p><p className="blueprint-target">{selected.targetLabel}</p>
+      {selected.kind==='upgrade'&&<p>{findUpgradeProfile(selected.targetId)?.paths.find(p=>p.blueprintId===selected.id)?.materials.map(m=>m.name+' '+m.quantity+' '+(m.unit??'份')).join(' · ')||'使用设施原有材料整理'}</p>}
+      <details><summary>图纸使用说明</summary><p>永久图纸可反复使用。有限图纸仅在成功制作后消耗次数；材料也在实际制作时扣除。</p></details>
+    </section>}</div>
   </section>;
 }
 
-export function UpgradeControls({view,remote=false,disabled,hasContextActions,onApproach,onUpgrade,onMount,onCancel}:{
+
+export function UpgradeControls({view,remote=false,disabled,hasContextActions,mountReason='',onApproach,onUpgrade,onMount,onCancel}:{
   view:WorkshopSnapshot;remote?:boolean;disabled:boolean;hasContextActions:boolean;onApproach:(id:string)=>void;
+  mountReason?:string;
   onUpgrade:(id:string)=>void;onMount:(id:string|null)=>void;onCancel:()=>void;
 }){
   const upgrades=view.upgradeOptions.length?view.upgradeOptions:view.upgrade?[view.upgrade]:[];
@@ -54,12 +52,13 @@ export function UpgradeControls({view,remote=false,disabled,hasContextActions,on
           {remote?null:working?<><p>正在安装「{upgrade.pathName}」…</p><progress aria-label="改装进度" value={view.job!.progress} max={1}/><button className="context-button" onClick={onCancel}>取消施工</button></>:
             installed&&upgrade.mountSlot?
               !upgrade.near?<button className="context-button" disabled={disabled||hasWork} onClick={()=>onApproach(upgrade.targetId)}>走到安装位置</button>:
-              <button className="context-button" disabled={disabled||hasWork} onClick={()=>onMount(upgrade.mounted?null:upgrade.targetId)}>{upgrade.mounted?'收起这个配件':'装上这个配件'}</button>:
+              <button className="context-button" title={mountReason} disabled={disabled||hasWork||!!mountReason} onClick={()=>onMount(upgrade.mounted?null:upgrade.targetId)}>{upgrade.mounted?'收起这个配件':'装上这个配件'}</button>:
             installed?<p className="upgrade-installed">已安装在原有设施上</p>:
             upgrade.status==='planned'?(<>{!hasContextActions&&!upgrade.near&&<button className="context-button" disabled={disabled||hasWork} onClick={()=>onApproach(upgrade.targetId)}>走近{upgrade.title}</button>}</>):
             !upgrade.near?<button className="context-button" disabled={disabled||hasWork} onClick={()=>onApproach(upgrade.targetId)}>走到安装位置</button>:
             <button className="context-button" disabled={disabled||hasWork||!upgrade.canStart} onClick={()=>onUpgrade(upgrade.targetId)}>制作并安装</button>}
           {!working&&!installed&&upgrade.reason&&upgrade.status!=='planned'&&upgrade.near&&<p className="action-reason">{upgrade.reason}</p>}
+          {!remote&&installed&&upgrade.mountSlot&&upgrade.near&&mountReason&&<p className="action-reason">{mountReason}</p>}
         </details>;
       })}
     </div>

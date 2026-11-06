@@ -5,6 +5,16 @@ import type {RarityVfxMode} from '../content/item-vfx.ts';
 import {createWoodcraftPresentation} from './woodcraft-presentation.ts';
 import {WOODCRAFT,insideWoodcraft} from '../content/woodcraft.ts';
 import {createWorkshopPresentation} from './workshop-presentation.ts';
+import {createHousingPresentation} from './housing-presentation.ts';
+import {createLifePresentation} from './life-presentation.ts';
+import {createBroomPresentation} from './broom-presentation.ts';
+import type {BroomUseEvent} from '../domain/broom.ts';
+import type {MealCommitted} from '../domain/food.ts';
+import type {WhimsyMode} from '../content/whimsy-display.ts';
+import {diningReadingSpot} from '../domain/housing.ts';
+import type {SeatContact} from './seated-pose.ts';
+import {SEAT_DEFINITION,WORKBENCH} from '../content/workshop.ts';
+import {HOUSING,isHousingFurniture} from '../content/housing.ts';
 import {createMerchantWagon} from './merchant-wagon.ts';
 import type {PlacementDraft} from '../domain/furniture-placement.ts';
 import {CAMP_VISITOR} from '../content/characters.ts';
@@ -24,7 +34,7 @@ import {createCampProps} from './camp-props.ts';
 import {createSelectionMarker} from './selection-marker.ts';
 import {createCabinRepair} from './cabin-repair.ts';
 import {createCampExteriors} from './camp-exteriors.ts';
-import {VIEWS,CAMP_PROPS} from '../content/scene-props.ts';
+import {VIEWS,CAMP_PROPS,DINING_SEAT} from '../content/scene-props.ts';
 import type {SceneAppearance,SceneViewPreset} from '../content/scene-props.ts';
 import {sceneAppearanceAt,daylightAt} from '../domain/scene-props.ts';
 import {createForestryPresentation} from './forestry-presentation.ts';
@@ -144,6 +154,8 @@ export async function createScene(
   const cabinRepair=createCabinRepair(models);
   props.get('cabin')!.add(cabinRepair.group);
   const campExteriors=createCampExteriors(r,props.get('tent')! as THREE.Group,props.get('cabin')! as THREE.Group,camp.roots.get(CAMP_PROPS.fire.id)!);
+  const housing=createHousingPresentation(r,props.get('cabin')!);
+  scene.add(housing.group);
   const propFades = new Map<
     THREE.Object3D,
     {
@@ -178,6 +190,19 @@ export async function createScene(
     propFades.set(root, { center, radius, materials });
   });
   const characters=createCharacters(r,models,trees,forest.selections),player=characters.player;
+  const visibleObject=(object:THREE.Object3D|undefined|null)=>{if(!object)return null;for(let current:THREE.Object3D|null=object;current;current=current.parent)if(!current.visible)return null;return object;};
+  const life=createLifePresentation(r,player,{curtainTargets(event,state){
+    const cue=event.curtain;if(!cue)return {pot:null,spoon:null};
+    const hook=visibleObject(campExteriors.parts.get(cue.hookId));
+    const pot=state.workshop.mounted['camp-fire:top']===cue.hookId&&(state.workshop.upgrades[cue.potId]?.level??0)>=1&&hook?visibleObject(campExteriors.parts.get(cue.potId)):null;
+    const table=cue.spoonTableId?state.inventory.instances?.find(item=>item.instanceId===cue.spoonTableId&&item.definitionId==='furniture.prep-side-table'&&item.location.kind==='world'):null;
+    const spoon=table?visibleObject(housing.object(table.instanceId)?.getObjectByName('prep-wooden-spoon')):null;
+    return {pot,spoon};
+  }});
+  const broom=createBroomPresentation(r,player);scene.add(broom.group);
+  let readingFocus:SeatContact|null=null;
+  let readingMode=false,mealFraming=false;
+  let lastState:GameState|null=null;
   scene.add(player,characters.visitor);
   const merchantWagon=createMerchantWagon(r);scene.add(merchantWagon.group);
   const wildlife=createWildlifePresentation(r,models);scene.add(wildlife.group);
@@ -262,7 +287,7 @@ export async function createScene(
   };
   const pick = (clientX: number, clientY: number) => {
     screenRay(clientX,clientY);
-    const hit = ray.intersectObjects([...hauling.hits.objects(),...woodcraft.hits.objects(),...workshop.hits.objects(),...forestry.getPickTargets(),...props.values(),...gathering.hits.objects(),...camp.hits.filter(o=>o.userData.propActive!==false)], true).find(hit=>{let o:THREE.Object3D|null=hit.object;while(o){if(!o.visible)return false;o=o.parent;}return true;}),
+    const hit = ray.intersectObjects([...broom.hits.objects(),...housing.hits.objects(),...hauling.hits.objects(),...woodcraft.hits.objects(),...workshop.hits.objects(),...forestry.getPickTargets(),...props.values(),...gathering.hits.objects(),...camp.hits.filter(o=>o.userData.propActive!==false)], true).find(hit=>{let o:THREE.Object3D|null=hit.object;while(o){if(!o.visible)return false;o=o.parent;}return true;}),
       terrainHit = ray.intersectObject(ground)[0];
     if(woodDropMode){const drop=ray.intersectObjects([...woodcraft.hits.objects(),ground],true)[0];if(drop)intent({kind:'wood-drop',x:drop.point.x,y:drop.point.y,z:drop.point.z});return;}
     if(placementMode){if(terrainHit)intent({kind:'move',x:terrainHit.point.x,z:terrainHit.point.z});return;}
@@ -271,6 +296,8 @@ export async function createScene(
       const haulId=hauling.hits.resolve(hit.object);if(haulId){intent({kind:'select',id:haulId});return;}
       const looseId=woodcraft.hits.resolve(hit.object);if(looseId){intent({kind:'select',id:looseId});return;}
       const ownedId=workshop.hits.resolve(hit.object);if(ownedId){intent({kind:'select',id:ownedId});return;}
+      const housingId=housing.hits.resolve(hit.object);if(housingId){intent({kind:'select',id:housingId});return;}
+      const broomId=broom.hits.resolve(hit.object);if(broomId){intent({kind:'select',id:broomId});return;}
       if(hit.object.userData.propId){intent({kind:'select',id:hit.object.userData.propId});return;}
       const sourceId = gathering.hits.resolve(hit.object);
       if (sourceId) { intent({ kind: 'select', id: sourceId }); return; }
@@ -408,7 +435,7 @@ export async function createScene(
       return id&&id!==CAMP_VISITOR.id?{kind:'furniture' as const,id}:null;
     },
     setWoodcraftDrop(value:boolean){woodDropMode=value;},
-    setPlacement(value:PlacementDraft|null){placementMode=!!value;workshop.setPreview(value);},
+    setPlacement(value:PlacementDraft|null){placementMode=!!value;workshop.setPreview(value&&lastState?.inventory.instances?.find(i=>i.instanceId===value.instanceId)?.definitionId===SEAT_DEFINITION?value:null);housing.setPreview(value);broom.setPreview(value);},
     resetCamera() {
       yaw = CAMERA.yaw;
       elevation = CAMERA.elevation;
@@ -420,8 +447,16 @@ export async function createScene(
     zoomBy(amount: number) {manualCamera();
       zoom = clamp(zoom * amount, CAMERA.minZoom, CAMERA.maxZoom);
     },
-    setReading(value:boolean){characters.setReading(value);view.inspectScene(value?'meal':null);},
-    setRarityVfxMode(mode:RarityVfxMode){workshop.setRarityVfxMode(mode);},
+    setReading(value:boolean,seat?:SeatContact){if(value)broom.cancel();readingMode=value;readingFocus=value&&seat?seat:null;life.cancelMeal();mealFraming=false;characters.setReading(value,seat);life.setReading(value);view.inspectScene(value?'meal':null);if(value)yaw=(seat?.facing??DINING_SEAT.facing)-.55;},
+    presentMeal(kind:'soup'|'bread',event?:MealCommitted){broom.cancel();const seat=diningReadingSpot().seat;readingFocus=seat;life.presentMeal(kind,event);mealFraming=true;characters.setReading(true,seat);view.inspectScene('meal');yaw=DINING_SEAT.facing-.55;},
+    presentBroom(event:BroomUseEvent){view.cancelMeal();readingMode=false;readingFocus=null;life.setReading(false);characters.setReading(false);view.inspectScene(null);return broom.present(event);},
+    isBroomPlaying:()=>broom.isPlaying(),cancelBroom:()=>broom.cancel(),
+    resetPresentationHistory(){view.cancelMeal();life.resetPresentationHistory();broom.resetPresentationHistory();},
+    isMealPlaying:()=>life.isMealPlaying(),
+    cancelMeal(){if(!mealFraming)return;life.cancelMeal();mealFraming=false;if(!readingMode){readingFocus=null;characters.setReading(false);view.inspectScene(null);}},
+    ringHousingBell(id:string){housing.ring(id);},
+    setRarityVfxMode(mode:RarityVfxMode){workshop.setRarityVfxMode(mode);housing.setRarityVfxMode(mode);broom.setRarityVfxMode(mode);life.setRarityVfxMode(mode);},
+    setWhimsyMode(mode:WhimsyMode){broom.setWhimsyMode(mode);life.setWhimsyMode(mode);},
     setReducedMotion(value: boolean) {
       reducedMotion = value;
     },
@@ -433,6 +468,7 @@ export async function createScene(
     },
     render(state: GameState, dt: number) {
       if (destroyed) return;
+      lastState=state;
       elapsed = state.time;
       ambientTime += Math.max(0,Math.min(dt,.1));
       appearance={...sceneAppearanceAt(state.time),...(Number.isFinite(auditHour)&&auditHour>=0&&auditHour<=24?{hour:auditHour}:{}),...sceneOverrides};
@@ -449,7 +485,14 @@ export async function createScene(
       const { x, z, facing, moving } = state.player,
         y = heightAt(x, z);
       forestry.update(state,reducedMotion);understory.update(state);
+      if(mealFraming&&(state.player.moving||state.route.length||state.workshop.job||state.forestry.active||state.gathering.action?.phase==='performing'))view.cancelMeal();
+      life.restorePose();
+      broom.restorePose();
       characters.update(state,reducedMotion,ambientTime);
+      life.update(state,dt,reducedMotion);
+      broom.update(state,dt,reducedMotion,sky.night);
+      if(mealFraming&&!life.isMealPlaying())view.cancelMeal();
+      housing.update(state,dt,reducedMotion,sky.night);
       merchantWagon.update(state.time,reducedMotion);
       forestry.alignContact(characters.getImpact());
       gathering.update(state.gathering);
@@ -457,42 +500,64 @@ export async function createScene(
       cabinRepair.update(state.workshop.upgrades?.cabin?.level??0);
       campExteriors.update(state.workshop);
       const action=state.gathering.action,ritual=state.ritual,craft=state.workshop.job;
-      cameraAction=craft?.phase==='working'?craft.id:action?.phase==='performing'?action.actionId:ritual?.phase==='performing'?`prayer-${ritual.startedAt}`:'';
-      const framed=!!cameraAction && cameraOverride!==cameraAction && !reducedMotion && !scenePreset;
-      const actionTime=craft?.phase==='working'?state.time-craft.startedAt!:action?.phase==='performing'?state.time-action.startedAt!:ritual?.phase==='performing'?state.time-ritual.startedAt!:0;
-      const actionLength=craft?.phase==='working'?craft.durationSeconds:action?.phase==='performing'?action.durationSeconds:5.5;
-      const blend=framed?ramp(actionTime,0,.65)*(1-ramp(actionTime,actionLength-.75,actionLength)):0;
+      const sweeping=broom.action();
+      cameraAction=sweeping?.id??(craft?.phase==='working'?craft.id:action?.phase==='performing'?action.actionId:ritual?.phase==='performing'?`prayer-${ritual.startedAt}`:'');
+      const guidedCraft=craft?.phase==='working'&&!!craft.assembly;
+      const framed=!!cameraAction && cameraOverride!==cameraAction && (!reducedMotion||guidedCraft||sweeping) && !scenePreset;
+      const actionTime=sweeping?.elapsed??(craft?.phase==='working'?state.time-craft.startedAt!:action?.phase==='performing'?state.time-action.startedAt!:ritual?.phase==='performing'?state.time-ritual.startedAt!:0);
+      const actionLength=sweeping?.duration??(craft?.phase==='working'?craft.durationSeconds:action?.phase==='performing'?action.durationSeconds:5.5);
+      const guidedBlend=!guidedCraft?0:reducedMotion?1:craft.assembly!.phase==='preparing'?ramp(actionTime,0,.65):craft.assembly!.phase==='finishing'?1-ramp(actionTime,actionLength-.65,actionLength):1;
+      const blend=framed?(guidedCraft?guidedBlend:sweeping&&reducedMotion?1:ramp(actionTime,0,.65)*(1-ramp(actionTime,actionLength-.75,actionLength))):0;
       const climbing=action?.phase==='performing'&&action.motionTag==='gather.climb';
       const rear=action?.phase==='performing'&&action.motionTag==='gather.pluck';
-      const actionYaw=player.rotation.y+Math.PI+(rear?0:-.8);
+      const actionYaw=player.rotation.y+(sweeping?sweeping.yawOffset:Math.PI+(guidedCraft?-1.12:rear?0:-.8));
       const viewYaw=yaw+Math.atan2(Math.sin(actionYaw-yaw),Math.cos(actionYaw-yaw))*blend;
-      const viewElevation=THREE.MathUtils.lerp(elevation,climbing?THREE.MathUtils.lerp(.10,.28,ramp(actionTime,2,3.2)):.28,blend);
-      const actionDistance=climbing?THREE.MathUtils.lerp(9,22,ramp(actionTime,2,3.2)):10;
+      const viewElevation=THREE.MathUtils.lerp(elevation,guidedCraft?.44:sweeping?.40:climbing?THREE.MathUtils.lerp(.10,.28,ramp(actionTime,2,3.2)):.28,blend);
+      const housingItem=state.inventory.instances?.find(i=>i.instanceId===state.selected);
+      const housingPoint=state.selected==='cabin'||housingItem?.definitionId===HOUSING.doorbell.definitionId&&housingItem.location.kind==='mounted'?HOUSING.doorbell.point:
+        state.selected===WORKBENCH.id?WORKBENCH:housingItem&&isHousingFurniture(housingItem.definitionId)&&housingItem.location.kind==='world'?housingItem.location:null;
+      const focusHousing=!scenePreset&&!framed&&housingPoint&&Math.hypot(state.player.x-housingPoint.x,state.player.z-housingPoint.z)<6?housingPoint:null;
+      const focusPlacement=placementMode&&!scenePreset&&!framed;
+      const actionDistance=guidedCraft?(mobile?13:11.5):sweeping?(mobile?13:11):climbing?THREE.MathUtils.lerp(9,22,ramp(actionTime,2,3.2)):10;
       const framing = Math.min(1, (CAMERA.zoom / zoom) ** 2);
       const inspecting=characters.getInspection()!==null;
       desired.set(x,y+(inspecting?1.25:1.5),z).lerp(overview,inspecting?0:(mobile ? .12 : .75)*framing);
-      if(inspecting)target.copy(desired);else if(scenePreset){target.fromArray(VIEWS[scenePreset].target);if(scenePreset==='altar')target.y=camp.foundation.levelY+1.9;if(scenePreset==='ritual')target.y=camp.foundation.levelY+2.5;}else target.lerp(desired, reducedMotion ? 1 : 1 - Math.exp(-dt * 5));
+      if(focusHousing){
+        const focusHeight=focusHousing===HOUSING.doorbell.point?props.get('cabin')!.localToWorld(new THREE.Vector3(HOUSING.doorbell.anchor.x,HOUSING.doorbell.anchor.y,HOUSING.doorbell.anchor.z)).y:heightAt(focusHousing.x,focusHousing.z)+1.2;
+        desired.set(focusHousing.x,focusHeight,focusHousing.z);
+      }
+      if(focusPlacement)desired.set(x,y+.7,z);
+      if(inspecting)target.copy(desired);else if(scenePreset){target.fromArray(VIEWS[scenePreset].target);if(scenePreset==='altar')target.y=camp.foundation.levelY+1.9;if(scenePreset==='ritual')target.y=camp.foundation.levelY+2.5;}else target.lerp(desired,reducedMotion?1:1-Math.exp(-dt*5));
+      if(scenePreset==='meal'&&readingFocus){target.set(readingFocus.x,heightAt(readingFocus.x,readingFocus.z)+1.1,readingFocus.z);}
       desired.copy(player.position).add(new THREE.Vector3(0,climbing?THREE.MathUtils.lerp(.85,2.3,ramp(actionTime,2,3.2)):1,0));target.lerp(desired,blend);if(mobile)target.y-=1.1*blend;
+      if(guidedCraft&&framed)target.set(WORKBENCH.x,heightAt(WORKBENCH.x,WORKBENCH.z)+1.55,WORKBENCH.z);
+      if(sweeping&&framed)target.set(sweeping.focus.x,heightAt(sweeping.focus.x,sweeping.focus.z)+.85,sweeping.focus.z);
       offset
         .set(
           Math.sin(viewYaw) * Math.cos(viewElevation),
           Math.sin(viewElevation),
           Math.cos(viewYaw) * Math.cos(viewElevation),
         )
-        .multiplyScalar(inspecting?11:scenePreset?VIEWS[scenePreset].distance:THREE.MathUtils.lerp(110,actionDistance,blend));
+        .multiplyScalar(inspecting?11:scenePreset?VIEWS[scenePreset].distance:focusPlacement?22:focusHousing?21:THREE.MathUtils.lerp(110,actionDistance,blend));
       camera.position.copy(target).add(offset);
       if(camera.position.x>WORLD.minX&&camera.position.x<WORLD.maxX&&camera.position.z>WORLD.minZ&&camera.position.z<WORLD.maxZ)camera.position.y=Math.max(camera.position.y,heightAt(camera.position.x,camera.position.z)+THREE.MathUtils.lerp(3,.4,blend));
       if(scenePreset)for(const tree of trees)if(Math.hypot(camera.position.x-tree.x,camera.position.z-tree.z)<3*tree.scale)camera.position.y=Math.max(camera.position.y,heightAt(tree.x,tree.z)+9*tree.scale);
       camera.lookAt(target);
       workshop.update(state,camera,dt,reducedMotion,sky.night);woodcraft.update(state.woodcraft);
       camera.zoom = THREE.MathUtils.lerp(zoom,1,blend) * (mobile ? scenePreset?.8:THREE.MathUtils.lerp(1.45,.9,blend) : 1);
+      if(focusHousing)camera.zoom=1;
+      if(focusPlacement)camera.zoom=1.05;
+      if((readingMode||mealFraming)&&camera.aspect>=1&&host.clientWidth<1000){camera.setViewOffset(host.clientWidth,host.clientHeight,host.clientWidth*.24,0,host.clientWidth,host.clientHeight);}
+      else if((guidedCraft||sweeping)&&framed&&mobile&&camera.aspect>=1){camera.setViewOffset(host.clientWidth,host.clientHeight,-host.clientWidth*.20,0,host.clientWidth,host.clientHeight);}
+      else if((readingMode||mealFraming||focusHousing||(guidedCraft||sweeping)&&framed)&&mobile&&camera.aspect<1){camera.setViewOffset(host.clientWidth,host.clientHeight,0,host.clientHeight*((readingMode||mealFraming) ? .25 : (guidedCraft||sweeping)&&framed ? .22 : .16),host.clientWidth,host.clientHeight);}
+      else camera.clearViewOffset();
       if(['wildlife','stagVista','goatVista'].includes(scenePreset??'')&&camera.aspect<1)camera.zoom*=camera.aspect;
       camera.updateProjectionMatrix();
       environment.update(ambientTime,dt,camera.position,reducedMotion);
       scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);
       river.update(ambientTime,sky.day,reducedMotion,appearance.reflections,host.clientWidth<600||host.clientHeight<500);
       const selected = state.selected
-        ? (hauling.point(state.selected) ?? woodcraft.point(state.selected) ?? workshop.point(state.selected) ?? (state.selected===CAMP_VISITOR.id?CAMP_VISITOR:null) ?? gatheringRegistry.sources.get(state.selected) ?? treeById.get(state.selected) ??
+        ? (broom.point(state.selected) ?? housing.point(state.selected) ?? hauling.point(state.selected) ?? woodcraft.point(state.selected) ?? workshop.point(state.selected) ?? (state.selected===CAMP_VISITOR.id?CAMP_VISITOR:null) ?? gatheringRegistry.sources.get(state.selected) ?? treeById.get(state.selected) ??
           (state.selected === "cabin"
             ? CABIN
             : state.selected === "tent"
@@ -551,7 +616,7 @@ export async function createScene(
     },
     stats() {
       return {
-        woodcraft:woodcraft.stats(),workshop:workshop.stats(),understory:understory.stats(),treeShapes:trees.reduce((counts,t)=>{const name=treeVisual(t).name;counts[name]=(counts[name]??0)+1;return counts;},{} as Record<string,number>),appearance:{...appearance},scenePreset,camp:camp.stats(),terrain:ground.geometry.userData,shaderErrors,
+        life:life.stats(),broom:broom.stats(),housing:housing.stats(),woodcraft:woodcraft.stats(),workshop:workshop.stats(),understory:understory.stats(),treeShapes:trees.reduce((counts,t)=>{const name=treeVisual(t).name;counts[name]=(counts[name]??0)+1;return counts;},{} as Record<string,number>),appearance:{...appearance},scenePreset,camp:camp.stats(),terrain:ground.geometry.userData,shaderErrors,
         resources: r.stats(),
         wildlife:wildlife.stats(),
         drawCalls: renderer.info.render.calls,
@@ -587,6 +652,9 @@ export async function createScene(
       pointers.clear();
       woodcraft.dispose();
       workshop.dispose();
+      housing.dispose();
+      broom.dispose();
+      life.dispose();
       forestry.dispose();
       characters.dispose();
       merchantWagon.dispose();

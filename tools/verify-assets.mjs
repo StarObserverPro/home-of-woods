@@ -114,3 +114,15 @@ for(const folder of ['m0','gathering','characters','wildlife']) assert.deepEqual
 console.log(
   `Verified ${listed.size} registered GLBs and terrain data: hashes, source licenses, embedded resources, nonmetallic palette, legacy pivots, skinned characters and complete finite surface grid.`,
 );
+const uiManifest=JSON.parse(await readFile(new URL('public/assets/ui-r1/manifest.json',root),'utf8'));
+assert.equal(uiManifest.batch,'HOW-UI-ART-R1');
+const uiFiles=new Set();
+for(const asset of uiManifest.files){
+  assert.match(asset.file,/^public\/assets\/ui-r1\/(icons\/[a-z-]+-(64|128)\.png|inventory-slot\.png)$/);
+  assert.ok(!uiFiles.has(asset.file));uiFiles.add(asset.file);
+  const bytes=await readFile(new URL(asset.file,root));
+  assert.equal(bytes.length,asset.bytes);assert.equal(createHash('sha256').update(bytes).digest('hex'),asset.sha256);
+  assert.equal(bytes.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+  if(asset.size){assert.equal(bytes.readUInt32BE(16),asset.size);assert.equal(bytes.readUInt32BE(20),asset.size);}
+}
+console.log(`Verified ${uiFiles.size} admitted generated UI PNGs: hashes, paths and image dimensions.`);
