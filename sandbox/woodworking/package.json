@@ -1,0 +1,18 @@
+{
+  "name": "@home-of-woods/woodworking",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "森林之家 · 读图、放样和直榫试配工作台",
+  "files": ["dist/woodworking.js", "dist/types", "README.md"],
+  "exports": {
+    ".": { "types": "./dist/types/index.d.ts", "import": "./dist/woodworking.js" }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.host.json && node tools/build.mjs",
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "prepack": "npm run build"
+  },
+  "devDependencies": { "esbuild": "0.25.12", "typescript": "5.9.3" },
+  "engines": { "node": ">=22.14.0" }
+}
