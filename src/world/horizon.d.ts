@@ -1,0 +1,16 @@
+import * as THREE from 'three';
+import type {LandscapeRoute} from '../content/landscape-routes.ts';
+export const clamp:typeof THREE.MathUtils.clamp;
+export const mix:typeof THREE.MathUtils.lerp;
+export function smooth(a:number,b:number,value:number):number;
+export function random(seed?:number):()=>number;
+export function insideOriginal(x:number,z:number):boolean;
+export function riverX(z:number):number;
+export function riverY(z:number):number;
+export function exteriorHeight(x:number,z:number):number;
+export function buildApron(geometry:THREE.BufferGeometry):THREE.BufferGeometry;
+export const ROUTES:LandscapeRoute[];
+export function sampleRoute(route:LandscapeRoute,spacing?:number):THREE.Vector3[];
+export function routeDistance(x:number,z:number):number;
+export function portalFrame(route:LandscapeRoute):{x:number;z:number;nx:number;nz:number;facing:number};
+export function buildRiver(start:number,end:number):THREE.BufferGeometry;

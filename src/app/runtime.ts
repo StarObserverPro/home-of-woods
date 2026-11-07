@@ -46,6 +46,7 @@ import type {GameState} from '../domain/state.ts';
 import {startChop,cancelChop,advanceForestry,forestrySnapshot,forestryColliders} from '../domain/forestry.ts';
 import type {ForestrySnapshot} from '../domain/forestry.ts';
 import { findPath, move,canStand } from "../domain/navigation.ts";
+import {movementOffset} from '../domain/movement.ts';
 import { makeColliders, makeTrees } from "../world/layout.ts";
 import { heightAt, zoneName } from "../world/surface.ts";
 import { createScene } from "../scene/create-scene.ts";
@@ -67,7 +68,9 @@ import type { SaveController, SaveStatus } from './save-controller.ts';
 import type {SceneAppearance,SceneViewPreset} from '../content/scene-props.ts';
 import {CAMP_PROPS} from '../content/scene-props.ts';
 import {ALTAR_LAYOUT} from '../content/altar.ts';
+import {advanceWeather,weatherSnapshot,setWeather as chooseWeather,setWeatherIntensity as changeWeatherIntensity,setWeatherAutomatic as changeWeatherAutomatic} from '../domain/weather.ts';
 export type Snapshot = {
+  weather:ReturnType<typeof weatherSnapshot>|null;
   carrying:CarryingSnapshot;
   interaction:InteractionAccess|null;
   woodcraft:WoodcraftSnapshot;
@@ -89,6 +92,7 @@ export type Snapshot = {
   height: number;
   selected: string | null;
   moving: boolean;
+  running: boolean;
   visited: string[];
   paused: boolean;
   message: string;
@@ -117,6 +121,7 @@ export async function createRuntime(
   const savedState = await persistence.load();
   const state = initialState ?? savedState ?? createStarterState(trees);
   validateWorldSession(state, saveContext);
+  advanceWeather(state);
   // Source registration is validated above; compute navigation when the player
   // chooses an action instead of synchronously auditing every source on startup.
   synchronizeGatheringHosts(state, registry);
@@ -124,6 +129,7 @@ export async function createRuntime(
   let message = "沿着小路，认识你的新家。",
     manualPause = !initialState && savedState !== null || !persistence.status().canSave,
     interfaceOpen = false,
+    menuOpen = false,
     inspectionOpen = false,
     contextLost = false,
     destroyed = false,
@@ -134,6 +140,9 @@ export async function createRuntime(
   let captureAt:number|null=null;
   const keys = new Set<string>(),
     stick = { x: 0, z: 0 };
+  let runToggle=false;
+  const running=()=>runToggle||keys.has('ShiftLeft')||keys.has('ShiftRight');
+  const resetMovementInput=()=>{keys.clear();stick.x=stick.z=0;runToggle=false;};
   const woodcraft=createWoodcraftSession(state,m=>{message=m;});
   if(state.selected===WOODCRAFT.id||state.woodcraft.pieces.some(p=>p.id===state.selected))woodcraft.activate();
   const activeColliders=()=>[...((state.workshop.upgrades[CAMP_PROPS.dryer.id]?.level??0)>0?[{id:CAMP_PROPS.dryer.id,x:CAMP_PROPS.dryer.x,z:CAMP_PROPS.dryer.z,radius:.95}]:[]),{id:WOODCRAFT.id,x:WOODCRAFT.x,z:WOODCRAFT.z,halfX:WOODCRAFT.halfX+.2,halfZ:WOODCRAFT.halfZ+.2},...forestryColliders(colliders,treeById,state.forestry,state.time),...workstationColliders(),...furnitureColliders(state),...seatingColliders()];
@@ -183,6 +192,7 @@ export async function createRuntime(
       // An open inventory freezes walking and the world clock, while nearby wood can settle.
       if(interfaceOpen){woodcraft.step(MOVEMENT.fixedStep);accumulator-=MOVEMENT.fixedStep;continue;}
       const stoppedAtDinner=advanceToEveningStop(state,MOVEMENT.fixedStep);
+      advanceWeather(state);
       if(stoppedAtDinner)message='18:00，傍晚到了。沙漏已停下：可以回营地做饭、看故事，或继续夜间探索。';
       let sx =
           stick.x +
@@ -194,6 +204,7 @@ export async function createRuntime(
           (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0);
       let dx = 0,
         dz = 0;
+      let routeDistance=Infinity;
       if(placement||woodcraft.isDropping()){sx=sz=0;state.route=[];}
       if (sx || sz) {
         view.inspectScene(null);
@@ -212,13 +223,15 @@ export async function createRuntime(
         else {
           dx = (p.x - state.player.x) / distance;
           dz = (p.z - state.player.z) / distance;
+          routeDistance=distance;
         }
       }
+      const step=movementOffset({x:dx,z:dz},currentLoad(state.inventory).speed,running(),MOVEMENT.fixedStep,routeDistance);
       const old = state.player,
         p = move(
           old,
-          dx * MOVEMENT.speed * currentLoad(state.inventory).speed * MOVEMENT.fixedStep,
-          dz * MOVEMENT.speed * currentLoad(state.inventory).speed * MOVEMENT.fixedStep,
+          step.x,
+          step.z,
           activeColliders(),
         );
       const travelled = Math.hypot(p.x - old.x, p.z - old.z);
@@ -271,8 +284,7 @@ export async function createRuntime(
     () => {
       accumulator = 0;
       lastSampleAt=null;
-      keys.clear();
-      stick.x = stick.z = 0;
+      resetMovementInput();
     },
   );
   const stats = () => {
@@ -289,8 +301,10 @@ export async function createRuntime(
       frameMsP95: sorted[Math.floor(sorted.length * 0.95)] ?? 0,
       seed: state.seed,
       routeNodes: state.route.length,
+      running: running(),
       player: { ...state.player, y: heightAt(state.player.x, state.player.z) },
       gameTime:state.time,
+      weather:weatherSnapshot(state),
       carrying:carryingSnapshot(state),
       wildlifeState: state.wildlife,
       wildlifeViews: wildlifeViews(state.wildlife, state.time),
@@ -319,6 +333,7 @@ export async function createRuntime(
   function publishSnapshot() {
     persistence.observe(state);
     publish({
+      weather:weatherSnapshot(state),
       carrying:carryingSnapshot(state),
       interaction:interactionAccess(state,state.selected),
       woodcraft:woodcraft.snapshot(),
@@ -328,6 +343,7 @@ export async function createRuntime(
       height: heightAt(state.player.x, state.player.z),
       selected: state.selected,
       moving: state.player.moving,
+      running: running(),
       visited: [...state.visited],
       paused: manualPause,
       message,
@@ -354,8 +370,7 @@ export async function createRuntime(
   }
   const syncPause = () => {
     loop.setPaused(manualPause || inspectionOpen || contextLost || document.hidden);
-    keys.clear();
-    stick.x = stick.z = 0;
+    resetMovementInput();
     state.player.moving = false;
     publishSnapshot();
   };
@@ -363,7 +378,7 @@ export async function createRuntime(
     target instanceof HTMLElement &&
     !!target.closest("input,select,textarea,[contenteditable]");
   const keyDown = (e: KeyboardEvent) => {
-    if (e.defaultPrevented || interfaceOpen || editable(e.target)) return;
+    if (e.defaultPrevented || interfaceOpen || editable(e.target) || (menuOpen && e.code!=="Escape")) return;
     if(inspectionOpen){
       if(e.code==='Escape'){e.preventDefault();inspectionOpen=false;view.inspectCharacter(null);view.inspectScene(null);syncPause();view.render(state,0);}
       return;
@@ -387,6 +402,8 @@ export async function createRuntime(
         "ArrowDown",
         "ArrowLeft",
         "ArrowRight",
+        "ShiftLeft",
+        "ShiftRight",
       ].includes(e.code)
     ) {
       e.preventDefault();
@@ -401,8 +418,9 @@ export async function createRuntime(
     keys.delete(e.code);
   };
   const blur = () => {
-    keys.clear();
-    stick.x = stick.z = 0;
+    resetMovementInput();
+    state.player.moving=false;
+    publishSnapshot();
   };
   const lost = (e: Event) => {
     e.preventDefault();
@@ -455,6 +473,7 @@ export async function createRuntime(
     openWoodcraft(){if(blocked()||placement||workshopBusy(state)||state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))return;
       cancelPlayerAction(state);state.selected=WOODCRAFT.id;message=approachInteraction(state,WOODCRAFT.id,activeColliders());
       view.inspectScene('woodcraft');woodcraft.activate();publishSnapshot();},
+    transferAllWood(collect=false){if(transferBlocked())return;woodcraft.transferAll(collect);publishSnapshot();},
     prepareWoodcraft(){if(blocked()||placement||workshopBusy(state)||state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))return;woodcraft.requestPrepare();publishSnapshot();},
     beginWoodDrop(key?:string){if(blocked()||placement||workshopBusy(state)||state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))return;if(woodcraft.beginDrop(key)){state.route=[];view.setWoodcraftDrop(true);view.inspectScene('woodcraft');}publishSnapshot();},
     cancelWoodDrop(){woodcraft.cancelDrop();view.setWoodcraftDrop(false);publishSnapshot();},
@@ -473,11 +492,32 @@ export async function createRuntime(
       view.render(state,0);publishSnapshot();
     },
     previewTransfer:itemTransfers.preview,
-    worldTransferItem:itemTransfers.worldItem,
+    worldTransferItem(x:number,y:number){
+      const item=itemTransfers.worldItem(x,y);
+      if(item){state.route=[];resetMovementInput();state.player.moving=false;publishSnapshot();}
+      return item;
+    },
     transferItem(item:ItemTransferIntent,x:number,y:number,toWarehouse:boolean){
       const result=itemTransfers.commit(item,x,y,toWarehouse);message=result.reason;view.render(state,0);publishSnapshot();return result;
     },
     setClockSpeed(speed:ClockSpeed){if(blocked()||!CLOCK_SPEEDS.includes(speed))return;state.clock={speed};publishSnapshot();},
+    setWeather(kind:Parameters<typeof chooseWeather>[1]){
+      if(destroyed||contextLost||document.hidden)return;
+      chooseWeather(state,kind);
+      view.render(state,0);publishSnapshot();
+      void persistence.saveNow(state);
+    },
+    setWeatherIntensity(value:number){
+      if(destroyed||contextLost||document.hidden)return;
+      changeWeatherIntensity(state,value);
+      view.render(state,0);publishSnapshot();
+    },
+    setWeatherAutomatic(value:boolean){
+      if(destroyed||contextLost||document.hidden)return;
+      changeWeatherAutomatic(state,value);
+      view.render(state,0);publishSnapshot();
+      void persistence.saveNow(state);
+    },
     returnToTent(){
       if(blocked()||placement)return;
       const exit=campExitPoint(activeColliders());
@@ -491,8 +531,9 @@ export async function createRuntime(
       const count=state.dayCycle.nightsSlept;
       message=sleepUntilSunrise(state,activeColliders());
       if(state.dayCycle.nightsSlept!==count){
+        advanceWeather(state);
         view.cancelBroom();
-        keys.clear();stick.x=stick.z=0;
+        resetMovementInput();
         const foodMessage=advanceFood(state);if(foodMessage)message+=' '+foodMessage;
         const forestryMessage=advanceForestry(state,treeById);if(forestryMessage)message+=' '+forestryMessage;
         synchronizeGatheringHosts(state,registry);
@@ -511,7 +552,7 @@ export async function createRuntime(
         const seatItem=seatId?state.inventory.instances?.find(i=>i.instanceId===seatId):null;
         const reason=access.reason||(seatId?(access.spot&&seatItem?.location.kind==='world'?readingReason(state,seatItem.location):'先把长凳摆好，再坐下来。'):readingReason(state));
         if(reason||!access.spot){message=reason||'这里暂时不适合坐下。';publishSnapshot();return false;}
-        state.route=[];state.player.moving=false;keys.clear();stick.x=stick.z=0;
+        state.route=[];state.player.moving=false;resetMovementInput();
         reading=true;view.setReading(true,access.spot.seat);
       }else if(reading){reading=false;view.setReading(false);}
       view.render(state,0);publishSnapshot();return true;
@@ -642,14 +683,14 @@ export async function createRuntime(
       const loaded = await persistence.reload();
       if (!loaded || destroyed) return false;
       reading=false;view.setReading(false);view.resetPresentationHistory();
-      woodcraft.reset();view.setWoodcraftDrop(false);clearPlacement();delete state.wildlife;Object.assign(state, loaded);synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
+      woodcraft.reset();view.setWoodcraftDrop(false);clearPlacement();delete state.wildlife;Object.assign(state, loaded);advanceWeather(state);synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
       manualPause = true; keys.clear(); stick.x = stick.z = 0; syncPause(); view.render(state, 0); return true;
     },
     async restoreWorldCopy() {
       const loaded = await persistence.restoreValidCopy();
       if (!loaded || destroyed) return false;
       reading=false;view.setReading(false);view.resetPresentationHistory();
-      woodcraft.reset();view.setWoodcraftDrop(false);clearPlacement();delete state.wildlife;Object.assign(state, loaded);synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
+      woodcraft.reset();view.setWoodcraftDrop(false);clearPlacement();delete state.wildlife;Object.assign(state, loaded);advanceWeather(state);synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
       manualPause = true; keys.clear(); stick.x = stick.z = 0; syncPause(); view.render(state,0); return true;
     },
     inspectCharacter(kind:'horizontal'|'vertical'|'wardrobe'|null){
@@ -668,6 +709,10 @@ export async function createRuntime(
       view.render(state,0);publishSnapshot();
     },
     captureScene(){const image=view.capture(state),data=stats();const {worldState,...sceneStats}=data;void worldState;return {image,stats:sceneStats};},
+    setMenuOpen(value:boolean) {
+      menuOpen=value;
+      if(value){resetMovementInput();publishSnapshot();}
+    },
     setInterfaceOpen(value: boolean) {
       if(destroyed)return;
       if(value&&inspectionOpen){inspectionOpen=false;view.inspectCharacter(null);view.inspectScene(null);}
@@ -693,9 +738,15 @@ export async function createRuntime(
       publishSnapshot();
     },
     setStick(x: number, z: number) {
+      if(menuOpen)return;
       if(destroyed||manualPause||interfaceOpen||inspectionOpen||contextLost||document.hidden)return;
       stick.x = x;
       stick.z = z;
+    },
+    setRunning(value:boolean) {
+      if(blocked()||menuOpen||placement||woodcraft.isDropping())return;
+      runToggle=value;
+      publishSnapshot();
     },
     setRarityVfxMode(mode:RarityVfxMode){
       if(destroyed)return;

@@ -1,9 +1,11 @@
 import {craftProfile} from '../content/parametric-crafting.ts';
 import {ITEM_CATALOG} from './item-catalog.ts';
-import {recognizedStack,stackIdentity} from './inventory.ts';
+import {recognizedStack,stackIdentity,stackKey} from './inventory.ts';
 import type {InventoryStack,InventoryDelta} from './inventory.ts';
 import {isAvailableMaterial} from './transport-location.ts';
 import type {GameState} from './state.ts';
+import {readWoodCondition,isWeatherWood} from './wood-condition.ts';
+import {WEATHER_RULES} from '../content/weather.ts';
 
 /** Resolve the registered recipe, preserving batch metadata and transport restrictions. */
 export function craftMaterialDebits(host:GameState,blueprintId:string):InventoryDelta[]|null{
@@ -27,4 +29,19 @@ export function craftMaterialCosts(host:GameState,blueprintId:string){
     name:input.typeIds.includes('wood.branch')?'枝杈':'原木',quantity:input.quantity,
     available:host.inventory.stacks.filter(stack=>recognizedStack(stack)&&isAvailableMaterial(stack)&&!stack.wood?.reserved&&input.typeIds.includes(ITEM_CATALOG.items.get(stack.itemId)?.typeId??'')).reduce((sum,stack)=>sum+stack.quantity,0),
   }));
+}
+
+/** Evaluate the same recipe-selected batches that the final transaction consumes. */
+export function craftWoodMoisture(host:GameState,blueprintId:string):number{
+  const debits=craftMaterialDebits(host,blueprintId);
+  if(!debits)return WEATHER_RULES.initialMoisture;
+  let total=0,weighted=0;
+  for(const debit of debits){
+    if(!isWeatherWood(debit))continue;
+    const stack=host.inventory.stacks.find(item=>stackKey(item)===stackKey(debit));
+    if(!stack)continue;
+    total-=debit.delta;
+    weighted-=readWoodCondition(stack).moisture*debit.delta;
+  }
+  return total?weighted/total:WEATHER_RULES.initialMoisture;
 }

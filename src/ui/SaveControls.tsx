@@ -1,3 +1,4 @@
+import {ItemBrowser,ItemHeading,MenuAction,TextPages} from './ItemBrowser.tsx';
 import { useState } from 'react';
 import type { SaveStatus } from '../app/save-controller.ts';
 export function SaveControls({ status, onSave, onReload, onRestore, onExport }: {
@@ -18,17 +19,6 @@ export function SaveControls({ status, onSave, onReload, onRestore, onExport }: 
     const link = document.createElement('a'); link.href = url; link.download = `home-of-woods-${which}.json`; link.click();
     URL.revokeObjectURL(url);
   };
-  return <section className="save-controls" aria-label="世界存档">
-    <h3>世界存档</h3><p role="status">{status.message}</p>
-    <div className="save-actions">
-      <button type="button" disabled={waiting || !status.canSave} onClick={() => void run(onSave)}>保存世界</button>
-      <button type="button" disabled={waiting} onClick={() => void run(onReload)}>重新读取</button>
-      <button type="button" disabled={waiting || !status.hasPrimary} onClick={() => void run(() => download('primary'))}>导出主档</button>
-      <button type="button" disabled={waiting || !status.hasBackup} onClick={() => void run(() => download('backup'))}>导出备份</button>
-      <button type="button" disabled={waiting || !status.canRestore} onClick={() => void run(onRestore)}>用有效副本恢复</button>
-    </div>
-    <small>自动保存整个世界。重新读取会回到最近保存的状态；有效副本恢复会替换主档与备份，可先导出原始数据。</small>
-    {notice && <p role="alert">{notice}</p>}
-    {status.diagnostics.length > 0 && <details><summary>存档检查详情</summary><p>{status.diagnostics.join('；')}</p></details>}
-  </section>;
+  const actions=[{id:'save',name:'保存世界',run:onSave,disabled:!status.canSave},{id:'load',name:'重新读取',run:onReload,disabled:false},{id:'primary',name:'导出主档',run:()=>download('primary'),disabled:!status.hasPrimary},{id:'backup',name:'导出备份',run:()=>download('backup'),disabled:!status.hasBackup},{id:'restore',name:'恢复副本',run:onRestore,disabled:!status.canRestore}];
+  return <section className="save-controls" aria-label="世界存档"><ItemBrowser pageSize={4} label="存档操作" items={actions.map(a=>({...a,icon:'blueprint' as const}))} renderDetail={action=><><ItemHeading name={action.name} icon={action.icon}/>{action.id==='load'&&<p className="wood-note">回到最近保存的状态</p>}{action.id==='restore'&&<p className="wood-note">有效副本将替换主档与备份；可先导出。</p>}<MenuAction disabled={waiting||action.disabled} onClick={()=>void run(action.run)}>{action.name}</MenuAction></>}/><TextPages text={notice||status.message} size={60}/>{status.diagnostics.length>0&&<TextPages text={status.diagnostics.join('；')} size={60}/>}</section>;
 }

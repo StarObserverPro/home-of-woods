@@ -5,7 +5,8 @@ import {rarityDefinition} from '../content/rarities.ts';
 import {createGeometrySpec,verifiedGeometrySpec,geometryParts,assemblyGuides,assessAssembly} from './parametric-crafting.ts';
 import type {GeometrySpec,GuidePlacement,AssemblyGuide} from './parametric-crafting.ts';
 import type {GameState} from './state.ts';
-import {craftMaterialDebits,craftMaterialCosts} from './craft-inputs.ts';
+import {craftMaterialDebits,craftMaterialCosts,craftWoodMoisture} from './craft-inputs.ts';
+import {fineWorkMultiplier} from './wood-condition.ts';
 import {isRecord,exactKeys,inventoryTransaction} from './inventory.ts';
 import {knowsBlueprint,consumeBlueprintUse} from './blueprint-copies.ts';
 import {canonicalInstances} from './owned-items.ts';
@@ -148,8 +149,9 @@ export function finishGuidedCraft(host:GameState):string{
   const reason=actionReason(host,work.blueprintId);if(reason)return reason;
   if(!assessAssembly(work.assembly.geometry,work.assembly.placements).valid)return '还有部件没装好，材料尚未扣除。';
   if(!craftMaterialDebits(host,work.blueprintId))return '材料已不足，装配保留，备齐后再收尾。';
-  host.workshop={...host.workshop,job:{...work.job,startedAt:host.time,durationSeconds:WORKBENCH_BRACING.finishSeconds,assembly:{...work.assembly,phase:'finishing'}}};
-  return '开始收尾，片刻后把整件家具收入仓库。';
+  const woodMoisture=craftWoodMoisture(host,work.blueprintId);
+  host.workshop={...host.workshop,job:{...work.job,woodMoisture,startedAt:host.time,durationSeconds:WORKBENCH_BRACING.finishSeconds*fineWorkMultiplier(woodMoisture),assembly:{...work.assembly,phase:'finishing'}}};
+  return woodMoisture>.2?'开始收尾，潮湿木料需要多花一些时间打磨拼接。':'开始收尾，片刻后把整件家具收入仓库。';
 }
 export function cancelGuidedCraft(host:GameState):string{
   if(!activeAssembly(host))return '当前没有进行中的装配。';

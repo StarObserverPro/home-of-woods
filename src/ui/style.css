@@ -33,7 +33,17 @@ button:not(:disabled):hover { color: #fff3bd; }
   min-height: 0;
   overflow: hidden;
   text-shadow: var(--hud-shadow);
+  -webkit-user-select: none;
+  user-select: none;
 }
+.game-shell input, .game-shell textarea, .game-shell [contenteditable="true"],
+.game-shell .forest-reader-paper h2, .game-shell .forest-reader-paper p,
+.game-shell .forest-reader-paper small {
+  -webkit-user-select: text;
+  user-select: text;
+}
+.game-shell .forest-reader-paper h2, .game-shell .forest-reader-paper p,
+.game-shell .forest-reader-paper small { cursor: text; }
 .scene-host, .scene-host canvas {
   position: absolute;
   inset: 0;

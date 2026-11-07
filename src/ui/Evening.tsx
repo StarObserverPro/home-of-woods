@@ -25,7 +25,8 @@ export function ForestReader({day,seed,onClose}:{day:number;seed:number;onClose:
   const [page,setPage]=useState(0);
   const dialog=useRef<HTMLElement>(null),close=useRef(onClose);close.current=onClose;
   const story=forestStoryForDay(seed,day,storyIndex);
-  const advance=()=>{if(page+1<story.pages.length)setPage(v=>v+1);else{setStoryIndex(v=>v+1);setPage(0);}};
+  const pages=story.pages.flatMap(text=>text.match(/[\s\S]{1,70}/g)??[]);
+  const advance=()=>{if(page+1<pages.length)setPage(v=>v+1);else{setStoryIndex(v=>v+1);setPage(0);}};
   useEffect(()=>{
     const before=document.activeElement;
     dialog.current?.focus();
@@ -50,12 +51,12 @@ export function ForestReader({day,seed,onClose}:{day:number;seed:number;onClose:
       <div className="forest-reader-paper">
         <small>{story.topic}</small>
         <h2 id="forest-story-title">{story.title}</h2>
-        <p aria-live="polite">{story.pages[page]}</p>
-        <span className="forest-reader-page">{page+1} / {story.pages.length}</span>
+        <p aria-live="polite">{pages[page]}</p>
+        <span className="forest-reader-page">{page+1} / {pages.length}</span>
       </div>
       <nav className="forest-reader-actions" aria-label="翻阅故事">
         <button disabled={page===0} onClick={()=>setPage(v=>Math.max(0,v-1))}>上一页</button>
-        <button onClick={advance}>{page+1===story.pages.length?'换一个故事':'下一页'}</button>
+        <button onClick={advance}>{page+1===pages.length?'换一个故事':'下一页'}</button>
       </nav>
       <p className="forest-reader-hint">读书时沙漏停着。随时合上书，继续夜游或回帐篷休息。</p>
       <button className="forest-reader-close" onClick={onClose}>合上书，继续活动</button>

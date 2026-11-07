@@ -3,7 +3,7 @@
 .carrying-panel label{display:grid;grid-template-columns:5em 1fr;align-items:center;gap:8px}
 .carrying-panel progress{width:100%;height:10px;accent-color:#83a47a}
 .carrying-actions{display:flex;gap:8px;flex-wrap:wrap}
-.carrying-panel button{padding:8px 10px;min-height:40px;border:1px solid #e9dfbf40;border-radius:8px;background:#24362c99;color:#fff4dc;cursor:pointer}
+.carrying-panel button{padding:8px 10px;min-height:44px;border:1px solid #e9dfbf40;border-radius:8px;background:#24362c99;color:#fff4dc;cursor:pointer}
 .carrying-panel button[aria-pressed=true]{background:#536e47cc;border-color:#c4d4a5}
 .carrying-panel button:disabled{opacity:.45;cursor:default}
 .carrying-list{display:grid;gap:8px}.carrying-list>div{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px;background:#31463244;border-radius:8px}
@@ -22,3 +22,7 @@
   .warehouse-dialog.warehouse-dock .warehouse-categories{margin:6px 0;padding-bottom:6px}
   .warehouse-dialog.warehouse-dock footer.warehouse-return-zone{margin-top:6px;padding-top:6px}
 }
+
+.transfer-quantity{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px}.transfer-quantity select{min-height:44px;min-width:110px;font:inherit;color:inherit;background:#f5e6c4;border:1px solid #98734b;border-radius:8px;padding:6px 10px}
+
+.game-shell .transfer-quantity select{color:#33271a;text-shadow:none;flex:0 0 140px;width:140px}

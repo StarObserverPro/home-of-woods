@@ -1,3 +1,4 @@
+import {scrapGeometry,scrapMaterial} from './scrap-geometry.ts';
 import * as THREE from 'three';
 import {ramp} from './actions/motion.js';
 import {canStand} from '../domain/navigation.ts';
@@ -5,7 +6,7 @@ import {makeColliders} from '../world/layout.ts';
 import {createActor} from './actions/actor.js';
 import { CHARACTER, CAMP_VISITOR } from '../content/characters.ts';
 import {merchantVisitAt,MERCHANT_SCENE} from '../content/merchant.ts';
-import {TENT} from '../content/world.ts';
+import {TENT,MOVEMENT} from '../content/world.ts';
 import {diningReadingSpot} from '../domain/housing.ts';
 import {applySeatedLegPose,SEATED_SKIN_CLEARANCE} from './seated-pose.ts';
 import type {SeatContact} from './seated-pose.ts';
@@ -25,7 +26,7 @@ import { axeHeadSamples, geometryContactTarget, contactClearance, findAxeStop, s
 import type { AxeTarget, AxeStop } from './axe-contact.ts';
 
 export type CharacterInspection = 'horizontal'|'vertical'|'wardrobe'|null;
-type Mode='idle'|'walk'|'gather'|'horizontal'|'vertical';
+type Mode='idle'|'walk'|'run'|'gather'|'horizontal'|'vertical';
 export type CharacterImpact={treeId:string;point:THREE.Vector3};
 
 /** One scene adapter; samples the app's game time and never schedules frames or settles actions. */
@@ -39,7 +40,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   const clips=new Map((models.animations.get('motions')??[]).map(c=>[c.name,c]));
   const need=(name:string)=>{const clip=clips.get(name);if(!clip)throw new Error(`Missing character animation: ${name}`);return clip;};
   const mixer=new THREE.AnimationMixer(body),npcMixer=new THREE.AnimationMixer(npc);
-  const sourceClips={idle:need('Idle_A'),walk:need('Walking_A'),gather:need('PickUp'),horizontal:need('Melee_2H_Attack_Slice'),vertical:need('Melee_2H_Attack_Chop')};
+  const sourceClips={idle:need('Idle_A'),walk:need('Walking_A'),run:need('Running_A'),gather:need('PickUp'),horizontal:need('Melee_2H_Attack_Slice'),vertical:need('Melee_2H_Attack_Chop')};
   const actions=Object.fromEntries(Object.entries(sourceClips).map(([key,c])=>[key,mixer.clipAction(c)])) as Record<Mode,THREE.AnimationAction>;
   let mode:Mode='idle',disposed=false,inspection:CharacterInspection=null,cutKey='',stop:AxeStop|null=null;
   let lastContact=Infinity,planMs=0,grip:ReturnType<typeof syncTwoHandedAxe>|null=null,impact:CharacterImpact|null=null;
@@ -66,10 +67,12 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   const readingPoseBase=new Map<THREE.Bone,{p:THREE.Vector3;q:THREE.Quaternion}>();
   const bodyY=body.position.y;
   let reading=false;
+  let lastMoveSample:{x:number;z:number;time:number}|null=null;
+  let movementTime=0,locomotionSpeed=0;
   let readingSeat:SeatContact|null=null;
   // Main + procedural action body each have their own cloned skeleton and bone-mounted accessories.
   const clothing=createWardrobeVisual(r,body),actionClothing=createWardrobeVisual(r,procedural.body);
-  const pickedScrap=new THREE.Mesh(r.geometry('held-scrap',()=>new THREE.CylinderGeometry(.025,.04,.38,5)),r.material('#92704a',.9));pickedScrap.rotation.z=Math.PI/2;pickedScrap.visible=false;player.add(pickedScrap);
+  const pickedScrap=new THREE.Mesh(r.geometry('held-split-scrap',scrapGeometry),scrapMaterial(r));pickedScrap.scale.setScalar(.68);pickedScrap.rotation.z=Math.PI/2;pickedScrap.visible=false;player.add(pickedScrap);
   const blade=axeHeadSamples(tool),byId=new Map(trees.map(t=>[t.id,t]));
   // Inspector-only solids demonstrate both constraints without inventing a crafting transaction.
   const inspectionProps=new THREE.Group();inspectionProps.name='character-inspection-solids';inspectionProps.visible=false;player.add(inspectionProps);
@@ -111,6 +114,13 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   }
   function update(state:GameState,reducedMotion=false,ambientTime=state.time){
     if(disposed)return;
+    const distance=lastMoveSample?Math.hypot(state.player.x-lastMoveSample.x,state.player.z-lastMoveSample.z):0;
+    const sampleSeconds=lastMoveSample?Math.max(0,ambientTime-lastMoveSample.time):0;
+    const moveSpeed=sampleSeconds>0&&state.player.moving?Math.min(MOVEMENT.speed*MOVEMENT.runMultiplier,distance/sampleSeconds):0;
+    lastMoveSample={x:state.player.x,z:state.player.z,time:ambientTime};
+    locomotionSpeed=state.player.moving?THREE.MathUtils.lerp(locomotionSpeed,moveSpeed,Math.min(1,sampleSeconds*14)):0;
+    const running=locomotionSpeed>MOVEMENT.speed*1.12;
+    movementTime+=distance*(running?1.15/(MOVEMENT.speed*MOVEMENT.runMultiplier):1.6/MOVEMENT.speed);
     for(const [bone,base] of readingPoseBase){bone.position.copy(base.p);bone.quaternion.copy(base.q);}readingPoseBase.clear();
     clothing.update(state.inventory);actionClothing.update(state.inventory);
     player.position.set(state.player.x,heightAt(state.player.x,state.player.z),state.player.z);player.rotation.y=state.player.facing;
@@ -148,9 +158,10 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
       const gather=state.gathering.action;
       const secondsFromDawn=state.dayCycle.wokeAt===null?Infinity:state.time-state.dayCycle.wokeAt;
       const emerging=!reading&&!state.player.moving&&!reducedMotion&&secondsFromDawn>=0&&secondsFromDawn<2.25;
-      const next:Mode=gather?.phase==='performing'?'gather':(state.player.moving||emerging)&&!reducedMotion?'walk':'idle';setMode(next);
+      const next:Mode=gather?.phase==='performing'?'gather':(state.player.moving||emerging)&&!reducedMotion?(running?'run':'walk'):'idle';setMode(next);
       const clip=sourceClips[mode];
-      actions[mode].time=mode==='gather'?Math.min(.999,gather!.progress)*clip.duration:reducedMotion?.01:(ambientTime*(mode==='walk'?1.6:1))%clip.duration;
+      const animationTime=mode==='walk'||mode==='run'?emerging?ambientTime*1.6:movementTime:ambientTime;
+      actions[mode].time=mode==='gather'?Math.min(.999,gather!.progress)*clip.duration:reducedMotion?.01:animationTime%clip.duration;
       mixer.update(0);
       // Render-only doorway emergence after sleep. Gameplay position is already at the tent exit.
       if(emerging){

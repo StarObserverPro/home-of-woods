@@ -1,0 +1,32 @@
+.run-toggle {
+  display: none;
+  position: absolute;
+  left: max(35px, env(safe-area-inset-left));
+  bottom: calc(142px + env(safe-area-inset-bottom));
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 76px;
+  min-height: 44px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  color: #f9edce;
+  background: #344b32;
+  border: 1px solid #d7bd7a;
+  box-shadow: 0 2px 6px #10291e66;
+}
+.run-toggle[aria-pressed="true"] {
+  position: absolute;
+  background: #926339 url('/assets/ui-r2/wood-split.svg') center / cover;
+  box-shadow: inset 0 2px #c69a59, inset 0 -3px #4d331f;
+}
+@media (max-width: 700px), (max-height: 500px) {
+  .run-toggle { display: inline-flex; }
+}
+@media (max-height: 500px) and (min-width: 540px) {
+  .run-toggle {
+    left: max(135px, calc(env(safe-area-inset-left) + 115px));
+    bottom: calc(36px + env(safe-area-inset-bottom));
+  }
+}
+.menu-is-open > .run-toggle { display: none; }

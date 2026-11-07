@@ -7,12 +7,12 @@ import {buildMountainGeometry,createEnvironment} from '../src/scene/environment.
 import {createCreek} from '../src/scene/creek.ts';
 import {createTerrain} from '../src/scene/terrain.ts';
 
-test('PNW environment instantiates bounded, distinct landforms with actual snow, exposed rock and glacier channels',()=>{
+test('valley environment instantiates bounded, distinct massifs with snowfields, exposed rock and ice gullies',()=>{
   const resources=new Resources(),environment=createEnvironment(resources),stats=environment.stats();
   assert.ok(stats.geometryTriangles<=ENVIRONMENT_LIMITS.triangles);
   assert.ok(stats.meshes<=ENVIRONMENT_LIMITS.meshes);
   assert.ok(stats.materials<=ENVIRONMENT_LIMITS.materialVariants);
-  assert.equal(stats.meshes,7);
+  assert.equal(stats.meshes,MOUNTAINS.length+1);
   const shapes=new Set<string>();
   let snow=0,rock=0,ice=0;
   for(const spec of MOUNTAINS){
@@ -26,10 +26,10 @@ test('PNW environment instantiates bounded, distinct landforms with actual snow,
     }
     mesh.geometry.computeBoundingBox();const box=mesh.geometry.boundingBox!;
     shapes.add([box.min.x,box.min.z,box.max.y,positions.count].join(':'));
-    if(spec.kind==='volcano'){
+    if(spec.id==='crown'){
       assert.ok(box.max.y>130,'dominant glaciated summit');
-      assert.ok(box.max.y-box.min.y>260,'massive volcanic relief');
-      assert.ok(box.max.x-box.min.x>450,'broad volcanic apron');
+      assert.ok(box.max.y-box.min.y>260,'massive summit relief');
+      assert.ok(box.max.x-box.min.x>450,'broad mountain apron');
     }
   }
   assert.equal(shapes.size,MOUNTAINS.length);
@@ -48,7 +48,7 @@ test('environment generation is deterministic and all geometry/material allocati
     const releases=new Map([...allocated].map(a=>[a,0]));
     for(const a of allocated)a.addEventListener('dispose',()=>releases.set(a,releases.get(a)!+1));
     const sky=environment.group.getObjectByName('sky-porch-daylight') as THREE.Mesh<THREE.BufferGeometry,THREE.ShaderMaterial>;
-    const fixedMountain=environment.group.getObjectByName('glacier-volcano')!;
+    const fixedMountain=environment.group.getObjectByName('crown')!;
     const mountainPosition=fixedMountain.position.clone();
     environment.update(12,1/60,new THREE.Vector3(10,50,30));
     assert.deepEqual(sky.position.toArray(),[10,50,30]);

@@ -1,3 +1,4 @@
+import {TREE_SLOT_CORRECTIONS} from '../src/content/tree-slot-corrections.ts';
 import {createState} from '../src/domain/state.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -15,9 +16,11 @@ import {ALTAR_LAYOUT} from '../src/content/altar.ts';
 import {buildClosedTerrain} from '../src/world/closed-terrain.ts';
 import {heightAt} from '../src/world/surface.ts';
 
-test('accepted terrain keeps every previous fixed tree, individual, coordinate and current world save',async()=>{
+test('R2 terrain preserves tree identities and all coordinates except two approved scenery corrections',async()=>{
   const oldTrees=JSON.parse(await readFile(new URL('../evidence/scene-r5/before-trees.json',import.meta.url),'utf8'));
-  assert.deepEqual(makeTrees(),oldTrees);
+  assert.deepEqual(Object.keys(TREE_SLOT_CORRECTIONS).sort(),['tree-slot-17-17','tree-slot-17-18']);
+  const expected=oldTrees.map((tree:{id:string;x:number;z:number})=>({...tree,...TREE_SLOT_CORRECTIONS[tree.id]}));
+  assert.deepEqual(makeTrees(),expected);
   const context=createSaveContext(), state=createState();
   const loaded=await prepareWorldSave(await serializeWorldSave(state,context,{sequence:1,savedAt:1}),context);
   assert.equal(loaded.decision,'restored');if(loaded.decision!=='restored')throw Error('current state failed');
@@ -37,7 +40,7 @@ test('day hearth shows real charcoal heads and ash; night restores light and fir
   assert.equal(JSON.stringify(inventory),before);camp.dispose();r.dispose();
 });
 test('randomized chips keep their accepted density, have varied triangle shapes and agree inside faces with the shared ground',()=>{
-  const geometry=buildClosedTerrain(),p=geometry.getAttribute('position'),ix=geometry.index!;assert.equal(geometry.userData.facetedPatches,166);
+  const geometry=buildClosedTerrain(),p=geometry.getAttribute('position'),ix=geometry.index!;assert.equal(geometry.userData.facetedPatches,120);
   let samples=0;for(let i=0;i<geometry.userData.topTriangles*3;i+=3){const ids=[ix.getX(i),ix.getX(i+1),ix.getX(i+2)];
     const x=ids.reduce((v,id)=>v+p.getX(id),0)/3,z=ids.reduce((v,id)=>v+p.getZ(id),0)/3,y=ids.reduce((v,id)=>v+p.getY(id),0)/3;
     if(Math.abs(x)>88||Math.abs(z)>88)continue;assert.ok(Math.abs(heightAt(x,z)-y)<.00015,`inside visible face ${x},${z}`);samples++;

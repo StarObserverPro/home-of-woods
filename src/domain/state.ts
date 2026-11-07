@@ -25,9 +25,12 @@ import {createDayCycle} from './day-cycle.ts';
 import type {DayCycleState} from './day-cycle.ts';
 import {createFoodState} from './food.ts';
 import type {FoodState} from './food.ts';
+import {createWeather} from './weather.ts';
+import type {WeatherState} from './weather.ts';
 export type GameState = {
   /** Decorative encounter state is session-local, not an inventory or save slice. */
   wildlife?: WildlifeState;
+  weather?: WeatherState;
   woodcraft:WoodcraftState;
   workshop:WorkshopState;
   merchant:MerchantState;
@@ -47,6 +50,7 @@ export type GameState = {
 };
 export function createState(trees:Tree[]=makeTrees()): GameState {
   return {
+    weather:createWeather(),
     woodcraft:createWoodcraft(),
     ritual: null,
     workshop:createWorkshop(),

@@ -8,10 +8,13 @@ import {canonicalInstances} from './owned-items.ts';
 import type {OwnedItem} from './owned-items.ts';
 import { ITEM_CATALOG, isStableId } from './item-catalog.ts';
 import type { ItemCatalog } from './item-catalog.ts';
+import { WEATHER_RULES } from '../content/weather.ts';
+import { isWeatherWood, readWoodCondition, validateWoodCondition } from './wood-condition.ts';
+import type { WoodCondition } from './wood-condition.ts';
 
 export type WoodSpec = ExtensibleRecord & { lengthMm: number; thicknessMm: number; straightness: 'straight' | 'curved' | 'crooked' };
 export type WoodBatch = ExtensibleRecord & { spec: WoodSpec | null; measureId: 'piece'; amountPerPiece: number; reserved: boolean };
-export type StackIdentity = ExtensibleRecord & { itemId: string; qualityId: string; wood?: WoodBatch };
+export type StackIdentity = ExtensibleRecord & { itemId: string; qualityId: string; wood?: WoodBatch; woodCondition?: WoodCondition };
 export function validateWood(raw: unknown): WoodBatch {
   if (!isRecord(raw)) throw new Error('Invalid wood batch');
   assertItemJson(raw);
@@ -30,9 +33,9 @@ export const woodBatch = (spec: WoodSpec | null): WoodBatch => ({ spec, measureI
 export type InventoryStack = StackIdentity & { quantity: number };
 export type InventoryState = ExtensibleRecord & { schemaVersion: typeof INVENTORY_SCHEMA_VERSION; revision: number; stacks: InventoryStack[]; instances?: OwnedItem[] };
 export type InventoryDelta = StackIdentity & { delta: number };
-/** Quantity and command delta are not batch identity; all other JSON fields are. */
+/** Dynamic humidity, quantity and command delta do not change the stable batch identity. */
 export function stackIdentity(stack: StackIdentity): StackIdentity {
-  const identity = withoutFields(stack, ['quantity', 'delta']);
+  const identity = withoutFields(stack, ['quantity', 'delta', 'woodCondition']);
   if (Object.hasOwn(stack, 'wood')) identity.wood = validateWood(stack.wood);
   transportLocation(identity);
   assertItemJson(identity);
@@ -56,7 +59,8 @@ export function canonicalStacks(value: unknown): InventoryStack[] {
     assertItemJson(raw);
     if (Object.hasOwn(raw, 'delta')) throw new Error('Transaction delta is not stored item data');
     if (!isStableId(raw.itemId) || !isStableId(raw.qualityId) || !Number.isSafeInteger(raw.quantity) || (raw.quantity as number) < 0) throw new Error('Invalid inventory identity or quantity');
-    const stack: InventoryStack = { ...stackIdentity(raw as StackIdentity), quantity: raw.quantity as number };
+    const condition = Object.hasOwn(raw, 'woodCondition') ? validateWoodCondition(raw.woodCondition) : undefined;
+    const stack: InventoryStack = { ...stackIdentity(raw as StackIdentity), quantity: raw.quantity as number, ...(condition ? { woodCondition: condition } : {}) };
     const key = stackKey(stack);
     if (seen.has(key)) throw new Error('Duplicate inventory stack identity');
     seen.add(key);
@@ -87,15 +91,13 @@ export const recognizedStack = (stack: StackIdentity, catalog: ItemCatalog = ITE
 export function inventoryTransaction(state: InventoryState, deltas: readonly InventoryDelta[], catalog: ItemCatalog = ITEM_CATALOG, expectedRevision = state.revision): InventoryState {
   const stacks = validateInventory(state);
   if (state.revision !== expectedRevision || !Number.isSafeInteger(state.revision + 1)) throw new Error('Stale or exhausted inventory revision');
-  const changes = new Map<string, InventoryDelta>();
   const debits = new Map<string, number>();
   for (const line of deltas) {
     if (!isStableId(line.itemId) || !isStableId(line.qualityId) || !Number.isSafeInteger(line.delta) || !recognizedStack(line, catalog)) throw new Error('Unrecognized inventory transaction');
     if (line.wood && catalog.items.get(line.itemId)?.category!=='wood')throw new Error('Wood metadata on non-wood item');
     if (line.delta > 0 && catalog.items.get(line.itemId)!.status !== 'active') throw new Error('Inactive item cannot be awarded');
-    const key = stackKey(line), delta = (changes.get(key)?.delta ?? 0) + line.delta;
-    if (!Number.isSafeInteger(delta)) throw new Error('Inventory delta overflow');
-    changes.set(key, { ...line, delta });
+    if (Object.hasOwn(line, 'woodCondition')) validateWoodCondition(line.woodCondition);
+    const key = stackKey(line);
     if (line.delta < 0) {
       const debit = (debits.get(key) ?? 0) - line.delta;
       if (!Number.isSafeInteger(debit)) throw new Error('Inventory debit overflow');
@@ -104,10 +106,31 @@ export function inventoryTransaction(state: InventoryState, deltas: readonly Inv
   }
   const next = new Map(stacks.map(stack => [stackKey(stack), stack]));
   for (const [key, debit] of debits) if ((next.get(key)?.quantity ?? 0) < debit) throw new Error('Insufficient inventory inputs');
-  for (const [key, line] of changes) {
-    const quantity = (next.get(key)?.quantity ?? 0) + line.delta;
+  for (const [key, debit] of debits) {
+    const stack = next.get(key)!;
+    next.set(key, { ...stack, quantity: stack.quantity - debit });
+  }
+  let nextLot = 1;
+  for (const line of deltas) {
+    if (line.delta <= 0) continue;
+    let identity = stackIdentity(line), key = stackKey(identity), existing = next.get(key);
+    const condition = isWeatherWood(line) && (line.woodCondition || existing?.woodCondition) ? readWoodCondition(line) : undefined;
+    if (condition && existing?.quantity && Math.abs(readWoodCondition(existing).moisture - condition.moisture) > WEATHER_RULES.distinctBatchDifference) {
+      // A newly returned wet piece stays separate from an existing dry pile.
+      do {
+        identity = { ...stackIdentity(line), woodLot: `weather-${state.revision + 1}-${nextLot++}` };
+        key = stackKey(identity);
+      } while (next.has(key));
+      existing = undefined;
+    }
+    const priorQuantity = existing?.quantity ?? 0, quantity = priorQuantity + line.delta;
     if (!Number.isSafeInteger(quantity) || quantity < 0) throw new Error('Insufficient or invalid inventory quantity');
-    next.set(key, { ...stackIdentity(line), quantity });
+    const prior = existing ? readWoodCondition(existing) : condition;
+    const woodCondition = condition && prior ? {
+      moisture: (prior.moisture * priorQuantity + condition.moisture * line.delta) / quantity,
+      snow: (prior.snow * priorQuantity + condition.snow * line.delta) / quantity,
+    } : undefined;
+    next.set(key, { ...identity, quantity, ...(woodCondition ? { woodCondition } : {}) });
   }
   return { ...structuredClone(state), schemaVersion: INVENTORY_SCHEMA_VERSION, revision: state.revision + 1, stacks: canonicalStacks([...next.values()]), ...(state.instances?{instances:canonicalInstances(state.instances)}:{}) };
 }

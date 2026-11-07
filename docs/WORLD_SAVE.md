@@ -1,5 +1,7 @@
 # 世界存档
 
+天气回接新增可选 weather 切片，保存模式、强度、自动序列起点、最后结算时刻以及湿地、积水和积雪。当前存档缺字段时在原游戏时间初始化。木料 woodCondition 保存湿度与表面积雪，持续变化保持 stackKey 稳定，收回时按数量加权混合或生成独立 woodLot。工作任务保存开工所用 woodMoisture 与实际工时，天气配置变化可触发原 checkpoint。仍由 save-controller 与 world-save-store 协调写入。当前验证见 [天气回接记录](scopes/running-selection-weather.md)。
+
 2026-11-05 营地生活回接继续使用主体 `home-of-woods-save-v2`，不读取沙盒数据库。装配、有限叶堆与原物使用频率进入同一世界记录；短动作事件不因加载而重播。当前合同与验证见 [CAMP_LIFE_INTEGRATION](CAMP_LIFE_INTEGRATION.md)。
 
 ## 当前格式与清洁起点

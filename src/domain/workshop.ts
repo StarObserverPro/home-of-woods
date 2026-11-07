@@ -23,7 +23,8 @@ import type {InventoryState} from './inventory.ts';
 import {findPath} from './navigation.ts';
 import {gatheringBusy} from './gathering.ts';
 import {ritualBusy} from './ritual.ts';
-import {craftMaterialDebits} from './craft-inputs.ts';
+import {craftMaterialDebits,craftWoodMoisture} from './craft-inputs.ts';
+import {fineWorkMultiplier} from './wood-condition.ts';
 export {craftMaterialDebits} from './craft-inputs.ts';
 import {advanceGuidedWorkshop,validateGuidedAssembly} from './workshop-guided.ts';
 import type {GuidedAssembly} from './workshop-guided.ts';
@@ -37,7 +38,7 @@ import type {SweptLeaves} from './leaf-patches.ts';
 import {validateAffixComposition} from '../content/affix-vfx-library.ts';
 import {HOUSEHOLD_AFFIX_DEFINITIONS} from '../content/household-affixes.ts';
 
-export type WorkshopJob={id:string;kind:'offering'|'craft'|'upgrade';blueprintId:string|null;phase:'approaching'|'working';startedAt:number|null;durationSeconds:number;targetId?:string;pathId?:string;assembly?:GuidedAssembly;oracle?:ItemOracleJob;broomCraft?:{mark:'leaf'|null}};
+export type WorkshopJob={id:string;kind:'offering'|'craft'|'upgrade';blueprintId:string|null;phase:'approaching'|'working';startedAt:number|null;durationSeconds:number;woodMoisture?:number;targetId?:string;pathId?:string;assembly?:GuidedAssembly;oracle?:ItemOracleJob;broomCraft?:{mark:'leaf'|null}};
 export type WorkshopState={nextAction:number;nextInstance:number;prayerCount:number;blueprints:string[];upgrades:UpgradeLedger;mounted:Record<string,string>;job:WorkshopJob|null;lastResponse:string;sweptLeaves?:SweptLeaves};
 export const createWorkshop=():WorkshopState=>({nextAction:1,nextInstance:1,prayerCount:0,blueprints:[...STARTER_BLUEPRINTS],upgrades:{},mounted:{},job:null,lastResponse:'',sweptLeaves:{}});
 export const workshopBusy=(host:Pick<GameState,'workshop'>)=>host.workshop.job!==null;
@@ -72,7 +73,7 @@ export function cancelWorkshop(host:GameState){
 }
 /** The whole debit + reward is built before one synchronous root commit. Cancellation is free. */
 export function advanceWorkshop(host:GameState):string|null{
-  const job=host.workshop.job;if(!job)return null;
+  let job=host.workshop.job;if(!job)return null;
   if(job.kind==='upgrade')return advanceUpgrade(host);
   if(job.oracle)return advanceItemOracle(host);
   if(job.assembly)return advanceGuidedWorkshop(host);
@@ -81,10 +82,18 @@ export function advanceWorkshop(host:GameState):string|null{
   if(job.phase==='approaching'){
     if(host.route.length)return null;
     if(Math.hypot(host.player.x-target.x,host.player.z-target.z)>.8){cancelWorkshop(host);return '未能到达操作位置，材料未扣除。';}
-    host.workshop={...host.workshop,job:{...job,phase:'working',startedAt:host.time}};
+    const woodMoisture=job.kind==='craft'?craftWoodMoisture(host,job.blueprintId!):undefined;
+    host.workshop={...host.workshop,job:{...job,phase:'working',startedAt:host.time,
+      durationSeconds:job.durationSeconds*(woodMoisture===undefined?1:fineWorkMultiplier(woodMoisture)),
+      ...(woodMoisture===undefined?{}:{woodMoisture})}};
     const face=job.kind==='craft'?WORKBENCH:CAMP_PROPS.altar;host.player.facing=Math.atan2(face.x-host.player.x,face.z-host.player.z);host.player.moving=false;return null;
   }
   if(Math.hypot(host.player.x-target.x,host.player.z-target.z)>.8){cancelWorkshop(host);return '离开了操作位置，材料未扣除。';}
+  if(job.kind==='craft'&&job.woodMoisture===undefined){
+    const woodMoisture=craftWoodMoisture(host,job.blueprintId!);
+    job={...job,woodMoisture,durationSeconds:job.durationSeconds*fineWorkMultiplier(woodMoisture)};
+    host.workshop={...host.workshop,job};
+  }
   if(host.time-job.startedAt!<job.durationSeconds)return null;
   const input=job.kind==='offering'?workshopInput(host,'offering'):null;
   const debits=job.kind==='craft'?craftMaterialDebits(host,job.blueprintId!):input?[{...stackIdentity(input),delta:-1}]:null;
@@ -160,11 +169,12 @@ export function validateWorkshop(raw:unknown,time:number,inventory?:InventorySta
     const profile=findUpgradeProfile(targetId);
     if(profile?.requires?.some(id=>(upgrades[id]?.level??findUpgradeProfile(id)?.initialLevel??0)<1))throw new Error('Missing prerequisite for installed fitting');
   }
-  if(raw.job!==null){const j=raw.job;if(!isRecord(j))throw new Error('Invalid workshop job');exactKeys(j,['id','kind','blueprintId','phase','startedAt','durationSeconds',...(j.kind==='upgrade'?['targetId','pathId']:[]),...(Object.hasOwn(j,'assembly')?['assembly']:[]),...(Object.hasOwn(j,'oracle')?['oracle']:[]),...(Object.hasOwn(j,'broomCraft')?['broomCraft']:[])]);
+  if(raw.job!==null){const j=raw.job;if(!isRecord(j))throw new Error('Invalid workshop job');exactKeys(j,['id','kind','blueprintId','phase','startedAt','durationSeconds',...(Object.hasOwn(j,'woodMoisture')?['woodMoisture']:[]),...(j.kind==='upgrade'?['targetId','pathId']:[]),...(Object.hasOwn(j,'assembly')?['assembly']:[]),...(Object.hasOwn(j,'oracle')?['oracle']:[]),...(Object.hasOwn(j,'broomCraft')?['broomCraft']:[])]);
     if(!isStableId(j.id)||!['craft','offering','upgrade'].includes(j.kind as string)||!['approaching','working'].includes(j.phase as string)||typeof j.durationSeconds!=='number'||!Number.isFinite(j.durationSeconds)||j.durationSeconds<=0||j.durationSeconds>86400)throw new Error('Invalid workshop action');
     if(j.phase==='approaching'?j.startedAt!==null:typeof j.startedAt!=='number'||!Number.isFinite(j.startedAt)||j.startedAt<0||j.startedAt>time)throw new Error('Invalid workshop timestamp');
     if(j.kind==='offering'?j.blueprintId!==null:!isStableId(j.blueprintId)||!(raw.blueprints.includes(j.blueprintId)||inventory&&knowsBlueprint(inventory,raw.blueprints as string[],j.blueprintId as string)))throw new Error('Invalid workshop recipe');
     if(j.kind==='craft'&&findBlueprint(j.blueprintId as string)?.kind==='upgrade')throw new Error('Upgrade blueprint cannot craft a furniture item');
+    if(Object.hasOwn(j,'woodMoisture')&&(j.kind!=='craft'||typeof j.woodMoisture!=='number'||!Number.isFinite(j.woodMoisture)||j.woodMoisture<0||j.woodMoisture>1))throw new Error('Invalid crafting wood moisture');
     if(Object.hasOwn(j,'oracle')){
       if(!isRecord(j.oracle))throw new Error('Invalid item oracle job');exactKeys(j.oracle,['riteId','instanceId']);
       const oracle=j.oracle,rite=typeof oracle.riteId==='string'?itemOracleRite(oracle.riteId):undefined;
@@ -178,7 +188,8 @@ export function validateWorkshop(raw:unknown,time:number,inventory?:InventorySta
     if(Object.hasOwn(j,'assembly')){
       if(j.kind!=='craft'||j.phase!=='working'||!isGuidedBlueprint(j.blueprintId as string)||(upgrades[WORKBENCH_BRACING.id]?.level??0)<1)throw new Error('Guided assembly requires the improved workbench');
       const assembly=validateGuidedAssembly(j.assembly,j.blueprintId as string);
-      if(j.durationSeconds!==(assembly.phase==='finishing'?WORKBENCH_BRACING.finishSeconds:WORKBENCH_BRACING.prepareSeconds))throw new Error('Invalid assembly stage duration');
+      const duration=assembly.phase==='finishing'?WORKBENCH_BRACING.finishSeconds*fineWorkMultiplier(typeof j.woodMoisture==='number'?j.woodMoisture:.2):WORKBENCH_BRACING.prepareSeconds;
+      if(j.durationSeconds!==duration)throw new Error('Invalid assembly stage duration');
     }else if(j.kind==='craft'&&isGuidedBlueprint(j.blueprintId as string))throw new Error('Guided craft lacks assembly evidence');
     if(j.kind==='upgrade'){
       if(!isStableId(j.targetId)||!isStableId(j.pathId)||j.phase!=='working')throw new Error('Invalid upgrade action');

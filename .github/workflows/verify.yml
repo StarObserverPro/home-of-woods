@@ -27,6 +27,7 @@ jobs:
           node --experimental-strip-types --test
           tests/wardrobe.test.ts tests/character-wardrobe.test.ts
           tests/merchant.test.ts tests/food-foundation.test.ts
+          tests/material-storage-drying.test.ts
           tests/day-cycle.test.ts tests/affix-vfx-library.test.ts
           tests/release-integration.test.ts
       - name: Clock, meals and camp life
@@ -49,3 +50,10 @@ jobs:
         run: >-
           node --experimental-strip-types --test
           tests/broom-oracle.test.ts tests/broom-presentation.test.ts
+      - name: Weather, movement, materials and valley landscape
+        run: >-
+          node --experimental-strip-types --test --test-concurrency=4
+          tests/weather.test.ts tests/weather-particle-density.test.ts
+          tests/movement.test.ts tests/item-transfers.test.ts
+          tests/branch-attachment.test.ts tests/wood-grain.test.ts
+          tests/valley-horizon.test.ts tests/gathering-presentation.test.ts

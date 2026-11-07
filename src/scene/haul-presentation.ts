@@ -1,3 +1,5 @@
+import {woodCoordinates,woodMaterial} from './wood-grain.ts';
+import {groundScrapGeometry,scrapMaterial} from './scrap-geometry.ts';
 import * as THREE from 'three';
 import {groundStacks,groundId} from '../domain/carrying.ts';
 import {transportLocation} from '../domain/transport-location.ts';
@@ -11,8 +13,9 @@ import {InteractionRegistry} from './interaction-registry.ts';
 export function createHaulPresentation(r:Resources,models:Models){
   const group=new THREE.Group(),hits=new InteractionRegistry();group.name='haul-materials';
   const placed=new Map<string,{root:THREE.Group;remove:()=>void}>();
-  const cylinder=r.geometry('haul-log',()=>new THREE.CylinderGeometry(1,1,1,9));
-  const bark=r.material('#875b3c',.7),end=r.material('#ddbd87',.72);
+  const cylinder=r.geometry('haul-log',()=>woodCoordinates(new THREE.CylinderGeometry(1,1,1,9),'raw','y'));
+  const bark=woodMaterial(r,'#875b3c',.7),end=woodMaterial(r,'#ddbd87',.72);
+  const scraps=r.geometry('haul-split-scraps',groundScrapGeometry),scrapSurface=scrapMaterial(r);
   let revision=-1;
   return {group,hits,
     update(inventory:InventoryState){
@@ -27,6 +30,8 @@ export function createHaulPresentation(r:Resources,models:Models){
             const shape=woodShape(stack),mesh=new THREE.Mesh(cylinder,[bark,end,end]);
             mesh.scale.set(shape.radius,shape.length,shape.radius);mesh.rotation.z=Math.PI/2;
             mesh.position.y=shape.radius;root.add(mesh);
+          }else if(stack.itemId==='scrap-fuel'){
+            const mesh=new THREE.Mesh(scraps,scrapSurface);mesh.name='ground-split-scraps';root.add(mesh);
           }else{
             const template=models.templates.get(stack.itemId.includes('mushroom')?'mushrooms':'branches');
             if(template){const mesh=template.clone(true);root.add(mesh);const box=new THREE.Box3().setFromObject(mesh),size=box.getSize(new THREE.Vector3());
