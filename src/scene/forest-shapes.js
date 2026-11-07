@@ -5,7 +5,7 @@ const species=['松','云杉','冷杉','栎','桦','杨','榆','鹅掌楸'];
 const foliage=['#57763c','#416658','#536b53','#718e42','#9bac60','#8baf5e','#648b4d','#799950'];
 const bark=['#876444','#6f5c4b','#858377','#786248','#d6d3bf','#a4a99a','#756857','#82765e'];
 const ballGeo=new THREE.IcosahedronGeometry(1,1),coneGeo=new THREE.ConeGeometry(1,1,9),woodGeo=new THREE.CylinderGeometry(.55,1,1,7), markGeo=new THREE.BoxGeometry(1,1,1);
-function branch(group,mat,a,b,r){const dir=new THREE.Vector3().subVectors(b,a);let m=new THREE.Mesh(woodGeo,mat);m.position.copy(a).add(b).multiplyScalar(.5);m.scale.set(r,dir.length(),r);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize());m.castShadow=true;m.name='wood-branch';group.add(m);}
+function branch(group,mat,a,b,r){(group.userData.woodSegments??=[]).push({a:a.toArray(),b:b.toArray(),radius:r});const dir=new THREE.Vector3().subVectors(b,a);let m=new THREE.Mesh(woodGeo,mat);m.position.copy(a).add(b).multiplyScalar(.5);m.scale.set(r,dir.length(),r);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize());m.castShadow=true;m.name='wood-branch';group.add(m);}
 function crown(group,mat,x,y,z,sx,sy,sz,shapeSeed){
  shapeSeed ??= group.userData.treeSeed*17+(group.userData.crownIndex++);
  let geometry=ballGeo;
@@ -29,9 +29,9 @@ export function makeTree(kind,id,detail=2){
    crown(g,leaves,x,y+.24,z,1.0+rand(id*29+i)*.3,.53+rand(id*31+i)*.17,.85+rand(id*37+i)*.25)}
   crown(g,leaves,-bend*.4,6.6,0,1.05,.65,1.0);
  }else if(kind===1){ // spruce: blue-green, broad branch layers
-  trunk(6.8,.32);for(let i=0;i<5;i++){let y=1.65+i*1.05,r=2.0-i*.29;cone(g,leaves,y,r,2.05)}
+  trunk(6.8,.32);branch(g,wood,V(0,3.4,0),V(1.05,3.2,0),.09);branch(g,wood,V(1.05,3.2,0),V(1.65,3.05,0),.055);for(let i=0;i<5;i++){let y=1.65+i*1.05,r=2.0-i*.29;cone(g,leaves,y,r,2.05)}
  }else if(kind===2){ // fir: dense narrow spire, smooth gray bark
-  trunk(7.1,.29);for(let i=0;i<6;i++){let y=1.35+i*.98,r=1.47-i*.195;cone(g,leaves,y,r,1.85)}
+  trunk(7.1,.29);branch(g,wood,V(0,3.3,0),V(.85,3.0,0),.075);branch(g,wood,V(.85,3.0,0),V(1.35,2.9,0),.045);for(let i=0;i<6;i++){let y=1.35+i*.98,r=1.47-i*.195;cone(g,leaves,y,r,1.85)}
  }else if(kind===3){ // oak: short irregular trunk and massive, spreading limbs
   branch(g,wood,V(0,0,0),V(.12,2.2,0),.76);branch(g,wood,V(.12,2.2,0),V(-.15,3.5,0),.55);
   for(let i=0;i<5;i++){let a=i*Math.PI*2/5,r=2.0+(i%2)*.5,x=Math.cos(a)*r,z=Math.sin(a)*r,y=3.9+(i%3)*.38;branch(g,wood,V(.1,2.3+(i%2)*.35,0),V(x,y,z),.32);crown(g,leaves,x,y+.45,z,1.55,.9,1.3)}crown(g,leaves,0,4.85,0,1.65,1,1.5);
@@ -60,5 +60,6 @@ export function makeTree(kind,id,detail=2){
  const stem=new THREE.Mesh(trunkGeometry,wood);stem.name='trunk';g.add(stem);
  const width=.90+rand(id*19)*.20,height=.92+rand(id*17)*.16,lean=(rand(id*23)-.5)*.045;
  g.updateMatrixWorld(true);g.traverse(o=>{if(!o.isMesh)return;const geometry=o.geometry.clone().applyMatrix4(o.matrixWorld),p=geometry.attributes.position;for(let i=0;i<p.count;i++){const y=p.getY(i);p.setXYZ(i,p.getX(i)*width+Math.max(0,y-2)*lean,y*height,p.getZ(i)*width);}geometry.computeVertexNormals();o.geometry=geometry;o.position.set(0,0,0);o.quaternion.identity();o.scale.setScalar(1);});
+ g.userData.woodSegments=g.userData.woodSegments.map(segment=>({...segment,radius:segment.radius*width,a:[segment.a[0]*width+Math.max(0,segment.a[1]-2)*lean,segment.a[1]*height,segment.a[2]*width],b:[segment.b[0]*width+Math.max(0,segment.b[1]-2)*lean,segment.b[1]*height,segment.b[2]*width]}));
  return g;
 }

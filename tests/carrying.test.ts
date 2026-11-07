@@ -137,3 +137,16 @@ test('representative presentation states are semantic only, never extra inventor
   s.inventory=awardCarried(createInventory(),item('branch'),1);assert.equal(carryingSnapshot(s).visual,'wood-bundle');
   s.inventory=awardCarried(createInventory(),item('wood'),1);assert.equal(carryingSnapshot(s).visual,'shoulder-log');
 });
+
+test('max withdraw respects capacity and bulk drop/store conserve stock',()=>{
+ const s=nearStorage();s.inventory=inventoryTransaction(s.inventory,[{...item('branch'),delta:20}]);
+ const key=stackKey(s.inventory.stacks.find(x=>x.itemId==='branch')!);
+ changeCarrying(s,{kind:'withdraw',key,quantity:'max'},[]);
+ const carried=s.inventory.stacks.find(isCarried)!;assert.equal(carried.quantity,3);
+ const before=structuredClone(s.inventory);changeCarrying(s,{kind:'withdraw',key,quantity:'max'},[]);assert.deepEqual(s.inventory,before);
+ changeCarrying(s,{kind:'drop',key:stackKey(carried),quantity:'max'},[]);
+ const ground=s.inventory.stacks.find(x=>transportLocation(x)?.kind==='ground')!;assert.equal(ground.quantity,3);
+ changeCarrying(s,{kind:'take',key:stackKey(ground),quantity:'max'},[]);
+ changeCarrying(s,{kind:'store'},[]);
+ assert.equal(s.inventory.stacks.find(x=>x.itemId==='branch'&&isStored(x))?.quantity,20);
+});

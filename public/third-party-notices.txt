@@ -110,3 +110,8 @@ AI-generated with built-in imagegen from project-authored prompts; later batches
 reference only artwork generated in the same batch. No third-party image inputs.
 These generated UI images are not designated CC0. Their provenance and exact
 file hashes are recorded in /assets/ui-r1/manifest.json.
+
+Home of Woods rustic UI surfaces — HOW-UI-RUSTIC-R2 (2026-11-06)
+Project-authored SVG bark and split-wood textures in /assets/ui-r2/.
+Created for this project from its accepted UI prototype. No third-party inputs;
+not designated third-party CC0. Existing UI icons retain the R1 provenance above.

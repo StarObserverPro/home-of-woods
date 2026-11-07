@@ -1,4 +1,5 @@
-import {isStored} from './transport-location.ts';
+import {SCRAP_LENGTH,SCRAP_RADIUS} from '../content/scrap-shape.ts';
+import {isStored,isCarried} from './transport-location.ts';
 import { WOODCRAFT, insideWoodcraft, zeroVector } from '../content/woodcraft.ts';
 import type { Vec3, Quat } from '../content/woodcraft.ts';
 import { heightAt } from '../world/surface.ts';
@@ -14,14 +15,20 @@ export type WoodcraftState = { nextId: number; prepared: boolean; pieces: LooseW
 export type WoodcraftOwner = { inventory: InventoryState; woodcraft: WoodcraftState; selected: string | null };
 export const createWoodcraft = (): WoodcraftState => ({ nextId: 1, prepared: false, pieces: [] });
 export const woodLabel = (s: InventoryStack) => ITEM_CATALOG.items.get(s.itemId)?.name ?? s.itemId;
+export const woodcraftItem = (itemId:string) => ['wood','branch','scrap-fuel'].includes(itemId);
+/** Manual placement accepts actual carried stock as well as camp stock; ground drops stay excluded. */
+export function placeableWood(inventory:InventoryState){
+  return inventory.stacks.filter(s=>(isStored(s)||isCarried(s))&&woodcraftItem(s.itemId)&&!s.wood?.reserved&&recognizedStack(s)&&s.quantity>0);
+}
 export function availableWood(inventory: InventoryState) {
-  return inventory.stacks.filter(s => isStored(s) && ['wood', 'branch'].includes(s.itemId) && !s.wood?.reserved && recognizedStack(s) && s.quantity > 0)
+  return placeableWood(inventory).filter(isStored)
     .sort((a,b) => Number(b.itemId === 'wood') - Number(a.itemId === 'wood') || stackKey(a).localeCompare(stackKey(b)));
 }
 export const availableWoodCount = (inventory: InventoryState) => availableWood(inventory).reduce((n,s) => n+s.quantity,0);
 /** Display dimensions are bounded toy-scale proxies; original material specifications stay intact. */
 export function woodShape(source: InventoryStack) {
   const log = source.itemId === 'wood', spec = source.wood?.spec;
+  if(source.itemId==='scrap-fuel')return {length:SCRAP_LENGTH,radius:SCRAP_RADIUS,fork:false};
   const length = Math.max(log ? 1.2 : .6, Math.min(log ? 2.5 : 1.6, spec ? spec.lengthMm / 1000 : log ? 2.2 : 1.2));
   const radius = Math.max(log ? .19 : .055, Math.min(log ? .32 : .12, spec ? spec.thicknessMm / 2000 : log ? .26 : .075));
   return { length, radius, fork: !log && spec?.straightness !== 'straight' };
@@ -30,16 +37,17 @@ function initialPiece(source: InventoryStack, n: number, target?: Vec3): LooseWo
   const yaw = (n * 2.399963229728653) % (Math.PI * 2), s = Math.SQRT1_2;
   const x = target?.x ?? WOODCRAFT.x + Math.sin(n * 2.7) * .85;
   const z = target?.z ?? WOODCRAFT.z + Math.cos(n * 1.9) * .7;
-  return { id: `loose-wood-${n}`, source: { ...structuredClone(source), quantity: 1 },
+  const storedSource=structuredClone(source);delete storedSource.transport;
+  return { id: `loose-wood-${n}`, source: { ...storedSource, quantity: 1 },
     position: { x, y: Math.max(heightAt(x,z) + 2, (target?.y ?? 0) + .8), z },
     rotation: { x: Math.sin(yaw/2)*s, y: Math.sin(yaw/2)*s, z: Math.cos(yaw/2)*s, w: Math.cos(yaw/2)*s },
     linear: zeroVector(), angular: {x:.25,y:.5,z:.2}, phase: 'queued', sleeping: false };
 }
 /** Synchronous exclusive ownership transfer. Every queued piece has already left inventory. */
-export function transferWood(owner: WoodcraftOwner, mode: 'prepare' | 'one', target?: Vec3, sourceKey?:string): number {
-  const candidates = availableWood(owner.inventory).filter(s=>mode!=='one'||sourceKey===undefined||stackKey(s)===sourceKey), total = candidates.reduce((n,s)=>n+s.quantity,0);
+export function transferWood(owner: WoodcraftOwner, mode: 'prepare' | 'one' | 'all', target?: Vec3, sourceKey?:string): number {
+  const candidates = (mode==='prepare'?availableWood(owner.inventory):placeableWood(owner.inventory)).filter(s=>mode!=='one'||sourceKey===undefined||stackKey(s)===sourceKey), total = candidates.reduce((n,s)=>n+s.quantity,0);
   const capacity = (mode === 'prepare' ? WOODCRAFT.maxPieces - 1 : WOODCRAFT.maxPieces) - owner.woodcraft.pieces.length;
-  let need = Math.min(Math.max(0, capacity), mode === 'prepare' ? Math.max(0,total-1) : Math.min(1,total));
+  let need = Math.min(Math.max(0, capacity), mode === 'prepare' ? Math.max(0,total-1) : mode === 'all' ? total : Math.min(1,total));
   if (!need) return 0;
   if (target && (!insideWoodcraft(target) || !Number.isFinite(target.y) || target.y < heightAt(target.x,target.z)-.2 || target.y > heightAt(target.x,target.z)+8)) throw new Error('请选择木料区内的位置。');
   if (!Number.isSafeInteger(owner.woodcraft.nextId + need)) throw new Error('木料编号已耗尽。');
@@ -83,7 +91,7 @@ export function validateWoodcraft(raw:unknown): WoodcraftState {
     if(!Number.isSafeInteger(n)||n>=(raw.nextId as number)||ids.has(p.id as string)) throw new Error('Invalid loose wood identity');
     ids.add(p.id as string);
     const stacks=canonicalStacks([p.source]);
-    if(stacks.length!==1||stacks[0].quantity!==1||!isStored(stacks[0])||!['wood','branch'].includes(stacks[0].itemId)||stacks[0].wood?.reserved) throw new Error('Invalid loose wood source');
+    if(stacks.length!==1||stacks[0].quantity!==1||!isStored(stacks[0])||!woodcraftItem(stacks[0].itemId)||stacks[0].wood?.reserved) throw new Error('Invalid loose wood source');
     const pos=vector(p.position), q=vector(p.rotation,true), v=vector(p.linear), a=vector(p.angular);
     const ground=WOODCRAFT.ground;
     if(pos.x<ground.minX||pos.x>ground.maxX||pos.z<ground.minZ||pos.z>ground.maxZ||pos.y<heightAt(pos.x,pos.z)-2||pos.y>heightAt(WOODCRAFT.x,WOODCRAFT.z)+14 ||
@@ -91,4 +99,15 @@ export function validateWoodcraft(raw:unknown): WoodcraftState {
       !['queued','loose'].includes(p.phase as string)||typeof p.sleeping!=='boolean'||p.phase==='queued'&&p.sleeping) throw new Error('Invalid loose wood dynamics');
   }
   return structuredClone(raw) as unknown as WoodcraftState;
+}
+
+/** Validate all returned stacks before committing either side of the transfer. */
+export function collectAllWood(owner:WoodcraftOwner):number {
+  const pieces=owner.woodcraft.pieces;
+  if(!pieces.length)return 0;
+  const inventory=inventoryTransaction(owner.inventory,pieces.map(piece=>({...piece.source,delta:1})));
+  owner.inventory=inventory;
+  owner.woodcraft={...owner.woodcraft,pieces:[]};
+  if(pieces.some(piece=>piece.id===owner.selected))owner.selected=WOODCRAFT.id;
+  return pieces.length;
 }

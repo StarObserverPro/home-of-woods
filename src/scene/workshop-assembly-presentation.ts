@@ -1,3 +1,4 @@
+import {woodCoordinates} from './wood-grain.ts';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {assemblyGuides,geometryParts} from '../domain/parametric-crafting.ts';
@@ -34,7 +35,7 @@ export function createWorkshopAssemblyPresentation(r:Resources,workbench:THREE.G
       const start=new THREE.Vector3(side*1.12,.14,z),end=new THREE.Vector3(side*.37,1.00,z),direction=end.clone().sub(start);
       const rotation=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),direction.clone().normalize());
       const matrix=new THREE.Matrix4().compose(start.add(end).multiplyScalar(.5),rotation,new THREE.Vector3(1,1,1));
-      geometries.push(new THREE.CylinderGeometry(.075,.09,direction.length(),6).applyMatrix4(matrix));
+      geometries.push(woodCoordinates(new THREE.CylinderGeometry(.075,.09,direction.length(),6),'round-board','y').applyMatrix4(matrix));
     }
     return geometries;
   }),factory.materials.frame);wood.name='workbench-diagonal-braces';wood.castShadow=wood.receiveShadow=true;bracing.add(wood);

@@ -29,6 +29,9 @@ import { Resources } from "./resources.ts";
 import { Models, createSign } from "./models.ts";
 import { createScenery, createTerrain } from "./terrain.ts";
 import {createEnvironment} from './environment.ts';
+import {createWeatherPresentation} from './weather-presentation.ts';
+import {weatherSnapshot} from '../domain/weather.ts';
+import {createHorizon} from './horizon.ts';
 import {createCreek} from './creek.ts';
 import {createCampProps} from './camp-props.ts';
 import {createSelectionMarker} from './selection-marker.ts';
@@ -94,8 +97,8 @@ export async function createScene(
   scene.environment=environment.environmentMap;
   scene.environmentIntensity=light.environmentIntensity;
   renderer.toneMappingExposure=light.recommendedExposure;
-  scene.fog = new THREE.Fog(light.haze, 220, 440);
-  const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 1100);
+  scene.fog = new THREE.Fog(light.haze, 300, 1050);
+  const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 3200);
   let yaw = CAMERA.yaw,
     elevation = CAMERA.elevation,
     zoom: number = CAMERA.zoom,
@@ -126,7 +129,9 @@ export async function createScene(
   sun.shadow.radius = 3;
   scene.add(sun, sun.target);
   const { ground, water } = createTerrain(r);
-  const river=createCreek(r,water),camp=createCampProps(r);
+  const horizon=createHorizon(r,ground.geometry,trees);
+  scene.add(horizon.group);
+  const river=createCreek(r,water,horizon.riverExtensions),camp=createCampProps(r);
   scene.add(river.group,camp.group);
   const auditParams=new URLSearchParams(window.location.search),auditHour=auditParams.has('inspect')&&auditParams.has('hour')?Number(auditParams.get('hour')):NaN;
   let appearance=sceneAppearanceAt(0),scenePreset:SceneViewPreset|null=null,sceneOverrides:Partial<SceneAppearance>={};
@@ -217,25 +222,12 @@ export async function createScene(
   const hauling=createHaulPresentation(r,models);scene.add(hauling.group);
   const signs = [
     { x: -24, z: -37, label: "宅后望台 ↑" },
-    { x: -31, z: -74, label: "深山 · 待开放" },
     { x: -31, z: 12, label: "溪谷小径 ↓" },
-    { x: 7, z: 46, label: "对岸林地 · 待开放" },
   ];
   for (const p of signs) {
     const sign = createSign(r, p.label);
     sign.position.set(p.x, heightAt(p.x, p.z), p.z);
     scene.add(sign);
-  }
-  // A visible closed trail boundary, outside the same world-owned movement limit.
-  const gateZ=WORLD.minOpenZ-.8,gatePosts=[-37,-27,-17].map(x=>new THREE.Vector3(x,heightAt(x,gateZ),gateZ));
-  for(const p of gatePosts){
-    const post=new THREE.Mesh(r.geometry('sign-post',()=>new THREE.CylinderGeometry(.13,.17,2.4,7)),r.material('#c0a270'));
-    post.position.copy(p).add(new THREE.Vector3(0,1.2,0));post.castShadow=true;scene.add(post);
-  }
-  for(let i=1;i<gatePosts.length;i++)for(const height of [1,1.9]){
-    const a=gatePosts[i-1].clone().add(new THREE.Vector3(0,height,0)),b=gatePosts[i].clone().add(new THREE.Vector3(0,height,0));
-    const direction=b.clone().sub(a),rail=new THREE.Mesh(r.geometry('sign-board',()=>new THREE.BoxGeometry(2.7,.95,.18)),r.material('#c0a270'));
-    rail.position.copy(a).lerp(b,.5);rail.scale.set(direction.length()/2.7,.22/.95,1.8);rail.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),direction.normalize());rail.castShadow=true;scene.add(rail);
   }
   const marker = createSelectionMarker(r);
   scene.add(marker.object);
@@ -264,6 +256,13 @@ export async function createScene(
       '#include <color_fragment>\n#ifdef USE_COLOR\nif(vColor.r>vColor.g*1.05) diffuseColor.a=1.;\n#endif');
   };
   fadeMat.customProgramCacheKey=()=> 'r3-crown-fade-preserve-bark';
+  const weather=createWeatherPresentation(r,scene,props);
+  weather.bind(ground,'ground');weather.bind(forest.group,'tree');weather.bindMaterial(fadeMat,'tree');
+  weather.bind(horizon.group);weather.bind(scenery.group);weather.bind(camp.group);
+  props.forEach(root=>weather.bind(root));
+  propFades.forEach(({materials})=>materials.forEach(({fade})=>weather.bindMaterial(fade)));
+  weather.addDynamicSurface(housing.group);weather.addDynamicSurface(workshop.group);
+  weather.addDynamicSurface(broom.group);weather.addDynamicSurface(woodcraft.group);
   const projectedCorner=new THREE.Vector3(), occluderCenter=new THREE.Vector3();
   const occlusionRay=new THREE.Raycaster(),headWorld=new THREE.Vector3(),headDirection=new THREE.Vector3(),localHit=new THREE.Vector3();
   const inverseTreeMatrix=new THREE.Matrix4();
@@ -285,9 +284,10 @@ export async function createScene(
     );
     ray.setFromCamera(pointer, camera);
   };
+  const interactionHit=()=>ray.intersectObjects([...broom.hits.objects(),...housing.hits.objects(),...hauling.hits.objects(),...woodcraft.hits.objects(),...workshop.hits.objects(),...forestry.getPickTargets(),...props.values(),...gathering.hits.objects(),...camp.hits.filter(o=>o.userData.propActive!==false)], true).find(hit=>{let o:THREE.Object3D|null=hit.object;while(o){if(!o.visible)return false;o=o.parent;}return true;});
   const pick = (clientX: number, clientY: number) => {
     screenRay(clientX,clientY);
-    const hit = ray.intersectObjects([...broom.hits.objects(),...housing.hits.objects(),...hauling.hits.objects(),...woodcraft.hits.objects(),...workshop.hits.objects(),...forestry.getPickTargets(),...props.values(),...gathering.hits.objects(),...camp.hits.filter(o=>o.userData.propActive!==false)], true).find(hit=>{let o:THREE.Object3D|null=hit.object;while(o){if(!o.visible)return false;o=o.parent;}return true;}),
+    const hit = interactionHit(),
       terrainHit = ray.intersectObject(ground)[0];
     if(woodDropMode){const drop=ray.intersectObjects([...woodcraft.hits.objects(),ground],true)[0];if(drop)intent({kind:'wood-drop',x:drop.point.x,y:drop.point.y,z:drop.point.z});return;}
     if(placementMode){if(terrainHit)intent({kind:'move',x:terrainHit.point.x,z:terrainHit.point.z});return;}
@@ -427,11 +427,11 @@ export async function createScene(
     },
     transferItemAt(clientX:number,clientY:number){
       screenRay(clientX,clientY);
-      const hit=ray.intersectObjects([...woodcraft.hits.objects(),...workshop.hits.objects()],true)[0],terrain=ray.intersectObject(ground)[0];
+      const hit=interactionHit(),terrain=ray.intersectObject(ground)[0];
       if(!hit||(terrain&&hit.distance>terrain.distance+.2))return null;
       const woodId=woodcraft.hits.resolve(hit.object);
       if(woodId)return {kind:'loose-wood' as const,id:woodId};
-      const id=workshop.hits.resolve(hit.object);
+      const id=workshop.hits.resolve(hit.object)??housing.hits.resolve(hit.object)??broom.hits.resolve(hit.object);
       return id&&id!==CAMP_VISITOR.id?{kind:'furniture' as const,id}:null;
     },
     setWoodcraftDrop(value:boolean){woodDropMode=value;},
@@ -476,6 +476,8 @@ export async function createScene(
       if((sceneOverrides.hour!==undefined||Number.isFinite(auditHour))&&sceneOverrides.fire===undefined)appearance.fire=daylightAt(appearance.hour).night>.5;
       // A real cooking job lights the hearth even when the daily decorative fire is off.
       if(state.food.cooking&&sceneOverrides.fire===undefined)appearance.fire=true;
+      weather.setWeather(weatherSnapshot(state),dt);
+      environment.setWeather(weather.profile);
       const sky=environment.setHour(appearance.hour);
       hemi.color.copy(light.skyColor);hemi.groundColor.copy(light.groundColor);hemi.intensity=light.ambientIntensity;
       sun.color.copy(light.sunColor);sun.intensity=light.sunIntensity;sun.position.copy(sun.target.position).addScaledVector(light.sunDirection,135);
@@ -611,8 +613,10 @@ export async function createScene(
       if(scenePreset==='stagVista')wildlifeSeen.push(landmarkInspectionView('wildlife.stag',state.time));
       if(scenePreset==='goatVista')wildlifeSeen.push(landmarkInspectionView('wildlife.goat',state.time));
       wildlife.update(wildlifeSeen,state.time,appearance.hour,camera,reducedMotion);
+      weather.update(ambientTime,dt,state.player,camera,host.clientWidth<600||host.clientHeight<500,reducedMotion);
       renderer.info.reset();renderer.info.autoReset=false;
       renderer.render(scene, camera);
+      weather.renderLens(renderer);
     },
     stats() {
       return {
@@ -634,6 +638,8 @@ export async function createScene(
         characters:characters.stats(),
         gatheringPresentation: gathering.stats(),
         environment:environment.stats(),
+        weatherPresentation:weather.stats(),
+        horizon:horizon.stats(),
         river:river.stats(),
         destroyed,
         contextLost: renderer.getContext().isContextLost(),
@@ -650,6 +656,7 @@ export async function createScene(
       canvas.removeEventListener("wheel", wheel);
       canvas.removeEventListener("contextmenu", contextMenu);
       pointers.clear();
+      weather.dispose();
       woodcraft.dispose();
       workshop.dispose();
       housing.dispose();
@@ -666,6 +673,7 @@ export async function createScene(
       river.dispose();
       camp.dispose();
       environment.dispose();
+      horizon.dispose();
       scene.environment=null;
       scene.clear();
       props.clear();

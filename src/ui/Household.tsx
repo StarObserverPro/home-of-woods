@@ -1,3 +1,4 @@
+import {ItemBrowser,ItemHeading,MenuAction,MaterialCounts} from './ItemBrowser.tsx';
 import {useState} from 'react';
 import {GameIcon} from './GameIcon.tsx';
 import {WORKBENCH} from '../content/workshop.ts';
@@ -57,12 +58,8 @@ export function BroomControls({selected,view,disabled,busy,playing,onLearn,onCra
   </div><p>收回原来的扫帚，就能带去扫叶。</p></section>;
   return <section className="housing-controls" aria-label="扫叶">
     {playing&&<p role="status">正在扫叶。移动可以放下手头的动作。</p>}
-    {(selectedPatch?[selectedPatch]:view.patches).map(patch=><article className="housing-recipe" key={patch.id}>
-      <strong>{patch.name}</strong><small>{patch.swept?'落叶已成堆，可以拨到另一侧。':'把这小片落叶扫拢。'}</small>
-      {patch.requiresApproach?<button className="context-button" disabled={disabled||busy||playing} onClick={()=>onApproach(patch.id)}>走到落叶旁</button>:
-        <button className="context-button" disabled={disabled||busy||playing||!patch.canUse} onClick={()=>onSweep(item.instanceId,patch.id)}>{patch.swept?'拨一拨原来的叶堆':'扫拢落叶'}</button>}
-      {!patch.requiresApproach&&!patch.canUse&&<small>{patch.reason}</small>}
-    </article>)}
+    <ItemBrowser label="扫叶位置" items={(selectedPatch?[selectedPatch]:view.patches).map(patch=>({...patch,icon:'branch-broom' as const}))} renderDetail={patch=><><ItemHeading name={patch.name} icon="branch-broom" subtitle={patch.swept?'已成堆':'散落的叶片'}/><MenuAction disabled={disabled||busy||playing||!patch.requiresApproach&&!patch.canUse} onClick={()=>patch.requiresApproach?onApproach(patch.id):onSweep(item.instanceId,patch.id)}>{patch.requiresApproach?'走近':patch.swept?'拨到另一侧':'扫拢'}</MenuAction>{!patch.requiresApproach&&!patch.canUse&&<p className="wood-reason">{patch.reason}</p>}</>}/>
+
     <button className="context-button" disabled={disabled||busy||playing} onClick={()=>onPlace(item.instanceId)}>把扫帚摆在营地</button>
   </section>;
 }
@@ -70,14 +67,5 @@ export function BroomControls({selected,view,disabled,busy,playing,onLearn,onCra
 export function ItemOracleControls({selected,view,disabled,onApproach,onOffer}:{selected:string|null;view:ItemOracleSnapshot;disabled:boolean;onApproach:()=>void;onOffer:(id:string,riteId:string)=>void}){
   if(![CAMP_PROPS.altar.id,ALTAR_LAYOUT.oracle.id].includes(selected as typeof CAMP_PROPS.altar.id))return null;
   if(!view.targets.length)return null;
-  return <details className="context-details" aria-label="原物神谕"><summary>让原物得到回应</summary>
-    {!view.near?<button className="context-button" disabled={disabled} onClick={onApproach}>带着原物走近祭坛</button>:view.targets.map(target=><article className="housing-recipe" key={target.instanceId}>
-      <strong>{target.name} · {target.riteName}</strong>
-      {target.hasTrait?<small>这份{rarityDefinition(target.grade).name}词条回应已经留在原物身上。</small>:<>
-        <small>{rarityDefinition(target.grade).name}词条 · 供奉{target.cost.name} {target.cost.quantity} 份</small>
-        <button className="context-button" disabled={disabled||!target.canStart} title={target.reason} onClick={()=>onOffer(target.instanceId,target.riteId)}>请神谕回应这件原物</button>
-        {!target.canStart&&<small>{target.reason}</small>}
-      </>}
-    </article>)}
-  </details>;
+  return <ItemBrowser label="原物神谕" items={view.targets.map(target=>({...target,id:target.instanceId+target.riteId,icon:'oracle' as const}))} renderDetail={target=><><ItemHeading name={target.name} icon="oracle" subtitle={target.riteName}/><MaterialCounts items={[{name:target.cost.name,quantity:target.cost.quantity}]}/>{target.hasTrait?<p className="wood-note">已获得回应</p>:<MenuAction disabled={disabled||view.near&&!target.canStart} onClick={()=>view.near?onOffer(target.instanceId,target.riteId):onApproach()}>{view.near?'供奉':'走近祭坛'}</MenuAction>}</>}/>;
 }

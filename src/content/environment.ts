@@ -1,54 +1,18 @@
-/** Authored PNW-inspired silhouettes, not a reconstruction of named real mountains. */
-export type RidgeKnot = readonly [x: number, z: number, height: number];
+/** Authored alpine massifs; decorative and independent of playable land. */
 export type MountainDefinition = {
-  id: string;
-  kind: "volcano" | "ridge";
-  center: readonly [x: number, z: number];
-  radius: readonly [x: number, z: number];
-  height: number;
-  baseY: number;
-  snowLine: number;
-  haze: number;
-  seed: number;
-  segments: readonly [x: number, z: number];
-  spine?: readonly RidgeKnot[];
+ id:string; center:readonly [number,number]; radius:readonly [number,number];
+ baseY:number; height:number; snowLine:number; seed:number;
+ spine:readonly (readonly [number,number,number])[]; segments:readonly [number,number];
 };
-export const MOUNTAINS: readonly MountainDefinition[] = [
-  {
-    id: "glacier-volcano", kind: "volcano", center: [-110, -495], radius: [235, 165],
-    height: 282, baseY: -128, snowLine: .44, haze: .10, seed: 517,
-    segments: [44, 34],
-  },
-  {
-    id: "western-cirques", kind: "ridge", center: [-430, -370], radius: [245, 145],
-    height: 242, baseY: -132, snowLine: .64, haze: .06, seed: 181,
-    segments: [34, 22],
-    spine: [[-.94,.04,.23],[-.68,-.1,.72],[-.45,.08,.49],[-.23,-.12,1],[.01,.03,.59],[.28,-.02,.88],[.55,.16,.51],[.81,.04,.65],[1,.05,.12]],
-  },
-  {
-    id: "eastern-aretes", kind: "ridge", center: [280, -455], radius: [290, 155],
-    height: 254, baseY: -132, snowLine: .61, haze: .14, seed: 709,
-    segments: [38, 24],
-    spine: [[-1,-.05,.12],[-.72,.05,.48],[-.49,-.08,.89],[-.25,.12,.53],[.02,-.13,1],[.25,.05,.57],[.46,-.04,.78],[.72,.12,.46],[1,0,.16]],
-  },
-  {
-    id: "distant-ice-divide", kind: "ridge", center: [105, -745], radius: [400, 170],
-    height: 283, baseY: -163, snowLine: .55, haze: .36, seed: 941,
-    segments: [36, 20],
-    spine: [[-1,.05,.12],[-.75,-.08,.69],[-.52,.04,.48],[-.26,-.03,.86],[0,.1,.57],[.23,-.09,1],[.51,.06,.65],[.78,0,.83],[1,.03,.2]],
-  },
-  {
-    id: "western-sentinels", kind: "ridge", center: [-510, 55], radius: [165, 215],
-    height: 230, baseY: -137, snowLine: .70, haze: .20, seed: 211,
-    segments: [24, 26],
-    spine: [[-1,.1,.1],[-.62,-.05,.66],[-.27,.12,.4],[.06,-.06,1],[.37,.05,.56],[.72,-.03,.77],[1,.05,.15]],
-  },
-  {
-    id: "eastern-shoulders", kind: "ridge", center: [515, 85], radius: [180, 220],
-    height: 239, baseY: -137, snowLine: .68, haze: .20, seed: 647,
-    segments: [24, 26],
-    spine: [[-1,-.04,.12],[-.63,.04,.6],[-.28,-.06,.89],[.01,.12,.5],[.28,-.08,1],[.64,.04,.59],[1,.05,.12]],
-  },
+export const MOUNTAINS: readonly MountainDefinition[] =[
+ {id:'crown',center:[-58,-590],radius:[325,220],baseY:12,height:362,snowLine:.40,seed:7,
+  spine:[[-1,.05,.04],[-.78,.04,.32],[-.60,-.06,.48],[-.40,.08,.60],[-.22,-.07,.79],[-.08,-.16,1],[.07,-.14,.89],[.20,.00,.72],[.34,.11,.81],[.50,.04,.51],[.72,.12,.34],[1,.03,.02]],segments:[78,48]},
+ {id:'west-wall',center:[-460,-510],radius:[260,180],baseY:0,height:262,snowLine:.69,seed:19,
+  spine:[[-1,0,.02],[-.70,-.02,.42],[-.40,.09,.67],[-.19,-.12,.94],[.03,.05,.57],[.26,-.03,1],[.46,.08,.61],[.68,-.09,.72],[1,0,.03]],segments:[48,30]},
+ {id:'east-divide',center:[425,-640],radius:[300,210],baseY:-6,height:300,snowLine:.66,seed:31,
+  spine:[[-1,0,.03],[-.80,.03,.40],[-.54,-.05,.70],[-.32,.09,.48],[-.08,-.11,1],[.10,-.03,.72],[.30,.08,.89],[.51,-.02,.59],[.74,.07,.65],[1,0,.02]],segments:[52,34]},
+ {id:'distant-crown',center:[-90,-930],radius:[600,190],baseY:0,height:330,snowLine:.58,seed:43,
+  spine:[[-1,0,.1],[-.72,.08,.61],[-.5,-.06,.80],[-.28,.09,.58],[-.08,-.02,1],[.15,.08,.69],[.4,-.1,.92],[.65,.08,.64],[1,0,.1]],segments:[48,26]},
 ];
 export const ENVIRONMENT_STYLE = {
   reference: "https://sky-porch.starobserverpro.chatgpt.site",
@@ -65,9 +29,6 @@ export const ENVIRONMENT_STYLE = {
   skyTint: [.68, .84, 1] as const,
   sunDirection: [-.52, .81, -.28] as const,
   ambientIntensity: 1.05,
-  // Diffuse sky-fill floors apply only to classified snow/ice; terrain lighting is unchanged.
-  snowDiffuseFloor: [1.62, 1.68, 1.72] as const,
-  iceDiffuseFloor: [.62, 1.06, 1.42] as const,
   airColor: [.23, .34, .48] as const,
   airDensity: .00034,
   airHeight: 230,

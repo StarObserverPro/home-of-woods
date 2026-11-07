@@ -390,8 +390,8 @@
       "role": "runtime",
       "status": "integrated",
       "file": "public/assets/characters/motions.glb",
-      "bytes": 178484,
-      "sha256": "cf0370621d7cebfc40299ddbd10126cff78e02b0bd55e3edb73ad812e02edaa5",
+      "bytes": 203564,
+      "sha256": "2dd813b43abf0203f4fdad58c8721d19f59fc2e2db950293b2f4b737a5168e36",
       "source": {
         "author": "Kay Lousberg",
         "page": "https://kaylousberg.itch.io/kaykit-character-animations",
@@ -422,7 +422,7 @@
         "thirdPartyContent": true,
         "rights": "Source assets allow modification, game use and public redistribution; original license and modification record retained."
       },
-      "adaptation": "Only Idle_A, Walking_A, PickUp, Waving and two Melee_2H attacks; no mannequin meshes; scene samples a stopped/recovered pose without changing source clips",
+      "adaptation": "Only Idle_A, Walking_A, Running_A, PickUp, Waving and two Melee_2H attacks; no mannequin meshes; scene samples a stopped/recovered pose without changing source clips",
       "integration": {
         "loader": "src/scene/models.ts",
         "render": "src/scene/characters.ts",

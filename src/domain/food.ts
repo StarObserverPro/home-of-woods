@@ -93,12 +93,17 @@ export function unpackFoodSack(host:GameState):string{
   host.inventory=inventory;host.food={...host.food,sacksBought:host.food.sacksBought+1};
   return '粮袋已拆开，谷物、黑面包和调味品收入营地库存。';
 }
-export function startDryMushrooms(host:GameState):string{
+export function dryingReason(host:GameState):string{
   if(host.selected!==FOOD_DRYER_ID||!near(host,CAMP_PROPS.dryer.x,CAMP_PROPS.dryer.z,3.2))return '先走近晾晒架。';
   if(busy(host))return '先完成当前动作。';
   if((host.workshop.upgrades[FOOD_DRYER_ID]?.level??0)<1)return '先使用基础图纸搭好蘑菇晾晒架。';
   if(host.food.drying)return '晾晒架上已有蘑菇。';
-  const debit=take(host.inventory,MUSHROOM_DRYING.inputs[0].itemId,MUSHROOM_DRYING.inputs[0].quantity);if(!debit)return '晾晒需要 2 份鲜蘑菇。';
+  if(!take(host.inventory,MUSHROOM_DRYING.inputs[0].itemId,MUSHROOM_DRYING.inputs[0].quantity))return '晾晒需要 2 份随身或已入库的鲜蘑菇，地上的蘑菇要先拿起。';
+  return '';
+}
+export function startDryMushrooms(host:GameState):string{
+  const reason=dryingReason(host);if(reason)return reason;
+  const debit=take(host.inventory,MUSHROOM_DRYING.inputs[0].itemId,MUSHROOM_DRYING.inputs[0].quantity)!;
   const inventory=inventoryTransaction(host.inventory,debit);
   host.inventory=inventory;host.food={...host.food,drying:{startedAt:host.time,durationSeconds:MUSHROOM_DRYING.durationSeconds}};
   return '已把两份鲜蘑菇挂上晾晒架。';
@@ -176,5 +181,5 @@ export function foodSnapshot(host:GameState){
     counts:Object.fromEntries(['trail-rations','mushroom','dried-mushroom','food-beans','food-oats','food-rice','food-black-bread','food-salt','food-spice',FOOD_SOUP_ITEM_ID,FOOD_PORRIDGE_ITEM_ID].map(id=>[id,count(id)])) as Record<string,number>,
     cookingOptions:POT_MEAL_SERIES.flatMap(series=>FOOD_GRAINS.map(grain=>{const reason=potCookingReason(host,series,grain);return {series,grain,name:potMealName(series,grain),canStart:!reason,reason};})),
     cookingName:host.food.cooking?potMealName(host.food.cooking.series??'mushroom-grain-soup',host.food.cooking.grain):null,
-    dryingProgress:progress(host.food.drying),cookingProgress:progress(host.food.cooking),sacksBought:host.food.sacksBought,mealsEaten:host.food.mealsEaten};
+    dryingReason:dryingReason(host),dryingProgress:progress(host.food.drying),cookingProgress:progress(host.food.cooking),sacksBought:host.food.sacksBought,mealsEaten:host.food.mealsEaten};
 }

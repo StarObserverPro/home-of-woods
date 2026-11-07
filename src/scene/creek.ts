@@ -15,15 +15,20 @@ float edge=smoothstep(.79,.98,across);float foam=edge*(.13+.24*step(.4,a))+.04*p
 gl_FragColor=vec4(water,1.);#include <tonemapping_fragment>
 #include <colorspace_fragment>
 }`.replace('1.);#','1.);\n#')};
-export function createCreek(r:Resources,surface:THREE.Mesh){
+export function createCreek(r:Resources,surface:THREE.Mesh,extensions:THREE.BufferGeometry[]=[]){
   const group=new THREE.Group();group.name='reflective-creek-and-rapids';
   const geometry=r.own(surface.geometry.clone().rotateX(Math.PI/2));
   const reflector=new Reflector(geometry,{textureWidth:512,textureHeight:512,multisample:0,clipBias:.005,shader});
   reflector.rotation.x=-Math.PI/2;reflector.position.copy(surface.position);reflector.name='bounded-planar-river-reflection';group.add(reflector);
   const material=reflector.material as THREE.ShaderMaterial;r.own(material);r.own(reflector.getRenderTarget());surface.visible=false;
+  const extensionMeshes:THREE.Mesh[]=[];
+  for(const [i,extension] of extensions.entries()){
+    const mesh=new THREE.Mesh(r.own(extension.clone().rotateX(Math.PI/2)),material);
+    mesh.rotation.x=-Math.PI/2;mesh.position.copy(surface.position);mesh.name=i===0?'upstream-continuation':'downstream-continuation';group.add(mesh);extensionMeshes.push(mesh);
+  }
   const original=reflector.onBeforeRender;let frame=0,passes=0,enabled=true,reduced=false,disposed=false,mobile=false,visualTime=0,invalidated=true,lastDay=1;
   // Cache the mirrored scene. Do not render shadows a second time for water.
-  reflector.onBeforeRender=function(renderer,scene,camera,geometry,mat,group){if(disposed)return;frame++;if(!enabled||(!invalidated&&(reduced||frame%(mobile?4:3)!==0)))return;invalidated=false;const auto=renderer.shadowMap.autoUpdate;renderer.shadowMap.autoUpdate=false;try{original.call(reflector,renderer,scene,camera,geometry,mat,group);passes++;}finally{renderer.shadowMap.autoUpdate=auto;}};
+  reflector.onBeforeRender=function(renderer,scene,camera,geometry,mat,group){if(disposed)return;frame++;if(!enabled||(!invalidated&&(reduced||frame%(mobile?4:3)!==0)))return;invalidated=false;const auto=renderer.shadowMap.autoUpdate;renderer.shadowMap.autoUpdate=false;try{for(const mesh of extensionMeshes)mesh.visible=false;original.call(reflector,renderer,scene,camera,geometry,mat,group);passes++;}finally{for(const mesh of extensionMeshes)mesh.visible=true;renderer.shadowMap.autoUpdate=auto;}};
   const rockGeo=r.geometry('r5-stream-rock',()=>new THREE.IcosahedronGeometry(1,0)),rockMat=r.material('#647b79',.86);
   const rocks=new THREE.InstancedMesh(rockGeo,rockMat,WATER_BUDGET.rapidRocks),dummy=new THREE.Object3D();
   const centers=[{z:36,offset:-1.1},{z:54,offset:.7},{z:77,offset:-.8}];

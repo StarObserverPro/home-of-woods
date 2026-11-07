@@ -89,8 +89,8 @@ for (const asset of manifest.assets) {
     assert.ok(gltf.images.every(i=>i.bufferView!==undefined));
   }
   if(asset.assetId==='how-character-motions'){
-    assert.equal(gltf.animations.length,6);
-    for(const name of ['Idle_A','Walking_A','PickUp','Waving','Melee_2H_Attack_Slice','Melee_2H_Attack_Chop'])assert.ok(gltf.animations.some(a=>a.name===name));
+    assert.equal(gltf.animations.length,7);
+    for(const name of ['Idle_A','Walking_A','Running_A','PickUp','Waving','Melee_2H_Attack_Slice','Melee_2H_Attack_Chop'])assert.ok(gltf.animations.some(a=>a.name===name));
   }
   if (asset.assetId === "how-m0-ranger") {
     // Blender adds numeric suffixes when a separate scene shares a file with earlier models.

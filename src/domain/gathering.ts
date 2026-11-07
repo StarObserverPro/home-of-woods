@@ -1,4 +1,5 @@
 import {awardCarried,carryAdditionReason} from './carrying.ts';
+import {WEATHER_RULES} from '../content/weather.ts';
 import { BRANCH_HARVEST_SPEC } from '../content/wood-uses.ts';
 import type { Point } from '../content/world.ts';
 import type { GatherMotionTag, RegenerationConfig } from '../content/gatherables.ts';
@@ -129,7 +130,7 @@ export function gatherCandidate(host: GatheringHost, registry: GatheringRegistry
   const remaining = life.remaining - 1;
   return { actionId: a.actionId, sourceId: s.sourceId, sourceVersion: life.version, inventoryRevision: host.inventory.revision,
     source: { ...life, remaining, version: life.version + 1, depletedAt: remaining === 0 ? host.time : life.depletedAt },
-    inventory: awardCarried(host.inventory,a.reward,a.reward.quantity),
+    inventory: awardCarried(host.inventory,{...a.reward,...(a.reward.itemId==='branch'?{woodCondition:{moisture:WEATHER_RULES.freshMoisture,snow:0}}:{})},a.reward.quantity),
     action: { ...a, phase: 'completed', progress: 1 }, message: `收获 ${a.reward.quantity} 份${registry.items.get(a.reward.itemId)!.name}。` };
 }
 /** App calls this synchronously; stale candidates and replays cannot write either half. */

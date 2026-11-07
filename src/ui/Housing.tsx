@@ -1,3 +1,4 @@
+import {ItemBrowser,ItemHeading} from './ItemBrowser.tsx';
 import type {WorkshopSnapshot} from '../domain/workshop.ts';
 import type {housingSnapshot} from '../domain/housing.ts';
 import {WORKBENCH,findBlueprint} from '../content/workshop.ts';
@@ -47,7 +48,7 @@ export function HousingControls({selected,view,workshop,disabled,onLearn,onCraft
       bell.location.kind==='mounted'?<><button className="context-button" disabled={disabled||busy} onClick={()=>onRing(bell.instanceId)}>轻摇门铃</button><button className="context-button" disabled={disabled||busy} onClick={()=>onDetach(bell.instanceId)}>拆回仓库</button></>:
       <button className="context-button" disabled={disabled||busy||bells.some(b=>b.location.kind==='mounted')} onClick={()=>onMount(bell.instanceId)}>挂到门边</button>}
   </div>;
-  if(selected==='cabin')return <section className="housing-controls" aria-label="木屋门前挂件"><details open={bells.length>0}><summary>门前挂件</summary>{bells.map(renderBell)}{!bells.length&&<p>在工作台学会图纸，用两份枝杈做一只松果门铃。</p>}</details></section>;
+  if(selected==='cabin')return <ItemBrowser label="门前挂件" items={bells.map(bell=>({...bell,id:bell.instanceId,name:itemName(bell.definitionId),icon:'pinecone-doorbell' as const}))} empty="工作台可制作松果门铃" renderDetail={bell=><><ItemHeading name={bell.name} icon={bell.icon}/>{renderBell(bell)}</>}/>;
   if(!item)return null;
   if(item.definitionId===BELL)return <section className="housing-controls" aria-label="门铃操作">{renderBell(item)}</section>;
   const noun=item.definitionId===TABLE?'边桌':'长凳';

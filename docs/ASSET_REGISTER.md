@@ -1,5 +1,15 @@
 # 资产登记与批准记录
 
+天气回接采用本项目独立沙盒中已审阅的原创程序雨丝、雪花、局部镜头雨滴、水坑涟漪与材质覆雪。新储木架棚顶和立柱为原木纹、共享几何与材质组成的原创模型，既有 GLB 字节与第三方许可沿用原登记。生产入口为 scene/weather-presentation.ts、weather-particle-seeds.js、environment.ts 与 camp-props.ts，资源归原 Resources owner。强度随机样本与空间坐标独立。当前范围和实机检查见 [天气回接记录](scopes/running-selection-weather.md)。
+
+## 跑步动作追加（2026-11-06）
+
+现有 HOW-CHARACTERS-1 的免费 KayKit Character Animations 1.1 已准入源件 MovementBasic.glb 增选 Running_A，沿用 public/assets/licenses/KayKit-Animations-1.1-CC0.txt。采用脚本 prepare-character-assets.mjs 重新打包，仅保留实际消费的七段动作。运行时 public/assets/characters/motions.glb 为 203,564 字节，SHA-256 为 2dd813b43abf0203f4fdad58c8721d19f59fc2e2db950293b2f4b737a5168e36。源件 SHA-256 为 11422afd50abf7e8c92ea107e2e0bc94abd38023d6d15f55ad580347efbfa29e。manifest 与角色子清单同步，Models/Resources 沿用原加载和骨架资源所有权。实际步频消费移动位移，采伐止点继续使用原动作。当前运行及验证见 [本轮记录](scopes/running-selection-weather.md)。
+
+## 山谷景观程序资产（2026-11-06）
+
+本项目 R1/R2 沙盒原创程序几何与着色器：四组山体、外坡、河道延伸、五种外景树冠、岸石和路牌。无新增外部网格、贴图、字体下载或采购，不标为第三方 CC0；Three.js 沿用已登记 MIT 许可。主体入口为 `scene/horizon.ts`、`mountain-geometry.js`、`outer-forest.js`、`trail-material.js`、`landscape-props.js`。地形与实例按原世界轴向和比例构建；只作装饰，无新增碰撞、命中或资源身份。修整前后、预算与所有权见 [接入记录](VALLEY_HORIZON_INTEGRATION.md)。
+
 ## 营地生活程序资产回接（2026-11-05）
 
 以下代表表现已获用户授权接入本地主体；没有新增下载模型、贴图、字体或许可包，也没有修改原 GLB 字节。本地集成与主线验证分开记录，当前结果见 [CAMP_LIFE_INTEGRATION](CAMP_LIFE_INTEGRATION.md)。
@@ -54,7 +64,7 @@
 | 资产 | 原件、修整与规格 | 运行入口 |
 | --- | --- | --- |
 | how-character-player / visitor | 同一 Rogue 源，移除披风、黑发黑眉，眉眼/高光小幅重绘；玩家苔绿、访客赭红。每个 6,418 顶点、7,574 三角、23 骨、1 蒙皮网格/材质；GLB 447,308 / 447,476 字节 | public/assets/characters/player.glb、visitor.glb；scene/characters；玩家与访客独立骨架 |
-| how-character-motions | General、MovementBasic、CombatMelee、Simulation 中选用 Idle_A、Walking_A、PickUp、Waving、Melee_2H_Attack_Slice / Chop，移除演示人体网格；178,484 字节 | public/assets/characters/motions.glb；消费唯一应用时钟，访客仅抽取头/手臂轨道 |
+| how-character-motions | General、MovementBasic、CombatMelee、Simulation 中选用 Idle_A、Walking_A、Running_A、PickUp、Waving、Melee_2H_Attack_Slice / Chop，移除演示人体网格；203,564 字节 | public/assets/characters/motions.glb；消费唯一应用时钟，访客仅抽取头/手臂轨道 |
 | how-character-axe | 本项目 Blender 原创单刃斧，11,400 字节，非金属风格材质；不同于第三方模型，未标 CC0 | public/assets/characters/axe.glb；两掌挂点约束刚性柄，实际刃面接触检测 |
 
 采用的源文件限于 `sources/kaykit/adventurers/` 和 `sources/kaykit/animations/`，原文件与产物 hash、取得版本、修改、入口在 manifest；未复制整套免费包。`tools/build-characters.py`、`build-character-axe.py` 在独立 Blender 5.2.3 后台进程生成 `art/characters/*.blend` 和 GLB，`prepare-character-assets.mjs` 组装六段动作，`register-character-assets.mjs` 登记规范字节。原 Rogue 图与重绘图保留在编辑源，工程打包图像且移除外部绝对图像路径。
@@ -70,7 +80,7 @@ R4 已于2026-10-30获准回接，当前状态为实现分支已集成，PR待�
 | 内容 | 实际来源、输入与运行入口 | 权利与分发边界 |
 | --- | --- | --- |
 | 林下 / 草甸规划色块 | 本轮原创分区与色板；src/content/biomes.ts、src/scene/ground-material.ts。5 个林下区、3 个清空区，程序方格色块结合原路径、河道与法线；无新增图像纹理 | 项目原创代码和参数，不冒标 CC0；分区不是实时树木状态或现实生态数据 |
-| PNW 风格雪山 | src/content/environment.ts 和 src/scene/environment.ts。本轮原创六组固定轮廓、冰斗/刃脊、雪线/裸岩/冰川槽与面色；形态知识参考 [NPS 冰川说明](https://www.nps.gov/mora/learn/nature/mount-rainier-glaciers.htm)、[NPS 地质说明](https://www.nps.gov/mora/learn/nature/geologicformations.htm) 和 [USGS 冰川地形说明](https://www.usgs.gov/volcanoes/mount-rainier/science/glaciers-help-shape-mount-rainier) | PNW 为美术方向，没有下载/分发网页图像、真实山岳 DEM 或摄影纹理，不声称具名实景复原；远山不承担可玩地表或碰撞事实 |
+| PNW 风格雪山 | 当前 R2 由 src/scene/mountain-geometry.js 与 horizon.ts 生成四组固定山体，保留冰斗/刃脊及岩雪面色，替换原 R5d 六组轮廓；形态知识参考 [NPS 冰川说明](https://www.nps.gov/mora/learn/nature/mount-rainier-glaciers.htm)、[NPS 地质说明](https://www.nps.gov/mora/learn/nature/geologicformations.htm) 和 [USGS 冰川地形说明](https://www.usgs.gov/volcanoes/mount-rainier/science/glaciers-help-shape-mount-rainier) | PNW 为美术方向，没有下载/分发网页图像、真实山岳 DEM 或摄影纹理，不声称具名实景复原；远山不承担可玩地表或碰撞事实 |
 | 程序河水 | src/scene/environment.ts 中 createRiverAppearance，替换原河面材质，加入深浅/岸沫/流纹/法线变化；无新增水面网格或纹理 | 本轮原创 shader；保留 R3 world 河道和水面高程，不把颜色变化当作水深或水文模拟 |
 | 斧头 / 树桩 / 木屑 | src/scene/forestry-presentation.ts 中原创七边柄、倒角斧头、树桩/年轮和固定池 18 片木屑；倒树与幼树复用既有原创 GLB | 运行时生成的共享几何与非金属材质，由 Resources 所有者释放；表现只消费 domain 状态，不结算奖励。稳定树位保留，后代身份在 state 中登记 |
 | 透明 HUD | src/ui/App.tsx、src/ui/style.css；本轮整理现有 UI、SVG 符号、文字阴影、透明地图和工具组，无新增字体或图标包 | 项目代码内的原生 DOM/CSS/SVG；不包含 Sky Porch UI 或业务逻辑 |
@@ -157,3 +167,23 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 接入入口为 `src/ui/GameIcon.tsx`、`art-icons.ts` 和 `menu-art.css`，用于常驻工具、仓库、随身、行商、图纸、衣柜、木作与营地日用品。等级色仍由既有物品规则控制，图标本身不新增物品、树种材料账本或等级规则。只采用小尺寸图标和空格皮肤，母版、512px 插值图及整套候选不进入生产目录。图片由浏览器按菜单实际出现加载，无 Three.js 几何／纹理缓存或场景命中对象；关闭菜单后 DOM 释放，原图缓存由浏览器管理。
 
 [tools/prepare-ui-art.mjs](../tools/prepare-ui-art.mjs) 是可选的本地取用工具，需要另有本地设计母版所派生的 `sandbox/ui-art-r1/manifest.json` 和对应 PNG 导出物；这些输入不在本生产包内。构建和 CI 直接使用已提交的正式 PNG 与 manifest，不依赖或自动运行该工具。`verify:assets` 已增加 UI 文件的路径、哈希、PNG 头和尺寸校验。实际游戏菜单操作与手机视口结果见 [接入 scope](scopes/menu-clarity-art-r1.md)。
+
+## 木料区碎柴代理（2026-11-05）
+
+碎柴投放复用 `scene/woodcraft-presentation.ts` 的项目原创九边形圆柱几何和木色共享材质，`domain/woodcraft.woodShape` 将其限制为长 0.4、半径 0.07 的玩具比例短料。Rapier 读取同一尺寸生成凸包，不复制第三方模型或贴图，不改燃料物品身份；几何/材质由既有 Resources 释放，刚体由局部物理岛 owner 释放。每岛仍限 32 件、碎柴每件一个凸包；专项验证及实际画面范围见 [取放与晾晒 scope](scopes/material-storage-drying-fix.md)。
+
+## HOW-UI-RUSTIC-R2（2026-11-06）
+
+`public/assets/ui-r2/wood-bark.svg`、`wood-bark-horizontal.svg`、`wood-split.svg`：本项目本轮自绘 SVG，来自用户已确认的独立 UI 样稿，允许随本项目源代码修改、分发；不标注为第三方 CC0。无外部字体、下载链接或第三方图像嵌入。仅用于 UI 边框、标题与按钮背景，无碰撞、动画、场景资源或物品身份。图标仍使用 R1 已登记资产。
+
+## 2026-11-06 碎柴与可采枝杈程序表现
+
+- 来源：本项目新增程序几何；未下载新的第三方图片或模型，不将项目生成物标作 CC0。
+- 碎柴：`src/content/scrap-shape.ts` 为可见/碰撞共用顶点；`src/scene/scrap-geometry.ts` 生成短断口、劈裂面和地面小堆。入口为 woodcraft / gathering / haul / characters 表现，几何与材质归 Resources 缓存释放。
+- 枝杈：`src/scene/branch-attachment.ts` 生成渐细分叉枝，读取现有树模型枝段元数据并消费 action-tree 的实际变换；宿主树侧枝和可采枝条共享连接位置。旧 branches GLB 仍用于原有其他道具，不改变其来源/许可。
+- 初期淡木纹预览的 256×256 原创颜色图集保留在项目外独立沙盒；正式游戏采用下节的函数木纹。所用 Three.js 库保留 MIT 许可。
+- 本轮规格与实际验证：[范围记录](scopes/wood-materials-and-grain-preview.md)。
+
+### 本地原创函数木纹（2026-11-06）
+
+`src/scene/wood-grain.ts` / `src/content/wood-grain.ts` 为本项目原创程序化表面，由已批准 R2 独立试样公式接入；不包含第三方图片、生成式图片或新增下载资产，不标记为第三方 CC0。原木树皮/切面、加工木件顺纹共享材质与坐标约定， Resources 统一释放。接入、预算和视觉验证见 [记录](scopes/woodgrain-mainline.md)。

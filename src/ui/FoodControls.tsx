@@ -1,3 +1,4 @@
+import {ItemBrowser,ItemHeading,MaterialCounts,MenuAction} from './ItemBrowser.tsx';
 import {useState} from 'react';
 import {GameIcon} from './GameIcon.tsx';
 import {CAMP_PROPS} from '../content/scene-props.ts';
@@ -27,35 +28,22 @@ export function FoodControls({selected,view,workshop,access,disabled,mealPlaying
   const pot=(workshop.upgrades['camp-fire:pot']?.level??0)>=1&&workshop.mounted['camp-fire:top']==='camp-fire:hook';
   const mushroom=(c.mushroom??0)+(c['dried-mushroom']??0);
   const rackBuilt=(workshop.upgrades[CAMP_PROPS.dryer.id]?.level??0)>0;
-  return <section className="workshop-controls" aria-label="营地食物">
-    {fire&&<>
-      {availableBowls.length>0&&<label className="material-filter">盛饭的碗<select aria-label="盛饭的碗" value={bowlId??''} disabled={disabled||mealPlaying} onChange={event=>setChosenBowl(event.target.value)}>
-        <option value="">营地借用碗</option>{availableBowls.map(bowl=><option key={bowl.instanceId} value={bowl.instanceId}>{bowl.name}{bowl.curtainCall?' · 饭后谢幕':''}</option>)}
-      </select></label>}
-      <div className="tree-actions">
-        <button className="context-button" disabled={disabled||mealPlaying||!(c['forest-soup']>0)} onClick={()=>onEat(bowlId)}><GameIcon name="forest-soup" size={28}/>坐下喝汤 · {c['forest-soup']??0}</button>
-        <button className="context-button" disabled={disabled||mealPlaying||!onEatPorridge||!(c['grain-porridge']>0)} onClick={()=>onEatPorridge?.(bowlId)}>吃热粥 · {c['grain-porridge']??0}</button>
-        <button className="context-button" disabled={disabled||mealPlaying||!(c['food-black-bread']>0)} onClick={onBread}><GameIcon name="black-bread" size={28}/>吃黑面包 · {c['food-black-bread']??0}</button>
-        <button className="context-button" disabled={disabled||mealPlaying} onClick={onRead}><GameIcon name="read" size={28}/>坐下读故事</button>
-      </div>
-      {mealPlaying&&<p role="status">慢慢吃一会儿。</p>}
-      <p className="food-day-readiness">{view.heavyWork?'现在可以做重活。':'现在可以散步、采菌和拾枝。'} {view.nextDayReady?'下次日出后可以做重活。':'吃一顿正餐，为下次日出做准备。'}</p>
-      {view.cookingProgress!==null&&<p role="status">{view.cookingName??'正餐'}正在煮 · {Math.round(view.cookingProgress*100)}%</p>}
-      {POT_MEAL_SERIES.map(series=><details className="context-details" key={series}><summary>{series==='grain-porridge'?'煮谷物粥':'煮菌菇汤'}</summary>
-        {series==='grain-porridge'&&<p>燕麦、米或杂豆都可以。没有菌类，也能煮一碗主食。</p>}
-        {!pot?<p>在「改造与修缮」制作汤锅并挂上吊钩。</p>:view.cookingOptions.filter(option=>option.series===series).map(option=><div className="recipe-row" key={option.grain}>
-          <div><strong>{option.name}</strong><small>{series==='mushroom-grain-soup'?`菌类 ${mushroom}/1 · `:''}{FOOD_GRAIN_NAMES[option.grain]} {c[option.grain]??0}/1</small></div>
-          <button className="context-button" title={option.reason} disabled={disabled||mealPlaying||!option.canStart||(series==='grain-porridge'&&!onCookPorridge)} onClick={()=>series==='grain-porridge'?onCookPorridge?.(option.grain):onCook(option.grain)}>煮一碗</button>
-        </div>)}
-      </details>)}
-      {(c['trail-rations']??0)>0&&<button className="context-button" disabled={disabled} onClick={onUnpack}>拆开粮袋 · {c['trail-rations']}</button>}
-    </>}
-    {dryer&&<>
-      <p>鲜菌 {c.mushroom??0} · 干菌 {c['dried-mushroom']??0}</p>
-      {!rackBuilt?<p>在「改造与修缮」搭建晾晒架。</p>:<>
-        <p>{MUSHROOM_DRYING.inputs[0].quantity} 份鲜菌 → {MUSHROOM_DRYING.outputs[0].quantity} 份干菌</p>
-        {view.dryingProgress!==null?<p role="status">晾晒中 · {Math.round(view.dryingProgress*100)}%</p>:<button className="context-button" disabled={disabled||(c.mushroom??0)<MUSHROOM_DRYING.inputs[0].quantity} onClick={onDry}>晾晒蘑菇</button>}
-      </>}
-    </>}
+  const locked=disabled||mealPlaying;
+  const meals=[
+    {id:'soup',name:'菌菇汤',icon:'forest-soup' as const,quantity:c['forest-soup']??0,category:'eat',run:()=>onEat(bowlId),blocked:!(c['forest-soup']>0)},
+    {id:'porridge',name:'热粥',icon:'wooden-bowl' as const,quantity:c['grain-porridge']??0,category:'eat',run:()=>onEatPorridge?.(bowlId),blocked:!onEatPorridge||!(c['grain-porridge']>0)},
+    {id:'bread',name:'黑面包',icon:'black-bread' as const,quantity:c['food-black-bread']??0,category:'eat',run:onBread,blocked:!(c['food-black-bread']>0)},
+    {id:'read',name:'森林故事',icon:'read' as const,category:'eat',run:onRead,blocked:false},
+    {id:'sack',name:'粮袋',icon:'trail-rations' as const,quantity:c['trail-rations']??0,category:'eat',run:onUnpack,blocked:!(c['trail-rations']>0)},
+    ...view.cookingOptions.map(option=>({id:option.series+option.grain,name:option.name,icon:option.series==='grain-porridge'?'wooden-bowl' as const:'forest-soup' as const,category:'cook',run:()=>option.series==='grain-porridge'?onCookPorridge?.(option.grain):onCook(option.grain),blocked:!pot||!option.canStart||(option.series==='grain-porridge'&&!onCookPorridge),option})),
+  ];
+  return <section aria-label="营地食物">
+    {fire&&<><ItemBrowser label="火塘" items={meals} categories={[{id:'all',name:'全部',icon:'campfire'},{id:'eat',name:'用餐',icon:'wooden-bowl'},{id:'cook',name:'烹煮',icon:'soup-pot'}]} renderDetail={item=><>
+      <ItemHeading name={item.name} icon={item.icon} subtitle={item.category==='eat'?(mealPlaying?'正在用餐':view.nextDayReady?'下次日出可做重活':'正餐为下次日出补充体力'):undefined}/>
+      {'option' in item&&item.option&&<><MaterialCounts items={[{name:FOOD_GRAIN_NAMES[item.option.grain],available:c[item.option.grain]??0,quantity:1},...(item.option.series==='mushroom-grain-soup'?[{name:'菌菇',available:mushroom,quantity:1}]:[])]}/>{!pot?<p className="wood-reason">先在改造页装好汤锅和吊钩</p>:item.option.reason&&<p className="wood-reason">{item.option.reason}</p>}</>}
+      {['soup','porridge'].includes(item.id)&&availableBowls.length>0&&<select aria-label="盛饭的碗" value={bowlId??''} onChange={e=>setChosenBowl(e.target.value)}><option value="">借用碗</option>{availableBowls.map(bowl=><option key={bowl.instanceId} value={bowl.instanceId}>{bowl.name}</option>)}</select>}
+      <MenuAction disabled={locked||item.blocked} onClick={item.run}>{item.category==='cook'?'煮一碗':item.id==='read'?'坐下阅读':item.id==='sack'?'拆开':'坐下吃'}</MenuAction>
+    </>}/>{view.cookingProgress!==null&&<progress aria-label="烹煮进度" value={view.cookingProgress} max={1}/>}</>}
+    {dryer&&<><ItemHeading name="晾晒蘑菇" icon="drying-rack"/><MaterialCounts items={[{name:'菌菇',available:c.mushroom??0,quantity:MUSHROOM_DRYING.inputs[0].quantity}]}/>{!rackBuilt?<p className="wood-reason">先在改造页搭好晾晒架</p>:view.dryingProgress!==null?<progress aria-label="晾晒进度" value={view.dryingProgress} max={1}/>:<MenuAction disabled={disabled||!!view.dryingReason} onClick={onDry}>开始晾晒</MenuAction>}{view.dryingReason&&<p className="wood-reason">{view.dryingReason}</p>}</>}
   </section>;
 }

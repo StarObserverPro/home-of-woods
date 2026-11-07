@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createState} from '../src/domain/state.ts';
 import {inventoryTransaction,woodBatch,canonicalStacks} from '../src/domain/inventory.ts';
-import {createWoodcraft,woodShape,availableWoodCount,transferWood,collectWood,validateWoodcraft} from '../src/domain/woodcraft.ts';
+import {createWoodcraft,woodShape,availableWoodCount,transferWood,collectWood,collectAllWood,validateWoodcraft} from '../src/domain/woodcraft.ts';
 import {createWoodPhysics} from '../src/physics/woodcraft.ts';
 import {createWoodcraftSession} from '../src/app/woodcraft-session.ts';
 import {createSaveContext} from '../src/domain/save-context.ts';
@@ -27,9 +27,9 @@ test('batch transfer reserves one total piece and manual release uses the final 
 });
 test('empty and single-piece inventories do not create materials',()=>{for(const n of [0,1]){const s=stock(n,0);assert.equal(transferWood(s,'prepare'),0);assert.equal(availableWoodCount(s.inventory),n);assert.deepEqual(s.woodcraft,createWoodcraft());}});
 test('capacity leaves excess in inventory and one free manual slot',()=>{const s=stock(40,0);assert.equal(transferWood(s,'prepare'),31);assert.equal(availableWoodCount(s.inventory),9);assert.equal(transferWood(s,'one'),1);assert.equal(transferWood(s,'one'),0);assert.equal(availableWoodCount(s.inventory),8);});
-test('reserved wood, fuel and unknown catalog records are never moved',()=>{
+test('reserved wood and unknown catalog records stay put while fuel can be placed',()=>{
   const s=stock(2,0);s.inventory.stacks=canonicalStacks([...s.inventory.stacks,{itemId:'wood',qualityId:'fine',quantity:5,wood:{...woodBatch(null),reserved:true}},{itemId:'scrap-fuel',qualityId:'ordinary',quantity:7},{itemId:'branch',qualityId:'unknown-quality',quantity:3}]);
-  assert.equal(transferWood(s,'prepare'),1);assert.equal(s.inventory.stacks.reduce((n,p)=>n+p.quantity,0),16);
+  assert.equal(transferWood(s,'prepare'),8);assert.equal(s.inventory.stacks.reduce((n,p)=>n+p.quantity,0),9);
 });
 test('pickup restores exact source batches and is idempotent',()=>{const s=stock(),before=structuredClone(s.inventory.stacks);transferWood(s,'prepare');for(const p of [...s.woodcraft.pieces]){assert.equal(collectWood(s,p.id),true);assert.equal(collectWood(s,p.id),false);}assert.deepEqual(s.inventory.stacks,before);assert.equal(s.woodcraft.pieces.length,0);});
 test('invalid click has no partial debit or identity allocation',()=>{const s=stock(),before=structuredClone(s);assert.throws(()=>transferWood(s,'one',{x:100,y:22,z:100}));assert.deepEqual(s,before);});
@@ -89,3 +89,35 @@ test('cancelling an approach, pending batch or uncommitted drop never moves mate
   session.dispose();
 });
 test('presentation follows solver poses and unregisters collected pieces',()=>{const s=stock(3,0);transferWood(s,'prepare');s.woodcraft.pieces.forEach(p=>p.phase='loose');const r=new Resources(),v=createWoodcraftPresentation(r);v.update(s.woodcraft);assert.equal(v.stats().visible,2);const p=s.woodcraft.pieces[0];assert.equal(v.group.getObjectByName(p.id)?.position.y,p.position.y);collectWood(s,p.id);v.update(s.woodcraft);assert.equal(v.stats().visible,1);v.dispose();r.dispose();assert.equal(v.stats().hits,0);assert.equal(r.stats().geometries,0);});
+
+test('bulk all fills available slots and atomically returns every exact source',()=>{
+ const s=stock(40,5),before=structuredClone(s.inventory.stacks);
+ assert.equal(transferWood(s,'all'),32);assert.equal(transferWood(s,'all'),0);
+ s.selected=s.woodcraft.pieces[0].id;
+ assert.equal(collectAllWood(s),32);assert.equal(collectAllWood(s),0);
+ assert.deepEqual(s.inventory.stacks,before);assert.equal(s.selected,WOODCRAFT.id);
+ const one=stock(1,0);assert.equal(transferWood(one,'all'),1);
+});
+
+test('mixed wood stock reports each location separately and scrap uses a split mesh',()=>{
+ const s=stock(2,3);s.inventory=inventoryTransaction(s.inventory,[{itemId:'scrap-fuel',qualityId:'ordinary',delta:5}]);
+ const session=createWoodcraftSession(s,()=>{});const before=session.snapshot();
+ assert.equal(before.materials.find(m=>m.itemId==='scrap-fuel')?.stored,5);
+ transferWood(s,'all');const after=session.snapshot();
+ assert.deepEqual(after.materials.map(m=>[m.itemId,m.stored,m.piled]),[['wood',0,2],['branch',0,3],['scrap-fuel',0,5]]);
+ assert.equal(after.items.filter(i=>i.itemId==='scrap-fuel').length,5);
+ s.woodcraft.pieces.forEach(p=>p.phase='loose');const r=new Resources(),view=createWoodcraftPresentation(r);view.update(s.woodcraft);
+ const scrap=s.woodcraft.pieces.find(p=>p.source.itemId==='scrap-fuel')!;
+ assert.ok(view.group.getObjectByName(scrap.id)?.getObjectByName('split-scrap'));
+ collectAllWood(s);assert.deepEqual(session.snapshot().materials,before.materials);
+ view.dispose();r.dispose();session.dispose();
+});
+
+test('split scrap hulls settle with branches and logs without losing fuel portions',async()=>{
+ const s=stock(2,3);s.inventory=inventoryTransaction(s.inventory,[{itemId:'scrap-fuel',qualityId:'ordinary',delta:8}]);transferWood(s,'all');
+ const physics=await createWoodPhysics();
+ try{for(let i=0;i<1800;i++)for(const id of physics.step(s.woodcraft,dt))collectWood(s,id);
+ validateWoodcraft(s.woodcraft);assert.equal(s.woodcraft.pieces.filter(p=>p.source.itemId==='scrap-fuel').length+s.inventory.stacks.filter(p=>p.itemId==='scrap-fuel').reduce((n,p)=>n+p.quantity,0),8);
+ assert.ok(physics.stats().awake<3);collectAllWood(s);assert.equal(s.inventory.stacks.find(p=>p.itemId==='scrap-fuel')?.quantity,8);
+ }finally{physics.dispose();}
+});

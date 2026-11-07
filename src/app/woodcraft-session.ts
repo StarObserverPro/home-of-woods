@@ -1,11 +1,13 @@
+import {isStored,isCarried} from '../domain/transport-location.ts';
 import { WOODCRAFT, insideWoodcraft } from '../content/woodcraft.ts';
 import type { Vec3 } from '../content/woodcraft.ts';
 import type { GameState } from '../domain/state.ts';
-import { availableWood, availableWoodCount, collectWood, transferWood, woodLabel } from '../domain/woodcraft.ts';
+import { placeableWood, availableWoodCount, collectWood, collectAllWood, transferWood, woodLabel } from '../domain/woodcraft.ts';
 import {stackKey} from '../domain/inventory.ts';
 import type { WoodPhysics } from '../physics/woodcraft.ts';
-export type WoodcraftSnapshot={available:number;count:number;queued:number;awake:number;near:boolean;ready:boolean;loading:boolean;error:string;dropping:boolean;items:{id:string;name:string}[]};
-export const emptyWoodcraftSnapshot = ():WoodcraftSnapshot=>({available:0,count:0,queued:0,awake:0,near:false,ready:false,loading:false,error:'',dropping:false,items:[]});
+export type WoodStock={itemId:string;name:string;stored:number;carried:number;piled:number};
+export type WoodcraftSnapshot={available:number;storedAvailable:number;count:number;queued:number;awake:number;near:boolean;ready:boolean;loading:boolean;error:string;dropping:boolean;materials:WoodStock[];items:{id:string;name:string;itemId:string;queued:boolean}[]};
+export const emptyWoodcraftSnapshot = ():WoodcraftSnapshot=>({available:0,storedAvailable:0,count:0,queued:0,awake:0,near:false,ready:false,loading:false,error:'',dropping:false,materials:[],items:[]});
 /** Runtime cache, not a second world or inventory. Loading never debits materials. */
 export function createWoodcraftSession(state:GameState,notify:(message:string)=>void,loader=()=>import('../physics/woodcraft.ts').then(m=>m.createWoodPhysics())) {
   let engine:WoodPhysics|null=null, loading=false, error='', destroyed=false, generation=0, prepareRequested=false, dropping=false;
@@ -23,7 +25,10 @@ export function createWoodcraftSession(state:GameState,notify:(message:string)=>
   return {
     activate(){activationRequested=true;error='';if(distance()<=WOODCRAFT.activateRadius)ensure();},
     requestPrepare(){if(destroyed)return;dropping=false;prepareRequested=true;activationRequested=true;ensure();},
-    beginDrop(key?:string){if(!near()||!engine||!availableWood(state.inventory).some(s=>key===undefined||stackKey(s)===key)||state.woodcraft.pieces.length>=WOODCRAFT.maxPieces)return false;dropKey=key;dropping=true;return true;},
+    beginDrop(key?:string){
+      const reason=!near()?'先走近木料区。':!engine?'木料区尚未准备好，请走近后稍等或重试。':state.woodcraft.pieces.length>=WOODCRAFT.maxPieces?'木料区已满，先收回一些。':!placeableWood(state.inventory).some(s=>key===undefined||stackKey(s)===key)?'这批木料已用完或不能投放。':'';
+      if(reason){notify(reason);return false;}dropKey=key;dropping=true;return true;
+    },
     cancelDrop(){dropping=false;dropKey=undefined;},
     cancelRequest(){dropping=false;dropKey=undefined;prepareRequested=false;activationRequested=false;},
     isDropping:()=>dropping,
@@ -34,6 +39,12 @@ export function createWoodcraftSession(state:GameState,notify:(message:string)=>
       catch(e){notify(e instanceof Error?e.message:'这里不能投放。');return false;}
     },
     collect(id:string){if(!near()||!engine)return false;try{const result=collectWood(state,id);if(result)notify('已收回仓库，原来的品质和规格都保留了。');return result;}catch{notify('这份木料的目录信息暂不可用，原物品已保留。');return false;}},
+    transferAll(collect=false){
+      if(!near()||!engine){notify('先走近木料堆，等待准备完成。');return false;}
+      dropping=false;dropKey=undefined;prepareRequested=false;
+      try{const count=collect?collectAllWood(state):transferWood(state,'all');notify(count?`已${collect?'收回仓库':'放入木料堆'} ${count} 份木料。`:collect?'木料堆已经收空。':'没有可放入的木料，或木料堆已满。');return count>0;}
+      catch{notify('木料信息暂不可用，物品保持原样。');return false;}
+    },
     step(dt:number){
       if(destroyed)return;
       if(distance()>WOODCRAFT.unloadRadius){engine?.dispose();engine=null;dropping=false;return;}
@@ -46,7 +57,9 @@ export function createWoodcraftSession(state:GameState,notify:(message:string)=>
       try {for(const id of engine.step(state.woodcraft,dt)){if(collectWood(state,id))notify('一根木料滚出了物理区，已完整收回仓库。');}}
       catch(e){engine.dispose();engine=null;error=e instanceof Error?e.message:'物理计算中断';dropping=false;notify('木料模拟已暂停，物品和最后有效姿态都已保留。可以重试。');}
     },
-    snapshot():WoodcraftSnapshot {return {available:availableWoodCount(state.inventory),count:state.woodcraft.pieces.length,queued:state.woodcraft.pieces.filter(p=>p.phase==='queued').length,awake:engine?.stats().awake??0,near:near(),ready:!!engine,loading,error,dropping,items:state.woodcraft.pieces.map(p=>({id:p.id,name:woodLabel(p.source)}))};},
+    snapshot():WoodcraftSnapshot {
+      const materials=['wood','branch','scrap-fuel'].map(itemId=>({itemId,name:woodLabel({itemId,qualityId:'ordinary',quantity:1}),stored:state.inventory.stacks.filter(s=>s.itemId===itemId&&isStored(s)).reduce((n,s)=>n+s.quantity,0),carried:state.inventory.stacks.filter(s=>s.itemId===itemId&&isCarried(s)).reduce((n,s)=>n+s.quantity,0),piled:state.woodcraft.pieces.filter(p=>p.source.itemId===itemId).length}));
+      return {materials,storedAvailable:availableWoodCount(state.inventory),available:placeableWood(state.inventory).reduce((n,s)=>n+s.quantity,0),count:state.woodcraft.pieces.length,queued:state.woodcraft.pieces.filter(p=>p.phase==='queued').length,awake:engine?.stats().awake??0,near:near(),ready:!!engine,loading,error,dropping,items:state.woodcraft.pieces.map(p=>({id:p.id,name:woodLabel(p.source),itemId:p.source.itemId,queued:p.phase==='queued'}))};},
     stats:()=>({loaded:!!engine,loading,...engine?.stats()}),reset,
     dispose(){if(destroyed)return;reset();destroyed=true;},
   };
