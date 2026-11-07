@@ -74,6 +74,7 @@ WASD/方向键或点地面移动，拖动旋转、滚轮/按钮缩放，R/按钮
 | [晚餐、休息与林间阅读](docs/EVENING_RHYTHM.md) | 18:00 沙漏停靠、可选夜行、06:00 日出和离线短故事 |
 | [独立道具去向与宿主关系](docs/ITEM_DESTINATIONS.md) | 独立 Item、安装槽、词条归属与旧设施外装边界 |
 | [参数化图纸与装配评分](docs/PARAMETRIC_CRAFTING.md) | 首版两类几何、图纸品质档次、偏差评分及未来工序接口 |
+| [木作图纸、放样与加工](docs/WOODWORKING_HANDWORK.md) | 手作规划，涵盖三视图读图、工件划线、按线加工和直榫试配 |
 | [物品扩展与存档兼容方案](docs/ITEM_DATA_EVOLUTION.md) | 已实现身份、品质堆叠和库存兼容；细分类与深加工后续接入 |
 | [美术、建模与 HUD](docs/ART_HUD.md) | 视觉规格、操作体验、首版资产清单 |
 | [资产获取与接入](docs/ASSET_PIPELINE.md) | CC0 优先、许可审查、Marble 2 / Midjourney、修整和整批接入 |
