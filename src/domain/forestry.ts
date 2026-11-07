@@ -1,4 +1,5 @@
 import {awardGround} from './carrying.ts';
+import {WEATHER_RULES} from '../content/weather.ts';
 import {heavyLaborAllowed} from './food.ts';
 import type {FoodState} from './food.ts';
 import {LOG_HARVEST_LENGTH_MM} from '../content/wood-uses.ts';
@@ -90,7 +91,7 @@ export function advanceForestry(host:ForestryHost,trees:ReadonlyMap<string,Tree>
     if(!valid)return cancelChop(host,'目标或距离已经变化，采伐已取消并释放预留。').message;
     if(!state.completedActions.includes(a.id)){
       // Validate inventory first. No point/tree changes survive a failed award.
-      const inventory = awardGround(host.inventory,a.reward,a.yield,host.player);
+      const inventory = awardGround(host.inventory,{...a.reward,woodCondition:{moisture:WEATHER_RULES.freshMoisture,snow:0}},a.yield,host.player);
       host.inventory = inventory;
       state.ledger.reserved-=a.cost;state.ledger.used+=a.cost;state.completedActions.push(a.id);
       life.status='falling';life.felledAt=a.startedAt+FORESTRY.chopSeconds;life.regrowAt=life.felledAt+FORESTRY.fallSeconds+FORESTRY.regrowDelay;

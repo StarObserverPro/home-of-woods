@@ -10,11 +10,11 @@ export function facetRockTriangle(triangle:SurfaceVertex[],allowed:(x:number,z:n
   const nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;
   const up=Math.abs(ny)/Math.hypot(nx,ny,nz);if(up>.72)return [triangle];
   let hash=Math.imul(Math.round(x*1000),73856093)^Math.imul(Math.round(z*1000),19349663);hash=(Math.imul(hash^(hash>>>13),1274126177)^(hash>>>16))>>>0;
-  if(hash%17>=4)return [triangle];
-  // A vertical displacement projects weakly onto a steep wall. Keep the visible
-  // chip depth near 16–36cm instead of losing it along the slope's tangent.
+  if(hash%17>=3)return [triangle];
+  // Shallow relief stays inside a continuous bank. Deep random points made
+  // adjacent faces read as intersecting shards, especially along the crest.
   const random=(salt:number)=>{let n=Math.imul(hash^salt,1597334677);n=Math.imul(n^(n>>>15),2246822519);return ((n^(n>>>13))>>>0)/4294967296;};
-  const bump=(random(31)<.53?1:-1)*Math.min(1.35,(.16+random(79)*.20)/Math.max(.2,up));
+  const bump=(random(31)<.53?1:-1)*Math.min(.35,(.045+random(79)*.055)/Math.max(.25,up));
   const weights=[.26+random(137)*.74,.26+random(251)*.74,.26+random(419)*.74],sum=weights.reduce((a,b)=>a+b);
   const [wa,wb,wc]=weights.map(w=>w/sum);
   const m={x:a.x*wa+b.x*wb+c.x*wc,y:a.y*wa+b.y*wb+c.y*wc+bump,z:a.z*wa+b.z*wb+c.z*wc};

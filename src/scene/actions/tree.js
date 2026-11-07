@@ -39,6 +39,10 @@ export function createTree(source,kind){
   section.sort((a,b)=>Math.atan2(a.z,a.x)-Math.atan2(b.z,b.x));
   const clean=section.filter((v,i)=>i===0||v.distanceTo(section[i-1])>1e-5);
   const radialScale=radius*.96/(clean.reduce((sum,v)=>sum+Math.hypot(v.x,v.z),0)/clean.length);
+  root.userData.woodSegments=(source.userData.woodSegments??[]).map(segment=>{
+    const transform=point=>{const v=new T.Vector3().fromArray(point).applyMatrix4(source.matrixWorld);v.x*=radialScale;v.z*=radialScale;return v.toArray();};
+    return {...segment,a:transform(segment.a),b:transform(segment.b),radius:segment.radius*.74*radialScale};
+  });
   original.scale(radialScale,1,radialScale);clean.forEach(v=>{v.x*=radialScale;v.z*=radialScale;});
   const N=clean.length;
   const ring=(h,mul=1)=>clean.map((v,i)=>{const a=Math.atan2(v.z,v.x),r=radius*mul*(1+.065*Math.sin(a*3+.4)+.025*Math.sin(a*7));return new T.Vector3(Math.cos(a)*r,h,Math.sin(a)*r*.94);});

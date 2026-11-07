@@ -1,0 +1,55 @@
+/* Accepted rough timber surface; ornament never clips interactive contents. */
+.wood-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:4px;margin:2px 0 8px}
+.wood-tabs button{display:flex;align-items:center;justify-content:center;gap:4px;min-height:44px;min-width:44px;padding:5px 12px;flex:1 0 auto;border:0;border-radius:8px;background:#203b2c;color:#f9edce;font:inherit;box-sizing:border-box}
+.wood-tabs button[aria-pressed=true]{background:#a27440 url('/assets/ui-r2/wood-split.svg') center/cover;box-shadow:inset 0 2px #e3bd76,inset 0 -3px #50331e,0 0 0 2px #e9c277}
+.item-browser{min-width:0;color:#f9edce}
+.browser-body{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:4px}
+.browser-slots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-content:start}
+.wood-slot{position:relative;min-width:0;min-height:60px;aspect-ratio:1;border:0;border-radius:10px;background:linear-gradient(135deg,#132c20,#294534);box-shadow:inset 0 3px 5px #071b14,0 2px #7d744c;color:inherit;padding:5px}
+.wood-slot .game-icon{max-width:100%;max-height:100%}.wood-slot[aria-pressed=true]{outline:2px solid #edc77e;outline-offset:1px;background:#42573b}
+.slot-mark{position:absolute;top:2px;left:5px;color:#f5d58c;font-size:11px}.slot-quantity{position:absolute;bottom:3px;right:6px;text-shadow:0 1px 3px #000}.slot-badge{position:absolute;top:3px;right:4px;font-size:10px;background:#253f2c}
+.wood-detail{position:relative;min-width:0;padding:10px;border-radius:10px;background:#10271faa;display:flex;flex-direction:column;gap:8px}
+.wood-item-heading{display:flex;align-items:center;gap:8px;padding-right:24px}.wood-item-heading h3{font-size:16px;margin:0}.wood-item-heading small{display:flex;align-items:center;gap:4px;color:#ded4b0}
+.wood-actions,.wood-materials,.wood-adjust{display:flex;flex-wrap:wrap;gap:8px}.wood-materials>span{display:flex;align-items:center;gap:3px;white-space:nowrap}.wood-materials .is-missing{color:#edb89d}
+.wood-action,.wood-pager button,.wood-quantity button,.wood-adjust button{min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:5px 12px;background:#926339 url('/assets/ui-r2/wood-split.svg') center/cover;color:#fff1cf;border:0;border-radius:8px;box-shadow:inset 0 2px #c69a59,inset 0 -3px #4d331f;font:inherit}
+.wood-action.secondary{background:#344b32}.wood-pager,.wood-quantity{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:8px}.wood-info{position:absolute;right:4px;top:4px;min-width:32px;min-height:32px;background:transparent;color:#edc77e;border:0;font-size:20px}
+.wood-note,.wood-reason,.wood-text-pages p{margin:0;font-size:12px;line-height:1.5}.wood-reason{color:#f2c394}.wood-empty{grid-column:1/-1;text-align:center;font-size:13px}.wood-check{font-size:12px}.wood-shop-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.wood-coins{display:flex;align-items:center;gap:5px}.wood-checkout{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px}.wood-checkout>div{display:flex;flex-direction:column;font-size:12px}.wood-gift{background:none;color:inherit;border:0;display:flex;align-items:center;gap:4px}.wood-dimensions label{display:flex;flex-wrap:wrap;gap:10px}.wood-dimensions input{width:100%}
+.target-card:has(.item-browser){width:min(680px,calc(100vw - 32px));max-height:none;overflow:visible}
+.target-card,.warehouse-dock,.route-sheet,.help-sheet,.pause-dialog,.forest-reader{border:12px solid #715035;border-image:url('/assets/ui-r2/wood-bark.svg') 12 stretch;background:#213e2f;border-radius:12px;box-shadow:0 5px 16px #081b16a0;color:#f9edce}
+.target-top,.warehouse-heading,.panel-heading,.forest-reader-heading,.wood-heading{background:#936739 url('/assets/ui-r2/wood-split.svg') center/cover;border-radius:6px}
+.target-top{position:static;margin:0 0 10px;padding:3px 10px}.target-card .target-tag{margin:4px 0 8px}
+@media(max-width:540px){.browser-body{grid-template-columns:1fr;gap:10px}.wood-slot{min-height:48px}.wood-slot img{width:46px;height:46px}.wood-tabs button{padding:4px 8px;font-size:12px}.wood-tabs button img{width:22px;height:22px}.target-card:has(.item-browser){left:8px;right:8px;bottom:80px;width:auto}.wood-detail{padding:9px}.wood-item-heading h3{font-size:14px}}
+@media(max-height:500px) and (min-width:541px){.browser-body{grid-template-columns:1fr 1fr}.target-card:has(.item-browser){top:12px;bottom:auto;right:12px}.wood-slot{min-height:44px}.wood-slot img{height:42px;width:42px}.wood-tabs{margin-bottom:4px}.wood-detail{gap:5px}}
+
+/* Override former dock sizing: bounded pages, no scroll containers. */
+.game-shell .target-card,.game-shell .target-card.is-merchant,.game-shell .warehouse-dialog.warehouse-dock,.game-shell .route-sheet,.game-shell .help-sheet{position:absolute;inset:20px 20px auto auto;transform:none;box-sizing:border-box;width:min(700px,calc(100vw - 40px));height:auto;max-height:none;padding:12px;overflow:visible;display:block;border:12px solid #715035;border-image:url('/assets/ui-r2/wood-bark.svg') 12 stretch;background:#213e2f;border-radius:12px}
+.game-shell .target-card .target-top{position:static;margin:0 0 8px;padding:4px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}.target-top h2{font-size:20px;letter-spacing:.04em}
+.wood-heading{display:flex;align-items:center;gap:8px;padding:5px 10px;margin-bottom:8px}.wood-heading h2{font-size:20px;margin:0;flex:1}.wood-close{font-size:24px;color:inherit;background:none;border:0;min-width:44px;min-height:44px}
+.wood-status{font-size:12px;line-height:1.5;margin-top:6px}.wood-status:empty{display:none}.warehouse-carry-summary{font-size:11px;padding:0 4px 6px}.carrying-panel{border:0;padding:0;margin:0}.carrying-panel>.wood-actions{margin-bottom:8px}
+.menu-is-open>.topbar,.menu-is-open>.joystick,.menu-is-open>.minimap-card,.menu-is-open>.hud-dock{display:none}.menu-is-open>.scene-host{pointer-events:none}
+.item-browser select{max-width:100%;min-height:36px;background:#203b2c;color:#f9edce;border:1px solid #ad8c51;border-radius:6px;padding:4px;font:inherit;font-size:12px}
+.game-shell .wood-tabs button{width:auto;white-space:nowrap;letter-spacing:0;line-height:1.3;box-sizing:border-box;overflow:visible;clip-path:none}
+.game-shell .wood-tabs button[aria-pressed=true]{padding-inline:14px;background:#a27440 url('/assets/ui-r2/wood-split.svg') center/cover}
+.wood-tabs button:focus-visible,.wood-slot:focus-visible{outline:3px solid #ffdf8f;outline-offset:3px}
+.game-shell .target-card .action-message{font-size:12px;line-height:1.45;margin:6px 0 0}
+.game-shell .wood-shop .wood-tabs{margin:0}.wood-shop-tools{margin-bottom:8px}.game-shell .wood-shop>.item-browser>.browser-toolbar .wood-tabs{margin-bottom:6px}
+.game-shell .panel-heading{padding:5px 10px;margin:0 0 8px}.game-shell .panel-heading h2{font-size:20px}.game-shell .panel-heading button{min-width:44px;min-height:44px}
+.pause-dialog{max-height:none;overflow:visible;padding:16px;width:min(540px,calc(100vw - 32px));box-sizing:border-box}.pause-dialog h2{font-size:21px;margin:12px}.rarity-vfx-controls{margin:6px 0;padding:6px}.rarity-vfx-controls p{font-size:11px;margin:3px}.rarity-vfx-controls legend{font-size:12px}.save-controls p,.save-controls small{font-size:12px;line-height:1.5}
+.forest-reader{max-height:none;overflow:visible}.forest-reader-paper{min-height:0}.forest-reader-hint{display:none}
+@media(max-width:540px){
+ .game-shell .target-card,.game-shell .target-card.is-merchant,.game-shell .warehouse-dialog.warehouse-dock,.game-shell .route-sheet,.game-shell .help-sheet{inset:8px 8px auto;width:calc(100vw - 16px);padding:8px;border-width:10px}
+ .wood-tabs{gap:5px;padding:3px;margin-bottom:6px}.game-shell .wood-tabs button,.game-shell .wood-tabs button[aria-pressed=true]{padding:4px 7px;font-size:11px;flex:1 0 auto}
+ .wood-heading{padding:2px 6px}.wood-heading h2,.target-top h2{font-size:17px}.wood-slot{aspect-ratio:1;min-height:46px}.browser-body{gap:8px}.wood-detail{gap:5px}.wood-checkout{margin-top:6px}.wood-shop-tools{gap:4px}.wood-shop-tools .wood-tabs{flex:1}.wood-gift{font-size:11px}.wood-action{font-size:12px;padding:5px 8px}.wood-pager{margin-top:5px}.wood-status{font-size:11px}
+}
+@media(max-height:500px) and (min-width:541px){
+ .game-shell .target-card,.game-shell .target-card.is-merchant,.game-shell .warehouse-dialog.warehouse-dock,.game-shell .route-sheet,.game-shell .help-sheet{inset:8px 8px auto auto;width:min(740px,calc(100vw - 16px));padding:6px 10px;border-width:9px}
+ .game-shell .target-card .target-top,.wood-heading{margin-bottom:3px;padding:0 8px}.target-top h2,.wood-heading h2{font-size:17px}.wood-tabs{margin:0 0 3px;padding:3px}.wood-tabs button{min-height:36px}.wood-slot{aspect-ratio:auto;height:58px;min-height:44px}.wood-slot img{width:43px;height:43px}.wood-detail{gap:4px;padding:6px}.wood-item-heading img{width:32px;height:32px}.wood-item-heading h3{font-size:14px}.wood-pager{margin-top:3px}.wood-pager button{min-height:32px}.wood-shop-tools{margin-bottom:2px}.wood-checkout{margin-top:3px}.wood-shop-tools .wood-tabs{flex:1}.wood-shop .wood-detail .wood-quantity{margin-top:0}.wood-status{font-size:10px;margin-top:2px}.carrying-panel>.wood-actions{margin:2px 0}.warehouse-carry-summary{padding:0;font-size:10px}.forest-reader{width:min(620px,calc(100vw - 24px));padding:8px;gap:5px}.forest-reader-paper{padding:10px}
+}
+
+@media(max-height:500px) and (min-width:541px){.game-shell .wood-shop .wood-detail{min-height:0}.game-shell .wood-shop .wood-detail .wood-note{line-height:1.3}.game-shell .wood-shop .wood-item-heading{padding-right:22px}.wood-shop .browser-body{align-items:start}.wood-shop .wood-detail .wood-quantity{gap:10px}.game-shell .wood-shop .wood-detail{padding:5px;gap:4px}.wood-shop .wood-checkout{font-size:11px}.wood-shop .wood-checkout .wood-action{min-height:36px}}
+.game-shell .wood-detail p{margin:0;font-size:12px;line-height:1.45}.game-shell .wood-detail h3{margin:0}.game-shell .item-browser .wood-note{margin:0}.game-shell .wood-item-heading{min-height:0}.game-shell .wood-shop .wood-reason{font-size:11px;margin:3px 0;line-height:1.3}
+@media(max-height:500px) and (min-width:541px){
+ .game-shell .help-sheet:has(.rarity-vfx-controls),.pause-dialog:has(.rarity-vfx-controls){display:grid;grid-template-columns:1fr 1fr;gap:6px}
+ .help-sheet:has(.rarity-vfx-controls)>.panel-heading,.help-sheet:has(.rarity-vfx-controls)>.wood-tabs,.help-sheet:has(.rarity-vfx-controls)>.reduced,.pause-dialog:has(.rarity-vfx-controls)>.wood-tabs{grid-column:1/-1}
+ .game-shell .help-sheet .reduced{margin:3px 0;padding:4px 0}.game-shell .help-sheet .rarity-vfx-controls{min-width:0;margin:3px 0}.pause-dialog .rarity-vfx-controls{min-width:0}
+}

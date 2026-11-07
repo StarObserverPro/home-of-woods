@@ -1,3 +1,4 @@
+import {paintSceneryTrails} from './trail-material.js';
 import {buildClosedTerrain} from '../world/closed-terrain.ts';
 import * as THREE from "three";
 import { PALETTE, WORLD } from "../content/world.ts";
@@ -14,9 +15,9 @@ export function createTerrain(r: Resources) {
   const nx = (WORLD.maxX - WORLD.minX) / WORLD.step,
     nz = (WORLD.maxZ - WORLD.minZ) / WORLD.step;
   const geo = r.geometry('r5-closed-adaptive-terrain',buildClosedTerrain);
-  const mat = createGroundMaterial(r);
-  const stone=r.own(new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.88,metalness:0,flatShading:true}));
-  stone.name='r5b-cut-rock-and-flat-crest';
+  const mat = paintSceneryTrails(createGroundMaterial(r));
+  const stone=r.own(new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.94,metalness:0,flatShading:false}));
+  stone.name='continuous-shallow-rock-relief';
   const ground = new THREE.Mesh(geo, [mat,stone]);
   ground.receiveShadow = true;
   ground.name = "authoritative-surface";

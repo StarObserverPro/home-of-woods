@@ -14,6 +14,11 @@ export type SceneAppearance = {hour:number;fire:boolean;altar:AltarState;offerin
 /** Visual candidate only; the M2 calendar and resource renewal use their own explicit rules. */
 export const VISUAL_DAY_SECONDS=1200;
 export const VIEWS = {
+  horizon:{label:'营地望远山',target:[-8, 90, -130],yaw:-0.071027,elevation:-0.066924,distance:254.208576,zoom:1},
+  upstream:{label:'溪谷上游',target:[120, 18, -40],yaw:-0.726642,elevation:0.330653,distance:190.968584,zoom:1},
+  downstream:{label:'溪谷下游',target:[-90, 6, 140],yaw:2.018316,elevation:0.371386,distance:148.798521,zoom:1},
+  ridge:{label:'越岭山路',target:[-54, 53, -143],yaw:-0.229642,elevation:0.478329,distance:89.073004,zoom:1},
+  bank:{label:'溪谷岩壁',target:[55, 18, 22],yaw:-0.383284,elevation:0.317929,distance:70.377553,zoom:1},
   wildlife:{label:'林间动物',target:[-36.5,22.2,1],yaw:-.3,elevation:.50,distance:25,zoom:1},
   stagVista:{label:'远坡雄鹿 · 检视',target:[70,39.8,-40],yaw:-.75,elevation:.28,distance:32,zoom:1},
   goatVista:{label:'崖上山羊 · 检视',target:[55,16.8,36],yaw:-.72,elevation:.28,distance:26,zoom:1},

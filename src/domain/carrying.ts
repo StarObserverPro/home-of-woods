@@ -43,6 +43,7 @@ export function carryAdditionReason(inventory:InventoryState,item:StackIdentity,
 export function atLocation(item:StackIdentity,location?:TransportLocation):StackIdentity{
   const result=stackIdentity(item);delete result.transport;
   if(location)result.transport=structuredClone(location);
+  if(item.woodCondition)result.woodCondition=structuredClone(item.woodCondition);
   return result;
 }
 export function awardCarried(inventory:InventoryState,item:StackIdentity,quantity:number){
@@ -57,7 +58,7 @@ export const groundStacks=(inventory:InventoryState)=>inventory.stacks.filter(s=
 export function groundItem(inventory:InventoryState,id:string|null){return id?groundStacks(inventory).find(s=>groundId(s)===id):undefined;}
 export const storageNear=(point:Point)=>Math.hypot(point.x-CAMP_PROPS.logs.x,point.z-CAMP_PROPS.logs.z)<=CARRY_RULES.storageReach;
 export type CarryHost={inventory:InventoryState;player:Point;selected:string|null;route:Point[];food?:FoodState;time?:number};
-export type CarryIntent={kind:'take'|'withdraw'|'drop';key:string;quantity?:number}|{kind:'store'}|{kind:'method';method:CarryMethod};
+export type CarryIntent={kind:'take'|'withdraw'|'drop';key:string;quantity?:number|'max'}|{kind:'store';key?:string}|{kind:'method';method:CarryMethod};
 /** No mutations until every delta, capacity and distance check has succeeded. */
 export function changeCarrying(host:CarryHost,intent:CarryIntent,blockers:Collider[]):string{
   const inventory=host.inventory;
@@ -70,13 +71,19 @@ export function changeCarrying(host:CarryHost,intent:CarryIntent,blockers:Collid
   }
   if(intent.kind==='store'){
     if(!storageNear(host.player)||!canInteract(host.player,CAMP_PROPS.logs,blockers.filter(c=>c.id!==CAMP_PROPS.logs.id)))return '先走近原木架，再把随身材料存入营地。';
-    const carried=carriedStacks(inventory);if(!carried.length)return '手里没有需要存放的材料。';
+    const carried=carriedStacks(inventory).filter(s=>intent.key===undefined||stackKey(s)===intent.key);if(!carried.length)return '手里没有需要存放的材料。';
     host.inventory=inventoryTransaction(inventory,carried.flatMap(s=>[{...s,delta:-s.quantity},{...atLocation(s),delta:s.quantity}]));
-    return '随身材料已全部存入营地。';
+    return intent.key===undefined?'随身材料已全部存入营地。':`${ITEM_CATALOG.items.get(carried[0].itemId)?.name??'材料'}已存入营地。`;
   }
   const item=inventory.stacks.find(s=>stackKey(s)===intent.key);
   if(!item||!recognizedStack(item)||item.wood?.reserved)return '这份材料已经变化或暂不能搬动。';
-  const quantity=intent.quantity??1;
+  let quantity=intent.quantity==='max'?item.quantity:intent.quantity??1;
+  if(intent.quantity==='max'&&intent.kind!=='drop'){
+    let low=0,high=item.quantity;
+    while(low<high){const mid=Math.ceil((low+high)/2);if(carryAdditionReason(inventory,item,mid))high=mid-1;else low=mid;}
+    quantity=low;
+    if(!quantity)return carryAdditionReason(inventory,item,1)||'已经拿满了。';
+  }
   if(!Number.isSafeInteger(quantity)||quantity<=0||quantity>item.quantity)return '搬运数量已变化，请重新选择。';
   if(intent.kind!=='drop'&&item.itemId==='wood'&&host.food&&host.time!==undefined&&!heavyLaborAllowed(host.food,host.time))return '昨天没有吃饱，今天只能搬轻料，先留原木在这里。';
   let location:TransportLocation;

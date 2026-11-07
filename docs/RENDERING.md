@@ -1,5 +1,11 @@
 # 运行时、数据与资源管理
 
+天气与湿度已获准回接。domain/weather 消费唯一游戏时间，runtime 在正常推进、睡觉和恢复后结算。scene/weather-presentation 复用原相机、Resources 和渲染循环，降水位置与密度阈值采用独立稳定随机数，强度在完整空间范围内增减粒子。四处水坑、地表洇湿、覆雪、屋顶遮蔽与局部镜头雨滴由原场景更新；储木架新增遮雨棚，立柱几何与导航碰撞共用配置。天气与湿度继续由原世界存档写入者保存。实际结果见 [天气回接记录](scopes/running-selection-weather.md)。
+
+2026-11-06 跑动由 app/runtime 的会话输入决定，domain/movement 封顶点地寻路最后一步，characters 按实际位移选 Walking_A / Running_A 并取样步频。跑动输入在菜单、暂停、失焦及隐藏时复位。道具拖动由原 Pointer Events 钩子发送原实例身份，scene 普通拾取与拖动物品拾取共用遮挡命中，app/item-transfers 松手复核后调用原摆放／收回事务。天气与湿度有独立沙盒入口和存储，当前主体入口见 [本轮记录](scopes/running-selection-weather.md)。
+
+2026-11-06 山谷景观接入继续使用唯一循环、地表和 Resources；外景仅增加装饰网格，溪流延伸共享原水面表现。当前所有者及回退见 [山谷景观接入](VALLEY_HORIZON_INTEGRATION.md)。
+
 2026-11-05 营地生活代表功能已回接本地主体；当前制作/住房/饮食/清扫、坐立接触与恢复合同见 [CAMP_LIFE_INTEGRATION](CAMP_LIFE_INTEGRATION.md)。继续使用下述唯一 GameState、循环、地表与资源所有者；原 R4 证据保留其历史范围。
 
 对应 HOW-BASELINE-1.0。M0 与有限采伐的 R4 实现已获用户授权回接工作分支，已通过 PR #3/#4 合并至 main，未部署；原 R4 验证与主体回接验证分开记录。本文保留后续 M1/M2 的契约，并标明当前已经存在的所有者。参考水晶花园的库存事务、主循环、道具生命周期和交互注册，不移植其他项目业务或私有记录。
@@ -181,3 +187,11 @@ Models 的固定树形缓存同时提供静态合并与动作 source，远景按
 `housing-presentation`、`supported-surface-presentation` 与 `workshop-assembly-presentation` 读取真实实例几何和同一制作任务。用餐/扫叶先由 domain 一次提交，再显式交给场景；场景无经济回调、独立 RAF 或存档写入。几何、材质、实例和骨架归既有 Resources owner；F100 仅借用现场原物，结束/取消恢复原 transform。世界替换后清理事件去重历史，普通取消保留去重。
 
 稀有度与奇趣偏好分别为 `home-of-woods.rarity-vfx`、`home-of-woods.whimsy`；均不属于世界经济状态。具体玩法与本轮验证见 [营地生活接入](CAMP_LIFE_INTEGRATION.md)。
+
+## 函数木纹与远景退色（2026-11-06）
+
+用户接受的 R2 木纹已接回本地主体。`scene/wood-grain.ts` 在几何变换/合批前附加构件坐标，使用 Resources 所有的共享 MeshStandardMaterial；材质编译钩子可与现有珍稀光效叠加。原木侧面为树皮、端面为年轮、加工木件为顺纹，不新增图片纹理、渲染循环或后处理通道。
+
+`content/wood-grain.ts` 管理浓淡及退色阈值：纹理面屏幕尺度约 36 → 12 像素平滑退色，视距 28 → 48 场景单位再作整体退色，远处保留原基础色。先计算覆盖度，完全退色后跳过纹理形状计算；仅使用材质内的导数平滑，不修改全局抗锯齿设置。库存架和采伐树桩原有独立年轮网格由函数年轮替代。
+
+接入范围、验证和回退见 [函数木纹回接](scopes/woodgrain-mainline.md)。

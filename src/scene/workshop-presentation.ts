@@ -1,3 +1,4 @@
+import {woodCoordinates,woodMaterial} from './wood-grain.ts';
 import type {RarityVfxMode} from '../content/item-vfx.ts';
 import {createItemSurface} from './item-surface.ts';
 import * as THREE from 'three';
@@ -14,9 +15,9 @@ import {createWorkshopAssemblyPresentation} from './workshop-assembly-presentati
 export function createWorkshopPresentation(r:Resources,models:Models){
   const surfaces=createItemSurface(r);
   const group=new THREE.Group(),hits=new InteractionRegistry();group.name='workshop';
-  const wood=r.material('#855739'),endgrain=r.material('#d6b47a');
-  const seatGeometry=r.geometry('workshop-seat',()=>new THREE.CylinderGeometry(.52,.6,.7,9));
-  const plank=r.geometry('workshop-plank',()=>new THREE.BoxGeometry(3.3,.22,.41));
+  const wood=woodMaterial(r,'#855739'),endgrain=woodMaterial(r,'#d6b47a');
+  const seatGeometry=r.geometry('workshop-seat',()=>woodCoordinates(new THREE.CylinderGeometry(.52,.6,.7,9),'raw','y'));
+  const plank=r.geometry('workshop-plank',()=>woodCoordinates(new THREE.BoxGeometry(3.3,.22,.41),'board','x'));
   const seat=()=>{const root=new THREE.Group();const m=new THREE.Mesh(seatGeometry,[wood,endgrain,endgrain]);m.position.y=.35;m.castShadow=m.receiveShadow=true;root.add(m);return root;};
   const bench=new THREE.Group();bench.name=WORKBENCH.id;
   for(const x of [-1.15,1.15]){

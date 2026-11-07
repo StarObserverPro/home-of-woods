@@ -16,8 +16,8 @@ export function workshopDetails(selected:string|null,view:WorkshopSnapshot){
   if(selected===WORKBENCH.id){const braced=(view.upgrades['camp-workbench:bracing']?.level??0)>0;return {title:braced?'加固木工台':'粗木工作台',tag:braced?'支架与定位靠山已装好':'营地木作',detail:braced?'按合适的尺寸对齐支撑和面板，做长凳或备餐边桌；基础手作仍可照常完成。':'备好木料，在这里学习基础手作图纸，做木墩、门铃或长凳。'};}
   if(selected===WORKBENCH_STOOL.id)return {title:'工作台小凳',tag:'营地家具 · 一级',detail:'几块粗木搭成的小凳，先陪着工作台使用。升级和坐下动作以后开放。'};
   if(selected===CAMP_VISITOR.id)return {title:'林间行商',tag:'图纸与材料',detail:'行商带着外装图纸、五金和混合干粮。换一麻袋食品即可一次补充几种谷物与少量调味品。'};
-  const item=view.items.find(i=>i.instanceId===selected&&i.location.kind==='world');
-  return item?{title:findBlueprint(item.blueprintId)?.name??'待识别家具',tag:`${itemRarity(item).name} · 已摆放的木作`,detail:itemProperties(item).traits.map(t=>`${traitLabel(t.id)} ${t.value}`).join(' · ')}:null;
+  const item=view.items.find(i=>i.instanceId===selected);
+  return item?{title:findBlueprint(item.blueprintId)?.name??'待识别家具',tag:`${itemRarity(item).name} · ${item.location.kind==='inventory'?'在库木作':'已摆放的木作'}`,detail:itemProperties(item).traits.map(t=>`${traitLabel(t.id)} ${t.value}`).join(' · ')}:null;
 }
 export function WorkshopControls({selected,view,access,message,disabled,onOffer,onCraft,onTrade,onSupply,onApproach,onCancel,onPlace,onPack}:{selected:string|null;view:WorkshopSnapshot;access:InteractionAccess|null;message:string;disabled:boolean;onOffer:()=>void;onCraft:(id:string)=>void;onTrade:(id:string)=>void;onSupply:(id:string)=>void;onApproach:()=>void;onCancel:()=>void;onPlace:(id:string)=>void;onPack:(id:string)=>void}){
   const altar=['grove-altar','grove-altar:oracle'].includes(selected??''),bench=selected===WORKBENCH.id,merchant=selected===CAMP_VISITOR.id,item=view.items.find(i=>i.instanceId===selected);
@@ -28,7 +28,7 @@ export function WorkshopControls({selected,view,access,message,disabled,onOffer,
     {altar&&<><p>献上一份蘑菇，森林之母会随机回应；不一定带来新图纸。</p><button className="context-button" disabled={disabled||busy||!view.inputs.offering} onClick={onOffer}>献上蘑菇 · 祈求神谕</button>{!view.inputs.offering&&<p>需要一份蘑菇。</p>}</>}
     {bench&&<details className="context-details" name="workbench-section"><summary><GameIcon name="stump-seat" size={27}/>整木坐墩</summary>{STUMP_BLUEPRINTS.map(p=><div className="recipe-row" key={p.id}><div><strong>{p.name}</strong><small>{p.traitName} {p.value} · 消耗木料 1 份</small></div><button className="context-button" disabled={disabled||busy||!view.availableBlueprints.includes(p.id)||!view.inputs.craft} onClick={()=>onCraft(p.id)}>{view.availableBlueprints.includes(p.id)?`制作${p.name}`:'尚未学会'}</button></div>)}{!STUMP_BLUEPRINTS.some(p=>view.availableBlueprints.includes(p.id))&&<p>先向行商换图纸，或在祭坛献上蘑菇。</p>}{!view.inputs.craft&&<p>需要一份未预留的木料。</p>}</details>}
     {merchant&&null}
-    {item&&<div className="tree-actions"><button className="context-button" disabled={disabled||busy||item.definitionId!==SEAT_DEFINITION} onClick={()=>onPlace(item.instanceId)}>移动摆放</button><button className="context-button" disabled={disabled||busy||item.definitionId!==SEAT_DEFINITION} onClick={()=>onPack(item.instanceId)}>收回仓库</button></div>}
+    {item&&<div className="tree-actions"><button className="context-button" disabled={disabled||busy||item.definitionId!==SEAT_DEFINITION} onClick={()=>onPlace(item.instanceId)}>移动摆放</button><button className="context-button" disabled={disabled||busy||item.definitionId!==SEAT_DEFINITION||item.location.kind!=='world'} onClick={()=>onPack(item.instanceId)}>收回仓库</button></div>}
     {view.job&&!view.job.assembly&&<><p>{view.job.phase==='approaching'?'正在走到操作位置…':view.job.kind==='offering'?'正在祈求神谕…':'正在完成这件木作…'}</p><progress aria-label="木作或供奉进度" value={view.job.progress} max={1}/><button className="context-button" onClick={onCancel}>取消</button></>}
 
   </section>;

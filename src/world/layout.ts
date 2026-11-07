@@ -2,7 +2,9 @@ import { CABIN, GIANT, HOME, TENT, WORLD_SEED } from "../content/world.ts";
 import { heightAt, pathDistance, riverX, slopeAt } from "./surface.ts";
 import {CAMP_VISITOR} from '../content/characters.ts';
 import {CAMP_PROPS} from '../content/scene-props.ts';
+import {LOG_SHELTER_POSTS} from '../content/weather.ts';
 import fixedSlots from '../content/fixed-tree-slots.json' with {type:'json'};
+import {TREE_SLOT_CORRECTIONS} from '../content/tree-slot-corrections.ts';
 const fixedSlotIds=new Set(fixedSlots);
 export type Tree = {
   id: string;
@@ -101,11 +103,16 @@ export function makeTrees(seed = WORLD_SEED): Tree[] {
     variant: 0.3,
     role: "landmark",
   });
+  if(seed===WORLD_SEED)for(const tree of trees){const corrected=TREE_SLOT_CORRECTIONS[tree.id];if(corrected)Object.assign(tree,corrected);}
   return trees;
 }
 export function makeColliders(trees: Tree[]): Collider[] {
   return [
     ...Object.values(CAMP_PROPS).map(p=>({id:p.id,x:p.x,z:p.z,radius:p.radius})),
+    ...LOG_SHELTER_POSTS.map((post,index)=>({
+      id:`camp-log-store-post-${index}`,
+      x:CAMP_PROPS.logs.x+post.x,z:CAMP_PROPS.logs.z+post.z,radius:.11,
+    })),
     { id: "cabin", x:CABIN.x, z:CABIN.z+1.4, halfX: 7.5, halfZ: 7.0 },
     { id: "tent", ...TENT, halfX: 4.4, halfZ: 4.4 },
     {id:CAMP_VISITOR.id,x:CAMP_VISITOR.x,z:CAMP_VISITOR.z,radius:CAMP_VISITOR.radius},

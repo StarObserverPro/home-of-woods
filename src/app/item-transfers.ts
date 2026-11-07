@@ -1,9 +1,10 @@
 import {WOODCRAFT,insideWoodcraft} from '../content/woodcraft.ts';
-import {availableWood} from '../domain/woodcraft.ts';
+import {placeableWood} from '../domain/woodcraft.ts';
 import {stackKey} from '../domain/inventory.ts';
 import {interactionAccess} from '../domain/interaction-access.ts';
 import type {ItemTransferIntent,TransferCheck} from '../domain/interaction-access.ts';
-import {placementReason,placeFurniture,packFurniture} from '../domain/furniture-placement.ts';
+import {furnitureGeometry,placementReason,placeFurniture,packFurniture} from '../domain/furniture-placement.ts';
+import {housingItemName} from '../content/housing.ts';
 import type {GameState} from '../domain/state.ts';
 import type {Collider} from '../world/layout.ts';
 import type {createWoodcraftSession} from './woodcraft-session.ts';
@@ -31,7 +32,7 @@ export function createItemTransfers(state:GameState,woodcraft:ReturnType<typeof 
       if(!status.near)return {valid:false,reason:'先走近木料堆，再放下木料。'};
       if(!status.ready)return {valid:false,reason:status.error?'木料堆暂不可用，请重试。':'木料堆正在准备，请稍等。'};
       if(status.count>=WOODCRAFT.maxPieces)return {valid:false,reason:'木料堆已满，先收回几根。'};
-      if(!availableWood(state.inventory).some(s=>stackKey(s)===item.key))return {valid:false,reason:'这批木料已用完或已被预留。'};
+      if(!placeableWood(state.inventory).some(s=>stackKey(s)===item.key))return {valid:false,reason:'这批木料已用完或已被预留。'};
       if(!insideWoodcraft(point))return {valid:false,reason:'把木料拖进木料堆的围框。'};
       return {valid:true,reason:'松手，放下一根'};
     }
@@ -39,9 +40,10 @@ export function createItemTransfers(state:GameState,woodcraft:ReturnType<typeof 
     return {valid:!reason,reason:reason||'松手，摆在这里'};
   }
   function worldItem(x:number,y:number):ItemTransferIntent|null{
-    const hit=view.transferItemAt(x,y);if(!hit)return null;
+    const hit=view.transferItemAt(x,y);if(!hit||blocked()||!interactionAccess(state,hit.id)?.near)return null;
     if(hit.kind==='loose-wood'){const p=woodcraft.snapshot().items.find(p=>p.id===hit.id);return p?{...hit,name:p.name}:null;}
-    return state.inventory.instances?.some(i=>i.instanceId===hit.id)?{...hit,name:'木作家具'}:null;
+    const item=state.inventory.instances?.find(i=>i.instanceId===hit.id);
+    return item&&item.location.kind==='world'&&furnitureGeometry(item)?{...hit,name:housingItemName(item.definitionId)}:null;
   }
   function commit(item:ItemTransferIntent,x:number,y:number,toWarehouse:boolean):TransferCheck{
     const check=preview(item,x,y,toWarehouse);if(!check.valid)return check;

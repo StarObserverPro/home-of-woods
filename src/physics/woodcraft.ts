@@ -1,3 +1,4 @@
+import {SCRAP_HULL} from '../content/scrap-shape.ts';
 import type * as Rapier from '@dimforge/rapier3d-compat';
 import { WOODCRAFT } from '../content/woodcraft.ts';
 import { heightAt } from '../world/surface.ts';
@@ -35,8 +36,10 @@ export async function createWoodPhysics() {
     const {length,radius,fork}=woodShape(piece.source);
     const b=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(piece.position.x,piece.position.y,piece.position.z)
       .setRotation(piece.rotation).setLinvel(piece.linear.x,piece.linear.y,piece.linear.z).setAngvel(piece.angular)
-      .setLinearDamping(.35).setAngularDamping(.8).setCanSleep(true).setCcdEnabled(true));
-    world.createCollider(logHull(length/2,radius).setDensity(450).setFriction(.95).setRestitution(.02),b);
+      .setLinearDamping(piece.source.itemId==='scrap-fuel'?.9:.35).setAngularDamping(piece.source.itemId==='scrap-fuel'?1.8:.8).setCanSleep(true).setCcdEnabled(true));
+    const hull=piece.source.itemId==='scrap-fuel'?R.ColliderDesc.convexHull(new Float32Array(SCRAP_HULL)):logHull(length/2,radius);
+    if(!hull)throw new Error('Invalid wood collision hull');
+    world.createCollider(hull.setDensity(450).setFriction(.95).setRestitution(.02),b);
     if(fork)world.createCollider(logHull(length*.28,radius*.7).setTranslation(length*.17,length*.19,0)
       .setRotation({x:0,y:0,z:-Math.sin(.65/2),w:Math.cos(.65/2)}).setDensity(450).setFriction(.95).setRestitution(.02),b);
     if(piece.sleeping)b.sleep();

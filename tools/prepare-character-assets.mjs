@@ -7,7 +7,7 @@ const chars=path.join(root,'sources/kaykit/adventurers');
 const anim=path.join(root,'sources/kaykit/animations');
 const sha=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
 const parse=f=>{const b=fs.readFileSync(f),n=b.readUInt32LE(12);return {g:JSON.parse(b.subarray(20,20+n).toString()),bin:b.subarray(28+n)};};
-const sets={General:['Idle_A','PickUp'],MovementBasic:['Walking_A'],CombatMelee:['Melee_2H_Attack_Chop','Melee_2H_Attack_Slice'],Simulation:['Waving']};
+const sets={General:['Idle_A','PickUp'],MovementBasic:['Walking_A','Running_A'],CombatMelee:['Melee_2H_Attack_Chop','Melee_2H_Attack_Slice'],Simulation:['Waving']};
 let result={asset:{version:'2.0',generator:'Home of Woods isolated animation subset'},scenes:[{nodes:[]}],scene:0,nodes:[],animations:[],accessors:[],bufferViews:[],buffers:[]},chunks=[],bytes=0;
 for(const [set,names] of Object.entries(sets)){
   const {g,bin}=parse(path.join(anim,set+'.glb'));

@@ -1,6 +1,7 @@
+import {branchAttachment,attachedBranchGeometry} from './branch-attachment.ts';
+import {groundScrapGeometry,scrapMaterial} from './scrap-geometry.ts';
 import * as THREE from 'three';
 import {makeTrees} from '../world/layout.ts';
-import {heightAt} from '../world/surface.ts';
 import type { Resources } from './resources.ts';
 import type { Models } from './models.ts';
 import type { GatheringRegistry } from '../domain/gathering-registry.ts';
@@ -17,7 +18,12 @@ export function createGatheringPresentation(r: Resources, models: Models, regist
   let patchCount = 0;
   for (const definition of registry.definitions.values()) {
     const spec = RUNTIME_MODELS.find(a => a.assetId === definition.assetId)!;
-    const template = models.templates.get(spec.name)!;
+    let template = models.templates.get(spec.name)!;
+    if(definition.motionTag==='gather.climb'){
+      template=new THREE.Group();template.add(new THREE.Mesh(r.geometry('attached-gather-branch',attachedBranchGeometry),r.material('#917254',.9)));
+    }else if(definition.itemId==='scrap-fuel'){
+      template=new THREE.Group();template.add(new THREE.Mesh(r.geometry('gather-split-scraps',groundScrapGeometry),scrapMaterial(r)));
+    }
     template.updateMatrixWorld(true);
     const records: { sourceId: string; matrix: THREE.Matrix4 }[] = [];
     for (const source of registry.sources.values()) {
@@ -26,13 +32,20 @@ export function createGatheringPresentation(r: Resources, models: Models, regist
       const patches = source.patches ?? [{ ...source.targetAnchor, scale: 1, rotation: 0 }];
       for (const patch of patches) {
         const host=source.hostRef&&trees.get(source.hostRef.slotId),climb=definition.motionTag==='gather.climb'&&host;
-        const visual=climb?{x:host.x,y:heightAt(host.x,host.z)+3*host.scale,z:host.z}:patch;
-        const dummy = new THREE.Object3D(); dummy.position.set(visual.x,visual.y,visual.z);
-        dummy.rotation.y = patch.rotation; dummy.scale.setScalar(patch.scale); dummy.updateMatrix();
+        const dummy = new THREE.Object3D();
+        const attachment=climb?branchAttachment(host,models):null;
+        if(attachment){dummy.matrix.copy(attachment.matrix);root.userData.branchRoot=attachment.root.toArray();root.userData.hostTree=host!.id;}
+        else {dummy.position.set(patch.x,patch.y,patch.z);dummy.rotation.y=patch.rotation;dummy.scale.setScalar(definition.itemId==='scrap-fuel'?1:patch.scale);dummy.updateMatrix();}
         records.push({ sourceId: source.sourceId, matrix: dummy.matrix.clone() });
-        const proxy = new THREE.Mesh(r.geometry(`gather-hit-${definition.definitionId}`,()=>new THREE.SphereGeometry(definition.hitRadius,10,6)),proxyMaterial);
-        proxy.position.set(patch.x-source.x,patch.y-source.targetAnchor.y+.4*patch.scale,patch.z-source.z);
-        proxy.scale.set(patch.scale,.55*patch.scale,patch.scale); root.add(proxy);
+        if(attachment){
+          root.position.set(0,0,0);
+          const geometry=r.geometry('gather-attached-branch-hit',()=>new THREE.BoxGeometry(1.16,.55,.46).translate(.5,-.08,-.04));
+          const proxy=new THREE.Mesh(geometry,proxyMaterial);proxy.matrixAutoUpdate=false;proxy.matrix.copy(attachment.matrix);root.add(proxy);
+        }else{
+          const proxy = new THREE.Mesh(r.geometry(`gather-hit-${definition.definitionId}`,()=>new THREE.SphereGeometry(definition.hitRadius,10,6)),proxyMaterial);
+          proxy.position.set(patch.x-source.x,patch.y-source.targetAnchor.y+.4*patch.scale,patch.z-source.z);
+          proxy.scale.set(patch.scale,.55*patch.scale,patch.scale); root.add(proxy);
+        }
         patchCount++;
       }
       group.add(root); hits.register(root,source.sourceId);

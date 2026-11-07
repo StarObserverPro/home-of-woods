@@ -57,6 +57,7 @@ export const CAMERA = {
 };
 export const MOVEMENT = {
   speed: 5.2,
+  runMultiplier: 1.6,
   radius: 0.48,
   maxSlope: 0.9,
   fixedStep: 1 / 60,

@@ -1,3 +1,4 @@
+import {woodCoordinates,woodMaterial} from './wood-grain.ts';
 import * as THREE from 'three';
 import {createTree} from './actions/tree.js';
 import {CUT} from './actions/motion.js';
@@ -23,10 +24,9 @@ export function createForestryPresentation({models,resources:r,forestGroup,trees
   const treeById=new Map(trees.map(t=>[t.id,t])),stumps=new Map<string,THREE.Group>();
   const baseRotations=new Map<string,THREE.Quaternion>();
   selections.forEach((o,id)=>baseRotations.set(id,o.quaternion.clone()));
-  const bark=r.material(PALETTE.wood,.72),cutWood=r.material('#d9b07a',.78),ringWood=r.material('#966a3d',.8);
-  const stumpGeometry=r.geometry('forestry-stump-r4',()=>new THREE.CylinderGeometry(1,.95,.5,10));
-  const ringGeometry=r.geometry('forestry-growth-ring-r4',()=>new THREE.RingGeometry(.67,.72,16));
-  const chips=new THREE.InstancedMesh(r.geometry('forestry-woodchip-r4',()=>new THREE.BoxGeometry(.13,.07,.1)),cutWood,18);
+  const bark=woodMaterial(r,PALETTE.wood,.72),cutWood=woodMaterial(r,'#d9b07a',.78);
+  const stumpGeometry=r.geometry('forestry-stump-r4',()=>woodCoordinates(new THREE.CylinderGeometry(1,.95,.5,10),'raw','y'));
+  const chips=new THREE.InstancedMesh(r.geometry('forestry-woodchip-r4',()=>new THREE.BoxGeometry(.13,.07,.1)),r.material('#d9b07a',.78),18);
   chips.name='forestry-hit-chips';chips.visible=false;chips.frustumCulled=false;forestGroup.add(chips);
   const dummy=new THREE.Object3D(),rotation=new THREE.Quaternion(),axis=new THREE.Vector3();
   const chipOrigin=new THREE.Vector3();let chipTree:string|null=null;
@@ -34,7 +34,6 @@ export function createForestryPresentation({models,resources:r,forestGroup,trees
     let root=stumps.get(tree.id);if(root)return root;
     root=new THREE.Group();root.name=tree.id;root.userData.forestryRole='stump';
     const trunk=new THREE.Mesh(stumpGeometry,[bark,cutWood,cutWood]);trunk.position.y=.25;trunk.castShadow=true;trunk.receiveShadow=true;root.add(trunk);
-    const ring=new THREE.Mesh(ringGeometry,ringWood);ring.rotation.x=-Math.PI/2;ring.position.y=.505;root.add(ring);
     root.position.set(tree.x,heightAt(tree.x,tree.z),tree.z);const radius=(tree.kind==='pine'?.43:.66)*tree.scale;root.scale.set(radius,tree.scale,radius);
     forestGroup.add(root);stumps.set(tree.id,root);return root;
   };
