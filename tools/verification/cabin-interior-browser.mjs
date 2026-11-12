@@ -193,6 +193,13 @@ try {
   assert.equal((await snapshot(page)).items.find(item => item.definitionId === 'chest').open, true);
   await settleChest(page);
   await capture(page, '05-chest-open', 'detail');
+  await useAndWait(page, 'stove');
+  assert.equal((await snapshot(page)).items.find(item => item.definitionId === 'stove').lit, true);
+  await useAndWait(page, 'lantern');
+  assert.equal((await snapshot(page)).items.find(item => item.definitionId === 'lantern').lit, false);
+  await useAndWait(page, 'lantern');
+  assert.equal((await snapshot(page)).items.find(item => item.definitionId === 'lantern').lit, true);
+  report.flows.push({ name: 'light-stove-toggle-lantern-off-and-on', passed: true });
   await page.getByRole('button', { name: '走进木屋', exact: true }).click(); await waitIdle(page);
   await page.locator('#door').click();
   assert.equal((await snapshot(page)).doorOpen, false);
@@ -212,6 +219,7 @@ try {
   await capture(page, '09-complete-roof', 'room');
   await page.locator('#cut-mode').selectOption('auto');
   await page.locator('#daylight').click();
+  await capture(page, '10a-interior-eye-level', 'inside');
   await page.locator('.audit-panel > summary').click();
   await page.locator('#material-mode').selectOption('clay');
   await capture(page, '10-clay-no-post', 'room');

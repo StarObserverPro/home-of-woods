@@ -180,6 +180,49 @@ export async function createCabinCharacter(resources: Resources) {
     return box;
   }
 
+  /** Aim the shipped joints; never change the rig's bone lengths or scale. */
+  function aimJoint(bone: THREE.Bone, child: THREE.Bone, direction: THREE.Vector3) {
+    root.updateMatrixWorld(true);
+    const from = bone.getWorldPosition(new THREE.Vector3());
+    const actual = child.getWorldPosition(new THREE.Vector3()).sub(from).normalize();
+    const desired = direction.clone().applyQuaternion(root.getWorldQuaternion(new THREE.Quaternion())).normalize();
+    const delta = new THREE.Quaternion().setFromUnitVectors(actual, desired);
+    const world = delta.multiply(bone.getWorldQuaternion(new THREE.Quaternion()));
+    bone.quaternion.copy(bone.parent!.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(world));
+  }
+
+  function supportRestingLegs() {
+    const targetY = (supportY + SEATED_SKIN_CLEARANCE) / CHARACTER.worldScale;
+    for (const side of ['l', 'r']) {
+      const thigh = bones.get(`upperleg${side}`), shin = bones.get(`lowerleg${side}`);
+      const foot = bones.get(`foot${side}`), toes = bones.get(`toes${side}`);
+      if (!thigh || !shin || !foot || !toes) throw new Error('木屋人物缺少卧姿所需的腿部骨骼');
+      const joints = [thigh, shin, foot], original = joints.map(joint => joint.quaternion.clone());
+      const contactBones = new Set([`lowerleg${side}`, `foot${side}`]);
+      const outward = side === 'l' ? 1 : -1;
+      function lower(angle: number) {
+        joints.forEach((joint, index) => joint.quaternion.copy(original[index]));
+        // The stock character's pelvis is much thicker than its short legs.
+        // Extend both segments toward the footboard and let the heels settle
+        // below the hip, with toes relaxed upward instead of holding a sit pose.
+        const direction = new THREE.Vector3(outward * .035, -Math.sin(angle), Math.cos(angle));
+        aimJoint(thigh!, shin!, direction);
+        aimJoint(shin!, foot!, direction);
+        aimJoint(foot!, toes!, new THREE.Vector3(outward * .08, .88, .47));
+      }
+      let low = 0, high = .95;
+      for (let iteration = 0; iteration < 14; iteration++) {
+        const angle = (low + high) / 2;
+        lower(angle);
+        if (bounds(contactBones).min.y > targetY) low = angle;
+        else high = angle;
+      }
+      // Keep the nonpenetrating side of the skin-contact bracket. This solve
+      // runs only on a posture change, never in the standing animation loop.
+      lower(low);
+    }
+  }
+
   function configurePosture(pose: CabinCharacterPose) {
     sample('idle', .01);
     postureRoot.position.set(0, 0, 0);
@@ -221,6 +264,7 @@ export async function createCabinCharacter(resources: Resources) {
       }
       const back = bounds(backBones).min.y;
       postureRoot.position.y = (supportY + SEATED_SKIN_CLEARANCE) / scale - back;
+      supportRestingLegs();
       const full = bounds();
       // Translation centres the preserved-size skin; no rescaling to the bed.
       postureRoot.position.x -= (full.min.x + full.max.x) / 2;

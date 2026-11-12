@@ -144,6 +144,37 @@ export function createCabinShell(r:Resources){
     const g=r.own(woodCoordinates(new THREE.ExtrudeGeometry(outline,{depth:T,bevelEnabled:false,steps:1,curveSegments:1})));
     const gable=mesh(roof,`closed-gable:${z}`,g,wood);gable.position.set(0,H,z-T/2);
   }
+  // Merge siblings only: walls, cut caps, window frames and the hinged door
+  // retain their own visibility/motion roots. Wood coordinates stay authored
+  // per component while positions and normals are baked into the parent frame.
+  function batchStatic(parent:THREE.Object3D){
+    for(const child of [...parent.children])if(!(child instanceof THREE.Mesh))batchStatic(child);
+    const batches=new Map<string,THREE.Mesh<THREE.BufferGeometry,THREE.Material>[]>();
+    for(const child of parent.children){
+      if(!(child instanceof THREE.Mesh)||Array.isArray(child.material)||child.material.transparent)continue;
+      const g:THREE.BufferGeometry=child.geometry;
+      const attributes=Object.entries(g.attributes).map(([name,a])=>`${name}:${a.itemSize}:${a.normalized}:${a.array.constructor.name}`).sort().join('|');
+      const key=[child.material.uuid,!!g.index,attributes,child.castShadow,child.receiveShadow,child.renderOrder,child.layers.mask,child.visible,child.userData.pickId??''].join(';');
+      const batch=batches.get(key)??[];batch.push(child);batches.set(key,batch);
+    }
+    for(const parts of batches.values()){
+      if(parts.length<2)continue;
+      let firstVertex=0;
+      const ranges=parts.map(part=>{
+        const vertexCount=part.geometry.getAttribute('position').count;
+        const range={name:part.name,firstVertex,vertexCount};firstVertex+=vertexCount;return range;
+      });
+      const geometries=parts.map(part=>{part.updateMatrix();return part.geometry.clone().applyMatrix4(part.matrix);});
+      const merged=mergeGeometries(geometries);
+      geometries.forEach(g=>g.dispose());
+      if(!merged)throw new Error(`Incompatible static cabin components: ${parent.name}`);
+      const first=parts[0],batch=mesh(parent,`${parent.name}:batch:${batches.size}:${ranges[0].name}`,r.own(merged),first.material);
+      batch.castShadow=first.castShadow;batch.receiveShadow=first.receiveShadow;batch.renderOrder=first.renderOrder;batch.layers.mask=first.layers.mask;batch.visible=first.visible;
+      batch.userData={...first.userData,parts:ranges};
+      for(const part of parts)parent.remove(part);
+    }
+  }
+  batchStatic(root);
   let angle=-Math.PI/2;
   doorPivot.rotation.y=angle;
   function setDoor(open:boolean,dt:number){const target=open?-Math.PI/2:0;angle=THREE.MathUtils.damp(angle,target,9,dt);if(Math.abs(angle-target)<.001)angle=target;doorPivot.rotation.y=angle;}

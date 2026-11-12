@@ -18,7 +18,7 @@ export async function createCabinView(host:HTMLElement,callbacks:ViewCallbacks){
   const scene=new THREE.Scene();scene.background=new THREE.Color('#e8e4d9');
   const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,preserveDrawingBuffer:true});
   renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.16;
-  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
   renderer.domElement.className='cabin-canvas';renderer.domElement.setAttribute('aria-label','可以旋转查看的木屋内部，点选物品或空地');renderer.domElement.tabIndex=0;host.append(renderer.domElement);
   const camera=new THREE.PerspectiveCamera(38,1,.08,100);
   const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.1;controls.minDistance=3.2;controls.maxDistance=30;controls.minPolarAngle=.001;controls.maxPolarAngle=Math.PI*.485;controls.enablePan=true;controls.maxTargetRadius=6;
@@ -59,7 +59,7 @@ export async function createCabinView(host:HTMLElement,callbacks:ViewCallbacks){
   const transientResources=new Map<THREE.Group,{dispose:()=>void}[]>();
   function clearGroup(group:THREE.Group){for(const resource of transientResources.get(group)??[])resource.dispose();transientResources.set(group,[]);group.clear();}
   function transient<T extends {dispose():void}>(group:THREE.Group,resource:T):T{const list=transientResources.get(group)??[];list.push(resource);transientResources.set(group,list);return resource;}
-  function line(group:THREE.Group,points:THREE.Vector3[],color:string){const geometry=transient(group,new THREE.BufferGeometry().setFromPoints(points));const material=transient(group,new THREE.LineBasicMaterial({color,transparent:true,opacity:.88,depthTest:false}));const obj=new THREE.Line(geometry,material);obj.renderOrder=20;group.add(obj);return obj;}
+  function line(group:THREE.Group,points:THREE.Vector3[],color:string){const geometry=transient(group,new THREE.BufferGeometry().setFromPoints(points));const material=transient(group,new THREE.LineBasicMaterial({color,transparent:true,opacity:.88,depthTest:group!==overlay}));const obj=new THREE.Line(geometry,material);obj.renderOrder=20;group.add(obj);return obj;}
   function rect(group:THREE.Group,x:number,z:number,w:number,d:number,yaw:number,color:string,y=.025){const points=[[-w/2,-d/2],[w/2,-d/2],[w/2,d/2],[-w/2,d/2],[-w/2,-d/2]].map(([a,b])=>new THREE.Vector3(x+a*Math.cos(yaw)+b*Math.sin(yaw),y,z-a*Math.sin(yaw)+b*Math.cos(yaw)));return line(group,points,color);}
   function circle(group:THREE.Group,x:number,z:number,r:number,color:string,y=.035){return line(group,Array.from({length:33},(_,i)=>new THREE.Vector3(x+Math.cos(i/32*Math.PI*2)*r,y,z+Math.sin(i/32*Math.PI*2)*r)),color);}
   function syncOverlays(){
@@ -103,7 +103,27 @@ export async function createCabinView(host:HTMLElement,callbacks:ViewCallbacks){
     else if(view==='inside'){position=new THREE.Vector3(0,2.55,2.6);target.set(-.4,1.65,-2.4);}
     else if(view==='detail'&&currentState&&selected&&selected!=='door'){
       const item=currentState.items.find(i=>i.instanceId===selected),pose=item&&itemPose(currentState,item);
-      if(pose&&item){const dims=definitionFor(item.definitionId).dimensions;target.set(pose.x,pose.y+dims[1]*.5,pose.z);const size=Math.max(...dims);position=target.clone().add(new THREE.Vector3(size*1.3,size*.9,size*1.55).multiplyScalar(factor));}else position=new THREE.Vector3(10.5,10,13.5).multiplyScalar(factor);
+      if(pose&&item){
+        const bounds=new THREE.Box3().setFromObject(items.get(selected)!.root,true);
+        // A seat close-up must frame its occupant; host close-ups include supported props.
+        if(currentState.player.usingId===selected)bounds.expandByObject(character.root,true);
+        for(const child of currentState.items)if(child.location.kind==='surface'&&child.location.hostId===selected)bounds.expandByObject(items.get(child.instanceId)!.root,true);
+        bounds.getCenter(target);
+        const radius=bounds.getSize(new THREE.Vector3()).length()/2;
+        const verticalHalf=THREE.MathUtils.degToRad(camera.fov/2),horizontalHalf=Math.atan(Math.tan(verticalHalf)*camera.aspect);
+        const distance=Math.max(controls.minDistance,radius/Math.sin(Math.min(verticalHalf,horizontalHalf))*1.12);
+        const occupied=currentState.player.usingId===selected;
+        const actorBounds=new THREE.Box3().setFromObject(character.root,true).expandByScalar(.18);
+        const candidates=[[1.3,.9,1.55],[1.55,1.1,.7],[1.55,1.1,-.9],[-1.55,1.1,.7],[-1.3,1.2,-1.55]];
+        position=target.clone().add(new THREE.Vector3(...candidates[0]).normalize().multiplyScalar(distance));
+        for(const direction of candidates){
+          const candidate=target.clone().add(new THREE.Vector3(...direction).normalize().multiplyScalar(distance));
+          const ray=new THREE.Ray(candidate,target.clone().sub(candidate).normalize());
+          const obstruction=occupied?null:ray.intersectBox(actorBounds,new THREE.Vector3());
+          // The entrance actor can stand exactly where the table's first close-up would land.
+          if(!obstruction||candidate.distanceTo(obstruction)>distance){position=candidate;break;}
+        }
+      }else position=new THREE.Vector3(10.5,10,13.5).multiplyScalar(factor);
     }else position=new THREE.Vector3(10.5,10,13.5).multiplyScalar(factor);
     tempCamera.position.copy(position);tempCamera.up.set(0,1,0);tempCamera.lookAt(target);
     if(instant){camera.position.copy(position);camera.quaternion.copy(tempCamera.quaternion);controls.target.copy(target);controls.update();transition=null;}

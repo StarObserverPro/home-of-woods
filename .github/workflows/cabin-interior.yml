@@ -50,6 +50,17 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cabin-interior-evidence
-          path: ${{ env.CABIN_EVIDENCE_DIR }}
+          path: |
+            /tmp/how-cabin-evidence/*.png
+            /tmp/how-cabin-evidence/report.json
+            /tmp/how-cabin-evidence/preview.log
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Keep continuous interaction recordings separately
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cabin-interior-recordings
+          path: /tmp/how-cabin-evidence/videos
           if-no-files-found: warn
           retention-days: 7

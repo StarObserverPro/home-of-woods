@@ -3,3 +3,25 @@
 @media(max-width:1000px){.masthead{padding:0 23px;gap:28px}.header-tools .save-note{display:none}.workspace{grid-template-columns:minmax(0,1fr) 275px}.collection{padding:24px 18px}.stage-bar{left:20px;right:20px}.stage-caption{left:22px}.view-dock{bottom:71px}.view-dock button{min-width:41px;padding:5px 7px}.view-dock select{max-width:111px}.walk-controls{bottom:125px}}
 @media(max-width:720px){.masthead{height:82px;padding:0 18px;gap:23px}.brand{gap:8px;font-size:11px;letter-spacing:1px}.brand svg{width:20px;height:28px}.brand small{font-size:6px;letter-spacing:1px;margin-top:4px}.page-title h1{font-size:19px;letter-spacing:3px;margin-top:5px}.page-title .eyebrow{font-size:7px;letter-spacing:1px}.header-tools{gap:0}.header-tools button{padding:5px 8px;font-size:10px}.header-tools #export{display:none}.workspace{display:flex;flex-direction:column;min-height:calc(100dvh - 82px)}.stage{height:61dvh;min-height:440px;max-height:620px;flex:none}.stage-bar{top:14px;left:14px;right:14px}.presets button{padding:5px 12px;min-height:37px;font-size:11px}.round-button{min-height:43px;padding:5px 10px}.round-button span{font-size:10px}.stage-caption{top:75px;left:19px}.stage-caption .overline{font-size:8px;letter-spacing:2px}.stage-caption p{font-size:10px;margin-top:5px}.view-dock{bottom:44px;max-width:calc(100% - 22px);gap:0;padding:2px;border-radius:8px}.view-dock button{min-width:40px;min-height:40px;font-size:10px;padding:4px 8px}.view-dock select{max-width:114px;font-size:10px;min-height:40px;padding:4px}.view-dock>span{margin:0 3px}.walk-controls{bottom:95px;gap:4px}.walk-controls button{min-height:38px;font-size:10px;padding:6px 9px}.stage-footer{bottom:17px;left:16px;right:16px;font-size:8px;letter-spacing:0}.collection{max-height:none;min-height:0;overflow:visible;border-left:0;border-top:1px solid #cbcbbd;padding:22px 19px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 16px}.collection-title,.collection-intro{grid-column:1/-1}.collection-title h2{font-size:18px}.collection-intro{margin:10px 0 15px;font-size:10px}.item-list{grid-column:1}.item-select{padding:7px 3px;gap:8px;min-height:50px}.item-symbol{width:28px;height:32px;font-size:21px}.item-select strong{font-size:10px;letter-spacing:0}.item-select small{font-size:8px;letter-spacing:0}.add-item{min-width:30px;width:30px;font-size:20px}.in-room{margin-right:6px}.inspector{grid-column:2;grid-row:3;border-top:0;border-left:1px solid #d1d3c4;padding:5px 0 0 16px;margin:0;align-self:start;position:sticky;top:15px}.inspector h3{font-size:17px;letter-spacing:1px}.inspector .eyebrow{font-size:8px;letter-spacing:1px}.inspector .primary{font-size:10px;padding:7px}.item-actions{flex-wrap:wrap;gap:1px}.item-actions>button{min-height:40px;font-size:10px;padding:4px}.item-dimensions{font-size:9px!important}.audit-panel{grid-column:1/-1;margin-top:15px}.sandbox-note{grid-column:1/-1;margin-top:10px;font-size:9px}.placement-panel{bottom:34px;gap:10px;padding:14px;grid-template-columns:1fr}.move-pad{grid-column:1;justify-content:center}.placement-actions{grid-column:1;justify-content:flex-end}.placement-panel p{font-size:10px}.toast{bottom:147px;font-size:11px;max-width:calc(100% - 28px);width:max-content}.object-record dl{grid-template-columns:1fr;gap:4px}.object-record dd{margin-bottom:5px}.empty-selection{padding-top:10px}.empty-selection small{font-size:9px;line-height:1.7;display:block}}
 @media(prefers-reduced-motion:reduce){button{transition:none}.loading span{animation:none}}
+
+@media(max-width:720px){
+  .presets button,.round-button,.view-dock button,.view-dock select,.walk-controls button,.item-actions>button,.move-pad button,.placement-actions button{min-height:44px}
+  .view-dock button{min-width:44px;font-size:12px;padding:4px 6px}
+  .view-dock select{font-size:11px}
+  .walk-controls{bottom:108px}
+  .walk-controls button,.item-select strong,.inspector .primary,.item-actions>button{font-size:12px}
+  .item-select small{font-size:10px}
+  .add-item{min-width:36px;min-height:44px}
+}
+@media(max-width:1000px) and (max-height:520px) and (min-width:721px){
+  .masthead{height:72px}
+  .workspace{min-height:calc(100dvh - 72px)}
+  .stage{min-height:calc(100dvh - 72px)}
+  .collection{min-height:0;max-height:calc(100dvh - 72px);padding-top:18px}
+  .stage-bar{top:12px;left:14px;right:14px}
+  .stage-caption{display:none}
+  .view-dock{bottom:16px}
+  .walk-controls{bottom:72px}
+  .walk-controls button,.view-dock button,.view-dock select,.presets button{min-height:40px}
+  .stage-footer{display:none}
+}

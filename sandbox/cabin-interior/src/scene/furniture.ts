@@ -197,6 +197,17 @@ export async function loadFurnitureAssets(resources: Resources) {
     ring.holes.push(cavity);
     const shell = new THREE.ExtrudeGeometry(ring, {depth: wallTop - footHeight, bevelEnabled: true, bevelSegments: 1, bevelSize: .007, bevelThickness: .007, steps: 1, curveSegments: 1});
     shell.rotateX(-Math.PI / 2).translate(0, footHeight, 0); woodCoordinates(shell, 'board', 'x');
+    // The closed carcass represents assembled boards, not one hollowed log:
+    // front/back grain follows X, while both side boards follow Z.
+    const frontGrain = shell.getAttribute('woodCoord');
+    woodCoordinates(shell, 'board', 'z');
+    const sideGrain = shell.getAttribute('woodCoord'), shellNormals = shell.getAttribute('normal');
+    for (let vertex = 0; vertex < frontGrain.count; vertex++) {
+      if (Math.abs(shellNormals.getX(vertex)) > Math.abs(shellNormals.getZ(vertex))) {
+        frontGrain.setXYZ(vertex, sideGrain.getX(vertex), sideGrain.getY(vertex), sideGrain.getZ(vertex));
+      }
+    }
+    shell.setAttribute('woodCoord', frontGrain);
     const parts: StaticPart[] = [{name: 'continuous-open-carcass', geometry: shell, material: wood},
       {name: 'cavity-bottom', geometry: box(outerW - thickness * 2, .07, outerD - thickness * 2, 0, footHeight + .035, 0, .008, true), material: darkWood}];
     for (const x of [-w / 2 + .13, w / 2 - .13]) for (const z of [-d / 2 + .13, d / 2 - .13]) {
