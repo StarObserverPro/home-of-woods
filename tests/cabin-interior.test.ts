@@ -115,13 +115,37 @@ test('storing a host atomically returns its supported props; restoration never g
 
 test('a closed door stops navigation; its swing refuses to pass through the actor',()=>{
   const state=createCabinState('empty');
-  assert.equal(setDoorOpen(state,false).ok,false,'actor on the porch lies inside the real swept door envelope');
+  assert.equal(setDoorOpen(at(state,{x:0,z:4.9}),false).ok,false,'actor directly in front of the door remains inside the real swept envelope');
   const inside=at(state,ENTRY_POINT),closed=setDoorOpen(inside,false);
   assert.equal(closed.ok,true);assert.equal(canStand(closed.state,{x:0,z:3.5}),false);
   assert.equal(findPath(closed.state,PORCH_POINT,ENTRY_POINT),null);
   assert.equal(auditLayout(closed.state).ok,true,'closing a usable door is not a broken floorplan');
   const opened=setDoorOpen(closed.state,true);assert.equal(opened.ok,true);
   assert.ok(findPath(opened.state,ENTRY_POINT,PORCH_POINT));
+});
+
+test('the physical side landing permits closing and reopening from outside before returning indoors',()=>{
+  for(const preset of ['empty','starter','full'] as const){
+    const state=createCabinState(preset),outside={x:state.player.x,z:state.player.z};
+    assert.deepEqual(outside,PORCH_POINT);
+    assert.ok(Math.abs(outside.x)+CABIN.actorRadius<CABIN.porchWidth/2,'the whole actor has real porch support to either side');
+    assert.ok(outside.z+CABIN.actorRadius<CABIN.depth/2+CABIN.porchDepth,'the whole actor stays inside the real porch edge');
+    assert.equal(canStand(state,outside),true);
+    const closed=setDoorOpen(state,false);assert.equal(closed.ok,true,closed.reason);
+    assert.equal(findPath(closed.state,outside,ENTRY_POINT),null,'the closed leaf still blocks entry');
+    const restored=parseCabinSnapshot(JSON.parse(JSON.stringify(closed.state)));
+    assert.ok(restored,'a closed-door snapshot outside is usable after refresh');
+    const opened=setDoorOpen(restored,true);assert.equal(opened.ok,true,opened.reason);
+    const route=findPath(opened.state,outside,ENTRY_POINT);assert.ok(route,'can return through the real doorway');
+    assert.deepEqual(route.at(-1),ENTRY_POINT);
+    for(let n=1;n<route.length;n++){
+      const a=route[n-1],b=route[n],steps=Math.ceil(Math.hypot(b.x-a.x,b.z-a.z)/.025);
+      for(let s=0;s<=steps;s++)assert.ok(canStand(opened.state,{x:a.x+(b.x-a.x)*s/steps,z:a.z+(b.z-a.z)*s/steps}),'return route clips a wall or the open leaf');
+    }
+    const inside=at(opened.state,ENTRY_POINT),exit=findPath(inside,ENTRY_POINT,outside);
+    assert.ok(exit,'can leave again');
+    assert.equal(setDoorOpen(at(inside,outside),false).ok,true,'can close the door after leaving');
+  }
 });
 
 test('invalid destinations remain invalid instead of snapping to a falsely successful nearby point',()=>{

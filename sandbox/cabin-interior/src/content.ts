@@ -2,7 +2,7 @@
 export const CABIN = {
   width: 8.4, depth: 7, height: 3.35, wallThickness: .18,
   doorWidth: 2.0, doorHeight: 2.95, doorThickness: .08,
-  porchDepth: 2.4, porchWidth: 3.8, actorRadius: .92, floorY: 0,
+  porchDepth: 2.4, porchWidth: 5.6, actorRadius: .92, floorY: 0,
 } as const;
 
 export type CabinDefinitionId = 'bed'|'table'|'stool'|'chest'|'shelf'|'stove'|'lantern'|'bowl'|'rug'|'plant';
@@ -62,7 +62,8 @@ export const DEFAULT_LOCATIONS:Readonly<Record<CabinDefinitionId,FloorLocation|S
   plant:{kind:'surface',hostId:'audit:shelf',slotId:'plant'},
 };
 export const ENTRY_POINT:Point={x:0,z:2.45};
-export const PORCH_POINT:Point={x:0,z:4.9};
+// The side landing leaves the original-scale actor clear of the outward door sweep.
+export const PORCH_POINT:Point={x:1.75,z:4.9};
 export const USE_DISTANCE=.3;
 export const instanceIdFor=(id:CabinDefinitionId)=>`audit:${id}`;
 export function definitionFor(id:CabinDefinitionId|string):CabinDefinition {

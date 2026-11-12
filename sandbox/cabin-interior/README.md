@@ -46,6 +46,8 @@ npm run verify:cabin-assets
 
 `mountCabinAudit(container, {initialState, persist, onChange})` 返回 `pause/resume/dispose/getSnapshot`。正式接入时设置 `persist:false`，将合法拥有实例与宿主事务接到 domain/app，保存和时间回归原运行时。当前 `onChange(snapshot,event)` 是提交后的审计通知，不是生产命令审批接口；生产接线应将 `commit` 交给现有规则服务，而非另开并行库存或保存器。
 
+`mountCabinAudit` 自带 RAF，作为整页模式时应先暂停宿主，退出销毁后恢复。若木屋与山谷共用原场景，应复用 content/domain 与 shell/furniture 工厂，由原 `Resources`、时钟和角色推进，不同时运行展台 mount。房间使用局部坐标，宿主提供 world transform 与入口锚点；相机在入口明确交接，不回到默认远景。
+
 炉火仅示意点亮，不消耗燃料；休息不推进游戏日期；箱内有真实几何空腔但不提供第二份库存。固定炉位的烟管接口由房屋层连接屋顶，泛水件高度从同一屋面剖面取得。
 
 ## 资产与验证

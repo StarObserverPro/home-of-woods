@@ -63,7 +63,7 @@ export function createCabinShell(r:Resources){
   deck('room',W,D,0);deck('porch',CABIN.porchWidth,CABIN.porchDepth,D/2+CABIN.porchDepth/2);
   box(platform,'door-threshold',[CABIN.doorWidth,.05,.25],[0,-.025,D/2],pale,.008);
   for(const x of [-W/2+.25,W/2-.25])for(const z of [-D/2+.35,D/2-.35])box(root,`stone-support:${x}:${z}`,[.66,.23,.65],[x,-.47,z],stone,.09);
-  for(const x of [-1.35,1.35])box(root,`porch-support:${x}`,[.6,.23,.6],[x,-.47,D/2+CABIN.porchDepth-.4],stone,.07);
+  for(const x of [-CABIN.porchWidth/2+.55,CABIN.porchWidth/2-.55])box(root,`porch-support:${x}`,[.6,.23,.6],[x,-.47,D/2+CABIN.porchDepth-.4],stone,.07);
 
   const walls=new Map<WallSide,{upper:THREE.Group;cap:THREE.Group;cut:boolean}>();
   const apertureGeometry=(plan:WallPlan,y0:number,y1:number)=>{

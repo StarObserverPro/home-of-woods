@@ -208,6 +208,15 @@ try {
   assert.equal((await snapshot(page)).doorOpen, true);
   await page.getByRole('button', { name: '走到门前', exact: true }).click(); await waitIdle(page);
   assert.ok((await snapshot(page)).player.z > 3.5);
+  await page.locator('#door').click();
+  assert.equal((await snapshot(page)).doorOpen, false, 'The outer landing must leave real room outside the door sweep');
+  await capture(page, '06a-closed-door-from-porch', 'room');
+  await page.locator('#door').click();
+  assert.equal((await snapshot(page)).doorOpen, true);
+  await page.getByRole('button', { name: '走进木屋', exact: true }).click(); await waitIdle(page);
+  assert.ok((await snapshot(page)).player.z < 3.5, 'Can return indoors after opening from the outer landing');
+  await page.getByRole('button', { name: '走到门前', exact: true }).click(); await waitIdle(page);
+  assert.ok((await snapshot(page)).player.z > 3.5);
   report.flows.push({ name: 'entry-rest-stand-seat-stand-chest-door-exit', passed: true });
 
   phase = 'material and cutaway controls';
@@ -257,6 +266,10 @@ try {
   report.flows.push({ name: 'valid-move-rotate-cancel-invalid-entrance', passed: true });
 
   phase = 'host movement and dependent item identity';
+  // Preserve the original camera obstruction regression even after the porch grows:
+  // walk through the same route command to the old centre-porch position, never teleport.
+  await page.evaluate(() => window.__CABIN_AUDIT__.walkTo({x:0,z:4.9}));
+  await waitIdle(page);
   await clickItem(page, 'table');
   const beforeHost = await snapshot(page);
   await page.locator('[data-action="move"]').click();
