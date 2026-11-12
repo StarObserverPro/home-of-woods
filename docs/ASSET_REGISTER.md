@@ -187,3 +187,25 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 ### 本地原创函数木纹（2026-11-06）
 
 `src/scene/wood-grain.ts` / `src/content/wood-grain.ts` 为本项目原创程序化表面，由已批准 R2 独立试样公式接入；不包含第三方图片、生成式图片或新增下载资产，不标记为第三方 CC0。原木树皮/切面、加工木件顺纹共享材质与坐标约定， Resources 统一释放。接入、预算和视觉验证见 [记录](scopes/woodgrain-mainline.md)。
+
+## HOW-CABIN-INTERIOR-1 · 独立内装审计（2026-11-12）
+
+本批用于 [木屋内装展台](scopes/cabin-interior-audit.md)，正常游戏不自动获得家具。采用作者 Kay Lousberg 的 [官方 Furniture Bits 1.0 仓库](https://github.com/KayKit-Game-Assets/KayKit-Furniture-Bits-1.0)，固定提交 `96d5930a8dbdb363409bbc2d3341718b00e17c9c`；[作者资产页](https://kaylousberg.itch.io/furniture-bits)与随包许可均明确为 CC0。只取公开免费版本，不含付费 Extra/Source 部件。确切原件和许可见 [来源记录](../sources/kaykit/furniture-bits/README.md)，运行时许可随 `public/assets/cabin-interior/KayKit-Furniture-Bits-1.0-CC0.txt` 分发。
+
+| 运行时文件 | 采用源件 | 三角形 / 字节 | 修整与用途 |
+| --- | --- | --- | --- |
+| `bed.glb` | `bed_single_B` | 534 / 26,796 | 床以底面中心落地，实际枕头/毯子接触高度独立于床头高度 |
+| `table.glb` | `table_medium` | 168 / 10,736 | 按物品目录缩放，桌面 Y=1.02；提灯与碗是独立支撑子件 |
+| `stool.glb` | `chair_stool_wood` | 216 / 12,320 | 凳面 Y=0.58，坐姿与安全接近点由空间目录定义 |
+| `wall-shelf.glb` | `shelf_B_large` | 212 / 11,588 | 三层采用源架板，配项目原创立柱；上层可用面 Y=1.75、背唇最高1.9 |
+| `rug.glb` | `rug_rectangle_stripes_A` | 68 / 4,136 | 编织条纹外观；薄层地面装饰，不阻挡导航 |
+
+五件网格合计1,198三角形，配一张未修改的1024²渐变图集 `furniture-atlas.png`（15,605字节），运行文件合计81,181字节（不含清单/许可）。图集 SHA-256：`de62db37a80d1801c3d9eb674890ae04b04469e0c149481a51fa250562c628dc`。逐原件/产物 SHA-256、尺寸、字节数和改动摘要在 [资源清单](../public/assets/cabin-interior/manifest.json)。[重建脚本](../tools/prepare-cabin-assets.mjs)只无损重打包GLB并共享本地纹理；源顶点、法线、UV和PNG保持原始字节。运行时材质将蓝布区域映射为森林绿并轻调木色，不修改原作者图集，也不把改色产物冒称原创或改变原许可。
+
+木箱、铁炉、提灯、厚壁木碗与盆栽为本项目程序几何，入口为 `sandbox/cabin-interior/src/scene/furniture.ts`，不标CC0。木箱有真实内腔与独立箱盖；炉体有真实炉膛、厚门框和空心烟管；提灯只消费点亮状态、不私自创建光源；木碗连续旋转截面包含内壁；盆栽叶片明确为双面薄植物表面。木箱/架框/木碗复用已登记的原项目函数木纹。本家具模块采用 Three.js 的 MIT 库模块与项目原创拼装逻辑，未复制第三方 skills 的实现文件。
+
+`loadFurnitureAssets(Resources)`一次载入五件模板，一张图集被共享；实例移除不释放共用几何和材质，全部资源由展台的 Resources 所有者卸载时释放。纹理释放之外，加载器产生的 ImageBitmap 按对象身份去重，随同一资源 owner 调用 `close()`，不提前关闭仍在使用的共享图像。内容、支撑面、摆放/开合状态由展台 domain 唯一管理；场景不烘焙独立提灯、碗或绿植的副本。
+
+[独立资产检查](../tools/verify-cabin-assets.mjs)校验五件原始 glTF/二进制、运行时 GLB、未修改的 PNG 以及来源/分发两份完整 CC0 通知的 SHA-256，并检查 GLB 结构、共享本地图集、原始网格二进制与 accessor 不变；许可 SHA 同存 manifest。该命令已在本轮资产上执行通过。构建、实机画面与连续交互的真实结果见本轮 scope；资产完整性检查本身不构成视觉通过声明。
+
+围护采用 Scott Sun 的 [Threejs-Awesome-Graphics-Agent-Skills](https://github.com/scottstts/Threejs-Awesome-Graphics-Agent-Skills) 中 `threejs-procedural-geometry` 附带的完整 `geometry-quality-kit`（6 个 JS 模块，MIT，Copyright 2026 Scott Sun），来自 2026-11-12 的已安装 skill 快照。工具文件与许可保存在 [vendor 目录](../sandbox/cabin-interior/src/vendor/geometry-quality-kit/README.md)。本项目用 `panelWithHoles` / `cleanMesh` / `toGeometry` 生成有实际门窗洞的厚墙，并运行 `auditMeshData` 检查闭合拓扑；墙体计划、分段、材质、窗框、门和屋顶为本项目组合逻辑。工具自检 171/171 通过；不将 MIT 工具标为本项目原创或 CC0。
