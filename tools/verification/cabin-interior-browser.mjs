@@ -18,7 +18,7 @@ const report = {
   sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd, encoding: 'utf8' }).trim(),
   builtEntrySha256: createHash('sha256').update(built).digest('hex'),
   target, node: process.version, browser: null, status: 'running',
-  deterministicInputs: { seed: 'authored-cabin-v1; no random placement', sceneTime: 'paused at each capture', dpr: 1 },
+  captureInputs: { layout: 'authored-cabin-v1; no random placement', camera: 'fixed inspection bookmarks', animationTiming: 'Paused at capture; idle/walk phase depends on elapsed runtime and is not deterministic.', dpr: 1 },
   frames: [], flows: [], errors: [], networkFailures: [], consoleWarnings: [],
   limits: [
     'Chromium ANGLE/SwiftShader is rendering and interaction evidence, not physical phone GPU performance.',
@@ -57,12 +57,36 @@ async function waitPosture(page, posture) {
   await page.waitForFunction(posture => window.__CABIN_AUDIT__?.getSnapshot().player.posture === posture, posture, { timeout: 120000 });
   await frames(page, 2);
 }
+async function settleChest(page) {
+  // Reports are published every .75 simulation seconds. Observing two fresh
+  // reports guarantees at least one full interval after the open command;
+  // the lid's damping reaches within .0002 of its target over that interval.
+  await page.evaluate(() => new Promise((resolve, reject) => {
+    let previous = window.__QA_STATE__, remaining = 2, done = false;
+    const timeout = setTimeout(() => { done = true; reject(new Error('Chest animation did not receive fresh scene updates')); }, 60000);
+    const observe = () => {
+      if (done) return;
+      const next = window.__QA_STATE__;
+      if (next && next !== previous) {
+        previous = next;
+        if (--remaining === 0) { done = true; clearTimeout(timeout); resolve(); return; }
+      }
+      requestAnimationFrame(observe);
+    };
+    requestAnimationFrame(observe);
+  }));
+}
 async function clickItem(page, id) { await page.locator(`[data-select="audit:${id}"]`).click(); }
 async function capture(page, name, camera) {
   phase = `capture ${name}`;
   // This public inspection bookmark runs the same camera controller, without
   // writing a second state or relying on an approximate hand-orbited position.
   if (camera) await page.evaluate(camera => window.__CABIN_AUDIT__.camera(camera), camera);
+  await page.waitForFunction(() => {
+    const api = window.__CABIN_AUDIT__;
+    const target = api.getSnapshot().doorOpen ? -Math.PI / 2 : 0;
+    return Math.abs(api.stats().shell.doorAngle - target) < .002;
+  }, null, { timeout: 60000 });
   await frames(page, 2);
   await page.evaluate(() => window.__CABIN_AUDIT__.pause());
   try {
@@ -167,6 +191,7 @@ try {
   await waitPosture(page, 'standing');
   await useAndWait(page, 'chest');
   assert.equal((await snapshot(page)).items.find(item => item.definitionId === 'chest').open, true);
+  await settleChest(page);
   await capture(page, '05-chest-open', 'detail');
   await page.getByRole('button', { name: '走进木屋', exact: true }).click(); await waitIdle(page);
   await page.locator('#door').click();

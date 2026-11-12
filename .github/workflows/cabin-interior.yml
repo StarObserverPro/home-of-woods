@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      CABIN_EVIDENCE_DIR: ${{ runner.temp }}/how-cabin-evidence
+      CABIN_EVIDENCE_DIR: /tmp/how-cabin-evidence
     steps:
       - uses: actions/checkout@v7
         with:
@@ -39,6 +39,7 @@ jobs:
           package-manager-cache: false
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get install -y fonts-noto-cjk
       - run: npm run build
       - run: npm run test:cabin
       - run: npm run verify:cabin-assets
