@@ -23,7 +23,9 @@ export function attachedBranchGeometry(){
   const parts:THREE.BufferGeometry[]=[];
   for(const [a,b,r] of [ [[0,0,0],[.48,-.11,0],.065],[[.48,-.11,0],[1,-.27,.04],.042],[[.48,-.11,0],[.8,.12,-.12],.029] ] as [number[],number[],number][]){
     const start=new THREE.Vector3().fromArray(a),end=new THREE.Vector3().fromArray(b),dir=end.clone().sub(start);
-    const g=new THREE.CylinderGeometry(r*.48,r,dir.length(),7);g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize()));g.translate(...start.add(end).multiplyScalar(.5).toArray());parts.push(g);
+    const g=new THREE.CylinderGeometry(r*.48,r,dir.length(),7);
+    const uv=g.getAttribute('uv');for(let i=0;i<uv.count;i++)uv.setY(i,uv.getY(i)*dir.length()/2);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize()));g.translate(...start.add(end).multiplyScalar(.5).toArray());parts.push(g);
   }
   const geometry=mergeGeometries(parts)!;parts.forEach(p=>p.dispose());return geometry;
 }

@@ -70,7 +70,7 @@ test('one early GLB failure releases later shared production resources without r
     await retry.load();assert.equal(retry.templates.size,ENABLED_RUNTIME_MODELS.length);
     assert.equal(retry.templates.has('goat'),false);
     assert.equal(retry.templates.has('stag'),true);
-    assert.deepEqual(retryOwner.stats(),{geometries:0,materials:0,extras:retryCounts.size,disposed:false},'normal owner counts remain unique and live');
+    assert.deepEqual(retryOwner.stats(),{geometries:0,materials:0,extras:retryCounts.size+2,disposed:false},'normal owner counts remain unique and live');
     assert.ok([...retryCounts.values()].every(count=>count===0),'new owner is independent of the failed attempt');
     retryOwner.dispose();retryOwner.dispose();assert.ok([...retryCounts.values()].every(count=>count===1));
   }finally{

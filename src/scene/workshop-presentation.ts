@@ -18,8 +18,8 @@ export function createWorkshopPresentation(r:Resources,models:Models){
   const wood=woodMaterial(r,'#855739'),endgrain=woodMaterial(r,'#d6b47a');
   const seatGeometry=r.geometry('workshop-seat',()=>woodCoordinates(new THREE.CylinderGeometry(.52,.6,.7,9),'raw','y'));
   const plank=r.geometry('workshop-plank',()=>woodCoordinates(new THREE.BoxGeometry(3.3,.22,.41),'board','x'));
-  const seat=()=>{const root=new THREE.Group();const m=new THREE.Mesh(seatGeometry,[wood,endgrain,endgrain]);m.position.y=.35;m.castShadow=m.receiveShadow=true;root.add(m);return root;};
-  const bench=new THREE.Group();bench.name=WORKBENCH.id;
+  const seat=()=>{const root=new THREE.Group();root.userData.ambientOccluder={width:1.2,height:.7,depth:1.2};const m=new THREE.Mesh(seatGeometry,[wood,endgrain,endgrain]);m.position.y=.35;m.castShadow=m.receiveShadow=true;root.add(m);return root;};
+  const bench=new THREE.Group();bench.name=WORKBENCH.id;bench.userData.ambientOccluder={width:3.3,height:1.3,depth:1.25};
   for(const x of [-1.15,1.15]){
     const support=models.staticClone('branches');
     const bounds=new THREE.Box3().setFromObject(support),size=bounds.getSize(new THREE.Vector3());

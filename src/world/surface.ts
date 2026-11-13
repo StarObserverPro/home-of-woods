@@ -1,6 +1,8 @@
 import { HOME, PATH, WORLD } from "../content/world.ts";
 import {CLIFF} from '../content/cliffs.ts';
 import {riverX} from './river.ts';
+import {regionAt,regionOpen,CLOSED_ACCESS} from './regions.ts';
+import type {TravelAccess} from './regions.ts';
 export {riverX} from './river.ts';
 import {gorgeSection,cutGorgeHeight} from './gorge-profile.ts';
 import {splitRimTriangle} from './rim-triangles.ts';
@@ -119,16 +121,12 @@ export function pathDistance(x: number, z: number) {
     ...PATH.slice(1).map((p, i) => segmentDistance({ x, z }, PATH[i], p)),
   );
 }
-export function inOpenArea(x: number, z: number) {
-  return (
-    x > -79 &&
-    x < riverX(z) - 4.6 &&
-    z > WORLD.minOpenZ &&
-    z < 66 &&
-    heightAt(x, z) > WORLD.waterY + 0.15
-  );
+export function inOpenArea(x: number, z: number,access:TravelAccess=CLOSED_ACCESS) {
+  const region=regionAt(x,z);return !!region&&regionOpen(region,access)&&heightAt(x,z)>WORLD.waterY+.15;
 }
 export function zoneName(x: number, z: number) {
+  if(regionAt(x,z)==='east-woodland')return '溪流东岸林';
+  if(x>=8&&x<=44&&Math.abs(z-38)<2.5)return '跨溪木桥';
   if (z < -40) return "宅后望台";
   if (Math.hypot(x - HOME.x, z - HOME.z) < 18) return "山间营地";
   if (z > 36) return "溪谷河岸";

@@ -20,7 +20,8 @@ test('R2 terrain preserves tree identities and all coordinates except two approv
   const oldTrees=JSON.parse(await readFile(new URL('../evidence/scene-r5/before-trees.json',import.meta.url),'utf8'));
   assert.deepEqual(Object.keys(TREE_SLOT_CORRECTIONS).sort(),['tree-slot-17-17','tree-slot-17-18']);
   const expected=oldTrees.map((tree:{id:string;x:number;z:number})=>({...tree,...TREE_SLOT_CORRECTIONS[tree.id]}));
-  assert.deepEqual(makeTrees(),expected);
+  const current=makeTrees();
+  assert.deepEqual(current.map(({regionId,...tree})=>({...tree,role:regionId==='east-woodland'?'scenery':tree.role})),expected,'east promotion retains fixed identities and R2 tree positions');
   const context=createSaveContext(), state=createState();
   const loaded=await prepareWorldSave(await serializeWorldSave(state,context,{sequence:1,savedAt:1}),context);
   assert.equal(loaded.decision,'restored');if(loaded.decision!=='restored')throw Error('current state failed');

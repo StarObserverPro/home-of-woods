@@ -9,8 +9,9 @@ import type { GatheringRegistry } from './gathering-registry.ts';
 import {CAMP_PROPS} from '../content/scene-props.ts';
 import {ALTAR_LAYOUT} from '../content/altar.ts';
 import {CAMP_LEAF_PATCHES} from '../content/broom.ts';
+import {CREEK_BRIDGE} from '../content/regions.ts';
 export function createSaveContext(trees: Tree[] = makeTrees(), registry: GatheringRegistry = createGatheringRegistry({ assetIds: RUNTIME_MODELS.map(asset => asset.assetId) })) {
   return { trees: new Map(trees.filter(tree => tree.role !== 'scenery').map(tree => [tree.id, tree])), registry,
-    selectable: new Set([WOODCRAFT.id,...trees.map(tree => tree.id), ...registry.sources.keys(), WORKBENCH.id,WORKBENCH_STOOL.id,CAMP_VISITOR.id, 'cabin', 'tent',...Object.values(CAMP_PROPS).map(p=>p.id),ALTAR_LAYOUT.oracle.id,...CAMP_LEAF_PATCHES.map(patch=>patch.id)]) };
+    selectable: new Set([CREEK_BRIDGE.id,WOODCRAFT.id,...trees.map(tree => tree.id), ...registry.sources.keys(), WORKBENCH.id,WORKBENCH_STOOL.id,CAMP_VISITOR.id, 'cabin', 'tent',...Object.values(CAMP_PROPS).map(p=>p.id),ALTAR_LAYOUT.oracle.id,...CAMP_LEAF_PATCHES.map(patch=>patch.id)]) };
 }
 export type SaveContext = ReturnType<typeof createSaveContext>;

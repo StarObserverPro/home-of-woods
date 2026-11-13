@@ -1,0 +1,41 @@
+name: Wood Tone Review
+on:
+  pull_request:
+    paths:
+      - 'src/content/wood-tones.ts'
+      - 'src/scene/**'
+      - 'sandbox/cabin-interior/src/scene/**'
+      - 'tests/wood*.test.ts'
+      - 'tools/verification/wood-tone*'
+      - '.github/workflows/wood-tone-review.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: wood-tone-review-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  wood-tone:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+          cache: npm
+      - run: npm ci
+      - run: node --experimental-strip-types --test tests/wood-tones.test.ts tests/wood-grain.test.ts tests/local-occlusion*.test.ts tests/cabin-interior.test.ts
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get install -y fonts-noto-cjk
+      - run: node tools/verification/wood-tone-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wood-tone-evidence
+          path: /tmp/how-wood-tone-evidence/
+          if-no-files-found: warn
+          retention-days: 7

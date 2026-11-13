@@ -1,3 +1,4 @@
+import {WOOD_TONES} from '../src/content/wood-tones.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
@@ -21,5 +22,5 @@ test('grain annotations preserve geometry and separate raw side, cut end and fin
 test('merged production furniture retains grain per part and its resource owner releases the shared materials once',()=>{
   const r=new Resources(),factory=createSupportedSurfaceFactory(r),spec=createGeometrySpec('bench.supported',{length:1.6,width:.6,height:.7,seatThickness:.15,supportCount:2,supportInset:.2});
   for(const look of ['bench','table'] as const){const root=factory.create(spec,look);root.traverse(o=>{if(o instanceof THREE.Mesh){assert.equal(o.geometry.getAttribute('woodCoord').count,o.geometry.getAttribute('position').count);assert.equal((o.material as THREE.Material).userData.proceduralWood,true);}});}
-  const m=woodMaterial(r,'#d1ac72',.78);assert.equal(m,factory.materials.surface);assert.equal(m.map,null);let disposed=0;m.addEventListener('dispose',()=>disposed++);r.dispose();r.dispose();assert.equal(disposed,1);
+  const m=woodMaterial(r,WOOD_TONES.light.face,.78);assert.equal(m,factory.materials.surface);assert.equal(m.map,null);let disposed=0;m.addEventListener('dispose',()=>disposed++);r.dispose();r.dispose();assert.equal(disposed,1);
 });

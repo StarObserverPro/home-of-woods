@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "name": "Cabin interior adopted furniture",
+  "author": "Kay Lousberg",
+  "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Furniture-Bits-1.0",
+  "sourceCommit": "96d5930a8dbdb363409bbc2d3341718b00e17c9c",
+  "authorUrl": "https://kaylousberg.itch.io/furniture-bits",
+  "license": "CC0-1.0",
+  "licenseFile": "KayKit-Furniture-Bits-1.0-CC0.txt",
+  "licenseSha256": "cd675f2adc31eb5fedaedc1072d8ddc27b917f523682f0561837c03dc56393cb",
+  "texture": {
+    "path": "furniture-atlas.png",
+    "bytes": 15605,
+    "sha256": "de62db37a80d1801c3d9eb674890ae04b04469e0c149481a51fa250562c628dc",
+    "modified": false
+  },
+  "assets": [
+    {
+      "id": "bed",
+      "path": "bed.glb",
+      "bytes": 26796,
+      "sha256": "0284ebdd20f6e26fbfdd1d59812385ad33382907aaf54ea267f85a9e1fe9d385",
+      "triangles": 534,
+      "sourceName": "bed_single_B",
+      "sourceHashes": {
+        "gltf": "f702283107f35fe400aa55775baa9515cbd9adaf9e2003b3441fd5cbedb9a07c",
+        "bin": "a1b26c1848d104381b311cae4dbd4b6d574a3d79e6c9fe88087405f3a99bb918"
+      },
+      "sourceBounds": {
+        "min": [
+          -0.800000011920929,
+          0,
+          -1.5
+        ],
+        "max": [
+          0.800000011920929,
+          0.9999999403953552,
+          1.5
+        ]
+      },
+      "modifications": "Lossless GLB repack with shared external atlas; runtime fits declared dimensions and applies forest palette material."
+    },
+    {
+      "id": "table",
+      "path": "table.glb",
+      "bytes": 10736,
+      "sha256": "fb364e5e6c22a539643672bd2459847cba8e0fc9d00f936f79facfcd6a6c3e71",
+      "triangles": 168,
+      "sourceName": "table_medium",
+      "sourceHashes": {
+        "gltf": "fd5e5fe8bbf1d3729b6bd725165d58490e9cbd8dd46ce42314b01f20951a302b",
+        "bin": "0e6ba8fd006f673d946979e45487067f4e274be9bbd07816fd371578d2a37518"
+      },
+      "sourceBounds": {
+        "min": [
+          -1,
+          -7.450580596923828e-9,
+          -1
+        ],
+        "max": [
+          1,
+          1,
+          1
+        ]
+      },
+      "modifications": "Lossless GLB repack with shared external atlas; runtime fits declared dimensions and applies forest palette material."
+    },
+    {
+      "id": "stool",
+      "path": "stool.glb",
+      "bytes": 12320,
+      "sha256": "4bd0ba6e06c0638a90a514fa8d66dae9d3eeed768841972455b6dab1942861f3",
+      "triangles": 216,
+      "sourceName": "chair_stool_wood",
+      "sourceHashes": {
+        "gltf": "b1670bee678ab5920ad8ef3a6fb7c6146054bb7b859798f86aaac96be5765f35",
+        "bin": "59ebde1791f6c46b6f3880cbe5632e44b123466a1bc7d2d2f3008da9a2a492ac"
+      },
+      "sourceBounds": {
+        "min": [
+          -0.3749847412109375,
+          -7.450580596923828e-9,
+          -0.3750000596046448
+        ],
+        "max": [
+          0.3750152587890625,
+          0.5,
+          0.3749999403953552
+        ]
+      },
+      "modifications": "Lossless GLB repack with shared external atlas; runtime fits declared dimensions and applies forest palette material."
+    },
+    {
+      "id": "wall-shelf",
+      "path": "wall-shelf.glb",
+      "bytes": 11588,
+      "sha256": "aa5f10673f171266aec946865b068bea2310465e4940e28da4c73d1f4bd47907",
+      "triangles": 212,
+      "sourceName": "shelf_B_large",
+      "sourceHashes": {
+        "gltf": "438921fdd044014a02f4e77e4b02205222d83cec3632db2eb8dad50173b24d5c",
+        "bin": "30bbd1a44054d02245bd7388d7143c5f676928d4e293a93f9fd442479afd4840"
+      },
+      "sourceBounds": {
+        "min": [
+          -1,
+          -0.10000038146972656,
+          -1.1970611168976575e-8
+        ],
+        "max": [
+          1.0000001192092896,
+          0.30000028014183044,
+          0.5000000596046448
+        ]
+      },
+      "modifications": "Lossless GLB repack with shared external atlas; runtime fits declared dimensions and applies forest palette material."
+    },
+    {
+      "id": "rug",
+      "path": "rug.glb",
+      "bytes": 4136,
+      "sha256": "5eb2584f263ce0ca9de2cd908cdbfdaf3eb71fafeec54471c8c1632cde7a67c4",
+      "triangles": 68,
+      "sourceName": "rug_rectangle_stripes_A",
+      "sourceHashes": {
+        "gltf": "daeafdd3efd5c2d3781426d1bb48ac6dc31893dea30abd3e6f2b22ff70890c55",
+        "bin": "4ce28e95c940d486b3bb94e91b79a8ad9633b3628dbd6f07be03a6ec6b3ac579"
+      },
+      "sourceBounds": {
+        "min": [
+          -1.5,
+          0,
+          -1
+        ],
+        "max": [
+          1.5,
+          0.09999996423721313,
+          1
+        ]
+      },
+      "modifications": "Lossless GLB repack with shared external atlas; runtime fits declared dimensions and applies forest palette material."
+    }
+  ]
+}

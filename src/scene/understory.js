@@ -1,3 +1,4 @@
+import {chunkKey} from '../world/regions.ts';
 import * as T from 'three';
 import {grassTuft,canopyMask,colonyField,SHADE_THRESHOLD} from './understory-geometry.js';
 import {heightAt,pathDistance,riverX,slopeAt} from '../world/surface.ts';
@@ -14,7 +15,7 @@ const broken=new T.CylinderGeometry(.83,1,1,7,1);const bp=broken.attributes.posi
 
 const group=new T.Group();group.name='integrated-understory';let batches={},host=null;
 const height=heightAt;
-function put(name,g,color,x,y,z,sx,sy,sz,rx=0,ry=0,rz=0){if(!batches[name])batches[name]={g,color,items:[]};dummy.position.set(x,y,z);dummy.scale.set(sx,sy,sz);dummy.rotation.set(rx,ry,rz);dummy.updateMatrix();batches[name].items.push({matrix:dummy.matrix.clone(),host,tint:.88+rnd()*.24});}
+function put(name,g,color,x,y,z,sx,sy,sz,rx=0,ry=0,rz=0){if(!batches[name])batches[name]={g,color,items:[]};dummy.position.set(x,y,z);dummy.scale.set(sx,sy,sz);dummy.rotation.set(rx,ry,rz);dummy.updateMatrix();batches[name].items.push({matrix:dummy.matrix.clone(),host,chunk:chunkKey({x,z}),tint:.88+rnd()*.24});}
 function fern(x,z,size){const y=height(x,z);for(let f=0;f<7;f++){const a=f*Math.PI*2/7+rnd()*.3;for(let j=1;j<=6;j++){const t=j/7,r=t*size;const cy=y+Math.sin(t*Math.PI*.8)*size*.65;for(const side of [-1,1]){const spread=(1-t)*size*.23;put('fern',leaf,0x39744b,x+Math.cos(a)*r+Math.cos(a+1.4)*spread*side,cy,z+Math.sin(a)*r+Math.sin(a+1.4)*spread*side,.075*size,.027*size,spread+.04,0,-a+side*.75,side*.15);}}
 put('stem',rod,0x678347,x+Math.cos(a)*size*.37,y+size*.30,z+Math.sin(a)*size*.37,.012,size*.88,.012,Math.sin(a)*.9,0,-Math.cos(a)*.9);}}
 
@@ -45,7 +46,8 @@ for(const [name,b] of Object.entries(batches)){
  b.items.forEach((v,i)=>{mesh.setMatrixAt(i,v.matrix);mesh.setColorAt(i,new T.Color().setScalar(v.tint));});mesh.computeBoundingSphere();group.add(mesh);live.push({mesh,items:b.items});triangles+=(geometry.index?.count??geometry.attributes.position.count)/3*b.items.length;
 }
 new Set([sphere,leaf,rod,grassGeometry,box,rock,shrub,fallen,broken]).forEach(g=>g.dispose());
-let last='';return {group,update(state){const signature=eligible.map(t=>{const life=state.forestry.slots[t.id];return `${life?.status}:${Math.round(treeScaleFactor(life,state.time)*10)}`;}).join('|');if(signature===last)return;last=signature;
- for(const batch of live){if(!batch.items.some(v=>v.host))continue;batch.items.forEach((v,i)=>{if(!v.host)return;const life=state.forestry.slots[v.host];const active=life?.status!=='stump'&&life?.status!=='falling'&&treeScaleFactor(life,state.time)>.75;batch.mesh.setMatrixAt(i,active?v.matrix:new T.Matrix4().makeScale(0,0,0));});batch.mesh.instanceMatrix.needsUpdate=true;}
+let last='';return {group,update(state,activeChunks){const signature=(activeChunks?[...activeChunks].sort().join(','):'all')+eligible.map(t=>{const life=state.forestry.slots[t.id];return `${life?.status}:${Math.round(treeScaleFactor(life,state.time)*10)}`;}).join('|');if(signature===last)return;last=signature;
+ for(const batch of live){batch.items.forEach((v,i)=>{const life=v.host?state.forestry.slots[v.host]:null;const active=(!activeChunks||activeChunks.has(v.chunk))&&(!v.host||(life?.status!=='stump'&&life?.status!=='falling'&&treeScaleFactor(life,state.time)>.75));batch.mesh.setMatrixAt(i,active?v.matrix:new T.Matrix4().makeScale(0,0,0));});batch.mesh.instanceMatrix.needsUpdate=true;}
+
  },stats:()=>({version:'forest-intake-1',ferns:fernCount,grassTufts:grassCount,shrubs:shrubCount,stones:stoneCount,logs:logCount,triangles,batches:live.length,shadeThreshold:SHADE_THRESHOLD})};
 }

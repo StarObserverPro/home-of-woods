@@ -1,6 +1,9 @@
 import {ItemBrowser,ItemHeading,MenuAction,IconTabs,TextPages} from './ItemBrowser.tsx';
 import {ownedIcon} from './art-icons.ts';
 import {CraftingMenu} from './CraftingMenu.tsx';
+import {BridgeControls} from './Bridge.tsx';
+import {CREEK_BRIDGE} from '../content/regions.ts';
+import {gatheringHostTrees} from '../world/gathering-layout.ts';
 import {CarryingControls,CarryingSummary,carryingDetails,GroundCarryControls} from './Carrying.tsx';
 import {RarityVfxControls} from './RarityVfxControls.tsx';
 import {readRarityVfxPreference,writeRarityVfxPreference,readWhimsyPreference,writeWhimsyPreference} from '../app/display-preferences.ts';
@@ -85,6 +88,7 @@ function Icon({name}:{name:string}) {
 
 const trees = makeTrees();
 const treeById = new Map(trees.map(tree=>[tree.id,tree]));
+const branchHosts=new Set(gatheringHostTrees(trees).map(tree=>tree.id));
 const mapX=(x:number)=>(x+90)*.9;
 const mapZ=(z:number)=>(z+85)*.9;
 const mapLine=(p:{x:number;z:number}[])=>p.map(v=>`${mapX(v.x)},${mapZ(v.z)}`).join(' ');
@@ -318,7 +322,9 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
   const gatherTarget = snapshot.gathering.selectedTarget;
   const gatherAction = snapshot.gathering.action;
   const selectedOwnedItem=snapshot.workshop.items.find(item=>item.instanceId===snapshot.selected);
-  const selected = broomDetails(snapshot.selected,snapshot.broom) ?? housingDetails(snapshot.selected,snapshot.housing) ?? carryingDetails(snapshot.selected,snapshot.carrying) ?? woodcraftDetails(snapshot.selected,snapshot.woodcraft) ?? workshopDetails(snapshot.selected,snapshot.workshop) ?? gatherTarget ?? scenePropDetails(snapshot.selected,snapshot.appearance,forest.wood) ?? (
+  const bridgeBuilt=(snapshot.workshop.upgrades[CREEK_BRIDGE.id]?.level??0)>0;
+  const bridgeDetails=snapshot.selected===CREEK_BRIDGE.id?{title:CREEK_BRIDGE.name,tag:bridgeBuilt?'两岸已接通':'待修建',detail:bridgeBuilt?'沿木桥可到东岸采集和伐木，原木仍需搬回营地入库。':'图纸已经收在仓库里。备好原木和枝杈，到桥头开工。'}:null;
+  const selected = bridgeDetails ?? broomDetails(snapshot.selected,snapshot.broom) ?? housingDetails(snapshot.selected,snapshot.housing) ?? carryingDetails(snapshot.selected,snapshot.carrying) ?? woodcraftDetails(snapshot.selected,snapshot.woodcraft) ?? workshopDetails(snapshot.selected,snapshot.workshop) ?? gatherTarget ?? scenePropDetails(snapshot.selected,snapshot.appearance,forest.wood) ?? (
     snapshot.selected === "cabin"
       ? {
           title: "旧木屋",
@@ -465,7 +471,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
           className="minimap"
           viewBox="0 0 180 150"
           role="img"
-          aria-label="营地、巨木、溪谷路线与当前位置"
+          aria-label="营地、巨木、木桥、两岸林地与当前位置"
         >
           <polyline
             points={mapLine(RIVER_KNOTS)}
@@ -486,6 +492,8 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
             stroke="#f4f8edb3"
             strokeWidth="1.2"
           />
+          <polyline points={mapLine([CREEK_BRIDGE.west,CREEK_BRIDGE.east])} fill="none" stroke="#fff1c9" strokeWidth="2.5" strokeDasharray={bridgeBuilt?undefined:'2 3'}/>
+          <circle cx={mapX(49)} cy={mapZ(38)} r="3" fill={snapshot.visited.includes('east-bank')?'#d4efbd':'#ffffff40'}/>
           <circle cx={mapX(HOME.x)} cy={mapZ(HOME.z)} r="4" fill="#ffe3b0" />
           <circle cx={mapX(GIANT.x)} cy={mapZ(GIANT.z)} r="5" fill="#d4efbd" />
           <circle cx={mapX(3)} cy={mapZ(48)} r="3.3" fill="#a9edee" />
@@ -604,14 +612,14 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
             </button>
           </div>
 
-          {snapshot.selected!==CAMP_VISITOR.id&&<IconTabs label="目标操作" tabs={[{id:'use',name:'使用',icon:'craft'},...((snapshot.workshop.upgradeOptions.length||snapshot.workshop.upgrade)?[{id:'upgrade',name:'改造',icon:'repair' as const}]:[]),{id:'info',name:'说明',icon:'read'}]} value={targetPage} onChange={setTargetPage}/>}
+          {snapshot.selected!==CAMP_VISITOR.id&&<IconTabs label="目标操作" tabs={[{id:'use',name:'使用',icon:'craft'},...((!bridgeDetails&&(snapshot.workshop.upgradeOptions.length||snapshot.workshop.upgrade))?[{id:'upgrade',name:'改造',icon:'repair' as const}]:[]),{id:'info',name:'说明',icon:'read'}]} value={targetPage} onChange={setTargetPage}/>}
           {targetPage==='info'&&<TextPages text={`${selected.tag}。${selected.detail}`} size={85}/>}
           {targetPage==='use'&&<>
           {farFacility?<div className="facility-approach">
             <button className="context-button primary-action" disabled={!ready||snapshot.paused||!!snapshot.workshop.job} onClick={approachFacility}>{snapshot.moving?'正在走近…':'走近'}</button>
           </div>:<>
           {['grove-altar','grove-altar:oracle'].includes(snapshot.selected??'') && snapshot.interaction?.near&&<div className="tree-actions"><button className="context-button" onClick={()=>runtime.current?.ritual('prayer')}>合掌祈祷</button></div>}
-          {selectedTree && ['tree-slot-r3-hero-0','tree-slot-16-9','tree-slot-13-6','tree-slot-17-11','landmark-elder'].includes(selectedTree.id) && <button className="context-button" onClick={()=>runtime.current?.selectTreeBranches()}>查看枝杈</button>}
+          {selectedTree && branchHosts.has(selectedTree.id) && <button className="context-button" onClick={()=>runtime.current?.selectTreeBranches()}>查看枝杈</button>}
           <GroundCarryControls id={snapshot.selected} view={snapshot.carrying} onChange={intent=>runtime.current?.carry(intent)} onApproach={id=>runtime.current?.approachMaterial(id)}/>
           <WoodcraftControls selected={snapshot.selected} view={snapshot.woodcraft} message={snapshot.message} disabled={!ready||snapshot.paused||!!snapshot.placement}
             onOpen={()=>runtime.current?.openWoodcraft()} onWarehouse={()=>setWarehouseOpen(true)} onPrepare={()=>runtime.current?.transferAllWood()} onCollectAll={()=>runtime.current?.transferAllWood(true)} onThrow={()=>runtime.current?.beginWoodDrop()} onCollect={id=>runtime.current?.collectWood(id)} onClose={()=>runtime.current?.closeWoodcraft()}/>
@@ -635,6 +643,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
           {snapshot.selected==='tent'&&<button className="context-button" onClick={()=>runtime.current?.select(WORKBENCH.id)}>查看工作台</button>}
 
           </>}
+          {bridgeDetails&&<BridgeControls view={snapshot.workshop} disabled={!ready||snapshot.paused||!!snapshot.placement} onBuild={()=>runtime.current?.upgrade(CREEK_BRIDGE.id)} onCancel={()=>runtime.current?.cancelAction()}/>}
           {gatherTarget && <div className="tree-work">
             <div className="tree-facts"><span>{gatherTarget.status}</span><span>距你 {gatherTarget.distance.toFixed(1)}</span></div>
             {gatherTarget.status === '可以采集' && <p className="tree-cost">可得 {gatherTarget.reward}</p>}
@@ -666,7 +675,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
             </div>
           )}
           </>}
-          {targetPage==='upgrade'&&<section className="facility-upgrades">
+          {targetPage==='upgrade'&&!bridgeDetails&&<section className="facility-upgrades">
           <UpgradeControls remote={farFacility} view={snapshot.workshop} hasContextActions={!!snapshot.interaction} disabled={!ready||snapshot.paused||!!snapshot.placement} mountReason={snapshot.food.cookingProgress!==null?'汤锅还在煮饭，做好这一锅后再更换配件。':''} onApproach={id=>runtime.current?.approachUpgrade(id)} onUpgrade={id=>runtime.current?.upgrade(id)} onMount={id=>runtime.current?.mountExterior(id)} onCancel={()=>runtime.current?.cancelAction()} onLearn={id=>runtime.current?.learnWorkshopPlan(id)}/>
           </section>}
           {messageVisible&&<p className="action-message" role="status" aria-live="polite">{snapshot.message}</p>}
@@ -695,7 +704,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
           </div>
           <ItemBrowser label="路线" categories={[{id:'all',name:'全部',icon:'route'},{id:'camp',name:'营地',icon:'workbench'},{id:'view',name:'风景',icon:'camera'}]} items={[
             ...[{id:WOODCRAFT.id,name:'木料堆',icon:'log-rack' as const},{id:WORKBENCH.id,name:'工作台',icon:'workbench' as const},{id:CAMP_VISITOR.id,name:'行商',icon:'trade' as const},{id:'grove-altar',name:'祭坛',icon:'altar' as const},{id:'cabin',name:'旧木屋',icon:'repair' as const},{id:CAMP_PROPS.fire.id,name:'火塘',icon:'forest-soup' as const}].map(w=>({...w,category:'camp'})),
-            ...WAYPOINTS.map(w=>({...w,icon:'route' as const,category:'view'}))]} renderDetail={item=><><ItemHeading name={item.name} icon={item.icon}/><MenuAction onClick={()=>{if(item.category==='camp')runtime.current?.select(item.id);else runtime.current?.navigate(item.id);setMapOpen(false);}}>{item.category==='camp'?'查看':'前往'}</MenuAction></>}/>
+            ...WAYPOINTS.map(w=>({...w,icon:'route' as const,category:'view'}))]} renderDetail={item=><><ItemHeading name={item.name} icon={item.icon}/>{item.id==='east-bank'&&!bridgeBuilt&&<p className="wood-note">先修桥，再去东岸林地。</p>}<MenuAction onClick={()=>{if(item.category==='camp')runtime.current?.select(item.id);else runtime.current?.navigate(item.id);setMapOpen(false);}}>{item.category==='camp'?'查看':'前往'}</MenuAction></>}/>
 
         </aside>
       )}
@@ -802,6 +811,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
       {diagnostic && (
         <details className="diagnostics">
           <summary>运行检查</summary>
+          <button id="toggle-ambient-occlusion" aria-pressed={(snapshot.stats.occlusion as {enabled?:boolean}|undefined)?.enabled??true} onClick={()=>runtime.current?.setAmbientOcclusion(!((snapshot.stats.occlusion as {enabled?:boolean}|undefined)?.enabled??true))}>局部遮蔽 / 林间衰减：{(snapshot.stats.occlusion as {enabled?:boolean}|undefined)?.enabled===false?'关':'开'}</button>
           <SceneInspector key={mountVersion} runtime={()=>runtime.current} active={typeof snapshot.stats.scenePreset==='string'} audits={audit}/>
           <WardrobeLab key={'wardrobe-'+mountVersion} runtime={()=>runtime.current}/>
           <button

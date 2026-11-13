@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#e9e4d5" />
+    <title>森林之家 · 木作间</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+      body {
+        font:
+          15px/1.5 system-ui,
+          -apple-system,
+          'Microsoft YaHei',
+          sans-serif;
+        color: #34483e;
+        background: #e9e6db;
+        padding: clamp(8px, 2.1vw, 30px);
+      }
+      main,
+      footer {
+        max-width: 1280px;
+        margin: auto;
+      }
+      footer {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        justify-content: space-between;
+        padding: 12px 5px;
+        color: #526258;
+        font-size: 13px;
+      }
+      summary,
+      footer button {
+        cursor: pointer;
+      }
+      summary {
+        font-weight: 650;
+      }
+      #ledger {
+        max-height: 195px;
+        overflow: auto;
+        margin: 8px 0;
+      }
+      #ledger div {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      #ledger i {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+      }
+      footer button {
+        background: transparent;
+        border: 0;
+        color: #576458;
+        font: inherit;
+        padding: 0;
+      }
+      #notice:empty {
+        display: none;
+      }
+      #notice {
+        padding: 6px 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="workshop"></main>
+    <footer>
+      <details id="gallery">
+        <summary>作品匣 · <span id="count">0</span></summary>
+        <div id="ledger"></div>
+      </details>
+      <span id="notice" role="status"></span><button id="replenish" type="button">重置练习台</button>
+    </footer>
+    <!-- APPLICATION -->
+  </body>
+</html>

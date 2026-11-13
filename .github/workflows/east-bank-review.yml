@@ -1,0 +1,51 @@
+name: East Bank Review
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'tests/east-bank.test.ts'
+      - 'tools/verification/east-bank*.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.*'
+      - '.github/workflows/east-bank-review.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: east-bank-review-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  east-bank:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EVIDENCE_DIR: /tmp/how-east-bank-evidence
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22.14.0'
+          package-manager-cache: false
+      - run: npm ci
+      - name: East-bank domain checks
+        run: node --experimental-strip-types --test tests/east-bank.test.ts
+      - run: npm run build
+      - name: Install browser and fonts
+        run: |
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y fonts-noto-cjk
+      - name: Build, cross and haul through the live UI
+        env:
+          SOURCE_REVISION: ${{ github.sha }}
+        run: node tools/verification/east-bank-ci.mjs
+      - name: Upload screenshots, runtime state and process logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: east-bank-review-evidence
+          path: /tmp/how-east-bank-evidence/
+          if-no-files-found: warn
+          retention-days: 7

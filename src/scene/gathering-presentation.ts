@@ -1,5 +1,8 @@
-import {branchAttachment,attachedBranchGeometry} from './branch-attachment.ts';
+import {setWoodInstanceTone} from './wood-tones.ts';
+import {branchAttachment} from './branch-attachment.ts';
+import {harvestBranchTemplate} from './harvest-branches.ts';
 import {groundScrapGeometry,scrapMaterial} from './scrap-geometry.ts';
+import {chunkKey} from '../world/regions.ts';
 import * as THREE from 'three';
 import {makeTrees} from '../world/layout.ts';
 import type { Resources } from './resources.ts';
@@ -13,14 +16,15 @@ export function createGatheringPresentation(r: Resources, models: Models, regist
   const trees=new Map(makeTrees().map(t=>[t.id,t]));
   const group = new THREE.Group(), hits = new InteractionRegistry();
   const proxyMaterial = r.own(new THREE.MeshBasicMaterial({ visible: false }));
-  const batches: { mesh: THREE.InstancedMesh; records: { sourceId: string; matrix: THREE.Matrix4 }[]; local: THREE.Matrix4 }[] = [];
+  const batches: { mesh: THREE.InstancedMesh; records: { sourceId: string; matrix: THREE.Matrix4 }[]; local: THREE.Matrix4; woodTone: boolean }[] = [];
   const visibility = new Map<string, boolean>();
+  const proxies=new Map<string,{root:THREE.Group;unregister:(()=>void)|null}>();
   let patchCount = 0;
   for (const definition of registry.definitions.values()) {
     const spec = RUNTIME_MODELS.find(a => a.assetId === definition.assetId)!;
     let template = models.templates.get(spec.name)!;
     if(definition.motionTag==='gather.climb'){
-      template=new THREE.Group();template.add(new THREE.Mesh(r.geometry('attached-gather-branch',attachedBranchGeometry),r.material('#917254',.9)));
+      template=harvestBranchTemplate(r,models);
     }else if(definition.itemId==='scrap-fuel'){
       template=new THREE.Group();template.add(new THREE.Mesh(r.geometry('gather-split-scraps',groundScrapGeometry),scrapMaterial(r)));
     }
@@ -39,7 +43,8 @@ export function createGatheringPresentation(r: Resources, models: Models, regist
         records.push({ sourceId: source.sourceId, matrix: dummy.matrix.clone() });
         if(attachment){
           root.position.set(0,0,0);
-          const geometry=r.geometry('gather-attached-branch-hit',()=>new THREE.BoxGeometry(1.16,.55,.46).translate(.5,-.08,-.04));
+          // The visible twig is also the pick surface; no surrounding box that selects empty air.
+          const geometry=(template.children[0] as THREE.Mesh).geometry;
           const proxy=new THREE.Mesh(geometry,proxyMaterial);proxy.matrixAutoUpdate=false;proxy.matrix.copy(attachment.matrix);root.add(proxy);
         }else{
           const proxy = new THREE.Mesh(r.geometry(`gather-hit-${definition.definitionId}`,()=>new THREE.SphereGeometry(definition.hitRadius,10,6)),proxyMaterial);
@@ -48,41 +53,48 @@ export function createGatheringPresentation(r: Resources, models: Models, regist
         }
         patchCount++;
       }
-      group.add(root); hits.register(root,source.sourceId);
+      group.add(root);proxies.set(source.sourceId,{root,unregister:hits.register(root,source.sourceId)});
     }
     template.traverse(object=>{
       if(!(object instanceof THREE.Mesh))return;
       const mesh = r.own(new THREE.InstancedMesh(object.geometry,object.material,records.length));
       const local=object.matrixWorld.clone();
       mesh.castShadow=true;mesh.receiveShadow=true;
-      records.forEach((record,index)=>mesh.setMatrixAt(index,record.matrix.clone().multiply(local)));
+      records.forEach((record,index)=>{mesh.setMatrixAt(index,record.matrix.clone().multiply(local));if(definition.itemId==='scrap-fuel')setWoodInstanceTone(mesh,index,record.sourceId);});
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-      mesh.computeBoundingSphere();group.add(mesh);batches.push({mesh,records,local});
+      mesh.computeBoundingSphere();group.add(mesh);batches.push({mesh,records,local,woodTone:definition.itemId==='scrap-fuel'});
     });
   }
   let disposed = false;
-  const hidden = new THREE.Matrix4().makeScale(0,0,0), matrix = new THREE.Matrix4();
+  const matrix = new THREE.Matrix4();
   return {
     group, hits,
-    stats:()=>({ sources:registry.sources.size,patches:patchCount,batches:batches.length,hits:hits.size }),
-    update(state: GatheringState) {
+    stats:()=>({ sources:registry.sources.size,patches:patchCount,batches:batches.length,hits:hits.size,drawnInstances:batches.reduce((sum,batch)=>sum+batch.mesh.count,0) }),
+    update(state: GatheringState,activeChunks?:Set<string>) {
       if(disposed)return;
       const changed=new Set<string>();
       for(const source of registry.sources.values()){
-        const life=state.sources[source.sourceId],a=state.action,held=a?.sourceId===source.sourceId&&a.phase==='performing'&&a.motionTag==='gather.pickup'&&a.progress*a.durationSeconds>=1.15,visible=(life?.remaining??0)>0&&life.hostAvailable!==false&&!held;
+        const life=state.sources[source.sourceId],a=state.action,held=a?.sourceId===source.sourceId&&a.phase==='performing'&&a.motionTag==='gather.pickup'&&a.progress*a.durationSeconds>=1.15,active=!activeChunks||activeChunks.has(chunkKey(source)),visible=active&&(life?.remaining??0)>0&&life.hostAvailable!==false&&!held;
+        const proxy=proxies.get(source.sourceId)!;
+        if(active&&!proxy.unregister){group.add(proxy.root);proxy.unregister=hits.register(proxy.root,source.sourceId);}
+        else if(!active&&proxy.unregister){proxy.unregister();proxy.unregister=null;proxy.root.removeFromParent();}
         if(visibility.get(source.sourceId)!==visible){visibility.set(source.sourceId,visible);changed.add(source.sourceId);}
       }
       if(!changed.size)return;
       for(const batch of batches){
-        let dirty=false;
-        batch.records.forEach((record,index)=>{
-          if(!changed.has(record.sourceId))return;
-          batch.mesh.setMatrixAt(index,visibility.get(record.sourceId)?matrix.copy(record.matrix).multiply(batch.local):hidden);dirty=true;
-        });
-        if(dirty)batch.mesh.instanceMatrix.needsUpdate=true;
+        if(!batch.records.some(record=>changed.has(record.sourceId)))continue;
+        let count=0;
+        for(const record of batch.records){
+          if(!visibility.get(record.sourceId))continue;
+          batch.mesh.setMatrixAt(count,matrix.copy(record.matrix).multiply(batch.local));
+          // Compact transforms and their source-owned tint together; GPU slots are not identities.
+          if(batch.woodTone)setWoodInstanceTone(batch.mesh,count,record.sourceId);
+          count++;
+        }
+        batch.mesh.count=count;batch.mesh.visible=count>0;batch.mesh.instanceMatrix.needsUpdate=true;
       }
     },
-    // Pick proxies remain to inspect empty/host-disabled resource pools.
-    dispose(){if(disposed)return;disposed=true;hits.clear();group.clear();visibility.clear();},
+    // Active chunks retain empty/host-disabled pools for inspection; unloading only removes their views.
+    dispose(){if(disposed)return;disposed=true;hits.clear();group.clear();visibility.clear();proxies.clear();},
   };
 }

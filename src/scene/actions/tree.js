@@ -1,3 +1,4 @@
+import {barkUV} from '../bark-surface.ts';
 import * as T from 'three';
 import {CUT,clamp,fallProgress,ramp} from './motion.js';
 
@@ -30,7 +31,7 @@ export function createTree(source,kind){
   function add(g,m,parent){owned.add(g);const o=new T.Mesh(g,m);o.castShadow=o.receiveShadow=true;parent.add(o);return o;}
   source=source.clone(true);source.scale.multiplyScalar(.74);source.updateMatrixWorld(true);let trunk;
   source.traverse(o=>{if(o.isMesh&&/trunk/.test(o.name))trunk=o;});
-  bark.color.copy(trunk.material.color);bark.roughness=trunk.material.roughness;
+  bark.color.copy(trunk.material.color);bark.roughness=trunk.material.roughness;bark.map=trunk.material.map;bark.normalMap=trunk.material.normalMap;
   const original=trunk.geometry.clone().applyMatrix4(trunk.matrixWorld);original.computeBoundingBox();
   const radius=(kind==='pine'?.25:.28);
   // Cross-section ray samples retain the source trunk outline at the join (no floating sleeve).
@@ -83,6 +84,8 @@ export function createTree(source,kind){
     let lo=.15,hi=1.72;for(let i=0;i<32;i++){const mid=(lo+hi)/2,s=support(mid);if(s.canopy>s.base)lo=mid;else hi=mid;}landing=lo;
     const dx=radius*2.15+.22;landShift.set(dx,-support(landing,dx).min+.008,0);
   }
+  // Bake local UVs after all source/action transformations, before any animation.
+  root.traverse(o=>{if(o.isMesh&&o.material.map){const old=o.geometry;const g=old.index?old.toNonIndexed():old.clone();barkUV(g,true);owned.add(g);o.geometry=g;}});
   solveLanding();let lastAngle=0;
   function update(t,action,reduced,showAnchors){
     const active=action==='fell';const progress=active?fallProgress(t):0;

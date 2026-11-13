@@ -15,6 +15,7 @@ import {ritualBusy} from './ritual.ts';
 import {canStand,findPath,navigationGridPoint} from './navigation.ts';
 import {leafPatchSnapshot,validateSweptLeaves} from './leaf-patches.ts';
 import {lifeDayAt} from './local-clock.ts';
+import {travelAccess} from '../world/regions.ts';
 
 export type BroomUseEvent={
   useId:string;instanceId:string;patchId:string;kind:'sweep'|'willful';durationSeconds:number;
@@ -56,8 +57,8 @@ function siteAccess(host:GameState,patch:CampLeafPatch|undefined,blockers:Collid
   const response=(code:BroomSiteAccess['code'],reason:string):BroomSiteAccess=>({code,requiresApproach:code==='approach',reason,stand:patch?.stand??null});
   if(!patch)return response('unavailable','这里没有可扫拢的营地落叶。');
   if(busy(host))return response('unavailable','先完成或取消当前动作。');
-  if(!canStand(host.player,blockers))return response('blocked','你现在的站位被挡住了，请先走到空地。');
-  if(!canStand(patch.stand,blockers,BROOM.actionClearance)||!canStand(patch.center,blockers,BROOM.actionClearance))return response('blocked','落叶旁没有足够的挥扫空间，请先挪开旁边的家具。');
+  if(!canStand(host.player,blockers,undefined,travelAccess(host)))return response('blocked','你现在的站位被挡住了，请先走到空地。');
+  if(!canStand(patch.stand,blockers,BROOM.actionClearance,travelAccess(host))||!canStand(patch.center,blockers,BROOM.actionClearance,travelAccess(host)))return response('blocked','落叶旁没有足够的挥扫空间，请先挪开旁边的家具。');
   if(Math.hypot(host.player.x-patch.stand.x,host.player.z-patch.stand.z)>BROOM.siteReach)return response('approach','先走到落叶旁的空位，再拿出扫帚。');
   return response('ready','');
 }
@@ -76,8 +77,8 @@ export function approachBroomPatch(host:GameState,patchId:string,blockers:Collid
   if(access.code!=='approach')return access.code==='ready'?'已经来到落叶旁的挥扫位置。':access.reason;
   const distance=Math.hypot(host.player.x-patch!.stand.x,host.player.z-patch!.stand.z),steps=Math.max(1,Math.ceil(distance/.15));
   let direct=true;
-  for(let index=0;index<=steps;index++)if(!canStand({x:host.player.x+(patch!.stand.x-host.player.x)*index/steps,z:host.player.z+(patch!.stand.z-host.player.z)*index/steps},blockers)){direct=false;break;}
-  const route=direct?[{x:patch!.stand.x,z:patch!.stand.z}]:canStand(navigationGridPoint(patch!.stand),blockers)?findPath(host.player,patch!.stand,blockers):[];
+  for(let index=0;index<=steps;index++)if(!canStand({x:host.player.x+(patch!.stand.x-host.player.x)*index/steps,z:host.player.z+(patch!.stand.z-host.player.z)*index/steps},blockers,undefined,travelAccess(host))){direct=false;break;}
+  const route=direct?[{x:patch!.stand.x,z:patch!.stand.z}]:canStand(navigationGridPoint(patch!.stand),blockers,undefined,travelAccess(host))?findPath(host.player,patch!.stand,blockers,travelAccess(host)):[];
   if(!route.length)return '暂时走不到这片落叶前，请先留出通路。';
   host.route=route;return '正在走到落叶前的空位。到达后再明确扫叶。';
 }

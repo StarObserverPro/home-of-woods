@@ -1,18 +1,19 @@
+import {canTraverse,travelHeightAt,onBridge} from '../world/traversal.ts';
+import {CLOSED_ACCESS,regionAt,regionRoute} from '../world/regions.ts';
+import type {TravelAccess} from '../world/regions.ts';
 import { MOVEMENT } from "../content/world.ts";
 import type { Point } from "../content/world.ts";
 import type { Collider } from "../world/layout.ts";
 import {
-  heightAt,
-  inOpenArea,
   pathDistance,
-  slopeAt,
 } from "../world/surface.ts";
 export function canStand(
   p: Point,
   colliders: Collider[],
   radius = MOVEMENT.radius,
+  access:TravelAccess=CLOSED_ACCESS,
 ) {
-  if (!inOpenArea(p.x, p.z) || slopeAt(p.x, p.z) > MOVEMENT.maxSlope)
+  if (!canTraverse(p.x,p.z,access,radius))
     return false;
   return !colliders.some((c) =>
     "radius" in c
@@ -35,8 +36,8 @@ function segmentEntersBox(from:Point,to:Point,c:Extract<Collider,{halfX:number}>
   return enter<exit;
 }
 /** An expanding trunk may overlap a stationary player. Only monotonic retreat is allowed. */
-function canRetreat(from:Point,to:Point,colliders:Collider[]){
-  if(!inOpenArea(to.x,to.z)||slopeAt(to.x,to.z)>MOVEMENT.maxSlope)return false;
+function canRetreat(from:Point,to:Point,colliders:Collider[],access:TravelAccess){
+  if(!canTraverse(to.x,to.z,access))return false;
   const dx=to.x-from.x,dz=to.z-from.z,lengthSquared=dx*dx+dz*dz;
   if(!lengthSquared)return false;
   let overlap=false;
@@ -63,6 +64,7 @@ export function move(
   dx: number,
   dz: number,
   colliders: Collider[],
+  access:TravelAccess=CLOSED_ACCESS,
 ): Point {
   const steps = Math.max(1, Math.ceil(Math.hypot(dx, dz) / 0.16));
   let x = p.x,
@@ -70,8 +72,8 @@ export function move(
   for (let i = 0; i < steps; i++) {
     const nx = x + dx / steps,
       nz = z + dz / steps;
-    const current={x,z},legalStart=canStand(current,colliders);
-    const accepts=(next:Point)=>legalStart?canStand(next,colliders):canRetreat(current,next,colliders);
+    const current={x,z},legalStart=canStand(current,colliders,MOVEMENT.radius,access);
+    const accepts=(next:Point)=>legalStart?canStand(next,colliders,MOVEMENT.radius,access):canRetreat(current,next,colliders,access);
     if (accepts({ x: nx, z: nz })) {
       x = nx;
       z = nz;
@@ -84,12 +86,13 @@ const GRID = 1.5;
 /** The grid owner exposes its anchor so precise interaction targets can avoid blocked snaps. */
 export const navigationGridPoint=(point:Point):Point=>({x:Math.round(point.x/GRID)*GRID,z:Math.round(point.z/GRID)*GRID});
 const key = (x: number, z: number) => `${x},${z}`;
-export function findPath(
+function localPath(
   from: Point,
   to: Point,
   colliders: Collider[],
+  access:TravelAccess,
 ): Point[] {
-  if (!canStand(to, colliders)) return [];
+  if (!canStand(to, colliders,MOVEMENT.radius,access)) return [];
   const sx = Math.round(from.x / GRID),
     sz = Math.round(from.z / GRID);
   const tx = Math.round(to.x / GRID),
@@ -128,15 +131,15 @@ export function findPath(
         if (!dx && !dz) continue;
         const nk = key(x + dx, z + dz),
           np = { x: (x + dx) * GRID, z: (z + dz) * GRID };
-        if (closed.has(nk) || !canStand(np, colliders)) continue;
+        if (closed.has(nk) || !canStand(np, colliders,MOVEMENT.radius,access)) continue;
         // Prevent diagonal corner cuts and collision between grid nodes.
-        const checked = move(fromP, dx * GRID, dz * GRID, colliders);
+        const checked = move(fromP, dx * GRID, dz * GRID, colliders,access);
         if (Math.hypot(checked.x - np.x, checked.z - np.z) > 0.01) continue;
         const cost =
           scores.get(current)! +
           Math.hypot(dx, dz) *
             (1 + Math.min(pathDistance(np.x, np.z) / 20, 0.8)) +
-          Math.abs(heightAt(np.x, np.z) - heightAt(fromP.x, fromP.z)) * 0.2;
+          Math.abs(travelHeightAt(np.x,np.z,access)-travelHeightAt(fromP.x,fromP.z,access)) * 0.2;
         if (cost >= (scores.get(nk) ?? Infinity)) continue;
         parents.set(nk, current);
         scores.set(nk, cost);
@@ -144,4 +147,18 @@ export function findPath(
       }
   }
   return [];
+}
+
+/** Region portals first, bounded local searches second. Every returned edge is walkable. */
+export function findPath(from:Point,to:Point,colliders:Collider[],access:TravelAccess=CLOSED_ACCESS):Point[]{
+  const a=regionAt(from.x,from.z),b=regionAt(to.x,to.z);
+  const portals=a&&b&&a!==b&&!onBridge(from.x,from.z)&&!onBridge(to.x,to.z)?regionRoute(a,b,access):[];
+  if(portals===null)return [];
+  let cursor=from;const result:Point[]=[];
+  for(const point of [...portals,to]){
+    if(Math.hypot(cursor.x-point.x,cursor.z-point.z)<.01)continue;
+    const section=localPath(cursor,point,colliders,access);if(!section.length)return [];
+    result.push(...section);cursor=point;
+  }
+  return result.length?result:canStand(to,colliders,MOVEMENT.radius,access)?[{...to}]:[];
 }

@@ -1,7 +1,7 @@
 export type Point = { x: number; z: number };
 export const WORLD_SEED = 104729;
-export const WORLD_LAYOUT_VERSION = 'how-valley-r3-hosts-1';
-export const WORLD_RULESET_VERSION = 8;
+export const WORLD_LAYOUT_VERSION = 'how-valley-east-bank-1';
+export const WORLD_RULESET_VERSION = 9;
 export const WORLD = {
   minX: -150,
   maxX: 150,
@@ -46,6 +46,8 @@ export const WAYPOINTS = [
   { id: "lookout", name: "宅后望台", note: "沿宅后小路登高", x: -27, z: -70 },
   { id: "giant", name: "守林巨木", note: "山路旁的老朋友", x: -6, z: 48 },
   { id: "creek", name: "溪谷河岸", note: "沿下坡小路走到水边", x: 3, z: 48 },
+  { id: "bridge", name: "跨溪木桥", note: "按图纸修桥，接通对岸", x: 6, z: 38 },
+  { id: "east-bank", name: "溪流东岸林", note: "修桥后可前往采集与伐木", x: 49, z: 38 },
 ] as const;
 export const CAMERA = {
   yaw: -0.13,

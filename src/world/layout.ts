@@ -3,10 +3,14 @@ import { heightAt, pathDistance, riverX, slopeAt } from "./surface.ts";
 import {CAMP_VISITOR} from '../content/characters.ts';
 import {CAMP_PROPS} from '../content/scene-props.ts';
 import {LOG_SHELTER_POSTS} from '../content/weather.ts';
+import {CREEK_BRIDGE,REGIONS} from '../content/regions.ts';
+import type {RegionId} from '../content/regions.ts';
+import {regionAt} from './regions.ts';
 import fixedSlots from '../content/fixed-tree-slots.json' with {type:'json'};
 import {TREE_SLOT_CORRECTIONS} from '../content/tree-slot-corrections.ts';
 const fixedSlotIds=new Set(fixedSlots);
 export type Tree = {
+  regionId?:RegionId;
   id: string;
   individualId: string;
   generation: number;
@@ -75,8 +79,11 @@ export function makeTrees(seed = WORLD_SEED): Tree[] {
         continue;
       // Keep the camp's east-facing view corridor open.
       if (seed!==WORLD_SEED&&x > -24 && x < 8 && z > -28 && z < 36) continue;
-      const role =
-        x > -79 && x < riverX(z)-8 && z > -76 && z < 66 ? "managed" : "scenery";
+      const regionId=regionAt(x,z);
+      const bridgeClear=Math.abs(z-CREEK_BRIDGE.west.z)<7&&x>CREEK_BRIDGE.west.x-5&&x<CREEK_BRIDGE.east.x+6;
+      const region=REGIONS.find(r=>r.id===regionId);
+      const managed=!!region&&Math.abs(x-riverX(z))>8&&(region.managedSlope===null||slopeAt(x,z)<region.managedSlope)&&!bridgeClear;
+      const role=managed?'managed':'scenery';
       trees.push({
         id,
         individualId: `${id}:g0`,
@@ -87,6 +94,7 @@ export function makeTrees(seed = WORLD_SEED): Tree[] {
         kind,
         variant,
         role,
+        ...(regionId?{regionId}:{}),
       });
     }
   for(const [i,p] of [{x:-20,z:27,scale:1.6},{x:-63,z:22,scale:1.65}].entries()){
