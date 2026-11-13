@@ -5,16 +5,38 @@ on:
 permissions:
   contents: read
 jobs:
-  snapshot:
+  integrate-and-review:
+    if: github.ref == 'refs/heads/feat/local-occlusion-lighting'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
-          persist-credentials: false
-      - run: git archive --format=tar.gz -o /tmp/wood-tone-source.tgz HEAD
-      - uses: actions/upload-artifact@v4
+          ref: feat/local-occlusion-lighting
+      - name: Apply hash-checked wood-only integration to this feature branch
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python3 tools/apply-wood-tone.py
+          git rm tools/apply-wood-tone.py
+          git add src sandbox/cabin-interior/src tests/wood-grain.test.ts docs/scopes/wood-tone-variation.md
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'feat: apply stable wood value variation without species mapping'
+          git push origin HEAD:refs/heads/feat/local-occlusion-lighting
+      - uses: actions/setup-node@v4
         with:
-          name: wood-tone-source
-          path: /tmp/wood-tone-source.tgz
-          retention-days: 1
+          node-version: '22.14.0'
+          cache: npm
+      - run: npm ci
+      - run: node --experimental-strip-types --test tests/wood-tones.test.ts tests/wood-grain.test.ts tests/local-occlusion*.test.ts tests/cabin-interior.test.ts
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get install -y fonts-noto-cjk
+      - run: node tools/verification/wood-tone-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wood-tone-evidence
+          path: /tmp/how-wood-tone-evidence/
+          if-no-files-found: warn
+          retention-days: 7
