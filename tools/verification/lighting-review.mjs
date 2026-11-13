@@ -40,10 +40,12 @@ async function cabinCapture(name,enabled){
 async function cabinPair(name,camera='room',light='day',cut='stage'){
  phase=name;await page.evaluate(({camera,light,cut})=>{const a=window.__CABIN_AUDIT__;a.pause();a.camera(camera);a.settings({light,cut});},{camera,light,cut});
  const off=await cabinCapture(`${name}-off`,false),on=await cabinCapture(`${name}-on`,true);
- assert.deepEqual(off.stats.cameraPosition,on.stats.cameraPosition);assert.deepEqual(off.state,on.state);
+ // OrbitControls spherical/cartesian round trips can differ at machine epsilon.
+ const cameraDelta=Math.hypot(...off.stats.cameraPosition.map((v,i)=>v-on.stats.cameraPosition[i]));
+ assert.ok(cameraDelta<1e-7,`${name}: camera moved ${cameraDelta} world units`);assert.deepEqual(off.state,on.state);
  assert.equal(off.stats.drawCalls,on.stats.drawCalls);assert.equal(off.stats.triangles,on.stats.triangles);
  const diff=await difference(off.image,on.image);assert.ok(diff.changedPixels>100,`${name}: no visible AO difference`);
- report.pairs.push({name,...diff,extraDrawCalls:on.stats.drawCalls-off.stats.drawCalls});
+ report.pairs.push({name,...diff,cameraDelta,extraDrawCalls:on.stats.drawCalls-off.stats.drawCalls});
 }
 async function mainStats(){return JSON.parse(await page.locator('#runtime-stats').textContent()).current;}
 async function mainPair(name,view,time='白昼'){
