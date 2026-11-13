@@ -1,0 +1,44 @@
+name: Lighting Review
+on:
+  push:
+    branches: [feat/local-occlusion-lighting]
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'sandbox/cabin-interior/**'
+      - 'tests/local-occlusion*'
+      - 'tools/lighting-review*'
+      - '.github/workflows/lighting-review.yml'
+permissions:
+  contents: read
+concurrency:
+  group: lighting-review-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  lighting:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Reproducible review workspace (temporary bootstrap)
+        run: |
+          mkdir -p /tmp/lighting-review-workspace
+          git archive HEAD | tar -x -C /tmp/lighting-review-workspace
+          cp -a node_modules /tmp/lighting-review-workspace/
+          tar -czf /tmp/lighting-workspace.tgz -C /tmp/lighting-review-workspace .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lighting-workspace
+          path: /tmp/lighting-workspace.tgz
+          retention-days: 1
+      - name: Lighting checks
+        run: |
+          if test -f tests/local-occlusion.test.ts; then
+            node --experimental-strip-types --test tests/local-occlusion.test.ts
+          fi
+          npm run build
