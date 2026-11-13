@@ -12,10 +12,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Export tracked source for isolated local verification
-        run: git archive --format=tar HEAD | gzip > /tmp/woodworking-source.tgz
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --prefix sandbox/woodworking
+      - name: Export locked build tools for isolated local verification
+        run: tar -czf /tmp/woodworking-tools.tgz sandbox/woodworking/node_modules
       - uses: actions/upload-artifact@v4
         with:
-          name: woodworking-source
-          path: /tmp/woodworking-source.tgz
+          name: woodworking-tools
+          path: /tmp/woodworking-tools.tgz
           retention-days: 1
