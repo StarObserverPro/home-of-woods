@@ -7,7 +7,7 @@ import {chromium} from 'playwright';
 const cwd=process.cwd(),out=process.env.LIGHTING_EVIDENCE_DIR??'/tmp/how-lighting-evidence';
 const origin='http://127.0.0.1:4181';
 await fs.mkdir(out,{recursive:true});
-const report={commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),status:'running',frames:[],pairs:[],flows:[],errors:[],warnings:[],limits:['Software Chromium WebGL is not physical mobile GPU performance.','This is authored ambient attenuation, not ray-traced AO or GI.','Forest detailed near-field occlusion remains deferred.']};
+const report={commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),status:'running',frames:[],pairs:[],mainCheckpoints:[],flows:[],errors:[],warnings:[],limits:['Software Chromium WebGL is not physical mobile GPU performance.','This is authored ambient attenuation, not ray-traced AO or GI.','Forest detailed near-field occlusion remains deferred.']};
 let serverLog='',phase='startup',browser,page;
 const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','--host','127.0.0.1','--port','4181','--strictPort'],{cwd,stdio:['ignore','pipe','pipe']});
 for(const s of [server.stdout,server.stderr])s.on('data',b=>serverLog=(serverLog+b).slice(-80000));
@@ -16,6 +16,7 @@ async function ready(){for(let i=0;i<100;i++){try{if((await fetch(origin)).ok)re
 async function newPage(viewport,mobile=false){
  const context=await browser.newContext({viewport,deviceScaleFactor:1,isMobile:mobile,hasTouch:mobile});
  page=await context.newPage();page.setDefaultTimeout(45000);page.setDefaultNavigationTimeout(120000);
+ page.on('crash',()=>report.errors.push({phase,message:'Browser page crashed'}));
  page.on('pageerror',e=>report.errors.push({phase,message:String(e)}));
  page.on('console',m=>{if(m.type()==='error')report.errors.push({phase,message:m.text()});else if(m.type()==='warning')report.warnings.push({phase,message:m.text()});});
  page.on('response',r=>{if(r.url().startsWith(origin)&&r.status()>=400)report.errors.push({phase,url:r.url(),status:r.status()});});
@@ -57,7 +58,11 @@ async function mainPair(name,view,time='白昼'){
    if((await mainStats()).occlusion.enabled!==enabled)await page.locator('#toggle-ambient-occlusion').click();
    await page.waitForFunction(enabled=>JSON.parse(document.querySelector('#runtime-stats').textContent).current.occlusion.enabled===enabled,enabled);
    await page.evaluate(()=>document.querySelector('.game-shell').classList.add('lighting-capture'));
-   const buffer=await page.locator('.scene-host canvas').screenshot({animations:'disabled'});
+   const checkpoint=await mainStats();
+   report.mainCheckpoints.push({name,enabled,stats:checkpoint});await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));
+   // The game canvas fills a fixed viewport. A viewport capture avoids Playwright's RAF-based element scroll/stability wait in a paused scene.
+   const viewport=page.viewportSize();
+   const buffer=await page.screenshot({clip:{x:0,y:0,...viewport},animations:'disabled',timeout:90000});
    await page.evaluate(()=>document.querySelector('.game-shell').classList.remove('lighting-capture'));
    const stats=await mainStats();assert.equal(stats.shaderErrors,0);assert.ok(stats.occlusion.forestBakes>0);assert.deepEqual(stats.occlusion.canopyFields,[192,128]);
    const label=`${name}-${enabled?'on':'off'}`;await fs.writeFile(path.join(out,`${label}.png`),buffer);report.frames.push({name:label,stats});captures.push(`data:image/png;base64,${buffer.toString('base64')}`);
@@ -92,7 +97,7 @@ try{
  context=await newPage({width:390,height:844},true);phase='mobile cabin';await page.goto(`${origin}/sandbox/cabin-interior/`);await page.waitForFunction(()=>window.__VISUAL_READY__===true,null,{timeout:120000});await page.locator('[data-preset="full"]').tap();
  await cabinPair('mobile-cabin');await cabinPair('mobile-evening','room','evening');
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);await context.close();
- context=await newPage({width:1440,height:960});phase='main load';await page.goto(`${origin}/?inspect=1&hour=14`);await page.waitForFunction(()=>{try{return JSON.parse(document.querySelector('#runtime-stats')?.textContent??'{}').current?.occlusion?.forestBakes>0;}catch{return false;}},null,{timeout:180000});
+ context=await newPage({width:960,height:640});phase='main load';await page.goto(`${origin}/?inspect=1&hour=14`);await page.waitForFunction(()=>{try{return JSON.parse(document.querySelector('#runtime-stats')?.textContent??'{}').current?.occlusion?.forestBakes>0;}catch{return false;}},null,{timeout:180000});
  await page.addStyleTag({content:'.game-shell.lighting-capture > :not(.scene-host){visibility:hidden!important}'});
  for(const [name,view,time] of [['home-exterior','homeLighting','白昼'],['tent','tentLighting','白昼'],['camp','camp','白昼'],['work-area','woodcraft','白昼'],['forest','understory','白昼'],['distant','overview','白昼'],['camp-night','camp','夜晚']])await mainPair(name,view,time);
  report.flows.push({name:'main production scene, canopy textures and fixed-view AO toggle',passed:true});await context.close();

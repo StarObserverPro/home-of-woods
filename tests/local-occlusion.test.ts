@@ -93,3 +93,11 @@ test('building attenuation reads real GLB wall/floor parts, ignores later upgrad
    loaded.scene.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose();}});
  }
 });
+
+test('far view only scans broad regions and spatial rejection includes rotated soft extents',()=>{
+ const r=new Resources(),ao=createAmbientOcclusion(r);
+ const broad={...volume,id:'broad',detail:false,yaw:Math.PI/2};ao.setVolumes([volume,broad]);
+ const stats=ao.stats();assert.equal(stats.broadVolumes,1);assert.equal(stats.volumes[0],'broad');
+ assert.ok(stats.spatialBounds[0][2]<=-2.5);assert.ok(stats.spatialBounds[1][2]>=2.5);
+ ao.setVolumes([]);assert.deepEqual(ao.stats().spatialBounds,[[0,0,0],[0,0,0]]);ao.dispose();r.dispose();
+});

@@ -12,13 +12,14 @@ export function createAmbientOcclusion(resources:Resources){
     tex.minFilter=tex.magFilter=THREE.LinearFilter;tex.wrapS=tex.wrapT=THREE.ClampToEdgeWrapping;tex.generateMipmaps=false;tex.colorSpace=THREE.NoColorSpace;tex.needsUpdate=true;return tex;
   }
   const core=texture(),outer=texture();
-  const uniforms={howAOEnabled:{value:1},howAOVolumeCount:{value:0},howAOA:{value:A},howAOB:{value:B},howAOD:{value:D},howAONight:{value:0},howAOCore:{value:core},howAOOuter:{value:outer},howAOCoreBounds:{value:new THREE.Vector4(-150,-150,300,300)},howAOOuterBounds:{value:new THREE.Vector4(-750,-750,1500,1500)},howAOFieldEnabled:{value:0}};
+  const uniforms={howAOEnabled:{value:1},howAOVolumeCount:{value:0},howAOBroadCount:{value:0},howAOMin:{value:new THREE.Vector3()},howAOMax:{value:new THREE.Vector3()},howAOA:{value:A},howAOB:{value:B},howAOD:{value:D},howAONight:{value:0},howAOCore:{value:core},howAOOuter:{value:outer},howAOCoreBounds:{value:new THREE.Vector4(-150,-150,300,300)},howAOOuterBounds:{value:new THREE.Vector4(-750,-750,1500,1500)},howAOFieldEnabled:{value:0}};
   let volumes:readonly OcclusionVolume[]=[],coreField:CanopyField|undefined,outerField:CanopyField|undefined,updates=0,disposed=false;
   const materials=new Map<THREE.Material,{compile:THREE.Material['onBeforeCompile'];key:THREE.Material['customProgramCacheKey'];installed:THREE.Material['onBeforeCompile']}>();
   const fragment=`
     varying vec3 vHowAOPosition;
     uniform float howAOEnabled,howAONight,howAOFieldEnabled;
-    uniform int howAOVolumeCount;
+    uniform int howAOVolumeCount,howAOBroadCount;
+    uniform vec3 howAOMin,howAOMax;
     uniform vec4 howAOA[${count}],howAOB[${count}],howAOD[${count}];
     uniform sampler2D howAOCore,howAOOuter;
     uniform vec4 howAOCoreBounds,howAOOuterBounds;
@@ -26,6 +27,7 @@ export function createAmbientOcclusion(resources:Resources){
       vec3 d=p-howAOA[i].xyz;
       vec2 xz=vec2(howAOD[i].x*d.x-howAOD[i].y*d.z,howAOD[i].y*d.x+howAOD[i].x*d.z);
       vec3 q=max(abs(vec3(xz.x,d.y,xz.y))-howAOB[i].xyz,vec3(0.));
+      if(any(greaterThanEqual(q,vec3(howAOB[i].w))))return 0.;
       return (1.-smoothstep(0.,howAOB[i].w,length(q)))*howAOA[i].w;
     }
     float howCanopyAO(vec3 p){
@@ -67,10 +69,14 @@ export function createAmbientOcclusion(resources:Resources){
         if(howAOEnabled>.5){
           float howNear=1.-smoothstep(${C.nearFull.toFixed(1)},${C.nearEnd.toFixed(1)},length(vViewPosition));
           float howBroad=0.,howDetail=0.;
-          for(int i=0;i<${count};i++){
-            if(i>=howAOVolumeCount)break;
-            if(howAOD[i].z>.5){if(howNear>.001)howDetail=max(howDetail,howAOBox(i,vHowAOPosition));}
-            else howBroad=max(howBroad,howAOBox(i,vHowAOPosition));
+          // Most forest/sky-facing geometry never enters the camp's bounded AO region.
+          if(all(greaterThanEqual(vHowAOPosition,howAOMin))&&all(lessThanEqual(vHowAOPosition,howAOMax))){
+            int howActive=howNear>.001?howAOVolumeCount:howAOBroadCount;
+            for(int i=0;i<${count};i++){
+              if(i>=howActive)break;
+              if(i<howAOBroadCount)howBroad=max(howBroad,howAOBox(i,vHowAOPosition));
+              else howDetail=max(howDetail,howAOBox(i,vHowAOPosition));
+            }
           }
           vec3 howWN=inverseTransformDirection(normal,viewMatrix);
           float howPreset=${C.distantUnderside}*(1.-smoothstep(-.3,.65,howWN.y));
@@ -87,8 +93,15 @@ export function createAmbientOcclusion(resources:Resources){
   function setVolumes(next:readonly OcclusionVolume[]){
     if(next.length>count)throw new Error(`Ambient occlusion volume budget exceeded: ${next.length}/${count}`);
     for(const v of next)if(![...v.center,...v.halfSize,v.yaw,v.softness,v.strength].every(Number.isFinite)||v.halfSize.some(n=>n<0)||v.softness<=0||v.strength<0||v.strength>1)throw new Error(`Invalid ambient occlusion volume: ${v.id}`);
-    volumes=next;uniforms.howAOVolumeCount.value=next.length;
-    next.forEach((v,i)=>{A[i].set(...v.center,v.strength);B[i].set(...v.halfSize,v.softness);D[i].set(Math.cos(v.yaw),Math.sin(v.yaw),v.detail?1:0,0);});updates++;
+    volumes=[...next.filter(v=>!v.detail),...next.filter(v=>v.detail)];
+    uniforms.howAOVolumeCount.value=volumes.length;uniforms.howAOBroadCount.value=volumes.filter(v=>!v.detail).length;
+    const min=uniforms.howAOMin.value.setScalar(Infinity),max=uniforms.howAOMax.value.setScalar(-Infinity);
+    volumes.forEach((v,i)=>{
+      const c=Math.cos(v.yaw),s=Math.sin(v.yaw),hx=Math.abs(c)*v.halfSize[0]+Math.abs(s)*v.halfSize[2]+v.softness,hz=Math.abs(s)*v.halfSize[0]+Math.abs(c)*v.halfSize[2]+v.softness,hy=v.halfSize[1]+v.softness;
+      A[i].set(...v.center,v.strength);B[i].set(...v.halfSize,v.softness);D[i].set(c,s,v.detail?1:0,0);
+      min.min(new THREE.Vector3(v.center[0]-hx,v.center[1]-hy,v.center[2]-hz));max.max(new THREE.Vector3(v.center[0]+hx,v.center[1]+hy,v.center[2]+hz));
+    });
+    if(!volumes.length){min.setScalar(0);max.setScalar(0);}updates++;
   }
   function setCanopy(kind:'core'|'outer',field:CanopyField){
     const tex=kind==='core'?core:outer,b=field.bounds;tex.image={data:field.data,width:field.size,height:field.size};tex.needsUpdate=true;
@@ -98,7 +111,7 @@ export function createAmbientOcclusion(resources:Resources){
   return {bind,bindMaterial,setVolumes,setCanopy,
     setEnabled(value:boolean){uniforms.howAOEnabled.value=value?1:0;},
     setNight(value:number){uniforms.howAONight.value=THREE.MathUtils.clamp(value,0,1);},
-    stats(){return {version:C.version,enabled:!!uniforms.howAOEnabled.value,volumes:volumes.map(v=>v.id),regions:volumes.map(v=>({id:v.id,center:[...v.center],halfSize:[...v.halfSize],yaw:v.yaw,detail:v.detail})),volumeBudget:count,updates,materials:materials.size,canopyFields:[coreField?.size??1,outerField?.size??1],textureBytes:(coreField?.data.byteLength??4)+(outerField?.data.byteLength??4),extraDrawCalls:0,extraRenderPasses:0,near:[C.nearFull,C.nearEnd],minimumAmbient:C.minimumAmbient};},
+    stats(){return {version:C.version,enabled:!!uniforms.howAOEnabled.value,volumes:volumes.map(v=>v.id),regions:volumes.map(v=>({id:v.id,center:[...v.center],halfSize:[...v.halfSize],yaw:v.yaw,detail:v.detail})),volumeBudget:count,broadVolumes:uniforms.howAOBroadCount.value,spatialBounds:[uniforms.howAOMin.value.toArray(),uniforms.howAOMax.value.toArray()],updates,materials:materials.size,canopyFields:[coreField?.size??1,outerField?.size??1],textureBytes:(coreField?.data.byteLength??4)+(outerField?.data.byteLength??4),extraDrawCalls:0,extraRenderPasses:0,near:[C.nearFull,C.nearEnd],minimumAmbient:C.minimumAmbient};},
     dispose(){if(disposed)return;disposed=true;for(const [m,old] of materials)if(m.onBeforeCompile===old.installed){m.onBeforeCompile=old.compile;m.customProgramCacheKey=old.key;m.needsUpdate=true;}materials.clear();},
   };
 }
