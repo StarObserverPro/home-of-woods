@@ -67,6 +67,7 @@ export function createSupportedSurfaceFactory(r:Resources){
       ]),materials.surface,'prep-wooden-spoon');
       root.userData.prepKit='fixed-empty-utensils';
     }
+    root.userData.ambientOccluder={width:spec.parameters.length,height:spec.parameters.height,depth:spec.parameters.width};
     root.userData.supportedGeometryKey=key;root.userData.supportedLook=look;root.userData.supportedPartIds=parts.map(part=>part.id);return root;
   }
   return {create,partGeometry,partEdges,geometryKey,materials,signature:(spec:GeometrySpec,look:SupportedSurfaceLook)=>`${look}:${geometryKey(spec)}`};

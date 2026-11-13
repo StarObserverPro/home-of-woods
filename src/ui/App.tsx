@@ -802,6 +802,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
       {diagnostic && (
         <details className="diagnostics">
           <summary>运行检查</summary>
+          <button id="toggle-ambient-occlusion" aria-pressed={(snapshot.stats.occlusion as {enabled?:boolean}|undefined)?.enabled??true} onClick={()=>runtime.current?.setAmbientOcclusion(!((snapshot.stats.occlusion as {enabled?:boolean}|undefined)?.enabled??true))}>局部遮蔽 / 林间衰减：{(snapshot.stats.occlusion as {enabled?:boolean}|undefined)?.enabled===false?'关':'开'}</button>
           <SceneInspector key={mountVersion} runtime={()=>runtime.current} active={typeof snapshot.stats.scenePreset==='string'} audits={audit}/>
           <WardrobeLab key={'wardrobe-'+mountVersion} runtime={()=>runtime.current}/>
           <button

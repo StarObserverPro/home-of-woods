@@ -1,3 +1,4 @@
+import {createCabinOcclusion} from './occlusion.ts';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {Resources} from '../../../../src/scene/resources.ts';
@@ -10,7 +11,7 @@ import {loadFurnitureAssets} from './furniture.ts';
 import {createCabinCharacter} from './character.ts';
 
 export type CameraView='room'|'opposite'|'plan'|'inside'|'detail';
-export type ViewSettings={cut:CutMode;light:'day'|'evening';material:'normal'|'clay'|'wire';spaces:boolean;quality:'balanced'|'fine';};
+export type ViewSettings={cut:CutMode;light:'day'|'evening';material:'normal'|'clay'|'wire';spaces:boolean;quality:'balanced'|'fine';occlusion?:boolean;};
 export type PlacementPreview={id:string;location:FloorLocation;valid:boolean};
 export type ViewCallbacks={pick:(id:string)=>void;floor:(x:number,z:number)=>void;hover:(x:number,z:number)=>void;};
 export async function createCabinView(host:HTMLElement,callbacks:ViewCallbacks){
@@ -50,6 +51,7 @@ export async function createCabinView(host:HTMLElement,callbacks:ViewCallbacks){
   const previewGroup=new THREE.Group();previewGroup.name='placement-preview';scene.add(previewGroup);
   const clay=resources.own(new THREE.MeshStandardMaterial({color:'#d9ccb3',roughness:.92}));
   const wire=resources.own(new THREE.MeshBasicMaterial({color:'#4b675b',wireframe:true}));
+  const localOcclusion=createCabinOcclusion(resources,scene);localOcclusion.bindMaterial(clay);
   const originalMaterials=new WeakMap<THREE.Mesh,THREE.Material|THREE.Material[]>();
   let currentState:CabinState|null=null,settings:ViewSettings={cut:'auto',light:'day',material:'normal',spaces:false,quality:'balanced'},selected:string|null=null,placing:PlacementPreview|null=null;
   let currentCamera:CameraView='room',stateKey='',materialKey='';
@@ -151,6 +153,7 @@ export async function createCabinView(host:HTMLElement,callbacks:ViewCallbacks){
   renderer.domElement.addEventListener('pointercancel',cancelPointer,{signal});
 
   function sync(state:CabinState,next:ViewSettings,selectionId:string|null,preview:PlacementPreview|null){
+    localOcclusion.sync(state,next.light==='evening',next.occlusion??new URLSearchParams(window.location.search).get('ao')!=='off');
     currentState=state;selected=selectionId;placing=preview;
     const previousQuality=settings.quality;settings=next;
     if(previousQuality!==next.quality){sunlight.shadow.mapSize.setScalar(next.quality==='fine'?2048:1024);sunlight.shadow.map?.dispose();sunlight.shadow.map=null;resize();}
@@ -187,10 +190,10 @@ export async function createCabinView(host:HTMLElement,callbacks:ViewCallbacks){
     const stove=currentState.items.find(i=>i.definitionId==='stove')!,stovePose=itemPose(currentState,stove);stoveLight.intensity=stove.lit&&stovePose?2.5:0;if(stovePose)stoveLight.position.set(stovePose.x+.7*Math.sin(stovePose.yaw),stovePose.y+.45,stovePose.z+.7*Math.cos(stovePose.yaw));
     renderer.render(scene,camera);
   }
-  function stats(){const gl=renderer.getContext(),ext=gl.getExtension('WEBGL_debug_renderer_info');return {drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,viewport:[renderer.domElement.width,renderer.domElement.height],dpr:renderer.getPixelRatio(),renderer:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER),camera:currentCamera,cameraPosition:camera.position.toArray(),cameraTarget:controls.target.toArray(),cameraQuaternion:camera.quaternion.toArray(),settings:{...settings},shell:shell.stats(),assets:typeof furniture.stats==='function'?furniture.stats():furniture.stats,renderTargets:[{purpose:'directional shadow',size:sunlight.shadow.mapSize.toArray()}],postProcessing:false};}
+  function stats(){const gl=renderer.getContext(),ext=gl.getExtension('WEBGL_debug_renderer_info');return {drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,viewport:[renderer.domElement.width,renderer.domElement.height],dpr:renderer.getPixelRatio(),renderer:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER),camera:currentCamera,cameraPosition:camera.position.toArray(),cameraTarget:controls.target.toArray(),cameraQuaternion:camera.quaternion.toArray(),settings:{...settings},shell:shell.stats(),assets:typeof furniture.stats==='function'?furniture.stats():furniture.stats,renderTargets:[{purpose:'directional shadow',size:sunlight.shadow.mapSize.toArray()}],postProcessing:false,occlusion:localOcclusion.stats()};}
   function capture(){return renderer.domElement.toDataURL('image/png');}
   function project(x:number,y:number,z:number){const p=new THREE.Vector3(x,y,z).project(camera),bounds=renderer.domElement.getBoundingClientRect();return {x:bounds.left+(p.x+1)*bounds.width/2,y:bounds.top+(1-p.y)*bounds.height/2};}
   function movementVector(x:number,z:number){const forward=camera.getWorldDirection(new THREE.Vector3());forward.y=0;if(forward.lengthSq()<.001)forward.set(0,0,-1);forward.normalize();const right=new THREE.Vector3().crossVectors(forward,new THREE.Vector3(0,1,0));return forward.multiplyScalar(-z).addScaledVector(right,x).normalize();}
-  function dispose(){if(disposed)return;disposed=true;abort.abort();observer.disconnect();for(const group of [overlay,selection,previewGroup])clearGroup(group);character.dispose();controls.dispose();sunlight.shadow.map?.dispose();resources.dispose();renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();}
+  function dispose(){if(disposed)return;disposed=true;abort.abort();observer.disconnect();for(const group of [overlay,selection,previewGroup])clearGroup(group);localOcclusion.dispose();character.dispose();controls.dispose();sunlight.shadow.map?.dispose();resources.dispose();renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();}
   return {sync,update,setView,stats,capture,project,movementVector,dispose,canvas:renderer.domElement};
 }

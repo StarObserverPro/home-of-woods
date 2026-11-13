@@ -1,3 +1,4 @@
+import {createCampOcclusion} from './lighting/camp-occlusion.ts';
 import {createHaulPresentation} from './haul-presentation.ts';
 import {createWildlifePresentation} from './wildlife-presentation.ts';
 import {wildlifeViews,landmarkInspectionView} from '../domain/wildlife.ts';
@@ -403,7 +404,10 @@ export async function createScene(
   const observer = new ResizeObserver(resize);
   observer.observe(host);
   resize();
+  const localOcclusion=createCampOcclusion({resources:r,scene,trees,props,campRoots:camp.roots,interactionRoots:()=>[...housing.hits.objects(),...workshop.hits.objects()],outerSeeds:horizon.canopySeeds,surfaceAt:horizon.surfaceAt});
+  localOcclusion.bind(scene);
   const view = {
+    setAmbientOcclusion:(enabled:boolean)=>localOcclusion.setEnabled(enabled),
     getAppearance:()=>({...appearance}),
     wildlifeAvailable:()=>wildlife.available(),
     wildlifeObserved:()=>wildlife.observedIds(),
@@ -614,6 +618,7 @@ export async function createScene(
       if(scenePreset==='goatVista')wildlifeSeen.push(landmarkInspectionView('wildlife.goat',state.time));
       wildlife.update(wildlifeSeen,state.time,appearance.hour,camera,reducedMotion);
       weather.update(ambientTime,dt,state.player,camera,host.clientWidth<600||host.clientHeight<500,reducedMotion);
+      localOcclusion.update(state,dt,camera,sky.night);
       renderer.info.reset();renderer.info.autoReset=false;
       renderer.render(scene, camera);
       weather.renderLens(renderer);
@@ -622,6 +627,7 @@ export async function createScene(
       return {
         life:life.stats(),broom:broom.stats(),housing:housing.stats(),woodcraft:woodcraft.stats(),workshop:workshop.stats(),understory:understory.stats(),treeShapes:trees.reduce((counts,t)=>{const name=treeVisual(t).name;counts[name]=(counts[name]??0)+1;return counts;},{} as Record<string,number>),appearance:{...appearance},scenePreset,camp:camp.stats(),terrain:ground.geometry.userData,shaderErrors,
         resources: r.stats(),
+        occlusion:localOcclusion.stats(),
         wildlife:wildlife.stats(),
         drawCalls: renderer.info.render.calls,
         triangles: renderer.info.render.triangles,
@@ -656,6 +662,7 @@ export async function createScene(
       canvas.removeEventListener("wheel", wheel);
       canvas.removeEventListener("contextmenu", contextMenu);
       pointers.clear();
+      localOcclusion.dispose();
       weather.dispose();
       woodcraft.dispose();
       workshop.dispose();

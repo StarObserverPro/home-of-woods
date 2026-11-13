@@ -74,5 +74,6 @@ export function createOuterForest(r,sample,existing=[]){
    color.set('#ffffff').multiplyScalar(.86+p.tone*.24).lerp(air,smooth(260,800,Math.hypot(p.x,p.z))*.6);mesh.setColorAt(i,color);
   });mesh.computeBoundingSphere();group.add(mesh);
  }
- group.userData={trees:plan.placements.length,triangles:plan.triangles,species:summary,placement:'rendered-terrain',triangleBudget:OUTER_FOREST.triangleBudget};return group;
+ group.userData.canopySeeds=plan.placements.map(p=>({x:p.x,z:p.z,radius:(p.kind==='oak'?2.65:2.05)*p.width,height:8*p.height}));
+ group.userData={...group.userData,trees:plan.placements.length,triangles:plan.triangles,species:summary,placement:'rendered-terrain',triangleBudget:OUTER_FOREST.triangleBudget};return group;
 }

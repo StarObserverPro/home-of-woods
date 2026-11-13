@@ -708,6 +708,7 @@ export async function createRuntime(
       view.setWardrobe(patch);
       view.render(state,0);publishSnapshot();
     },
+    setAmbientOcclusion(enabled:boolean){if(destroyed||contextLost)return;view.setAmbientOcclusion(enabled);view.render(state,0);publishSnapshot();},
     captureScene(){const image=view.capture(state),data=stats();const {worldState,...sceneStats}=data;void worldState;return {image,stats:sceneStats};},
     setMenuOpen(value:boolean) {
       menuOpen=value;
