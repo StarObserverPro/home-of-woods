@@ -1,0 +1,20 @@
+name: Wood Tone Review
+on:
+  push:
+    branches: [feat/local-occlusion-lighting]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: git archive --format=tar.gz -o /tmp/wood-tone-source.tgz HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wood-tone-source
+          path: /tmp/wood-tone-source.tgz
+          retention-days: 1
