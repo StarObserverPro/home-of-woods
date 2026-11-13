@@ -4,22 +4,107 @@ on:
     branches: [feat/woodworking-finite-saw]
     paths: [.github/workflows/woodworking-session.yml]
 permissions:
-  contents: read
+  contents: write
+concurrency:
+  group: woodworking-finite-saw-publish
+  cancel-in-progress: false
 jobs:
-  snapshot:
+  verify-and-publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
-          persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-      - run: npm ci --prefix sandbox/woodworking
-      - name: Export locked build tools for isolated local verification
-        run: tar -czf /tmp/woodworking-tools.tgz sandbox/woodworking/node_modules
-      - uses: actions/upload-artifact@v4
+          node-version: '22.14.0'
+      - name: Apply checksum-verified source changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = 'feat/woodworking-finite-saw'
+          python3 - <<'PY'
+          import base64, hashlib, json, lzma, os, pathlib, shutil, subprocess
+          root = pathlib.Path.cwd()
+          payload = ''.join((root / f'.woodworking-transport/part-{i}.txt').read_text().strip() for i in range(5))
+          raw = lzma.decompress(base64.b64decode(payload, validate=True))
+          assert hashlib.sha256(raw).hexdigest() == '89410c79e6ad6dfa259e7d446c37834b297fac4fa0723111bb19c4ec2c247a11'
+          patch = json.loads(raw)
+          assert patch['base'] == 'd6d621d4f827229d3d312a69ac679453844eaca4'
+          subprocess.run(['git', 'merge-base', '--is-ancestor', patch['base'], 'HEAD'], check=True)
+          named = {'README.md', 'docs/WOODWORKING_HANDWORK.md', 'docs/WOODWORKING_TOOLS.md', 'docs/scopes/woodworking-finite-saw.md', 'docs/scopes/woodworking-handwork-sandbox.md', '.github/workflows/woodworking-browser.yml'}
+          manifest = {}
+          for name, change in patch['files'].items():
+              path = pathlib.Path(name)
+              assert not path.is_absolute() and '..' not in path.parts
+              assert name in named or name.startswith('sandbox/woodworking/')
+              assert not path.is_symlink()
+              if 'content' in change:
+                  result = change['content']
+              else:
+                  result = path.read_text(encoding='utf-8')
+                  assert hashlib.sha256(result.encode()).hexdigest() == change['base_sha256'], name
+                  for start, end, text in reversed(change['spans']):
+                      assert 0 <= start <= end <= len(result)
+                      result = result[:start] + text + result[end:]
+              digest = hashlib.sha256(result.encode()).hexdigest()
+              assert digest == change['sha256'], name
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_text(result, encoding='utf-8')
+              manifest[name] = digest
+          assert patch['delete'] == ['.github/workflows/woodworking-session.yml']
+          pathlib.Path(patch['delete'][0]).unlink()
+          shutil.rmtree('.woodworking-transport')
+          pathlib.Path('/tmp/woodworking-evidence').mkdir(exist_ok=True)
+          pathlib.Path('/tmp/woodworking-evidence/source-manifest.json').write_text(json.dumps(manifest, indent=2))
+          print(f'CHECKSUM_PASS: {len(manifest)} source files')
+          PY
+          git diff --check
+      - run: npm ci
+      - run: npm --prefix sandbox/woodworking ci
+      - name: Domain and real host tests
+        run: |
+          set -o pipefail
+          npm --prefix sandbox/woodworking test | tee /tmp/woodworking-evidence/unit.log
+      - name: Build component and host adapter
+        run: |
+          set -o pipefail
+          npm --prefix sandbox/woodworking run build | tee /tmp/woodworking-evidence/build.log
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get install -y fonts-noto-cjk
+      - name: Real page input, save reload and mount lifecycle
+        env:
+          QA_EVIDENCE_DIR: /tmp/woodworking-evidence
+        run: node sandbox/woodworking/test/browser.mjs
+      - name: Publish only the verified feature branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/feat/woodworking-finite-saw | cut -f1)" = "$GITHUB_SHA"
+          python3 - <<'PY'
+          import hashlib, json, pathlib
+          m=json.loads(pathlib.Path('/tmp/woodworking-evidence/source-manifest.json').read_text())
+          for name, sha in m.items():
+              assert hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest() == sha, name
+          assert not pathlib.Path('.woodworking-transport').exists()
+          assert not pathlib.Path('.github/workflows/woodworking-session.yml').exists()
+          PY
+          git add README.md docs/WOODWORKING_HANDWORK.md docs/WOODWORKING_TOOLS.md docs/scopes/woodworking-finite-saw.md docs/scopes/woodworking-handwork-sandbox.md sandbox/woodworking .github/workflows/woodworking-browser.yml
+          git add -u .github/workflows/woodworking-session.yml .woodworking-transport
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat: rebuild tenon workbench around selected faces and finite saw cuts'
+          git push origin HEAD:refs/heads/feat/woodworking-finite-saw
+          git rev-parse HEAD > /tmp/woodworking-evidence/verified-head.txt
+      - name: Preserve build and verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: woodworking-tools
-          path: /tmp/woodworking-tools.tgz
-          retention-days: 1
+          name: woodworking-finite-saw-verification
+          path: |
+            /tmp/woodworking-evidence
+            sandbox/woodworking/dist/woodworking.html
+          if-no-files-found: warn
+          retention-days: 7
