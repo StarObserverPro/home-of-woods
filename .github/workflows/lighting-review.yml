@@ -24,6 +24,6 @@ jobs:
           test -f tools/apply-lighting-integration.py
           python3 tools/apply-lighting-integration.py
           git rm tools/apply-lighting-integration.py
-          git add src sandbox/cabin-interior/src
-          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'feat: wire ambient occlusion into camp and cabin lifecycle'
+          git add src sandbox/cabin-interior/src tests/local-occlusion.test.ts tools/verification/lighting-review.mjs
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'fix: anchor building occlusion to authored floor and wall geometry'
           git push origin HEAD:refs/heads/feat/local-occlusion-lighting
