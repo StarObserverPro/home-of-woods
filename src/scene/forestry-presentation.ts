@@ -1,10 +1,11 @@
+import {WOOD_TONES} from '../content/wood-tones.ts';
+import {woodToneGeometry} from './wood-tones.ts';
 import {woodCoordinates,woodMaterial} from './wood-grain.ts';
 import * as THREE from 'three';
 import {createTree} from './actions/tree.js';
 import {CUT} from './actions/motion.js';
 import type {Models} from './models.ts';
 import {FORESTRY} from '../content/forestry.ts';
-import {PALETTE} from '../content/world.ts';
 import type {GameState} from '../domain/state.ts';
 import {treeScaleFactor} from '../domain/forestry.ts';
 import type {Tree} from '../world/layout.ts';
@@ -24,7 +25,6 @@ export function createForestryPresentation({models,resources:r,forestGroup,trees
   const treeById=new Map(trees.map(t=>[t.id,t])),stumps=new Map<string,THREE.Group>();
   const baseRotations=new Map<string,THREE.Quaternion>();
   selections.forEach((o,id)=>baseRotations.set(id,o.quaternion.clone()));
-  const bark=woodMaterial(r,PALETTE.wood,.72),cutWood=woodMaterial(r,'#d9b07a',.78);
   const stumpGeometry=r.geometry('forestry-stump-r4',()=>woodCoordinates(new THREE.CylinderGeometry(1,.95,.5,10),'raw','y'));
   const chips=new THREE.InstancedMesh(r.geometry('forestry-woodchip-r4',()=>new THREE.BoxGeometry(.13,.07,.1)),r.material('#d9b07a',.78),18);
   chips.name='forestry-hit-chips';chips.visible=false;chips.frustumCulled=false;forestGroup.add(chips);
@@ -33,7 +33,8 @@ export function createForestryPresentation({models,resources:r,forestGroup,trees
   const getStump=(tree:Tree)=>{
     let root=stumps.get(tree.id);if(root)return root;
     root=new THREE.Group();root.name=tree.id;root.userData.forestryRole='stump';
-    const trunk=new THREE.Mesh(stumpGeometry,[bark,cutWood,cutWood]);trunk.position.y=.25;trunk.castShadow=true;trunk.receiveShadow=true;root.add(trunk);
+    const tone=WOOD_TONES.neutral,bark=woodMaterial(r,tone.bark,.72),cutWood=woodMaterial(r,tone.end,.78);
+    const trunk=new THREE.Mesh(woodToneGeometry(r,stumpGeometry,tree.id),[bark,cutWood,cutWood]);trunk.position.y=.25;trunk.castShadow=true;trunk.receiveShadow=true;root.add(trunk);
     root.position.set(tree.x,heightAt(tree.x,tree.z),tree.z);const radius=(tree.kind==='pine'?.43:.66)*tree.scale;root.scale.set(radius,tree.scale,radius);
     forestGroup.add(root);stumps.set(tree.id,root);return root;
   };

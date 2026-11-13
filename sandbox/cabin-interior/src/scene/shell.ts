@@ -1,3 +1,4 @@
+import {WOOD_TONES} from '../../../../src/content/wood-tones.ts';
 import * as THREE from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
@@ -30,8 +31,8 @@ export const SHELL_PLAN:readonly WallPlan[]=[
 
 export function createCabinShell(r:Resources){
   const root=new THREE.Group();root.name='cabin-shell';
-  const wood=woodMaterial(r,'#bb9369',.87),trim=woodMaterial(r,'#795138',.84),pale=woodMaterial(r,'#d8b686',.84);
-  const floorMaterials=['#ae8253','#bb9060','#b58b5d','#c19b6d'].map(c=>woodMaterial(r,c,.84));
+  const wood=woodMaterial(r,WOOD_TONES.warm.face,.87),trim=woodMaterial(r,WOOD_TONES.dark.face,.84),pale=woodMaterial(r,WOOD_TONES.light.face,.84);
+  const floorMaterial=woodMaterial(r,WOOD_TONES.neutral.face,.84);
   const roofMaterial=r.material('#435a4b',.92),stone=r.material('#756f60',.96),iron=r.material('#443e35',.65);
   const glass=r.own(new THREE.MeshStandardMaterial({color:'#9db3b3',transparent:true,opacity:.20,roughness:.36,metalness:0,depthWrite:false}));
   const geometryReports:{id:string;ok:boolean;faces:number}[]=[];
@@ -39,8 +40,8 @@ export function createCabinShell(r:Resources){
     const part=new THREE.Mesh(g,m);part.name=name;part.castShadow=part.receiveShadow=true;parent.add(part);return part;
   }
   function box(parent:THREE.Object3D,name:string,size:readonly[number,number,number],p:readonly[number,number,number],m:THREE.Material,bevel=.012){
-    const key=`cabin-box:${size.join(',')}:${bevel}`;
-    const g=r.geometry(key,()=>woodCoordinates(new RoundedBoxGeometry(...size,1,Math.min(bevel,...size.map(v=>v/4)))));
+    const key=`cabin-box:${size.join(',')}:${bevel}:${name}`;
+    const g=r.geometry(key,()=>woodCoordinates(new RoundedBoxGeometry(...size,1,Math.min(bevel,...size.map(v=>v/4))), 'board',undefined,name));
     const obj=mesh(parent,name,g,m);obj.position.set(...p);return obj;
   }
   const platform=new THREE.Group();platform.name='continuous-floor-and-porch';root.add(platform);
@@ -48,17 +49,17 @@ export function createCabinShell(r:Resources){
   box(platform,'porch-foundation',[CABIN.porchWidth,.30,CABIN.porchDepth],[0,-.23,D/2+CABIN.porchDepth/2],trim,.035);
   // Plank surfaces are exactly Y=0. A foundation below closes every seam.
   function deck(name:string,width:number,depth:number,z:number){
-    const batches:THREE.BufferGeometry[][]=[[],[],[],[]];
+    const boards:THREE.BufferGeometry[]=[];
     const rows=Math.ceil(depth/.32),pitch=depth/rows;
     for(let row=0;row<rows;row++){
       const ends=row%2===0?[-width/2,-width/6,width/6,width/2]:[-width/2,-width*.30,width*.04,width*.36,width/2];
       for(let part=0;part<ends.length-1;part++){
         const a=ends[part],b=ends[part+1];
-        const g=woodCoordinates(new RoundedBoxGeometry(b-a-.008,.08,pitch-.006,1,.007),'board','x');
-        g.translate((a+b)/2,-.04,z-depth/2+(row+.5)*pitch);batches[(row+part*3)%4].push(g);
+        const g=woodCoordinates(new RoundedBoxGeometry(b-a-.008,.08,pitch-.006,1,.007),'board','x',`${name}:${row}:${part}`);
+        g.translate((a+b)/2,-.04,z-depth/2+(row+.5)*pitch);boards.push(g);
       }
     }
-    batches.forEach((items,i)=>{const merged=r.own(mergeGeometries(items)!);items.forEach(g=>g.dispose());mesh(platform,`${name}:boards:${i}`,merged,floorMaterials[i]);});
+    const merged=r.own(mergeGeometries(boards)!);boards.forEach(g=>g.dispose());mesh(platform,`${name}:boards`,merged,floorMaterial);
   }
   deck('room',W,D,0);deck('porch',CABIN.porchWidth,CABIN.porchDepth,D/2+CABIN.porchDepth/2);
   box(platform,'door-threshold',[CABIN.doorWidth,.05,.25],[0,-.025,D/2],pale,.008);
@@ -73,7 +74,7 @@ export function createCabinShell(r:Resources){
     const report=auditMeshData(design,{maxComponents:4});
     geometryReports.push({id:`${plan.id}:${y0}`,ok:report.ok,faces:design.faces.length});
     if(!report.ok)throw new Error(`Invalid cabin wall topology: ${plan.id}: ${JSON.stringify(report.issues)}`);
-    const g=woodCoordinates(toGeometry(design),'board','x');g.translate(0,y0,0);return r.own(g);
+    const g=woodCoordinates(toGeometry(design),'board','x',`wall:${plan.id}`);g.translate(0,y0,0);return r.own(g);
   };
   for(const plan of SHELL_PLAN){
     const wall=new THREE.Group();wall.name=`wall:${plan.id}`;wall.position.set(...plan.origin);wall.rotation.y=plan.yaw;root.add(wall);

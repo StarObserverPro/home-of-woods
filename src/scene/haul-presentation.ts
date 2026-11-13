@@ -1,3 +1,5 @@
+import {WOOD_TONES,woodBatchToneSeed} from '../content/wood-tones.ts';
+import {woodToneGeometry} from './wood-tones.ts';
 import {woodCoordinates,woodMaterial} from './wood-grain.ts';
 import {groundScrapGeometry,scrapMaterial} from './scrap-geometry.ts';
 import * as THREE from 'three';
@@ -14,7 +16,6 @@ export function createHaulPresentation(r:Resources,models:Models){
   const group=new THREE.Group(),hits=new InteractionRegistry();group.name='haul-materials';
   const placed=new Map<string,{root:THREE.Group;remove:()=>void}>();
   const cylinder=r.geometry('haul-log',()=>woodCoordinates(new THREE.CylinderGeometry(1,1,1,9),'raw','y'));
-  const bark=woodMaterial(r,'#875b3c',.7),end=woodMaterial(r,'#ddbd87',.72);
   const scraps=r.geometry('haul-split-scraps',groundScrapGeometry),scrapSurface=scrapMaterial(r);
   let revision=-1;
   return {group,hits,
@@ -27,11 +28,13 @@ export function createHaulPresentation(r:Resources,models:Models){
         if(!entry){
           const root=new THREE.Group();root.name=id;
           if(stack.itemId==='wood'||stack.itemId==='small-wood'){
-            const shape=woodShape(stack),mesh=new THREE.Mesh(cylinder,[bark,end,end]);
+            const shape=woodShape(stack),tone=WOOD_TONES.neutral;
+            const bark=woodMaterial(r,tone.bark,.7),end=woodMaterial(r,tone.end,.72);
+            const mesh=new THREE.Mesh(woodToneGeometry(r,cylinder,woodBatchToneSeed(stack)),[bark,end,end]);
             mesh.scale.set(shape.radius,shape.length,shape.radius);mesh.rotation.z=Math.PI/2;
             mesh.position.y=shape.radius;root.add(mesh);
           }else if(stack.itemId==='scrap-fuel'){
-            const mesh=new THREE.Mesh(scraps,scrapSurface);mesh.name='ground-split-scraps';root.add(mesh);
+            const mesh=new THREE.Mesh(woodToneGeometry(r,scraps,woodBatchToneSeed(stack)),scrapSurface);mesh.name='ground-split-scraps';root.add(mesh);
           }else{
             const template=models.templates.get(stack.itemId.includes('mushroom')?'mushrooms':'branches');
             if(template){const mesh=template.clone(true);root.add(mesh);const box=new THREE.Box3().setFromObject(mesh),size=box.getSize(new THREE.Vector3());

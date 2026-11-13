@@ -1,3 +1,5 @@
+import {WOOD_TONES} from '../content/wood-tones.ts';
+import {setWoodTone} from './wood-tones.ts';
 import {woodCoordinates,woodMaterial} from './wood-grain.ts';
 import * as THREE from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
@@ -9,7 +11,7 @@ import type {Resources} from './resources.ts';
 export type SupportedSurfaceLook='bench'|'table';
 /** Shared parts, material palette and geometry caches for furniture and its assembly preview. */
 export function createSupportedSurfaceFactory(r:Resources){
-  const materials={surface:woodMaterial(r,'#d1ac72',.78),frame:woodMaterial(r,'#9d7246',.84),endgrain:woodMaterial(r,'#624936',.88)};
+  const materials={surface:woodMaterial(r,WOOD_TONES.light.face,.78),frame:woodMaterial(r,WOOD_TONES.warm.face,.84),endgrain:woodMaterial(r,WOOD_TONES.dark.face,.88)};
   const keyFor=(part:GeometryPart)=>`${part.primitive}:${part.dimensions.x}:${part.dimensions.y}:${part.dimensions.z}`;
   function partGeometry(part:GeometryPart){
     return r.geometry('supported-part:'+keyFor(part),()=>{
@@ -41,7 +43,7 @@ export function createSupportedSurfaceFactory(r:Resources){
   function create(value:GeometrySpec,look:SupportedSurfaceLook){
     const spec=verifiedGeometrySpec(value);if(spec.family!=='supported-surface')throw Error('Expected a supported surface');
     const parts=geometryParts(spec),key=geometryKey(spec),root=new THREE.Group();
-    const placed=(part:GeometryPart)=>partGeometry(part).clone().translate(part.center.x,part.center.y,part.center.z);
+    const placed=(part:GeometryPart)=>setWoodTone(partGeometry(part).clone(),`${key}:${part.id}`).translate(part.center.x,part.center.y,part.center.z);
     mesh(root,merge('supported-surface:'+key,()=>parts.filter(part=>part.id==='surface').map(placed)),materials.surface,'supported-surface');
     mesh(root,merge('supported-frame:'+key,()=>parts.filter(part=>part.id!=='surface').map(placed)),materials.frame,'supported-frame');
     if(look==='bench'){

@@ -1,3 +1,4 @@
+import {setWoodInstanceTone} from './wood-tones.ts';
 import {branchAttachment,attachedBranchGeometry} from './branch-attachment.ts';
 import {groundScrapGeometry,scrapMaterial} from './scrap-geometry.ts';
 import * as THREE from 'three';
@@ -55,7 +56,7 @@ export function createGatheringPresentation(r: Resources, models: Models, regist
       const mesh = r.own(new THREE.InstancedMesh(object.geometry,object.material,records.length));
       const local=object.matrixWorld.clone();
       mesh.castShadow=true;mesh.receiveShadow=true;
-      records.forEach((record,index)=>mesh.setMatrixAt(index,record.matrix.clone().multiply(local)));
+      records.forEach((record,index)=>{mesh.setMatrixAt(index,record.matrix.clone().multiply(local));if(definition.itemId==='scrap-fuel')setWoodInstanceTone(mesh,index,record.sourceId);});
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       mesh.computeBoundingSphere();group.add(mesh);batches.push({mesh,records,local});
     });

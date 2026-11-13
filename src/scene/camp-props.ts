@@ -1,3 +1,5 @@
+import {WOOD_TONES} from '../content/wood-tones.ts';
+import {setWoodInstanceTone} from './wood-tones.ts';
 import {woodCoordinates,woodMaterial} from './wood-grain.ts';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
@@ -85,12 +87,12 @@ export function createCampProps(r:Resources){
   woodMesh(canopy,woodBox(.17,.16,3.75),'#a5855b',0,3.23,0).name='log-store-roof-ridge';
   const logGeo=r.geometry('r5-stock-log',()=>woodCoordinates(new THREE.CylinderGeometry(.31,.33,2.6,9),'raw','y').rotateX(Math.PI/2));
   const capGeo=r.geometry('r5-stock-cap',()=>woodCoordinates(new THREE.CircleGeometry(.274,9),'end','z'));
-  const logs=new THREE.InstancedMesh(logGeo,woodMaterial(r,'#845a37'),18),caps=new THREE.InstancedMesh(capGeo,woodMaterial(r,'#d9b57a'),36);store.add(logs,caps);
+  const logs=new THREE.InstancedMesh(logGeo,woodMaterial(r,WOOD_TONES.neutral.bark),18),caps=new THREE.InstancedMesh(capGeo,woodMaterial(r,WOOD_TONES.neutral.end),36);store.add(logs,caps);
   const dummy=new THREE.Object3D();let index=0;
   for(let row=0;row<4;row++)for(let col=0;col<6-row&&index<18;col++){
     const x=(col-(5-row)/2)*.65,y=.52+row*.55;
-    dummy.position.set(x,y,0);dummy.rotation.set(0,0,0);dummy.scale.setScalar(1);dummy.updateMatrix();logs.setMatrixAt(index,dummy.matrix);
-    for(let side=0;side<2;side++){dummy.position.set(x,y,side?1.303:-1.303);dummy.rotation.set(0,side?0:Math.PI,0);dummy.updateMatrix();caps.setMatrixAt(index*2+side,dummy.matrix);}index++;
+    dummy.position.set(x,y,0);dummy.rotation.set(0,0,0);dummy.scale.setScalar(1);dummy.updateMatrix();logs.setMatrixAt(index,dummy.matrix);setWoodInstanceTone(logs,index,`stored-log:${index}`);
+    for(let side=0;side<2;side++){dummy.position.set(x,y,side?1.303:-1.303);dummy.rotation.set(0,side?0:Math.PI,0);dummy.updateMatrix();caps.setMatrixAt(index*2+side,dummy.matrix);setWoodInstanceTone(caps,index*2+side,`stored-log:${index}`);}index++;
   }
   logs.computeBoundingSphere();caps.computeBoundingSphere();
   // The accepted lower octagonal stonework stays beneath the separate floating crown.

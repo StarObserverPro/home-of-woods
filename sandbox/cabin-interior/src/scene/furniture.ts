@@ -1,3 +1,5 @@
+import {WOOD_TONES,woodToneDrift} from '../../../../src/content/wood-tones.ts';
+import {setWoodTone} from '../../../../src/scene/wood-tones.ts';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
@@ -61,6 +63,9 @@ export async function loadFurnitureAssets(resources: Resources) {
   adoptedMaterial.name = 'cabin:kaykit-forest-palette';
   adoptedMaterial.userData.source = 'KayKit Furniture Bits 1.0 / CC0-1.0';
   adoptedMaterial.onBeforeCompile = shader => {
+    shader.vertexShader='attribute vec3 woodTone;varying vec3 vCabinWoodTone;\n'+shader.vertexShader;
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvCabinWoodTone=woodTone;');
+    shader.fragmentShader='varying vec3 vCabinWoodTone;\n'+shader.fragmentShader;
     shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
       // Preserve the licensed atlas and its authored gradients; map only its blue cloth swatch.
       #ifdef USE_MAP
@@ -68,16 +73,21 @@ export async function loadFurnitureAssets(resources: Resources) {
           float clothLight = dot(diffuseColor.rgb, vec3(.2126, .7152, .0722));
           diffuseColor.rgb = vec3(.105, .215, .145) * (.62 + 1.05 * clothLight);
         } else if (diffuseColor.r > diffuseColor.g * 1.15 && diffuseColor.g > diffuseColor.b * 1.15) {
-          diffuseColor.rgb *= vec3(.88, .94, .90);
+          diffuseColor.rgb *= vec3(.88, .94, .90) * vCabinWoodTone;
         }
       #endif
     `);
   };
-  adoptedMaterial.customProgramCacheKey = () => 'cabin-kaykit-forest-palette-v1';
+  adoptedMaterial.customProgramCacheKey = () => 'cabin-kaykit-forest-palette-wood-v2';
   let sourceTriangles = 0;
   for (const {id, scene} of loaded) {
     scene.traverse(object => {
       if (!(object instanceof THREE.Mesh)) return;
+      // Per-model offset in the same wood swatch; no recoloring cloth, metal or the rug.
+      const factor=id==='bed'?[1.12,1.15,1.19]:id==='stool'?[.82,.83,.84]:[1,1,1];
+      const drift=woodToneDrift(`adopted:${id}:${object.name}`,.10),values=new Float32Array(object.geometry.getAttribute('position').count*3);
+      for(let i=0;i<values.length;i+=3)values.set(id==='rug'?[1,1,1]:drift.map((v,k)=>v*factor[k]),i);
+      object.geometry.setAttribute('woodTone',new THREE.BufferAttribute(values,3));
       object.material = adoptedMaterial;
       object.castShadow = object.receiveShadow = true;
       sourceTriangles += (object.geometry.index?.count ?? object.geometry.getAttribute('position').count) / 3;
@@ -85,9 +95,9 @@ export async function loadFurnitureAssets(resources: Resources) {
     imported.set(id, scene);
   }
 
-  const wood = woodMaterial(resources, '#a87b4b', .84);
-  const darkWood = woodMaterial(resources, '#6f4f35', .88);
-  const paleWood = woodMaterial(resources, '#bd9864', .82);
+  const wood = woodMaterial(resources, WOOD_TONES.warm.face, .84);
+  const darkWood = woodMaterial(resources, WOOD_TONES.dark.face, .88);
+  const paleWood = woodMaterial(resources, WOOD_TONES.light.face, .82);
   const iron = resources.own(new THREE.MeshStandardMaterial({color: '#303933', roughness: .67, metalness: .35}));
   iron.name = 'cabin:patinated-iron';
   const brass = resources.own(new THREE.MeshStandardMaterial({color: '#b48e4c', roughness: .48, metalness: .62}));
@@ -126,7 +136,7 @@ export async function loadFurnitureAssets(resources: Resources) {
       const normalized = entries.map(({geometry}) => geometry.index ? geometry.toNonIndexed() : geometry.clone());
       // All authored pieces of a wooden batch own the same custom coordinate attribute.
       if ((material as THREE.MeshStandardMaterial).userData.proceduralWood) {
-        for (const geometry of normalized) if (!geometry.getAttribute('woodCoord')) woodCoordinates(geometry);
+        for (const [i,geometry] of normalized.entries()) {if (!geometry.getAttribute('woodCoord')) woodCoordinates(geometry);setWoodTone(geometry,`${parent.name}:${entries[i].name}`);}
       }
       const merged = mergeGeometries(normalized, false);
       for (const geometry of normalized) geometry.dispose();
