@@ -1,29 +1,42 @@
 name: Lighting Review
 on:
-  push:
-    branches: [feat/local-occlusion-lighting]
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'sandbox/cabin-interior/src/**'
+      - 'tests/local-occlusion.test.ts'
+      - 'tools/verification/lighting-review.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/lighting-review.yml'
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:
   group: lighting-review-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  integrate-reviewed-patch:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/feat/local-occlusion-lighting'
+  lighting:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: write
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: feat/local-occlusion-lighting
-      - name: Apply hash-checked integration only to this feature branch
-        run: |
-          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          test -f tools/apply-lighting-integration.py
-          python3 tools/apply-lighting-integration.py
-          git rm tools/apply-lighting-integration.py
-          git add src sandbox/cabin-interior/src tests/local-occlusion.test.ts tools/verification/lighting-review.mjs
-          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'fix: anchor building occlusion to authored floor and wall geometry'
-          git push origin HEAD:refs/heads/feat/local-occlusion-lighting
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+          cache: npm
+      - run: npm ci
+      - run: node --experimental-strip-types --test tests/local-occlusion.test.ts tests/cabin-interior.test.ts
+      - run: npm run verify:cabin-assets && npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get install -y fonts-noto-cjk
+      - run: node tools/verification/lighting-review.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighting-review-evidence
+          path: /tmp/how-lighting-evidence/
+          if-no-files-found: warn
+          retention-days: 7
