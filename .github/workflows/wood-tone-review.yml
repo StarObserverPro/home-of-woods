@@ -1,28 +1,27 @@
 name: Wood Tone Review
 on:
-  push:
-    branches: [feat/local-occlusion-lighting]
+  pull_request:
+    paths:
+      - 'src/content/wood-tones.ts'
+      - 'src/scene/**'
+      - 'sandbox/cabin-interior/src/scene/**'
+      - 'tests/wood*.test.ts'
+      - 'tools/verification/wood-tone*'
+      - '.github/workflows/wood-tone-review.yml'
+  workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: wood-tone-review-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  integrate-and-review:
-    if: github.ref == 'refs/heads/feat/local-occlusion-lighting'
+  wood-tone:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: feat/local-occlusion-lighting
-      - name: Apply hash-checked wood-only integration to this feature branch
-        run: |
-          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          python3 tools/apply-wood-tone.py
-          git rm tools/apply-wood-tone.py
-          git add src sandbox/cabin-interior/src tests/wood-grain.test.ts docs/scopes/wood-tone-variation.md
-          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'feat: apply stable wood value variation without species mapping'
-          git push origin HEAD:refs/heads/feat/local-occlusion-lighting
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22.14.0'
