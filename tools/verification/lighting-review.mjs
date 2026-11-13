@@ -87,9 +87,9 @@ async function mainCrownFade(name){
  for(let index=0;index<rotations;index++)await page.getByRole('button',{name:'镜头右转',exact:true}).click();
  await page.waitForFunction(yaw=>Math.abs(JSON.parse(document.querySelector('#runtime-stats').textContent).current.yaw-yaw)<1e-8,expectedYaw);
  const rotated=await mainStats();
- // Only observe the normal loop. Three simulated seconds let its exponential camera follow settle,
- // including on software GPUs; no scene mutation, forced material or alternate tick is used.
- await page.waitForFunction(time=>{const s=JSON.parse(document.querySelector('#runtime-stats').textContent).current;return s.scenePreset===null&&s.loop.running&&s.gameTime>=time;},rotated.gameTime+3,{timeout:120000});
+ // Observe the real material transition across normal rendered frames. A wall-clock wait for
+ // arbitrary simulation time is unreliable when a software GPU renders only a few frames a minute.
+ await page.waitForFunction(frames=>{const s=JSON.parse(document.querySelector('#runtime-stats').textContent).current;return s.scenePreset===null&&s.loop.running&&s.loop.frames>=frames+2&&s.fadedTreeIds?.length>0;},rotated.loop.frames,{timeout:180000});
  const settled=await mainStats();report.mainCheckpoints.push({name:`${name}-settled`,stats:settled});
  assert.equal(settled.shaderErrors,0);assert.equal(settled.occlusion.enabled,true);
  assert.ok(settled.fadedTreeIds.length>0,`${name}: the real camera path did not fade any tree crown`);
@@ -144,5 +144,5 @@ try{
    await mainCrownFade(name);await context.close();
  }
  assert.deepEqual(report.errors,[]);report.status='passed-automated';console.log('LIGHTING_BROWSER_PASS');
-}catch(error){report.status='failed';report.failure={phase,message:String(error.stack??error)};if(page&&!page.isClosed()){report.body=await page.locator('body').innerText().catch(()=>null);await page.screenshot({path:path.join(out,'failure.png'),fullPage:true}).catch(()=>{});}console.error(error);process.exitCode=1;
+}catch(error){report.status='failed';report.failure={phase,message:String(error.stack??error)};if(page&&!page.isClosed()){report.failureState=await page.locator('#runtime-stats').textContent({timeout:2000}).then(value=>JSON.parse(value).current).catch(()=>null);report.body=await page.locator('body').innerText().catch(()=>null);await page.screenshot({path:path.join(out,'failure.png'),fullPage:true,timeout:90000}).catch(()=>{});}console.error(error);process.exitCode=1;
 }finally{await browser?.close().catch(()=>{});server.kill('SIGTERM');await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));await fs.writeFile(path.join(out,'preview.log'),serverLog);}

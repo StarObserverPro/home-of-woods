@@ -6,7 +6,7 @@ const origin=process.env.TEST_ORIGIN??'http://127.0.0.1:5187';
 const baseline=process.env.BASELINE_ORIGIN;
 const out=process.env.EVIDENCE_DIR??'/tmp/how-east-evidence';fs.mkdirSync(out,{recursive:true});
 const browser=await chromium.connectOverCDP(process.env.CHROME_CDP_URL??'http://127.0.0.1:9333');
-const report={sourceRevision:process.env.SOURCE_REVISION??'working-tree',advancement:'DEV inspection uses the existing fixed-step owner for the loaded return trip',origin,browser:browser.version(),flows:[],frames:[],errors:[],failedRequests:[]};
+const report={sourceRevision:process.env.SOURCE_REVISION??'working-tree',advancement:'DEV inspection advances world actions and slow-render journeys through the existing fixed-step owner in bounded 2-second steps',origin,browser:browser.version(),flows:[],frames:[],errors:[],failedRequests:[]};
 const flow=process.env.TEST_FLOW??'all';
 let context,page;
 const stats=async()=>JSON.parse(await page.locator('#runtime-stats').textContent()).current;
@@ -73,20 +73,20 @@ try{
   await fresh('camp');await shot('expanded-camp');
   await fresh('bridge');assert.equal((await world()).workshop.upgrades['creek-bridge'],undefined);
   await shot('desktop-bridge-unbuilt');await page.getByRole('button',{name:'修建木桥',exact:true}).click();
-  await waitFor(()=>JSON.parse(document.querySelector('#runtime-stats').textContent).current.worldState.workshop.upgrades['creek-bridge']?.level===1);
+  await drive(()=>JSON.parse(document.querySelector('#runtime-stats').textContent).current.worldState.workshop.upgrades['creek-bridge']?.level===1);
   assert.equal((await world()).inventory.stacks.length,0);await shot('desktop-bridge-built');report.flows.push('actual blueprint construction debits 4 logs and 3 branches, then enables crossing');
   await page.getByRole('button',{name:'关闭目标详情',exact:true}).click();await page.getByRole('button',{name:'路线',exact:true}).click();
   const routes=page.locator('.route-sheet');await routes.getByRole('button',{name:'风景',exact:true}).click();await routes.getByRole('button',{name:'溪流东岸林',exact:true}).click();await routes.getByRole('button',{name:'前往',exact:true}).click();
-  await waitFor(()=>{const p=JSON.parse(document.querySelector('#runtime-stats').textContent).current.player;return p.x>20&&p.x<36;});await shot('desktop-on-bridge');
-  await waitFor(()=>{const s=JSON.parse(document.querySelector('#runtime-stats').textContent).current;return s.player.x>44&&s.routeNodes===0;});
+  await drive(()=>{const p=JSON.parse(document.querySelector('#runtime-stats').textContent).current.player;return p.x>20&&p.x<36;});await shot('desktop-on-bridge');
+  await drive(()=>{const s=JSON.parse(document.querySelector('#runtime-stats').textContent).current;return s.player.x>44&&s.routeNodes===0;});
   assert.ok((await world()).visited.includes('east-bank'));await shot('desktop-east-bank');report.flows.push('scene UI navigation walks across the constructed deck, loads eastern chunks and discovers the east bank');
   await fresh('gather');await page.getByRole('button',{name:'采集',exact:true}).click();
-  await waitFor(()=>JSON.parse(document.querySelector('#runtime-stats').textContent).current.gathering.action?.phase==='completed');
+  await drive(()=>JSON.parse(document.querySelector('#runtime-stats').textContent).current.gathering.action?.phase==='completed');
   assert.equal((await stats()).carrying.items.find(s=>s.name.includes('蘑菇'))?.quantity,2);await shot('desktop-east-gathered');report.flows.push('eastern mushrooms collect through the live action and carried inventory');
   }
   if(flow==='all'||flow==='haul'||flow==='haul-mobile'){
   await fresh('felling');await page.getByRole('button',{name:'砍树',exact:true}).click();
-  await waitFor(()=>{const s=JSON.parse(document.querySelector('#runtime-stats').textContent).current.worldState;return !s.forestry.active&&s.forestry.slots['tree-slot-18-20'].status==='stump';});
+  await drive(()=>{const s=JSON.parse(document.querySelector('#runtime-stats').textContent).current.worldState;return !s.forestry.active&&s.forestry.slots['tree-slot-18-20'].status==='stump';});
   const yieldCount=(await world()).inventory.stacks.filter(s=>s.harvest).reduce((n,s)=>n+s.quantity,0);assert.ok(yieldCount>1);
   await page.getByRole('button',{name:'打开仓库',exact:true}).click();const carrying=page.locator('.carrying-panel');await carrying.getByRole('button',{name:'地上材料',exact:true}).click();
   await carrying.getByLabel('搬运数量',{exact:true}).selectOption('1');await carrying.getByRole('group',{name:'地上材料图标',exact:true}).getByRole('button',{name:/^原木，/}).click();
@@ -107,7 +107,7 @@ try{
   for(const viewport of [{width:390,height:844},{width:844,height:390}]){
     await fresh('bridge',viewport);const button=page.getByRole('button',{name:'修建木桥',exact:true}),bounds=await button.boundingBox();assert.ok(bounds&&bounds.x>=0&&bounds.x+bounds.width<=viewport.width&&bounds.height>=44);
     assert.ok(await button.isEnabled());await shot('mobile-'+viewport.width+'-bridge-unbuilt');await button.click();
-    await waitFor(()=>JSON.parse(document.querySelector('#runtime-stats').textContent).current.worldState.workshop.upgrades['creek-bridge']?.level===1);await shot('mobile-'+viewport.width+'-bridge-built');
+    await drive(()=>JSON.parse(document.querySelector('#runtime-stats').textContent).current.worldState.workshop.upgrades['creek-bridge']?.level===1);await shot('mobile-'+viewport.width+'-bridge-built');
   }
   report.flows.push('390×844 touch and 844×390 landscape layouts expose the same construction action with a 44px target');
   }
