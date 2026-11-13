@@ -7,11 +7,11 @@ import {
   woodBatch,
 } from '../../../src/domain/inventory.ts'
 import type { InventoryState } from '../../../src/domain/inventory.ts'
-import { restoreJob } from '../src/domain.ts'
+import { restoreDraft } from '../src/workbench.ts'
 import { rarityDefinition, isRarityId } from '../../../src/content/rarities.ts'
 
-type Session = { version: 1; inventory: InventoryState; serial: number; draft: WoodworkingDraft | null }
-const key = 'home-of-woods.handwork.sandbox.v1'
+type Session = { version: 2; inventory: InventoryState; serial: number; draft: WoodworkingDraft | null }
+const key = 'home-of-woods.handwork.sandbox.v2'
 const root = document.querySelector<HTMLElement>('#workshop')!
 const ledger = document.querySelector<HTMLElement>('#ledger')!
 const gallery = document.querySelector<HTMLDetailsElement>('#gallery')!
@@ -25,7 +25,7 @@ function fresh(): Session {
     { id: 'offcut', label: '短枫木料', length: 69, section: 28, quantity: 3 },
   ]
   return {
-    version: 1,
+    version: 2,
     serial: 1,
     draft: null,
     inventory: inventoryTransaction(
@@ -57,9 +57,9 @@ function load(): Session {
     const raw = storage?.getItem(key)
     if (raw) {
       const s: Session = JSON.parse(raw)
-      if (s.version !== 1 || !Number.isSafeInteger(s.serial) || s.serial < 1) throw Error()
+      if (s.version !== 2 || !Number.isSafeInteger(s.serial) || s.serial < 1) throw Error()
       validateInventory(s.inventory)
-      if (s.draft) s.draft.job = restoreJob(s.draft.job)
+      if (s.draft) s.draft = restoreDraft(s.draft)
       return s
     }
   } catch {
@@ -82,7 +82,7 @@ function shelves() {
   document.querySelector('#count')!.textContent = String(items.length)
   ledger.replaceChildren()
   if (!items.length) {
-    ledger.textContent = '收好第一件榫样，就能领用直角尺。'
+    ledger.textContent = '尺量辅助从第一件就可用。作品会保留实际尺寸与工艺成绩。'
     return
   }
   for (const item of [...items].sort((a, b) => b.createdAt - a.createdAt)) {
@@ -119,13 +119,12 @@ function open() {
         if (draft !== null || session.draft !== null) save({ ...session, draft })
       },
       commit: (inventory, serial) => {
-        save({ version: 1, inventory, serial, draft: null })
+        save({ version: 2, inventory, serial, draft: null })
         shelves()
       },
     },
     session.draft,
-    () => ({ straightedge: (session.inventory.instances?.length ?? 0) > 0 }),
-    '收好第一件榫样后可领用直角尺',
+    () => ({ saw: true, autoFinish: true, brush: true, straightedge: true }),
   )
 }
 document.querySelector('#replenish')!.addEventListener('click', () => {

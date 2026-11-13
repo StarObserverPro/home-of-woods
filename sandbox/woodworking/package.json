@@ -1,9 +1,9 @@
 {
   "name": "@home-of-woods/woodworking",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "森林之家 · 读图、放样和直榫试配工作台",
+  "description": "森林之家 · 立体选面、有限锯切和直榫试配工作台",
   "files": ["dist/woodworking.js", "dist/types", "README.md"],
   "exports": {
     ".": { "types": "./dist/types/index.d.ts", "import": "./dist/woodworking.js" }

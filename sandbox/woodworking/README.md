@@ -1,10 +1,8 @@
-# 森林之家 · 木作间
+# 森林之家 · 木作间 0.2
 
-一根方料、一把手锯和一副开口试配槽。在纸上定总长、榫长和榫宽，翻转工件划出五道墨线，锯出直榫。可以把近侧榫颊刻意留厚一点，看看试配时哪一侧顶住，再用凿子薄削。首件收进作品匣后，下一件可领用直角尺。尺子只沿玩家选定的落笔位置扶正线条。
+立体木料选面 → 量具辅助定位 → 设止锯深度 → 明确下锯 → 检查/一次收尾 → 收件。鼠标点击只选面，拖动只转视角；没有徒手画直线要求。图纸只供参考，不能作为工作面。
 
-## 试玩和打包
-
-在仓库根目录执行以下命令。需要 Node.js 22.14 或更新版本。
+在仓库根目录执行：
 
 ```sh
 cd sandbox/woodworking
@@ -14,56 +12,60 @@ npm run build
 npm pack
 ```
 
-- **直接试玩**　用浏览器打开 `dist/woodworking.html`。它包含完整画面、工序和示例宿主，可离线使用。样件、方料与草稿存在试玩页自己的存储空间。浏览器限制文件存储时可在同一会话继续操作。
-- **挂载包**　`home-of-woods-woodworking-0.1.0.tgz` 可用 `npm install ./home-of-woods-woodworking-0.1.0.tgz` 安装。包内是浏览器 ESM 模块、内嵌样式和 TypeScript 声明，没有运行时依赖。普通静态页面也可直接导入 `dist/woodworking.js`。
-- **正式工作台入口**　游戏仓库中的[营地挂载入口](integration/mount-camp.ts)已将该视图接到[库存适配器](integration/camp.ts)。示例宿主通过同一个入口挂载。游戏默认入口尚未启用这个沙盒。
+`dist/woodworking.html` 为单文件独立试玩页，包含示例宿主、库存和草稿；支持普通浏览器本地打开。若浏览器禁用本地存储，页内提示仅本次会话保留。`dist/woodworking.js` 是无运行时外部依赖的 ESM 挂载包，声明在 `dist/types`。正式游戏默认菜单尚未开放这间练习台。
 
-## 在宿主中挂载
+## 怎么锯第一支榫
+
+初始 90 × 30 × 30 mm 方料，图纸总长 80、榫长 20、榫宽 14 mm。选择“截端”，点击顶面或“建议面”，从 A 端量 80 mm；可以先锯入 10 mm，再把深度设为 30 mm 继续。浅锯不发余料，贯穿后才断开。
+
+剩下两侧榫颊从端面进入，标线从近侧 B 基准量起分别是 8 和 22 mm，纵向锯入 20 mm。两肩从 A 端量 60 mm，分别从近侧和远侧进入 8 mm。肩先、颊先都允许；不必遵循标签排列。默认锯缝放在各自的废料侧，改变该选择会真实改变结果。深度视角仍是同一木料，也可以回到立体视角。
+
+这是用于理解工序的示例尺寸，试玩不会替玩家持续投影正确线。进深和位置滑块的初值不等于正确答案。此版的满行程往复、1 mm 锯缝和公差是游戏抽象，并非现实承重木作指导。
+
+“检查/试配”显示预制槽、冲突面和分数。少量偏厚可明确确认一次减材收尾；过薄或锯伤保留结构不能补回。收尾后重新检查实际几何，工艺分含收尾成本。自动收尾不是已实现的手动凿子。
+
+## 挂载
 
 ```ts
 import { mountWoodworking } from '@home-of-woods/woodworking'
 
 const view = mountWoodworking(panel, {
-  stocks: availableBlanks,
+  stocks: availableSquareBlanks,
   draft: savedDraft,
-  tools: { saw: true, chisel: true, brush: true, straightedge: hasSquare },
-  onDraftChange: saveWorkshopDraft,
+  tools: { saw: true, autoFinish: true, brush: true },
+  onDraftChange: saveDraft,
   onComplete: settleWorkpiece,
-  onDiscard: discardSawnBlank
+  onDiscard: discardWorkpiece,
 })
-view.setPaused(true)    // 随游戏暂停，冻结输入与虚影余时
+view.setPaused(true)
 view.setPaused(false)
-view.destroy()         // 离开工作台，释放画布输入、计时器和尺寸监听
+view.destroy()
 ```
 
-| 交接 | 职责 |
-| --- | --- |
-| 选料与图纸 | 宿主提供可用木坯的稳定批次 ID、显示名和毫米尺寸。传空数组代表没有可用料。进入工作台的距离、图纸知识和工具权限由宿主判定。练习宿主提供两种常规方料和一批短料 |
-| 加工中 | `onDraftChange(draft)` 回传可序列化工件，宿主决定保存位置。下一次挂载传回 `draft`，保留墨线与切面。退出工作台继续保留草稿，暂停/重开不会补发五秒虚影 |
-| 收件 | `onComplete(preview, stockId, draft)` 可异步返回稀有度名称和词条展示名。适配器从草稿重建实际几何并复查材料，单次提交扣料、足尺寸余料、成品和流水号。若结算失败可在原工件上重试 |
-| 换料或弃料 | 第一刀以前可以换料。实际下锯后须确认放弃，`onDiscard(draft)` 扣除这根方料并保留可用截余，不发成品。关闭界面不会触发弃料 |
-| 成品 | 成品记录实际端面、两侧榫颊和两肩的上下边界，从少量参数重建斜度与轮廓。宿主用原有图纸档次和种子决定稀有度，面漆单独保存。当前普通习作没有附加词条 |
+量具辅助从首件开放，`straightedge`/旧提示参数不再决定能否准确放样。`autoFinish` 独立控制辅助收尾，旧 `chisel:false` 仅在未设置 `autoFinish` 时作为兼容禁用信号，不开放凿子操作。
 
-营地侧可以直接调用以下入口。工件批次必须标有方截面 `wood.spec.section = 'square'` 和稳定 `blankLot`，并通过原有材料位置与库存校验。这样一根圆木不会在打开工作台时被当作已刨方的坯料。正式回接时需要接入工作台菜单、登记习作图纸与成品，并把已有方料供应和活动工单槽交给宿主。渲染、放样、试配和结算逻辑均在此目录。
+宿主拥有库存、当前活动工单、暂停和存档。`onComplete`/`onDiscard` 可以异步；提交前界面进入等待状态，失败保留当前工件供重试。关闭界面不会弃料。主线入口仍是 `integration/mount-camp.ts`，复用唯一库存事务；原料必须是已登记的直方料，不能把圆木当作已刨平木坯。
 
-```ts
-import { mountCampHandwork } from './sandbox/woodworking/integration/mount-camp.ts'
+草稿 v2 保存操作及布局。恢复与结算根据操作重建实体，不接受客户端伪造的分数、网格或余料。示例使用 `home-of-woods.handwork.sandbox.v2`，不覆盖 v1 草稿。旧版原型草稿不做静默转换；v1 结算分支仅保留原宿主合同回归，不把旧操作变成新试件。
 
-const view = mountCampHandwork(panel, {
-  read: () => gameState,
-  checkpoint: saveWorkshopDraft,
-  commit: commitInventorySerialAndClearDraft
-}, savedDraft, availableTools)
-```
+完成品继续输出已存在的 `FinishedWork` 包络，并附带体积平衡和是否辅助收尾。可复用余段按实际尺寸进入宿主库存；小块、锯屑和薄屑只记体积，没有几何实体，也不进入 Woodcraft 物理岛。本轮没有兑换细碎燃料的新物品。
 
-## 几何与检验
+## 内核与边界
 
-[设计规划](../../docs/WOODWORKING_HANDWORK.md)规定图纸目标、玩家墨线和加工实物各自的用途。首期实现一个可调的贯通直榫族。截端露出新面后，可在端面上放两条榫颊线，再从两侧锯肩。锯缝与纵锯止点相交才脱料。过厚能薄削，过薄会留下侧隙。试配使用真实端长、接触间隙、错肩及有效咬合。纸图和工件使用同一毫米坐标。画布按输入、工序变化和尺寸变化重绘，显示短工具动作，组件不创建常驻渲染循环。
+- `solid.ts`：精确正交实体减法、连通块、外露面；显示和命中同源。
+- `machining.ts`：有限锯切参数、夹持/可达性、实际去料与材料账。
+- `tenon.ts`：图纸建议、成形检查、评分、一次收尾与回放。
+- `workbench.ts` / `viewport.ts`：控件、同一木料的立体投影、观察与选面。
 
-`npm test` 覆盖几何、返工、报废、库存事务、重复收件与保存恢复。可选浏览器验收使用真实鼠标及模拟触控，在构建之后执行。桌面和手机都从落笔走到返工收件。传入 `QA_EVIDENCE_DIR` 可将检查图写入指定的临时目录。
+依然使用轻量 Canvas 立体投影，未引入新的 Three.js/WebGL 运行时。无常驻动画循环，变动才重绘。刀具往复覆盖整个行程轴，玩家设置的是向内进深；不模拟每一锯齿或手腕轨迹。48 次加工为本练习的上限。凿槽、钻孔、斜切、木纤维断裂、多零件配做和新图纸尚未实现；接入审查见 [传统工具与工序](../../docs/WOODWORKING_TOOLS.md)。
+
+## 验证
+
+单测包括新有限切削/材料/回放及真实营地事务，也保留旧合同测试。UI 验证使用独立 Playwright，不加入运行依赖：
 
 ```sh
-CHROME_PATH=/path/to/chromium PLAYWRIGHT_CORE=/path/to/playwright-core node test/browser.mjs
+CHROME_PATH=/path/to/chromium PLAYWRIGHT_CORE=/path/to/playwright-core \
+  QA_EVIDENCE_DIR=/tmp/woodworking-evidence node test/browser.mjs
 ```
 
-本阶段提供直榫试件和预制槽。自行凿槽、多零件家具、雕刻和拆解回收仍按后续工序开发。本沙盒使用原创程序几何和系统字体。
+浏览器脚本默认导航真实单文件页并检查刷新；`INLINE_ONLY=1` 仅用于受管本地浏览器禁止导航时的内嵌画面验证，**不将其计作刷新验证**。桌面与模拟触控覆盖真实选面、滑块/数值、浅锯续锯、肩先、试配、一次收尾、报废、收件和 ESM 挂载暂停/销毁/恢复。实际结果与版本绑定见 [本轮记录](../../docs/scopes/woodworking-finite-saw.md)。没有实体手机性能结论。
