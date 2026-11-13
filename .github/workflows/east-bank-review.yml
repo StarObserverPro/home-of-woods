@@ -19,8 +19,13 @@ jobs:
   east-bank:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        flow: [travel, haul-mobile]
     env:
       EVIDENCE_DIR: /tmp/how-east-bank-evidence
+      TEST_FLOW: ${{ matrix.flow }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -45,7 +50,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: east-bank-review-evidence
+          name: east-bank-review-evidence-${{ matrix.flow }}
           path: /tmp/how-east-bank-evidence/
           if-no-files-found: warn
           retention-days: 7

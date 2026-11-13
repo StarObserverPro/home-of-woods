@@ -12,8 +12,10 @@ const root=fileURLToPath(new URL('../../',import.meta.url));
 const origin='http://127.0.0.1:5187',cdp='http://127.0.0.1:9333';
 const out=path.resolve(process.env.EVIDENCE_DIR??'/tmp/how-east-bank-evidence');
 const playwrightModule=process.env.PLAYWRIGHT_MODULE??'playwright';
+const flow=process.env.TEST_FLOW??'all';
+const coverage={all:{flows:6,frames:13},travel:{flows:3,frames:6},'haul-mobile':{flows:3,frames:7}};
 const abort=new AbortController(),children=[];
-const report={result:'running',startedAt:new Date().toISOString(),origin,cdp,flow:'all',sourceRevision:null};
+const report={result:'running',startedAt:new Date().toISOString(),origin,cdp,flow,sourceRevision:null};
 let profile;
 fs.mkdirSync(out,{recursive:true});
 const onSignal=signal=>abort.abort(new Error(`East-bank review interrupted by ${signal}`));
@@ -77,6 +79,7 @@ async function stop(record){
 }
 
 try{
+  assert.ok(Object.hasOwn(coverage,flow),'TEST_FLOW must be all, travel or haul-mobile');
   report.sourceRevision=process.env.SOURCE_REVISION??execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim();
   fs.accessSync(path.join(root,'tools/verification/east-bank.mjs'));
   const {chromium}=await import(playwrightModule);
@@ -97,7 +100,7 @@ try{
   ]);
   await ready(chrome,`${cdp}/json/version`,true);
   report.phase='interaction-review';
-  const env={...process.env,TEST_ORIGIN:origin,CHROME_CDP_URL:cdp,EVIDENCE_DIR:out,SOURCE_REVISION:report.sourceRevision,TEST_FLOW:'all',PLAYWRIGHT_MODULE:playwrightModule};
+  const env={...process.env,TEST_ORIGIN:origin,CHROME_CDP_URL:cdp,EVIDENCE_DIR:out,SOURCE_REVISION:report.sourceRevision,TEST_FLOW:flow,PLAYWRIGHT_MODULE:playwrightModule};
   delete env.BASELINE_ORIGIN;
   const review=start('east-bank',process.execPath,[path.join(root,'tools/verification/east-bank.mjs')],env);
   const result=await Promise.race([
@@ -108,15 +111,15 @@ try{
   const evidence=JSON.parse(fs.readFileSync(path.join(out,'report.json'),'utf8'));
   assert.equal(evidence.sourceRevision,report.sourceRevision);
   assert.equal(evidence.result,'passed');
-  assert.equal(evidence.flows.length,6,'Every east-bank interaction flow must finish');
-  assert.equal(evidence.frames.length,13,'All desktop and mobile review frames must be captured');
+  assert.equal(evidence.flows.length,coverage[flow].flows,`Every ${flow} interaction flow must finish`);
+  assert.equal(evidence.frames.length,coverage[flow].frames,`All ${flow} review frames must be captured`);
   assert.deepEqual(evidence.errors,[]);assert.deepEqual(evidence.failedRequests,[]);
   for(const frame of evidence.frames){
     assert.equal(frame.shaderErrors,0,`${frame.name}: shader errors`);
     assert.ok(frame.drawCalls>0&&frame.triangles>0,`${frame.name}: no rendered scene`);
   }
   report.result='passed';report.flows=evidence.flows.length;report.frames=evidence.frames.length;
-  console.log(`East-bank review passed: ${report.flows} flows, ${report.frames} frames at ${report.sourceRevision}`);
+  console.log(`East-bank ${flow} review passed: ${report.flows} flows, ${report.frames} frames at ${report.sourceRevision}`);
 }catch(error){
   report.result='failed';report.failure=String(error);report.stack=error.stack;
   console.error(error);process.exitCode=1;

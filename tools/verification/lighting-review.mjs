@@ -49,6 +49,11 @@ async function cabinPair(name,camera='room',light='day',cut='stage'){
  report.pairs.push({name,...diff,cameraDelta,extraDrawCalls:on.stats.drawCalls-off.stats.drawCalls});
 }
 async function mainStats(){return JSON.parse(await page.locator('#runtime-stats').textContent()).current;}
+async function renderedViewport(){
+ const session=await page.context().newCDPSession(page);
+ try{const frame=await session.send('Page.captureScreenshot',{format:'png',fromSurface:true});return Buffer.from(frame.data,'base64');}
+ finally{await session.detach();}
+}
 async function mainPair(name,view,time='白昼'){
  phase=name;const diag=page.locator('details.diagnostics');if(!await diag.evaluate(e=>e.open))await diag.locator('summary').click();
  await page.getByLabel('场景观察位置').selectOption(view);await page.locator('.scene-inspector').getByRole('button',{name:time,exact:true}).click();
@@ -98,7 +103,7 @@ async function mainCrownFade(name){
  await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));
  await page.evaluate(()=>document.querySelector('.game-shell').classList.add('lighting-capture'));
  let buffer;
- try{buffer=await page.screenshot({clip:{x:0,y:0,...page.viewportSize()},animations:'disabled',timeout:90000});}
+ try{buffer=await renderedViewport();}
  finally{await page.evaluate(()=>document.querySelector('.game-shell').classList.remove('lighting-capture'));}
  const captured=await mainStats();
  assert.equal(captured.scenePreset,null);assert.equal(captured.shaderErrors,0);assert.ok(captured.fadedTreeIds.length>0,`${name}: fade disappeared before capture`);

@@ -88,7 +88,8 @@ try{
   await fresh('felling');await page.getByRole('button',{name:'砍树',exact:true}).click();
   await drive(()=>{const s=JSON.parse(document.querySelector('#runtime-stats').textContent).current.worldState;return !s.forestry.active&&s.forestry.slots['tree-slot-18-20'].status==='stump';});
   const yieldCount=(await world()).inventory.stacks.filter(s=>s.harvest).reduce((n,s)=>n+s.quantity,0);assert.ok(yieldCount>1);
-  await page.getByRole('button',{name:'打开仓库',exact:true}).click();const carrying=page.locator('.carrying-panel');await carrying.getByRole('button',{name:'地上材料',exact:true}).click();
+  await page.locator('.target-card').getByRole('button',{name:'关闭目标详情',exact:true}).click();
+  await page.locator('.bottom-toolbar').getByRole('button',{name:'打开仓库',exact:true}).click();const carrying=page.locator('.carrying-panel');await carrying.getByRole('button',{name:'地上材料',exact:true}).click();
   await carrying.getByLabel('搬运数量',{exact:true}).selectOption('1');await carrying.getByRole('group',{name:'地上材料图标',exact:true}).getByRole('button',{name:/^原木，/}).click();
   await carrying.getByRole('button',{name:'拿起所选数量',exact:true}).click();assert.equal((await stats()).carrying.weight,30);await shot('desktop-east-carrying');
   await page.setViewportSize({width:640,height:480});
@@ -116,8 +117,12 @@ try{
   report.result='failed';report.failure=String(error);report.stack=error.stack;
   if(page){
     try{report.failureState=JSON.parse(await page.locator('#runtime-stats').textContent({timeout:5000})).current;}catch{}
-    try{report.failureUi=await page.locator('.target-card, .route-sheet, .warehouse-dialog, .loading').allTextContents();}catch{}
-    try{await page.screenshot({path:out+'/failure.png',timeout:10000});}catch(captureError){report.screenshotError=String(captureError);}
+    try{report.failureUi=await page.locator('.target-card, .route-sheet, .warehouse-dialog, .carrying-panel, .pause-dialog[open], .loading').allTextContents();}catch{}
+    try{
+      const cdp=await context.newCDPSession(page);
+      try{const capture=await cdp.send('Page.captureScreenshot',{format:'png',fromSurface:true});fs.writeFileSync(out+'/failure.png',Buffer.from(capture.data,'base64'));}
+      finally{await cdp.detach();}
+    }catch(captureError){report.screenshotError=String(captureError);}
   }
   throw error;
 }finally{
