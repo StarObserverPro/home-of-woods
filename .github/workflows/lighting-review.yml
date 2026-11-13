@@ -4,7 +4,7 @@ on:
     paths:
       - 'src/**'
       - 'sandbox/cabin-interior/src/**'
-      - 'tests/local-occlusion.test.ts'
+      - 'tests/local-occlusion*.test.ts'
       - 'tools/verification/lighting-review.mjs'
       - 'package.json'
       - 'package-lock.json'
@@ -28,7 +28,7 @@ jobs:
           node-version: '22.14.0'
           cache: npm
       - run: npm ci
-      - run: node --experimental-strip-types --test tests/local-occlusion.test.ts tests/cabin-interior.test.ts
+      - run: node --experimental-strip-types --test tests/local-occlusion*.test.ts tests/cabin-interior.test.ts
       - run: npm run verify:cabin-assets && npm run build
       - run: npx playwright install --with-deps chromium
       - run: sudo apt-get install -y fonts-noto-cjk

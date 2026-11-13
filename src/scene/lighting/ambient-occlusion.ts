@@ -3,14 +3,17 @@ import {OCCLUSION as C} from '../../content/occlusion.ts';
 import type {CanopyField,OcclusionVolume} from '../../world/occlusion.ts';
 import type {Resources} from '../resources.ts';
 import {bakeLocalOcclusion} from '../../world/local-occlusion-field.ts';
+import type {LocalOcclusionField} from '../../world/local-occlusion-field.ts';
 
 /** Shared, world-anchored ambient attenuation. No framebuffer pass or extra draws. */
 export function createAmbientOcclusion(resources:Resources){
   const count=C.maxVolumes;
-  const local=resources.own(new THREE.Data3DTexture(new Uint8Array(2),1,1,1));
-  local.format=THREE.RGFormat;local.minFilter=local.magFilter=THREE.LinearFilter;
-  local.wrapS=local.wrapT=local.wrapR=THREE.ClampToEdgeWrapping;local.unpackAlignment=1;local.generateMipmaps=false;local.needsUpdate=true;
-  let localField=bakeLocalOcclusion([]),localBakeMs=0;
+  function localTexture(field:LocalOcclusionField){
+    const tex=resources.own(new THREE.Data3DTexture(field.data,...field.size));
+    tex.format=THREE.RGFormat;tex.minFilter=tex.magFilter=THREE.LinearFilter;
+    tex.wrapS=tex.wrapT=tex.wrapR=THREE.ClampToEdgeWrapping;tex.unpackAlignment=1;tex.generateMipmaps=false;tex.needsUpdate=true;return tex;
+  }
+  let localField=bakeLocalOcclusion([]),localBakeMs=0,local=localTexture(localField);
   function texture(field?:CanopyField){
     const tex=resources.own(new THREE.DataTexture(field?.data??new Uint8Array([0,0,255,255]),field?.size??1,field?.size??1,THREE.RGBAFormat));
     tex.minFilter=tex.magFilter=THREE.LinearFilter;tex.wrapS=tex.wrapT=THREE.ClampToEdgeWrapping;tex.generateMipmaps=false;tex.colorSpace=THREE.NoColorSpace;tex.needsUpdate=true;return tex;
@@ -92,7 +95,12 @@ export function createAmbientOcclusion(resources:Resources){
     uniforms.howAOVolumeCount.value=volumes.length;uniforms.howAOBroadCount.value=volumes.filter(v=>!v.detail).length;
     const start=performance.now();localField=bakeLocalOcclusion(volumes);localBakeMs=performance.now()-start;
     uniforms.howAOMin.value.fromArray(localField.min);uniforms.howAOMax.value.fromArray(localField.max);uniforms.howAOGrid.value.fromArray(localField.size);
-    local.image={data:localField.data,width:localField.size[0],height:localField.size[1],depth:localField.size[2]};local.needsUpdate=true;updates++;
+    // GPU texture storage is immutable after upload. Replace ownership and the shared
+    // uniform when a moved/removed item changes the grid dimensions; reuse otherwise.
+    if(local.image.width!==localField.size[0]||local.image.height!==localField.size[1]||local.image.depth!==localField.size[2]){
+      resources.releaseOwned(local);local=localTexture(localField);uniforms.howAOLocal.value=local;
+    }else{local.image.data=localField.data;local.needsUpdate=true;}
+    updates++;
   }
   function setCanopy(kind:'core'|'outer',field:CanopyField){
     const tex=kind==='core'?core:outer,b=field.bounds;tex.image={data:field.data,width:field.size,height:field.size};tex.needsUpdate=true;
