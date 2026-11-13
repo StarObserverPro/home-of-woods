@@ -1,0 +1,47 @@
+name: Woodworking Browser
+on:
+  pull_request:
+    paths:
+      - 'sandbox/woodworking/**'
+      - 'src/domain/inventory.ts'
+      - 'src/domain/transport-location.ts'
+      - 'src/domain/owned-items.ts'
+      - 'src/domain/blueprint-rarity.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/woodworking-browser.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  woodworking-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22.14.0'
+          package-manager-cache: false
+      - run: npm ci
+      - run: npm --prefix sandbox/woodworking ci
+      - run: npm --prefix sandbox/woodworking test
+      - run: npm --prefix sandbox/woodworking run build
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get install -y fonts-noto-cjk
+      - name: Real page reloads, pointer input, trial fit and mount lifecycle
+        env:
+          QA_EVIDENCE_DIR: /tmp/woodworking-evidence
+        run: node sandbox/woodworking/test/browser.mjs
+      - name: Keep current build and browser evidence outside the source tree
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: woodworking-evidence
+          path: |
+            /tmp/woodworking-evidence
+            sandbox/woodworking/dist/woodworking.html
+          if-no-files-found: warn
+          retention-days: 7
