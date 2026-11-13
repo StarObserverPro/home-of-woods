@@ -1,10 +1,11 @@
+import {WOOD_TONES} from '../content/wood-tones.ts';
+import {woodToneGeometry} from './wood-tones.ts';
 import {woodCoordinates,woodMaterial} from './wood-grain.ts';
 import * as THREE from 'three';
 import {createTree} from './actions/tree.js';
 import {CUT} from './actions/motion.js';
 import type {Models} from './models.ts';
 import {FORESTRY} from '../content/forestry.ts';
-import {PALETTE} from '../content/world.ts';
 import type {GameState} from '../domain/state.ts';
 import {treeScaleFactor} from '../domain/forestry.ts';
 import type {Tree} from '../world/layout.ts';
@@ -14,17 +15,17 @@ import type {Resources} from './resources.ts';
 type ForestryPresentationOptions={
   models:Models; resources:Resources; forestGroup:THREE.Group; trees:Tree[];
   selections:Map<string,THREE.Object3D>;
+  bindTreeSurface?:(root:THREE.Object3D)=>void;
 };
 // The domain has already settled the tree; this short rest only makes its landing legible.
 const FALLEN_HOLD_SECONDS=1.8;
 /** Presentation only: consumes committed world state; no timers, rewards or gameplay writes. */
-export function createForestryPresentation({models,resources:r,forestGroup,trees,selections}:ForestryPresentationOptions){
+export function createForestryPresentation({models,resources:r,forestGroup,trees,selections,bindTreeSurface}:ForestryPresentationOptions){
   let disposed=false;
   const dynamic=new Map<string,ReturnType<typeof createTree>>();
   const treeById=new Map(trees.map(t=>[t.id,t])),stumps=new Map<string,THREE.Group>();
   const baseRotations=new Map<string,THREE.Quaternion>();
   selections.forEach((o,id)=>baseRotations.set(id,o.quaternion.clone()));
-  const bark=woodMaterial(r,PALETTE.wood,.72),cutWood=woodMaterial(r,'#d9b07a',.78);
   const stumpGeometry=r.geometry('forestry-stump-r4',()=>woodCoordinates(new THREE.CylinderGeometry(1,.95,.5,10),'raw','y'));
   const chips=new THREE.InstancedMesh(r.geometry('forestry-woodchip-r4',()=>new THREE.BoxGeometry(.13,.07,.1)),r.material('#d9b07a',.78),18);
   chips.name='forestry-hit-chips';chips.visible=false;chips.frustumCulled=false;forestGroup.add(chips);
@@ -33,14 +34,18 @@ export function createForestryPresentation({models,resources:r,forestGroup,trees
   const getStump=(tree:Tree)=>{
     let root=stumps.get(tree.id);if(root)return root;
     root=new THREE.Group();root.name=tree.id;root.userData.forestryRole='stump';
-    const trunk=new THREE.Mesh(stumpGeometry,[bark,cutWood,cutWood]);trunk.position.y=.25;trunk.castShadow=true;trunk.receiveShadow=true;root.add(trunk);
+    const tone=WOOD_TONES.neutral,bark=woodMaterial(r,tone.bark,.72),cutWood=woodMaterial(r,tone.end,.78);
+    const trunk=new THREE.Mesh(woodToneGeometry(r,stumpGeometry,tree.id),[bark,cutWood,cutWood]);trunk.position.y=.25;trunk.castShadow=true;trunk.receiveShadow=true;root.add(trunk);
     root.position.set(tree.x,heightAt(tree.x,tree.z),tree.z);const radius=(tree.kind==='pine'?.43:.66)*tree.scale;root.scale.set(radius,tree.scale,radius);
-    forestGroup.add(root);stumps.set(tree.id,root);return root;
+    forestGroup.add(root);stumps.set(tree.id,root);bindTreeSurface?.(root);return root;
   };
   const pickTargets:THREE.Object3D[]=[];
   function update(state:GameState,reducedMotion=false){
     if(disposed)return;
     pickTargets.length=0;
+    for(const [id,parts] of dynamic)if(!selections.has(id)){parts.dispose();dynamic.delete(id);}
+    for(const [id,stump] of stumps)if(!selections.has(id)){stump.removeFromParent();stumps.delete(id);}
+
     let impactTree:Tree|undefined,impactAge=Infinity;
     for(const [id,object] of selections){
       const tree=treeById.get(id)!,life=state.forestry.slots[id];
@@ -58,6 +63,7 @@ export function createForestryPresentation({models,resources:r,forestGroup,trees
           parts.root.name=id;parts.root.position.set(tree.x,ground,tree.z);parts.root.scale.setScalar(tree.scale);
           parts.root.rotation.y=yaw;
           parts.setGround((x,z)=>{const wx=tree.x+tree.scale*(x*Math.cos(yaw)+z*Math.sin(yaw)),wz=tree.z+tree.scale*(-x*Math.sin(yaw)+z*Math.cos(yaw));return (heightAt(wx,wz)-ground)/tree.scale;});
+          bindTreeSurface?.(parts.root);
         }
         const elapsed=climbing?state.time-gather!.startedAt!:status==='chopping'?Math.min(2.14,(state.time-state.forestry.active!.startedAt)/FORESTRY.chopSeconds*2.14):CUT.fallStart+(state.time-life.felledAt!)/FORESTRY.fallSeconds*(CUT.impact-CUT.fallStart);
         parts.root.visible=true;parts.update(elapsed,climbing?'climb':'fell',reducedMotion,false);parts.upper.visible=status!=='stump'||resting;

@@ -1,0 +1,66 @@
+name: Cabin Interior Browser
+on:
+  pull_request:
+    paths:
+      - 'sandbox/cabin-interior/**'
+      - 'public/assets/cabin-interior/**'
+      - 'public/assets/characters/**'
+      - 'src/content/characters.ts'
+      - 'src/content/world.ts'
+      - 'src/content/wood-grain.ts'
+      - 'src/scene/resources.ts'
+      - 'src/scene/wood-grain.ts'
+      - 'src/scene/seated-pose.ts'
+      - 'tests/cabin-interior.test.ts'
+      - 'tools/prepare-cabin-assets.mjs'
+      - 'tools/verify-cabin-assets.mjs'
+      - 'sources/kaykit/furniture-bits/**'
+      - 'tools/verification/cabin-interior-browser.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+      - '.github/workflows/cabin-interior.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cabin-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CABIN_EVIDENCE_DIR: /tmp/how-cabin-evidence
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22.14.0'
+          package-manager-cache: false
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get install -y fonts-noto-cjk
+      - run: npm run build
+      - run: npm run test:cabin
+      - run: npm run verify:cabin-assets
+      - name: Exercise the built cabin with real browser input
+        run: node tools/verification/cabin-interior-browser.mjs
+      - name: Keep screenshots, recordings and exact run report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cabin-interior-evidence
+          path: |
+            /tmp/how-cabin-evidence/*.png
+            /tmp/how-cabin-evidence/report.json
+            /tmp/how-cabin-evidence/preview.log
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Keep continuous interaction recordings separately
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cabin-interior-recordings
+          path: /tmp/how-cabin-evidence/videos
+          if-no-files-found: warn
+          retention-days: 7

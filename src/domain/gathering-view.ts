@@ -1,3 +1,4 @@
+import {travelAccess} from '../world/regions.ts';
 import {carryAdditionReason} from './carrying.ts';
 import { inventoryTypeCount } from './inventory.ts';
 import type { GatheringHost, GatherActionView } from './gathering.ts';
@@ -19,7 +20,7 @@ export function gatheringSnapshot(host: GatheringHost, registry: GatheringRegist
     const d = registry.definitions.get(s.definitionId)!, life = host.gathering.sources[s.sourceId];
     const distance = Math.hypot(host.player.x - s.x, host.player.z - s.z), reason = gatheringReason(host, s);
     const busyHere = gatheringBusy(host.gathering) && host.gathering.action?.sourceId === s.sourceId;
-    const near = distance <= d.range && canInteract(host.player, s, blockers);
+    const near = distance <= d.range && canInteract(host.player, s, blockers,travelAccess(host));
     const capacityReason=near&&!busyHere?carryAdditionReason(host.inventory,{itemId:d.itemId,qualityId:d.qualityId},d.yieldPerUnit):'';
     selectedTarget = { id: s.sourceId, title: s.displayName ?? d.name, tag: s.hostLabel ? `${s.hostLabel} · 林间物产` : '林间物产', detail: s.placement === 'mushroom-circle' ? `围绕${s.hostLabel}生长的一圈蘑菇，共享这一处的采集量。` : d.description,
       status: hostResourceReason(host,s) ? '宿主暂不提供物产' : life.remaining > 0 ? '可以采集' : '已经采空', distance, reward: `${d.yieldPerUnit} 份${registry.items.get(d.itemId)!.name}`,

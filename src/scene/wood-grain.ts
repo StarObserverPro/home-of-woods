@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 import type {Resources} from './resources.ts';
 import {WOOD_GRAIN} from '../content/wood-grain.ts';
+import {setWoodTone} from './wood-tones.ts';
 
 type Axis='x'|'y'|'z';
 type Surface='board'|'raw'|'round-board'|'end';
 const axes:Axis[]=['x','y','z'];
 /** Attach coordinates BEFORE rotating, translating or merging parts. Does not change topology. */
-export function woodCoordinates<T extends THREE.BufferGeometry>(geometry:T,surface:Surface='board',axis?:Axis):T {
+export function woodCoordinates<T extends THREE.BufferGeometry>(geometry:T,surface:Surface='board',axis?:Axis,toneSeed?:string|number):T {
   geometry.computeBoundingBox();
   const bounds=geometry.boundingBox!,size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
   const along=axis??axes.reduce((a,b)=>size[a]>=size[b]?a:b),across=axes.filter(a=>a!==along);
@@ -32,7 +33,7 @@ export function woodCoordinates<T extends THREE.BufferGeometry>(geometry:T,surfa
     data.set([u*.91+.045+shift,v*.9+.05-shift,kind],i*3);
   }
   geometry.setAttribute('woodCoord',new THREE.BufferAttribute(data,3));
-  return geometry;
+  return setWoodTone(geometry,toneSeed??`${surface}:${along}:${size.toArray().join(',')}`);
 }
 
 const fragmentFunctions=`
@@ -59,16 +60,17 @@ export function woodMaterial(r:Resources,color:string,roughness=.82,vertexColors
   const material=r.own(new THREE.MeshStandardMaterial({color,roughness,vertexColors}));
   material.name='procedural-wood';material.userData.proceduralWood=true;
   material.onBeforeCompile=shader=>{
-    shader.vertexShader='attribute vec3 woodCoord; varying vec3 vHowWood;\n'+shader.vertexShader;
-    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvHowWood=woodCoord;');
-    shader.fragmentShader='varying vec3 vHowWood;\n'+fragmentFunctions+'\n'+shader.fragmentShader;
+    shader.vertexShader='attribute vec3 woodCoord; attribute vec3 woodTone; varying vec3 vHowWood; varying vec3 vHowWoodTone;\n'+shader.vertexShader;
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvHowWood=woodCoord;vHowWoodTone=woodTone.x>0.?woodTone:vec3(1.);');
+    shader.fragmentShader='varying vec3 vHowWood;varying vec3 vHowWoodTone;\n'+fragmentFunctions+'\n'+shader.fragmentShader;
     shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+      diffuseColor.rgb*=vHowWoodTone;
       float howFootprint=max(length(dFdx(vHowWood.xy)),length(dFdy(vHowWood.xy)));
       float howDetail=(1.-smoothstep(${1/WOOD_GRAIN.fullDetailPixels},${1/WOOD_GRAIN.noDetailPixels},howFootprint))
         *(1.-smoothstep(${WOOD_GRAIN.distanceFadeStart.toFixed(1)},${WOOD_GRAIN.distanceFadeEnd.toFixed(1)},length(vViewPosition)));
       if(howDetail>0.)diffuseColor.rgb*=1.-${WOOD_GRAIN.strength}*howDetail*howWoodInk(vHowWood.xy,vHowWood.z,howFootprint);
     `);
   };
-  material.customProgramCacheKey=()=> 'how-wood-r2-screen-fade-v1';
+  material.customProgramCacheKey=()=> 'how-wood-r3-stable-tone-v1';
   cache.set(key,material);return material;
 }

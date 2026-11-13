@@ -1,3 +1,8 @@
+import {pendingHarvest} from './harvest.ts';
+import {regionAt,regionName,regionOpen} from '../world/regions.ts';
+import {WORLD_STREAMING} from '../content/regions.ts';
+import type {RegionalHost} from '../world/regions.ts';
+import {travelAccess} from '../world/regions.ts';
 import {awardGround} from './carrying.ts';
 import {WEATHER_RULES} from '../content/weather.ts';
 import {heavyLaborAllowed} from './food.ts';
@@ -23,7 +28,7 @@ export type ForestryState={
   ledger:{year:number;base:number;used:number;reserved:number};
   slots:Record<string,TreeLife>; active:ChopAction|null; nextAction:number; completedActions:string[];
 };
-export type ForestryHost={time:number;player:Point&{facing:number;moving:boolean};route:Point[];selected:string|null;forestry:ForestryState;inventory:InventoryState;food?:FoodState};
+export type ForestryHost=RegionalHost&{time:number;player:Point&{facing:number;moving:boolean};route:Point[];selected:string|null;forestry:ForestryState;inventory:InventoryState;food?:FoodState};
 export type ForestrySnapshot={
   wood:number;points:{year:number;available:number;used:number;reserved:number};
   active:{treeId:string;phase:'chopping'|'falling';progress:number;hits:number;totalHits:number}|null;
@@ -52,6 +57,9 @@ export function chopReason(host:ForestryHost,tree:Tree|undefined):string{
   if(life.status==='sapling')return '幼树尚未成材，请让它继续生长。';
   if(host.forestry.active)return host.forestry.active.phase==='falling'?'树正在倒下，请稍候。':'正在挥斧，可取消或移动离开。';
   if(life.status!=='standing')return '这棵树当前无法砍伐。';
+  const region=tree.regionId??regionAt(tree.x,tree.z)??'home-woodland',pending=pendingHarvest(host.inventory,region);
+  if(!regionOpen(region,travelAccess(host)))return '先修好跨溪木桥，再到东岸采伐。';
+  if(pending)return `${regionName(region)}还有 ${pending} 根原木未入库，先把这一批搬回营地。`;
   if(host.food&&!heavyLaborAllowed(host.food,host.time))return '昨天没有吃饱，今天先采集、散步或做些轻活吧。';
   if(Math.hypot(host.player.x-tree.x,host.player.z-tree.z)>chopRange(tree))return '先走近树干，再开始砍伐。';
   if(availablePoints(host.forestry)<volumePoints(tree))return '本年度可用体量点数不足。';
@@ -66,7 +74,7 @@ export function startChop(host:ForestryHost,tree:Tree|undefined,blockers?:Collid
     const others=blockers.filter(c=>c.id!==tree.id),width=.65*tree.scale;
     for(let distance=.6;distance<=5.5*tree.scale;distance+=.4)for(const side of [-width,0,width]){
       const point={x:tree.x+dx/length*distance-dz/length*side,z:tree.z+dz/length*distance+dx/length*side};
-      if(!canStand(point,others)){state.nextAction--;return {ok:false,message:'这个倒向靠近障碍或水岸，请换一侧站稳再砍。'};}
+      if(!canStand(point,others,undefined,travelAccess(host))){state.nextAction--;return {ok:false,message:'这个倒向靠近障碍或水岸，请换一侧站稳再砍。'};}
     }
   }
   state.active={id,treeId:tree.id,individualId:life.individualId,year:state.ledger.year,cost,yield:cost,reward:{itemId:FORESTRY.harvestItemId,qualityId:FORESTRY.harvestQualityId,wood:woodBatch({lengthMm:LOG_HARVEST_LENGTH_MM,thicknessMm:Math.round((tree.kind==='pine'?500:560)*tree.scale),straightness:'straight'})},startedAt:host.time,committedAt:null,phase:'chopping'};
@@ -91,7 +99,7 @@ export function advanceForestry(host:ForestryHost,trees:ReadonlyMap<string,Tree>
     if(!valid)return cancelChop(host,'目标或距离已经变化，采伐已取消并释放预留。').message;
     if(!state.completedActions.includes(a.id)){
       // Validate inventory first. No point/tree changes survive a failed award.
-      const inventory = awardGround(host.inventory,{...a.reward,woodCondition:{moisture:WEATHER_RULES.freshMoisture,snow:0}},a.yield,host.player);
+      const inventory = awardGround(host.inventory,{...a.reward,woodCondition:{moisture:WEATHER_RULES.freshMoisture,snow:0},harvest:{batchId:a.id,treeId:tree!.id,regionId:tree!.regionId??regionAt(tree!.x,tree!.z)??'home-woodland'}},a.yield,host.player);
       host.inventory = inventory;
       state.ledger.reserved-=a.cost;state.ledger.used+=a.cost;state.completedActions.push(a.id);
       life.status='falling';life.felledAt=a.startedAt+FORESTRY.chopSeconds;life.regrowAt=life.felledAt+FORESTRY.fallSeconds+FORESTRY.regrowDelay;
@@ -103,6 +111,8 @@ export function advanceForestry(host:ForestryHost,trees:ReadonlyMap<string,Tree>
     const life=state.slots[a.treeId];if(life?.individualId===a.individualId)life.status='stump';state.active=null;
   }
   for(const life of Object.values(state.slots)){
+    const tree=trees.get(life.slotId);
+    if(tree&&Math.hypot(tree.x-host.player.x,tree.z-host.player.z)>WORLD_STREAMING.simulation)continue;
     if(life.status==='stump'&&life.regrowAt!==null&&host.time>=life.regrowAt){
       life.generation++;life.individualId=`${life.slotId}:g${life.generation}`;life.status='sapling';life.bornAt=life.regrowAt;life.maturesAt=life.bornAt+FORESTRY.saplingSeconds;life.actionId=null;life.felledAt=null;life.regrowAt=null;
       message='一棵幼树在原来的树位冒出了新叶。';

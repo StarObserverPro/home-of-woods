@@ -15,6 +15,7 @@ import {BENCH_SEATING,STUMP_SEATING} from '../content/seating.ts';
 import {DINING_SEAT} from '../content/scene-props.ts';
 import {canStand} from './navigation.ts';
 import {heightAt} from '../world/surface.ts';
+import {travelAccess} from '../world/regions.ts';
 
 const busy=(s:GameState)=>!!s.forestry.active||!!s.workshop.job||
   (!!s.gathering.action&&['approaching','performing'].includes(s.gathering.action.phase))||
@@ -117,8 +118,8 @@ function seatingAccess(host:GameState,spot:BenchReadingSpot|null,instanceId:stri
   const response=(code:BenchReadingAccess['code'],reason:string):BenchReadingAccess=>({spot,frontStand:spot?.stand??null,code,requiresApproach:code==='approach',reason});
   if(!spot)return response('invalid','先把可坐的长凳摆好，再坐下读故事。');
   if(busy(host))return response('busy','先完成或取消当前动作，再坐下来。');
-  if(!canStand(host.player,blockers))return response('blocked','你现在的站位被挡住了，请先走到空地。');
-  if(!canStand(spot.stand,blockers))return response('blocked',`${noun}前的起身位置被挡住了，请挪开前方物品或移动家具。`);
+  if(!canStand(host.player,blockers,undefined,travelAccess(host)))return response('blocked','你现在的站位被挡住了，请先走到空地。');
+  if(!canStand(spot.stand,blockers,undefined,travelAccess(host)))return response('blocked',`${noun}前的起身位置被挡住了，请挪开前方物品或移动家具。`);
   const otherBlockers=blockers.filter(c=>c.id!==instanceId);
   if(seatedBodyBlocked(spot.seat,otherBlockers))return response('blocked',`${noun}旁的物体挤到了坐位，请先留出身体和书本的空间。`);
   const c=Math.cos(spot.seat.facing),s=Math.sin(spot.seat.facing);
@@ -126,12 +127,12 @@ function seatingAccess(host:GameState,spot:BenchReadingSpot|null,instanceId:stri
     const x=-BENCH_SEATING.footHalfWidth+BENCH_SEATING.footHalfWidth*2*ix/4;
     const z=BENCH_SEATING.footBackZ+(BENCH_SEATING.footFrontZ-BENCH_SEATING.footBackZ)*iz/4;
     const point={x:spot.seat.x+c*x+s*z,z:spot.seat.z-s*x+c*z};
-    if(!canStand(point,[],0)||heightAt(point.x,point.z)>spot.seat.surfaceY-BENCH_SEATING.footDrop)return response('blocked',`${noun}前脚下的地面太高或不平，坐下会碰到地面，请调整家具位置。`);
+    if(!canStand(point,[],0,travelAccess(host))||heightAt(point.x,point.z)>spot.seat.surfaceY-BENCH_SEATING.footDrop)return response('blocked',`${noun}前脚下的地面太高或不平，坐下会碰到地面，请调整家具位置。`);
   }
   const distance=Math.hypot(spot.stand.x-spot.seat.x,spot.stand.z-spot.seat.z),steps=Math.max(1,Math.ceil(distance/.15));
   for(let index=0;index<=steps;index++){
     const point={x:spot.seat.x+(spot.stand.x-spot.seat.x)*index/steps,z:spot.seat.z+(spot.stand.z-spot.seat.z)*index/steps};
-    if(!canStand(point,otherBlockers))return response('blocked',`${noun}前的坐下与起身通道被挡住了，请先留出通路。`);
+    if(!canStand(point,otherBlockers,undefined,travelAccess(host)))return response('blocked',`${noun}前的坐下与起身通道被挡住了，请先留出通路。`);
     if(heightAt(point.x,point.z)>spot.seat.surfaceY-BENCH_SEATING.minSeatGroundClearance)return response('blocked',`${noun}前的地面太高，坐下会碰到地面，请换一块较平的空地。`);
   }
   if(Math.hypot(host.player.x-spot.stand.x,host.player.z-spot.stand.z)>BENCH_SEATING.frontReach)return response('approach',`先走到${noun}前留空的一侧，再坐下来。`);

@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && tsc -p sandbox/cabin-interior/tsconfig.json && vite build",
+    "dev:cabin": "vite --open /sandbox/cabin-interior/",
+    "test:cabin": "node --experimental-strip-types --test tests/cabin-interior.test.ts",
+    "verify:cabin-assets": "node tools/verify-cabin-assets.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "verify:assets": "node tools/verify-assets.mjs",
@@ -25,6 +28,7 @@
     "@types/react-dom": "19.2.3",
     "@types/three": "0.185.0",
     "@vitejs/plugin-react": "6.1.2",
+    "playwright": "1.65.0",
     "typescript": "5.9.3",
     "vite": "8.3.5"
   },

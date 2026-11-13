@@ -1,4 +1,6 @@
 import {scrapGeometry,scrapMaterial} from './scrap-geometry.ts';
+import {travelAccess} from '../world/regions.ts';
+import {travelHeightAt} from '../world/traversal.ts';
 import * as THREE from 'three';
 import {ramp} from './actions/motion.js';
 import {canStand} from '../domain/navigation.ts';
@@ -123,7 +125,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     movementTime+=distance*(running?1.15/(MOVEMENT.speed*MOVEMENT.runMultiplier):1.6/MOVEMENT.speed);
     for(const [bone,base] of readingPoseBase){bone.position.copy(base.p);bone.quaternion.copy(base.q);}readingPoseBase.clear();
     clothing.update(state.inventory);actionClothing.update(state.inventory);
-    player.position.set(state.player.x,heightAt(state.player.x,state.player.z),state.player.z);player.rotation.y=state.player.facing;
+    player.position.set(state.player.x,travelHeightAt(state.player.x,state.player.z,travelAccess(state)),state.player.z);player.rotation.y=state.player.facing;
     const visit=merchantVisitAt(state.time);
     visitor.visible=visit.active;
     if(visit.active){const eased=visit.travel*visit.travel*(3-2*visit.travel);
@@ -148,7 +150,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     }else if(state.forestry.active?.phase==='chopping'){
       const a=state.forestry.active,tree=byId.get(a.treeId)!,root=selections.get(a.treeId)!;
       const dx=state.player.x-tree.x,dz=state.player.z-tree.z,len=Math.hypot(dx,dz)||1,radius=(tree.kind==='pine'?.25:.28)*tree.scale;
-      player.position.set(tree.x+dx/len*(radius+1),heightAt(state.player.x,state.player.z),tree.z+dz/len*(radius+1));
+      player.position.set(tree.x+dx/len*(radius+1),travelHeightAt(state.player.x,state.player.z,travelAccess(state)),tree.z+dz/len*(radius+1));
       cutHeight=heightAt(tree.x,tree.z)+.88*tree.scale;
       const cycle=FORESTRY.chopSeconds/FORESTRY.hits,phase=((state.time-a.startedAt)/cycle)%1;
       cut('horizontal',models.trunkContact(tree,root),phase,a.id,reducedMotion);
@@ -198,7 +200,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
         if(action!=='climb'){
           const targetX=gather.targetAnchor.x-Math.sin(player.rotation.y)*1.05,targetZ=gather.targetAnchor.z-Math.cos(player.rotation.y)*1.05;
           const px=THREE.MathUtils.lerp(state.player.x,targetX,approach),pz=THREE.MathUtils.lerp(state.player.z,targetZ,approach);
-          if(canStand({x:px,z:pz},blockers))player.position.set(px,heightAt(px,pz),pz);
+          if(canStand({x:px,z:pz},blockers,undefined,travelAccess(state)))player.position.set(px,travelHeightAt(px,pz,travelAccess(state)),pz);
         }
         procedural.update(action,t,{radius:.3});const lift=procedural.root.position.y;
         procedural.root.position.set(0,lift/CHARACTER.worldScale,0);procedural.root.rotation.set(0,0,0);
@@ -207,7 +209,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
         if(action==='climb'){
           const hostId=gather.sourceId.replace(/^gather\./,'').replace(/\.branches$/,'');const tree=byId.get(hostId);
           if(tree){const radius=(tree.role==='landmark'?1.2:tree.kind==='pine'?.25:.28)*tree.scale,dx=state.player.x-tree.x,dz=state.player.z-tree.z,len=Math.hypot(dx,dz)||1;
-            const px=THREE.MathUtils.lerp(state.player.x,tree.x+dx/len*(radius+.48),approach),pz=THREE.MathUtils.lerp(state.player.z,tree.z+dz/len*(radius+.48),approach);player.position.set(px,heightAt(px,pz),pz);player.rotation.y=Math.atan2(-dx,-dz);
+            const px=THREE.MathUtils.lerp(state.player.x,tree.x+dx/len*(radius+.48),approach),pz=THREE.MathUtils.lerp(state.player.z,tree.z+dz/len*(radius+.48),approach);player.position.set(px,travelHeightAt(px,pz,travelAccess(state)),pz);player.rotation.y=Math.atan2(-dx,-dz);
           }
         }
       }
@@ -215,7 +217,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     if(state.forestry.active?.phase==='falling'){
       const a=state.forestry.active,dir=state.forestry.slots[a.treeId].fallDirection,step=.7*ramp(state.time-a.committedAt!,0,.75);
       const x=state.player.x-dir.x*step,z=state.player.z-dir.z*step;
-      if(canStand({x,z},blockers))player.position.set(x,heightAt(x,z),z);
+      if(canStand({x,z},blockers,undefined,travelAccess(state)))player.position.set(x,travelHeightAt(x,z,travelAccess(state)),z);
     }
     const near=visit.parked&&Math.hypot(state.player.x-CAMP_VISITOR.x,state.player.z-CAMP_VISITOR.z)<CAMP_VISITOR.waveRange;
     const localTime=ambientTime%CAMP_VISITOR.waveInterval;

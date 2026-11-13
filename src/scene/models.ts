@@ -1,3 +1,4 @@
+import {CREEK_BRIDGE} from '../content/regions.ts';
 import * as THREE from "three";
 import {createTree} from "./actions/tree.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -10,12 +11,14 @@ import { ENABLED_RUNTIME_MODELS } from '../content/assets.ts';
 import type { Tree } from "../world/layout.ts";
 import type { Resources } from "./resources.ts";
 import {makeTree} from './forest-shapes.js';
+import {barkUV,createBarkSurface,configureForestBark} from './bark-surface.ts';
 import {treeVisual} from '../world/tree-appearance.ts';
 export class Models {
+  barkSurface:ReturnType<typeof createBarkSurface>;
   shapeTemplates=new Map<string,THREE.Group>();
   sourceForTree(tree:Tree,distant=false){
     const visual=treeVisual(tree),key=`${visual.key}-${distant}`;let source=this.shapeTemplates.get(key);
-    if(!source){source=makeTree(visual.species,visual.seed,distant?1:2);source.traverse(o=>{if(o instanceof THREE.Mesh){this.r.own(o.geometry);const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>this.r.own(m));}});this.shapeTemplates.set(key,source);}
+    if(!source){source=makeTree(visual.species,visual.seed,distant?1:2);source.traverse(o=>{if(o instanceof THREE.Mesh){this.r.own(o.geometry);if(!distant&&o.name==='trunk'){const m=o.material as THREE.MeshStandardMaterial;m.map=this.barkSurface.map;m.normalMap=this.barkSurface.normalMap;}const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>this.r.own(m));}});this.shapeTemplates.set(key,source);}
     return source;
   }
   templates = new Map<string, THREE.Group>();
@@ -23,6 +26,7 @@ export class Models {
   private r: Resources;
   constructor(r: Resources) {
     this.r = r;
+    this.barkSurface=createBarkSurface(r);
   }
   async load() {
     const loader = new GLTFLoader();
@@ -122,7 +126,10 @@ export class Models {
         let shown=true;for(let parent:THREE.Object3D|null=o;parent;parent=parent.parent)shown=shown&&parent.visible;
         if (shown && o instanceof THREE.Mesh) {
           const g = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()).applyMatrix4(o.matrixWorld);
-          g.deleteAttribute("uv");
+          const isBark=!!(o.material as THREE.MeshStandardMaterial).map;
+          if(distant)g.deleteAttribute("uv");
+          else {barkUV(g,isBark);
+          g.setAttribute('barkWeight',new THREE.BufferAttribute(new Float32Array(g.attributes.position.count).fill(isBark?1:0),1));}
           const color = new THREE.Color(
             (o.material as THREE.MeshStandardMaterial).color,
           );
@@ -139,7 +146,10 @@ export class Models {
       return merged;
     });
   }
-  createForest(trees: Tree[]) {
+  createForest(trees: Tree[],streaming=false) {
+    // The visible roster also feeds canopy occlusion; bridge-cleared scenery cannot leave a shadow.
+    // Managed trees retain their gameplay identity and can switch between near and distant views.
+    const canopyTrees=trees.filter(t=>t.role!=='scenery'||!(Math.abs(t.z-CREEK_BRIDGE.west.z)<CREEK_BRIDGE.width/2+2&&t.x>CREEK_BRIDGE.west.x&&t.x<CREEK_BRIDGE.east.x+6));
     const group = new THREE.Group(),
       selections = new Map<string, THREE.Object3D>();
     const material = this.r.own(
@@ -149,6 +159,7 @@ export class Models {
         metalness: 0,
       }),
     );
+    configureForestBark(material,this.barkSurface);
     const sceneryMaterial = this.r.own(
       new THREE.MeshStandardMaterial({
         vertexColors: true,
@@ -157,19 +168,20 @@ export class Models {
       }),
     );
     const mappings = new Map<THREE.Object3D, string[]>();
+    const sceneryBatches:{mesh:THREE.InstancedMesh;members:Tree[]}[]=[];
     for (const kind of ["pine", "broadleaf"] as const) {
-      const far = trees.filter(t=>t.kind===kind&&t.role==='scenery');
+      const far = canopyTrees.filter(t=>t.kind===kind&&(t.role==='scenery'||streaming&&t.role==='managed'));
       const keys=[...new Set(far.map(t=>treeVisual(t).key))];
       for(const key of keys){const members=far.filter(t=>treeVisual(t).key===key);
         const instances=this.r.own(new THREE.InstancedMesh(this.treeGeometry(kind,true,members[0],true),sceneryMaterial,members.length));
         const dummy=new THREE.Object3D();members.forEach((t,i)=>{dummy.position.set(t.x,heightAt(t.x,t.z),t.z);dummy.rotation.y=t.variant*Math.PI*2;dummy.scale.setScalar(t.scale);dummy.updateMatrix();instances.setMatrixAt(i,dummy.matrix);});
-        instances.name=`scenic-shape-${key}`;instances.computeBoundingSphere();group.add(instances);
+        instances.name=`scenic-shape-${key}`;instances.computeBoundingSphere();group.add(instances);sceneryBatches.push({mesh:instances,members});
       }
       const near = trees.filter((t) => t.kind === kind && t.role !== "scenery");
       near.forEach((t) => {
         const mesh = new THREE.Mesh(this.treeGeometry(kind,true,t), material);
         mesh.name = t.id;
-        mesh.position.set(t.x, 0, t.z);
+        mesh.position.set(t.x, heightAt(t.x,t.z), t.z);
         mesh.rotation.y = t.variant * Math.PI * 2;
         mesh.scale.setScalar(t.scale);
         mesh.castShadow = true;
@@ -179,7 +191,7 @@ export class Models {
         mappings.set(mesh, [t.id]);
       });
     }
-    return { group, selections, mappings, material };
+    return { group, selections, mappings, material,sceneryBatches,canopyTrees };
   }
 }
 export function createSign(r: Resources, label: string) {

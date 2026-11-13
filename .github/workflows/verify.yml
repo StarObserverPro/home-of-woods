@@ -20,6 +20,11 @@ jobs:
       - run: npm ci
       - run: npm run verify:assets
       - run: npm run build
+      - name: Independent woodworking package and host inventory adapter
+        run: |
+          npm --prefix sandbox/woodworking ci
+          npm --prefix sandbox/woodworking test
+          npm --prefix sandbox/woodworking run build
       # Current gameplay and ownership checks are required. Archived evidence
       # audits run separately on request.
       - name: Core gameplay
@@ -55,5 +60,7 @@ jobs:
           node --experimental-strip-types --test --test-concurrency=4
           tests/weather.test.ts tests/weather-particle-density.test.ts
           tests/movement.test.ts tests/item-transfers.test.ts
-          tests/branch-attachment.test.ts tests/wood-grain.test.ts
+          tests/branch-attachment.test.ts tests/tree-surface.test.ts tests/wood-grain.test.ts
           tests/valley-horizon.test.ts tests/gathering-presentation.test.ts
+      - name: Verify regional forestry and bridge transport
+        run: node --experimental-strip-types --test tests/east-bank.test.ts

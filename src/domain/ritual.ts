@@ -1,3 +1,4 @@
+import {travelAccess} from '../world/regions.ts';
 import type { GameState } from './state.ts';
 import type { Collider } from '../world/layout.ts';
 import { CAMP_PROPS } from '../content/scene-props.ts';
@@ -16,7 +17,7 @@ export function beginRitual(state: GameState, blockers: Collider[], kind: 'praye
   if (![CAMP_PROPS.altar.id, ALTAR_LAYOUT.oracle.id].includes(state.selected as typeof CAMP_PROPS.altar.id)) return {ok:false,message:'先选中林间祭坛。'};
   const target={x:CAMP_PROPS.altar.x,z:CAMP_PROPS.altar.z+5};
   const near=Math.hypot(state.player.x-target.x,state.player.z-target.z)<.6;
-  const route=near?[]:findPath(state.player,target,blockers);
+  const route=near?[]:findPath(state.player,target,blockers,travelAccess(state));
   if(!near&&!route.length)return {ok:false,message:'暂时无法走到祭坛前。'};
   state.route=route;state.ritual={kind:'prayer',phase:'approaching',startedAt:null};
   return {ok:true,message:'走到祭坛前，合掌祈祷。'};

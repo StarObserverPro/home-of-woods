@@ -40,8 +40,9 @@ export const CAMP_EXTERIOR_BLUEPRINTS=[
   exteriorPlan('blueprint.camp-fire-grill','可收起的烧烤网','从行商换五金包，再做可收起的网架。','camp-fire:grill','篝火 · 可换上部件'),
   exteriorPlan('blueprint.camp-fire-smoker','焖烤烟罩','从行商换五金包，再做可拆的带烟口罩。','camp-fire:smoker','篝火 · 可换上部件'),
 ] as const;
-export const BLUEPRINTS = [...CRAFT_BLUEPRINTS,...WORKSHOP_SERIES_BLUEPRINTS,WORKBENCH_BRACING_BLUEPRINT,CABIN_REPAIR_BLUEPRINT,...CAMP_EXTERIOR_BLUEPRINTS] as const;
-export const STARTER_BLUEPRINTS = [CABIN_REPAIR_BLUEPRINT.id,'blueprint.tent-ropes','blueprint.camp-fire-stones','blueprint.camp-drying-rack'] as const;
+export const BRIDGE_BLUEPRINT={id:'blueprint.creek-bridge',kind:'upgrade',name:'跨溪木桥图纸',description:'用原木做梁、枝料固定栏杆，接通溪流两岸。',source:'营地旧物箱中的基础桥梁图纸。',targetLabel:'溪谷 · 修建木桥',targetId:'creek-bridge'} as const;
+export const BLUEPRINTS = [...CRAFT_BLUEPRINTS,...WORKSHOP_SERIES_BLUEPRINTS,WORKBENCH_BRACING_BLUEPRINT,CABIN_REPAIR_BLUEPRINT,...CAMP_EXTERIOR_BLUEPRINTS,BRIDGE_BLUEPRINT] as const;
+export const STARTER_BLUEPRINTS = [CABIN_REPAIR_BLUEPRINT.id,'blueprint.tent-ropes','blueprint.camp-fire-stones','blueprint.camp-drying-rack',BRIDGE_BLUEPRINT.id] as const;
 export const SEAT_DEFINITION = 'furniture.stump-seat';
 export const findBlueprint = (id:string) => BLUEPRINTS.find(b=>b.id===id);
 export const findCraftBlueprint = (id:string) => CRAFT_BLUEPRINTS.find(b=>b.id===id);

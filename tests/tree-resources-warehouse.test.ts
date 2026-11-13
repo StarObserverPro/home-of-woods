@@ -1,7 +1,7 @@
 import { inventoryCount, inventoryTransaction } from '../src/domain/inventory.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { makeGatheringSources } from '../src/world/gathering-layout.ts';
+import { makeGatheringSources,gatheringHostTrees } from '../src/world/gathering-layout.ts';
 import { makeTrees, makeColliders } from '../src/world/layout.ts';
 import { heightAt } from '../src/world/surface.ts';
 import { TREE_RESOURCE_PROFILES } from '../src/content/tree-resources.ts';
@@ -16,13 +16,13 @@ import { synchronizeGatheringHosts, beginGather, advanceGather, commitGather, re
 
 const trees=makeTrees(),blockers=makeColliders(trees),registry=createGatheringRegistry({assetIds:RUNTIME_MODELS.map(a=>a.assetId)});
 test('resource identities resolve to fixed hosts and species-specific circles grounded on the shared surface',()=>{
-  const sources=makeGatheringSources();assert.equal(sources.length,15);
+  const sources=makeGatheringSources();assert.equal(sources.length,gatheringHostTrees(trees).length*3);
   assert.deepEqual(sources,makeGatheringSources([...trees].reverse()),'loading order cannot change identities or circle placement');
   for(const s of sources){
-    if(!s.hostRef){assert.equal(s.definitionId,'forage.scrap-pile');assert.ok(interactionRoute({player:{x:-35,z:2,facing:0,moving:false}},s,registry,blockers).reachable);continue;}
+    if(!s.hostRef){assert.equal(s.definitionId,'forage.scrap-pile');assert.ok(interactionRoute({player:{x:-35,z:2,facing:0,moving:false},workshop:{upgrades:{'creek-bridge':{level:1}}}},s,registry,blockers).reachable);continue;}
     const host=trees.find(t=>t.id===s.hostRef!.slotId)!;assert.ok(host);assert.equal(s.hostRef!.id,host.individualId);
     assert.equal(s.hostKind,host.kind);assert.equal(s.hostRef!.kind,host.role==='landmark'?'landmark':'tree-individual');
-    assert.ok(interactionRoute({player:{x:-35,z:2,facing:0,moving:false}},s,registry,blockers).reachable);
+    assert.ok(interactionRoute({player:{x:-35,z:2,facing:0,moving:false},workshop:{upgrades:{'creek-bridge':{level:1}}}},s,registry,blockers).reachable);
     for(const p of s.patches!)assert.equal(p.y,heightAt(p.x,p.z));
     if(s.placement==='mushroom-circle'){
       const profile=TREE_RESOURCE_PROFILES[host.kind];assert.equal(s.patches!.length,profile.patches);
