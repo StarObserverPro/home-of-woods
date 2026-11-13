@@ -1,3 +1,4 @@
+import {CABIN,TENT} from './world.ts';
 import type {OfferingMode} from './altar.ts';
 import {runtimeModelEnabled} from './assets.ts';
 export const CAMP_PROPS = {
@@ -25,6 +26,8 @@ export const VIEWS = {
   squirrel:{label:'松鼠近景',target:[-43,22.05,-4],yaw:-.55,elevation:.35,distance:6,zoom:1},
   hare:{label:'野兔近景',target:[-31,22.05,1],yaw:.5,elevation:.35,distance:6,zoom:1},
 
+  homeLighting:{label:'木屋墙根 · 光照检视',target:[CABIN.x,23.5,CABIN.z+2],yaw:-.65,elevation:.38,distance:22,zoom:1},
+  tentLighting:{label:'帐篷内外 · 光照检视',target:[TENT.x,23,TENT.z],yaw:-.3,elevation:.25,distance:13,zoom:1},
   woodcraft:{label:'营地木料堆',target:[-29,22,7],yaw:-.65,elevation:.6,distance:14,zoom:1},
   understory:{label:'树形与林下',target:[-67,28,10],yaw:-.65,elevation:.36,distance:17,zoom:1},
   overview:{label:'山谷全景',target:[-5,24,15],yaw:-.13,elevation:.28,distance:120,zoom:.76},

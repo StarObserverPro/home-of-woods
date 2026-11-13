@@ -404,7 +404,7 @@ export async function createScene(
   const observer = new ResizeObserver(resize);
   observer.observe(host);
   resize();
-  const localOcclusion=createCampOcclusion({resources:r,scene,trees,props,campRoots:camp.roots,interactionRoots:()=>[...housing.hits.objects(),...workshop.hits.objects()],outerSeeds:horizon.canopySeeds,surfaceAt:horizon.surfaceAt});
+  const localOcclusion=createCampOcclusion({resources:r,scene,trees,props,buildingSources:models.templates,campRoots:camp.roots,interactionRoots:()=>[...housing.hits.objects(),...workshop.hits.objects()],outerSeeds:horizon.canopySeeds,surfaceAt:horizon.surfaceAt});
   localOcclusion.bind(scene);
   const view = {
     setAmbientOcclusion:(enabled:boolean)=>localOcclusion.setEnabled(enabled),

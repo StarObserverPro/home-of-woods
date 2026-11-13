@@ -92,7 +92,7 @@ try{
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);await context.close();
  context=await newPage({width:1440,height:960});phase='main load';await page.goto(`${origin}/?inspect=1&hour=14`);await page.waitForFunction(()=>{try{return JSON.parse(document.querySelector('#runtime-stats')?.textContent??'{}').current?.occlusion?.forestBakes>0;}catch{return false;}},null,{timeout:180000});
  await page.addStyleTag({content:'.game-shell.lighting-capture > :not(.scene-host){visibility:hidden!important}'});
- for(const [name,view,time] of [['camp','camp','白昼'],['work-area','woodcraft','白昼'],['forest','understory','白昼'],['distant','overview','白昼'],['camp-night','camp','夜晚']])await mainPair(name,view,time);
+ for(const [name,view,time] of [['home-exterior','homeLighting','白昼'],['tent','tentLighting','白昼'],['camp','camp','白昼'],['work-area','woodcraft','白昼'],['forest','understory','白昼'],['distant','overview','白昼'],['camp-night','camp','夜晚']])await mainPair(name,view,time);
  report.flows.push({name:'main production scene, canopy textures and fixed-view AO toggle',passed:true});await context.close();
  assert.deepEqual(report.errors,[]);report.status='passed-automated';console.log('LIGHTING_BROWSER_PASS');
 }catch(error){report.status='failed';report.failure={phase,message:String(error.stack??error)};if(page&&!page.isClosed()){report.body=await page.locator('body').innerText().catch(()=>null);await page.screenshot({path:path.join(out,'failure.png'),fullPage:true}).catch(()=>{});}console.error(error);process.exitCode=1;

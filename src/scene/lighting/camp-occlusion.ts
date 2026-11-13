@@ -10,27 +10,21 @@ import {bakeCanopyField,floorOccluder} from '../../world/occlusion.ts';
 import type {CanopyField,CanopySeed,OcclusionVolume} from '../../world/occlusion.ts';
 import type {Resources} from '../resources.ts';
 import {createAmbientOcclusion} from './ambient-occlusion.ts';
+import {buildingOcclusionVolumes} from './building-occlusion.ts';
 
-type Options={resources:Resources;scene:THREE.Scene;trees:Tree[];props:Map<string,THREE.Object3D>;campRoots:Map<string,THREE.Group>;interactionRoots:()=>THREE.Object3D[];outerSeeds:CanopySeed[];surfaceAt:(x:number,z:number)=>number};
+type Options={resources:Resources;scene:THREE.Scene;trees:Tree[];props:Map<string,THREE.Object3D>;buildingSources:Map<string,THREE.Group>;campRoots:Map<string,THREE.Group>;interactionRoots:()=>THREE.Object3D[];outerSeeds:CanopySeed[];surfaceAt:(x:number,z:number)=>number};
 /** Presentation adapter. Existing transforms, tree state and parametric surfaces remain authoritative. */
 export function createCampOcclusion(options:Options){
-  const {resources,scene,trees,props,campRoots,interactionRoots,outerSeeds,surfaceAt}=options,ao=createAmbientOcclusion(resources);
+  const {resources,scene,trees,props,buildingSources,campRoots,interactionRoots,outerSeeds,surfaceAt}=options,ao=createAmbientOcclusion(resources);
   const bounds={minX:WORLD.minX,maxX:WORLD.maxX,minZ:WORLD.minZ,maxZ:WORLD.maxZ};
   const outerBounds={minX:-750,maxX:750,minZ:-750,maxZ:750};
   let core:CanopyField|undefined,outer:CanopyField|undefined,forestKey='',surfaceKey='__initial__',clock=Infinity,bindClock=Infinity,forestBakes=0,forestBakeMs=0,omittedVolumes=0;
-  const boundsBox=new THREE.Box3(),position=new THREE.Vector3(),scale=new THREE.Vector3(),rotation=new THREE.Quaternion(),euler=new THREE.Euler(0,0,0,'YXZ');
+  const position=new THREE.Vector3(),scale=new THREE.Vector3(),rotation=new THREE.Quaternion(),euler=new THREE.Euler(0,0,0,'YXZ');
   const fixed:OcclusionVolume[]=[];
   for(const [id,root] of props){
     if(id!=='cabin'&&id!=='tent')continue;
-    root.updateWorldMatrix(true,true);boundsBox.setFromObject(root);const size=boundsBox.getSize(new THREE.Vector3()),center=boundsBox.getCenter(new THREE.Vector3());
-    const x=center.x,z=center.z,y=root.position.y,w=size.x*(id==='tent'?.72:.84),d=size.z*.78,h=Math.min(size.y*.55,3.3);
-    fixed.push({id:`${id}:enclosure`,center:[x,y+h/2,z],halfSize:[w/2,h/2,d/2],yaw:0,softness:.6,strength:id==='tent'?.14:.20,detail:false});
-    // The central entrance is deliberately not crossed by a dark sill stripe.
-    for(const side of [-1,1]){
-      fixed.push({id:`${id}:side:${side}`,center:[x+side*w/2,y+.10,z],halfSize:[.05,.10,d/2],yaw:0,softness:.65,strength:.32,detail:true});
-      fixed.push({id:`${id}:front:${side}`,center:[x+side*w*.35,y+.10,z+d/2],halfSize:[w*.15,.10,.05],yaw:0,softness:.5,strength:.28,detail:true});
-    }
-    fixed.push({id:`${id}:back`,center:[x,y+.10,z-d/2],halfSize:[w/2,.10,.05],yaw:0,softness:.65,strength:.32,detail:true});
+    const source=buildingSources.get(id);if(!source)throw new Error(`Missing building source: ${id}`);
+    fixed.push(...buildingOcclusionVolumes(id,source,root));
   }
   const logStore=campRoots.get(CAMP_PROPS.logs.id);
   if(logStore){const p=logStore.position;fixed.push({id:'log-store:shelter',center:[p.x,p.y+.9,p.z],halfSize:[1.5,.9,1.5],yaw:0,softness:.7,strength:.19,detail:false});}

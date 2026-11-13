@@ -72,3 +72,24 @@ test('volume capacity and inputs fail before uploading invalid uniforms',()=>{
  assert.throws(()=>ao.setVolumes(Array.from({length:C.maxVolumes+1},()=>volume)));
  assert.throws(()=>ao.setVolumes([{...volume,softness:0}]));ao.setVolumes([volume]);ao.setEnabled(false);assert.equal(ao.stats().enabled,false);ao.dispose();r.dispose();
 });
+
+test('building attenuation reads real GLB wall/floor parts, ignores later upgrade bounds',async()=>{
+ const {readFile}=await import('node:fs/promises');
+ const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
+ const {buildingOcclusionVolumes}=await import('../src/scene/lighting/building-occlusion.ts');
+ for(const id of ['cabin','tent'] as const){
+   const bytes=await readFile(new URL(`../public/assets/m0/${id}.glb`,import.meta.url));
+   const loaded=await new GLTFLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
+   const placement=new THREE.Group();placement.position.set(10,21.5,8);placement.scale.setScalar(1.6);
+   const a=buildingOcclusionVolumes(id,loaded.scene,placement);
+   const ghost=new THREE.Mesh(new THREE.BoxGeometry(100,100,100));ghost.position.x=100;ghost.visible=false;placement.add(ghost);
+   assert.deepEqual(buildingOcclusionVolumes(id,loaded.scene,placement),a);
+   assert.ok(a.find(v=>v.id.endsWith(':enclosure'))!.center[1]>21.5);
+   if(id==='cabin'){assert.equal(a.filter(v=>v.id.includes('wall-root')).length,5);assert.ok(a.filter(v=>v.id.includes('wall-root')).every(v=>v.center[1]>22.5));}
+   else assert.equal(a.filter(v=>v.id.includes('canvas-root')).length,3);
+   placement.rotation.y=Math.PI/2;const rotated=buildingOcclusionVolumes(id,loaded.scene,placement);
+   close(rotated[0].yaw,Math.PI/2);
+   ghost.geometry.dispose();(ghost.material as THREE.Material).dispose();
+   loaded.scene.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose();}});
+ }
+});
