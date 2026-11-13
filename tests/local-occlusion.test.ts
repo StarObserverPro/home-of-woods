@@ -94,10 +94,26 @@ test('building attenuation reads real GLB wall/floor parts, ignores later upgrad
  }
 });
 
-test('far view only scans broad regions and spatial rejection includes rotated soft extents',()=>{
+test('local shading is cached in a bounded field, with separate broad and detail channels',()=>{
  const r=new Resources(),ao=createAmbientOcclusion(r);
  const broad={...volume,id:'broad',detail:false,yaw:Math.PI/2};ao.setVolumes([volume,broad]);
  const stats=ao.stats();assert.equal(stats.broadVolumes,1);assert.equal(stats.volumes[0],'broad');
  assert.ok(stats.spatialBounds[0][2]<=-2.5);assert.ok(stats.spatialBounds[1][2]>=2.5);
- ao.setVolumes([]);assert.deepEqual(ao.stats().spatialBounds,[[0,0,0],[0,0,0]]);ao.dispose();r.dispose();
+ ao.setVolumes([]);assert.deepEqual(ao.stats().localFieldSize,[1,1,1]);ao.dispose();r.dispose();
+});
+
+test('local field agrees with analytical volumes at voxel centers and never exceeds its budget',async()=>{
+ const {bakeLocalOcclusion}=await import('../src/world/local-occlusion-field.ts');
+ const inputs=[{...volume,detail:false}, {...volume,id:'rotated',center:[1,0,0] as const,yaw:.7,strength:.46}];
+ const field=bakeLocalOcclusion(inputs),[nx,ny,nz]=field.size;
+ assert.ok(nx<=128&&ny<=48&&nz<=128);assert.equal(field.data.length,nx*ny*nz*2);
+ for(let z=0;z<nz;z+=4)for(let y=0;y<ny;y+=3)for(let x=0;x<nx;x+=4){
+   const p=[x,y,z].map((v,a)=>field.min[a]+v*(field.max[a]-field.min[a])/(field.size[a]-1)) as [number,number,number];
+   const i=((z*ny+y)*nx+x)*2;
+   for(let channel=0;channel<2;channel++){
+     const expected=Math.max(0,...inputs.filter(v=>Number(v.detail)===channel).map(v=>volumeWeight(v,p)));
+     assert.ok(Math.abs(field.data[i+channel]/255-expected)<=.5/255+.000001);
+   }
+ }
+ assert.deepEqual(bakeLocalOcclusion([]).size,[1,1,1]);
 });
