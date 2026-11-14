@@ -1,511 +1,298 @@
 import css from './style.css?inline'
 import timberCss from '../../../src/ui/timber/theme.css?inline'
-import {mountWoodworkingTimber} from './timber-adapter.js'
-import {
-  availableCuts,
-  clearMark,
-  createJob,
-  cut,
-  CUT_FACE,
-  CUTS,
-  DEFAULT_DESIGN,
-  DEFAULT_STOCK,
-  finish,
-  idealMark,
-  markCut,
-  pare,
-  recordTrial,
-  restoreJob,
-  trialFit,
-} from './domain.js'
-import type { CutId, Design, FinishedWork, Job, Stock } from './domain.js'
-import { blueprint } from './blueprint.js'
-import { createWorkbenchViewport } from './viewport.js'
-import type { SurfaceStroke, WorkView } from './viewport.js'
-
-export interface WoodworkingDraft {
-  version: 1
-  job: Job
-  selected: CutId
+import { mountWoodworkingTimber } from './timber-adapter.ts'
+import { blueprint } from './blueprint.ts'
+import { DEFAULT_DESIGN, DEFAULT_STOCK } from './domain.ts'
+import type { CutId, Design, FinishedWork, Job, Stock } from './domain.ts'
+import { createPiece, executeSaw, materialBalance, sawProvider } from './machining.ts'
+import type { Workpiece } from './machining.ts'
+import { bounds, EPS, surfaces } from './solid.ts'
+import type { Sign } from './solid.ts'
+import { defaultLayout, finishTenon, inspectPiece, inspectTenon, operationFor, recommendedSurface, repairTenon, restorePiece, TASKS } from './tenon.ts'
+import type { Layout, TaskId } from './tenon.ts'
+import { createWorkbenchViewport, surfaceName } from './viewport.ts'
+export interface LegacyWoodworkingDraft { version: 1; job: Job; selected: CutId; paint: string | null; tested: boolean }
+export interface FiniteSawDraft {
+  version: 2
+  job: Workpiece
+  selected: TaskId
+  selectedSurface: string | null
+  layouts: Partial<Record<TaskId, Layout>>
   paint: string | null
-  tested: boolean
 }
-export interface WoodworkingReceipt {
-  rarityLabel?: string
-  traits?: readonly string[]
-}
+export type WoodworkingDraft = LegacyWoodworkingDraft | FiniteSawDraft
+export interface WoodworkingReceipt { rarityLabel?: string; traits?: readonly string[] }
 export interface WoodworkingOptions {
   stocks?: readonly Stock[]
   draft?: WoodworkingDraft | null
-  tools?: { saw?: boolean; chisel?: boolean; brush?: boolean; straightedge?: boolean }
+  tools?: { saw?: boolean; autoFinish?: boolean; chisel?: boolean; brush?: boolean; straightedge?: boolean }
   lockedStraightedgeHint?: string
-  onNew?: () => void
   ghostEligible?: boolean
+  onNew?: () => void
   onDraftChange?: (draft: WoodworkingDraft | null) => void
   onDiscard?: (draft: WoodworkingDraft) => void | Promise<void>
-  onComplete?: (
-    item: FinishedWork,
-    stockId: string,
-    draft: WoodworkingDraft,
-  ) => void | WoodworkingReceipt | Promise<void | WoodworkingReceipt>
+  onComplete?: (item: FinishedWork, stockId: string, draft: WoodworkingDraft) => void | WoodworkingReceipt | Promise<void | WoodworkingReceipt>
 }
-export interface WoodworkingMount {
-  destroy(): void
-  getDraft(): WoodworkingDraft | null
-  setPaused(paused: boolean): void
+export interface WoodworkingMount { destroy(): void; getDraft(): WoodworkingDraft | null; setPaused(paused: boolean): void }
+const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v))
+const round = (v: number) => Math.round(v * 10) / 10
+const pigments: [string, string | null][] = [['原木', null], ['松绿', '#476b53'], ['赭红', '#974f37'], ['靛蓝', '#465d79']]
+export function restoreDraft(raw: unknown): FiniteSawDraft {
+  const d = raw as FiniteSawDraft
+  if (!d || d.version !== 2 || !TASKS.some(t => t.id === d.selected)) throw new Error('这件旧习作暂不能继续，请另开一件。')
+  const job = restorePiece(d.job), layouts: FiniteSawDraft['layouts'] = {}
+  for (const task of TASKS) {
+    const l = d.layouts?.[task.id]
+    if (!l) continue
+    if (![l.position, l.depth].every(Number.isFinite) || ![-1, 1].includes(l.wasteSide) || !['low', 'high'].includes(l.reference) || !['auto', 'flat', 'end-up', 'side-out'].includes(l.fixture)) throw new Error('放样数据无效')
+    layouts[task.id] = { ...l }
+  }
+  const selectedSurface = surfaces(job.geometry.boxes).some(s => s.id === d.selectedSurface) ? d.selectedSurface : null
+  if (d.paint !== null && !/^#[0-9a-f]{6}$/i.test(d.paint)) throw new Error('面漆数据无效')
+  return { version: 2, job, layouts, selected: d.selected, selectedSurface, paint: d.paint }
 }
-const names: Record<CutId, string> = {
-  trim: '截取总长',
-  cheekNear: '锯近侧榫颊',
-  cheekFar: '锯远侧榫颊',
-  shoulderNear: '切近侧榫肩',
-  shoulderFar: '切远侧榫肩',
-}
-const surfaces = { top: '顶面', near: '近侧面', far: '远侧面', end: '端面' }
-const pigments = [
-  ['原木', null],
-  ['松绿', '#476b53'],
-  ['赭红', '#974f37'],
-  ['靛蓝', '#465d79'],
-] as const
-
 export function mountWoodworking(container: HTMLElement, options: WoodworkingOptions = {}): WoodworkingMount {
-  const mount = document.createElement('div')
-  const shadow = mount.attachShadow({ mode: 'open' })
-  const style = document.createElement('style')
-  style.textContent = css + '\n' + timberCss
-  const shell = document.createElement('section')
-  shell.className = 'shell'
-  shell.innerHTML = `<header><div class="brand"><span class="seal">木</span><div><div class="eyebrow">森林之家 ／ 木工房</div><h1>榫作练习台</h1></div></div><span class="stamp">习作 01 · 直榫</span></header>
-    <ol class="rail"><li>01　定图选材</li><li>02　放样开榫</li><li>03　试配修整</li><li>04　收件</li></ol>
-    <div class="layout"><section class="panel"><div class="bar"><h2>操作台</h2><span class="tag" id="modeLabel"></span></div><div class="stage"><canvas aria-label="可旋转的木料，在划线模式沿木面拖动划线"></canvas></div>
-    <div class="tools"><button data-a="rotate">↻ 转动</button><button data-a="mark">✎ 划线</button><button data-a="ruler" title="沿落笔点作直线">直角尺</button><button data-a="face">正对工作面</button><button data-a="iso">立体视角</button></div><div class="foot" id="guide"></div></section>
-    <section class="panel"><div class="bar"><h2>工艺图纸</h2><span class="meta">W–01 / mm</span></div><div class="drawings"></div><div class="body">
-    <div class="row" id="dims"><label>总长<input name="length" type="number" min="1" step="1"></label><label>榫长<input name="tenonLength" type="number" min="1" step="1"></label><label>榫宽<input name="tenonWidth" type="number" min="1" step="1"></label></div>
-    <div id="materials" class="row"><label>毛料<select id="stocks"></select></label><button data-a="start" class="primary">选料开工</button></div>
-    <small id="spec" class="hint"></small><details class="tolerance"><summary>试配公差</summary><p>单侧榫颊可留 0.25 mm 过盈，侧隙须在 1.5 mm 以内。榫头允许短 2 mm、长 0.75 mm，两肩沿长度方向最多错开 2 mm。</p></details><div id="operations"><label>工作线　<select id="cuts"></select></label><div class="actions inspect"><button data-a="cut" class="primary">沿墨线下锯</button><button data-a="erase">擦线重画</button></div></div>
-    <div id="fitting"><div class="actions"><button data-a="trial" class="primary">试插榫孔</button><button data-a="near">薄削近颊</button><button data-a="far">薄削远颊</button></div><p class="hint" id="fit"></p></div>
-    <div id="finish"><div class="actions finish-actions"><span>面漆</span><span id="paints" class="actions"></span><button data-a="finish" class="primary">收为成品</button></div></div>
-    <div class="note" id="note" role="status" aria-live="polite"></div><button class="secondary" data-a="restart" hidden>另取毛料</button>
-    <dialog id="discard-dialog" aria-labelledby="discard-title"><h2 id="discard-title">放弃当前工件？</h2><p>这块料已经下锯，放弃后不能恢复。</p><div class="actions"><button data-a="keep" autofocus>继续做</button><button data-a="discard" class="discard">确认放弃这块料</button></div></dialog>
-    </div></section></div>`
-  shadow.append(style, shell)
-  container.append(mount)
+  const mount = document.createElement('div'), shadow = mount.attachShadow({ mode: 'open' })
+  const style = document.createElement('style'); style.textContent = css + '\n' + timberCss; shadow.append(style)
+  const shell = document.createElement('section'); shell.className = 'shell'
+  shell.innerHTML = `<header class="workshop-hud" data-ui-grid="hud"><div class="title-plaque"><span class="eyebrow">森林之家</span><h1>木作台</h1></div><div class="message" id="message" role="status" aria-live="polite" data-ui-grid="notice"></div><span class="stamp">直榫习作</span></header>
+  <div class="layout" data-ui-grid="content"><section class="stage-panel">
+    <div class="stage"><canvas tabindex="0" aria-label="木作台：拖动翻看木料，点击选择木面；加工使用按钮"></canvas></div>
+    <div class="stage-readout"><span id="face-label">选择木面</span><span id="cut-count"></span></div>
+    <div class="view-tools" aria-label="观察木料" data-ui-grid="hud">
+      <div class="orbit-pad"><button data-a="turn-up" data-how-camera aria-label="向上翻看" title="向上翻看">↑</button><button data-a="turn-left" data-how-camera aria-label="向左转动" title="向左转动">←</button><button data-a="iso" data-how-camera aria-label="复位角度" title="复位角度，不改变大小">◈</button><button data-a="turn-right" data-how-camera aria-label="向右转动" title="向右转动">→</button><button data-a="turn-down" data-how-camera aria-label="向下翻看" title="向下翻看">↓</button></div>
+      <div class="view-presets"><button data-a="face" data-how-camera title="正对选中的木面">正面</button><button data-a="depth-view" data-how-camera title="从侧面查看锯入深度">侧看</button><button data-a="zoom-in" data-how-camera aria-label="放大木料">＋</button><button data-a="zoom-out" data-how-camera aria-label="缩小木料">−</button></div>
+    </div>
+    <nav class="tool-dock" aria-label="手工工具" data-ui-grid="row">
+      <button data-a="measure-tool" title="用量具定位锯线"><svg viewBox="0 0 48 38" aria-hidden="true"><path d="M6 3H15V25H43V34H6Z" fill="#bec9b2"/><path d="M9 7H15M9 13H15M9 19H15M21 25V31M28 25V31M35 25V31" stroke="#4d6151" stroke-width="2"/></svg><span>量具</span></button>
+      <button data-a="saw-tool" title="设置锯深与下锯"><svg viewBox="0 0 56 38" aria-hidden="true"><path d="M17 9L53 12V23L48 21L45 24L42 22L39 25L36 23L33 26L30 24L27 27L24 25L18 27Z" fill="#c2cbc4"/><path fill-rule="evenodd" d="M5 7Q2 11 3 27Q4 33 11 33Q20 30 21 17L20 7Q14 2 5 7ZM8 11Q5 20 8 28L12 27L16 12Z" fill="#bf8a51"/></svg><span>手锯</span></button>
+      <button data-a="paper" title="查看图纸"><svg viewBox="0 0 48 38" aria-hidden="true"><path d="M10 4H36L34 33H8Z" fill="#ecdcad"/><path d="M14 11H30V25H14ZM19 11V25M14 18H30" fill="none" stroke="#937951" stroke-width="2"/></svg><span>图纸</span></button>
+      <button data-a="trial" title="检查尺寸与试配"><svg viewBox="0 0 48 38" aria-hidden="true"><path d="M7 8H22V17H31V24H22V31H7Z" fill="#d3a66a"/><path d="M31 7H42V32H31V26H36V15H31Z" fill="#8b6745"/></svg><span>试配</span></button>
+    </nav>
+  </section><aside class="controls" data-ui-grid="window">
+    <div class="card-content" data-ui-grid="content">
+    <section id="setup"><p class="eyebrow">选料开工</p><h2>做一支直榫</h2><label>方料<select id="stocks"></select></label><div class="dimensions"><label>总长<input name="length" type="number" min="8" step="1"></label><label>榫长<input name="tenonLength" type="number" min="2" step="1"></label><label>榫宽<input name="tenonWidth" type="number" min="2" step="1"></label></div><p id="stock-spec" class="hint"></p><button class="primary" data-a="start">放上工作台</button></section>
+    <section id="working" hidden>
+      <nav class="tasks" aria-label="加工部位" data-ui-grid="row"></nav><p class="task-hint" id="task-hint"></p>
+      <nav class="steps" aria-label="当前操作" data-ui-grid="row"><button data-stage="face">选面</button><button data-stage="line">定线</button><button data-stage="depth">锯深</button></nav>
+      <div class="operation-inputs">
+      <section class="control-step" data-section="face"><h2>从哪一面下锯？</h2><label>工作面<select id="surface" aria-label="工作面"><option value="">选择木面</option></select></label><button data-a="suggest-face">选择建议面</button><p class="hint">点木料也能选面。</p><button class="primary" data-a="next-line">定锯线 →</button></section>
+      <section class="control-step" data-section="line" hidden><h2>锯线位置</h2><label>从哪里量<select id="reference"><option value="low">基准端 A</option><option value="high">现有端面</option></select></label><div class="measure" data-ui-grid="row"><button data-step="offset:-1" aria-label="位置减零点一毫米">−</button><input id="offset-number" aria-label="距基准毫米" type="number" step="0.1"><span>mm</span><button data-step="offset:1" aria-label="位置加零点一毫米">＋</button></div><input id="offset-range" aria-label="锯线位置滑块" type="range" step="0.1"><label>锯缝落在<select id="waste"><option value="1">标线右侧</option><option value="-1">标线左侧</option></select></label><button class="primary" data-a="next-depth">设锯深 →</button></section>
+      <section class="control-step" data-section="depth" hidden><h2>锯到哪里停？</h2><div class="measure" data-ui-grid="row"><button data-step="depth:-1" aria-label="深度减零点一毫米">−</button><input id="depth-number" aria-label="锯入深度毫米" type="number" min="0.1" step="0.1"><span>mm</span><button data-step="depth:1" aria-label="深度加零点一毫米">＋</button></div><input id="depth-range" aria-label="锯入深度滑块" type="range" min="0.1" step="0.1"><div class="row"><p id="depth-note" class="hint"></p><button data-a="through">锯穿</button></div><details><summary>夹持</summary><label class="sr-only" for="fixture">夹持方式</label><select id="fixture"><option value="auto">采用建议</option><option value="flat">平放</option><option value="end-up">端头朝上</option><option value="side-out">侧面朝外</option></select></details><div class="execute"><p id="cut-hint" class="hint"></p><button class="primary" data-a="cut">下锯</button></div></section>
+      </div>
+      <section class="inspection" hidden><h2>试配结果 <strong id="score"></strong></h2><div id="issues"></div><button data-a="repair" hidden>收尾修整一次</button><div class="finish-row" id="finish" hidden><label>面漆<select id="paint"></select></label><button data-a="finish" class="primary">收好成品</button></div><button data-a="back-work">返回加工</button></section>
+      <details class="materials"><summary>余料 <span id="balance"></span></summary><p id="materials"></p></details>
+      <button data-a="discard" class="quiet danger">放弃这根料</button>
+    </section><section id="done" hidden><p class="eyebrow">完成</p><h2>这一件收好了</h2><p id="receipt"></p><button data-a="new" class="primary">再做一件</button></section>
+    </div>
+  </aside></div>
+  <dialog class="drawing" id="paper-dialog"><div class="paper-heading" data-ui-grid="row"><h2>直榫图纸</h2><button data-a="close-paper" aria-label="收起图纸">×</button></div><div class="drawings"></div><p class="hint">尺寸单位：毫米</p></dialog>
+  <dialog id="discard-dialog"><form method="dialog"><h2>放弃这根料？</h2><p>锯过的木头不能恢复。可用余段会保留。</p><div class="row"><button value="cancel">继续加工</button><button value="discard" class="danger">确认弃料</button></div></form></dialog>`
+  shadow.append(shell); container.append(mount)
   const timber = mountWoodworkingTimber(shell, shadow)
   const $ = <T extends HTMLElement = HTMLElement>(selector: string) => shell.querySelector<T>(selector)!
+  const input = (id: string) => $<HTMLInputElement>(`#${id}`)
+  const select = (id: string) => $<HTMLSelectElement>(`#${id}`)
   const btn = (a: string) => $<HTMLButtonElement>(`[data-a="${a}"]`)
-  const stocks = options.stocks ?? [DEFAULT_STOCK, { id: 'wide-blank', length: 100, width: 36, height: 30 }]
-  const restored = options.draft?.version === 1 ? structuredClone(options.draft) : null
-  let job: Job | null = restored ? restoreJob(restored.job) : null,
-    selected: CutId = restored && CUTS.includes(restored.selected) ? restored.selected : 'trim',
-    paint = restored?.paint ?? null
-  let design: Design = { ...(job?.design ?? DEFAULT_DESIGN) },
-    mode: WorkView['mode'] = 'rotate'
-  let item: FinishedWork | null = null,
-    receipt: WoodworkingReceipt | void,
-    busy = false,
-    disposed = false
-  let message = job
-    ? '已续接工件，选择工作线可继续加工。'
-    : !stocks.length
-      ? '暂时没有可用毛料。'
-      : options.ghostEligible === false
-        ? '定好尺寸，选一块毛料。'
-        : '定好尺寸，选一块毛料。开工后可观察五秒虚影。'
-  let useRuler = false
-  let finishedStock: Stock | null = null
-  let ghostUntil = 0,
-    pausedGhostMs = 0,
-    paused = false,
-    ghostUsed = !!job
-  let timer: ReturnType<typeof setInterval> | undefined
-  const discardDialog = $<HTMLDialogElement>('#discard-dialog')
-  const caps = options.tools ?? {},
-    stockMenu = $<HTMLSelectElement>('#stocks'),
-    cutMenu = $<HTMLSelectElement>('#cuts')
-  if (caps.straightedge === false) btn('ruler').title = options.lockedStraightedgeHint ?? '尚未配备直角尺'
-  for (const [i, s] of stocks.entries())
-    stockMenu.add(new Option(`${s.length} × ${s.width} × ${s.height} mm · ${s.label ?? s.id}`, String(i)))
-  for (const [key, color] of pigments) {
-    const b = document.createElement('button')
-    b.type = 'button'
-    b.className = 'swatch'
-    b.dataset.paint = color ?? ''
-    b.title = key
-    b.setAttribute('aria-label', `面漆：${key}`)
-    b.style.setProperty('--color', color ?? '#cda26d')
-    $('#paints').append(b)
+  const stocks = [...(options.stocks ?? [DEFAULT_STOCK])]
+  for (const s of stocks) select('stocks').add(new Option(s.label ?? s.id, s.id))
+  for (const t of TASKS) { const b = document.createElement('button'); b.dataset.task = t.id; b.textContent = ({trim:'截端',cheekNear:'近颊',cheekFar:'远颊',shoulderNear:'近肩',shoulderFar:'远肩'} as const)[t.id]; b.setAttribute('aria-label',t.name); $('.tasks').append(b) }
+  for (const [name, color] of pigments) select('paint').add(new Option(name, color ?? ''))
+  let lastPiece: Workpiece | null = null
+  let stage: 'face' | 'line' | 'depth' = 'face'
+  let showingInspection = false
+  let design: Design = { ...DEFAULT_DESIGN }, job: Workpiece | null = null, selected: TaskId = 'trim', selectedSurface: string | null = null
+  let layouts: FiniteSawDraft['layouts'] = {}, paint: string | null = null, paused = false, disposed = false, pending = false, completed = false, invalidInput = false
+  let message = '选好方料，放上工作台。', receipt = ''
+  if (options.draft) {
+    try { const d = restoreDraft(options.draft); ({ job, selected, selectedSurface, layouts, paint } = d); showingInspection = job.inspectedAt === job.operations.length; design = { ...job.design }; select('stocks').value = job.stock.id }
+    catch (e) { message = e instanceof Error ? e.message : '草稿不能继续'; }
   }
-  for (const key of Object.keys(design) as (keyof Design)[])
-    $<HTMLInputElement>(`[name=${key}]`).value = String(design[key])
-  const currentStock = () => job?.stock ?? finishedStock ?? stocks[Number(stockMenu.value)] ?? DEFAULT_STOCK
-  function getDraft(): WoodworkingDraft | null {
-    return job
-      ? structuredClone({ version: 1, job, selected, paint, tested: job.trials > 0 && !job.needsTrial })
-      : null
-  }
-  function emit() {
-    options.onDraftChange?.(getDraft())
-  }
-  function error(e: unknown) {
-    message = e instanceof Error ? e.message : String(e)
-  }
-  function stopClock() {
-    clearInterval(timer)
-    timer = undefined
-  }
-  function startClock(ms: number) {
-    stopClock()
-    ghostUntil = ms > 0 ? performance.now() + ms : 0
-    if (ms > 0)
-      timer = setInterval(() => {
-        if (performance.now() >= ghostUntil) {
-          ghostUntil = 0
-          stopClock()
-        }
-        render()
-      }, 250)
-  }
-  function resetBench(newPiece: boolean) {
-    job = null
-    item = null
-    receipt = undefined
-    finishedStock = null
-    paint = null
-    useRuler = false
-    mode = 'rotate'
-    selected = 'trim'
-    pausedGhostMs = 0
-    startClock(0)
-    if (newPiece) ghostUsed = false
-    message = '选一块毛料开始下一次练习。'
-    viewport.orient('iso')
-    emit()
-    if (newPiece) options.onNew?.()
-  }
-  const viewport = createWorkbenchViewport($<HTMLCanvasElement>('canvas'), (stroke: SurfaceStroke) => {
-    if (!job || busy || paused || mode !== 'mark') return
-    try {
-      const { face, points } = stroke
-      if (face !== CUT_FACE[selected])
-        throw new Error(`这道工序要在${surfaces[CUT_FACE[selected]]}划线。可点「正对工作面」。`)
-      if (points.length < 2) return
-      const a = points[0],
-        end = points[points.length - 1]
-      job = markCut(job, selected, { face, a, b: useRuler ? { u: a.u, v: end.v } : end })
-      message = '墨线已留在木面。可以下锯，也可以重画。'
-      emit()
-    } catch (e) {
-      error(e)
-    }
-    render()
+  for (const k of ['length', 'tenonLength', 'tenonWidth'] as const) $<HTMLInputElement>(`[name="${k}"]`).value = String(design[k])
+  function stock() { return stocks.find(s => s.id === select('stocks').value) ?? DEFAULT_STOCK }
+  function scenePiece(): Workpiece { return job ?? lastPiece ?? createPiece(design, stock()) }
+  function layout(p: Workpiece) { return layouts[selected] ??= defaultLayout(p, selected) }
+  function getDraft(): FiniteSawDraft | null { return job ? structuredClone({ version: 2, job, selected, selectedSurface, layouts, paint }) : null }
+  function emit() { options.onDraftChange?.(getDraft()) }
+  function setMessage(e: unknown) { message = e instanceof Error ? e.message : String(e) }
+  const viewport = createWorkbenchViewport($<HTMLCanvasElement>('canvas'), id => {
+    if (!job || paused || pending || disposed) return
+    selectedSurface = id; showingInspection = false; message = '木面已选好。'; emit(); render()
   })
+  function current() {
+    const p = scenePiece(), task = TASKS.find(t => t.id === selected)!, l = layout(p)
+    const ss = surfaces(p.geometry.boxes), face = ss.find(s => s.id === selectedSurface)
+    const extent = task.planeAxis === 0 ? bounds(p.geometry.boxes).max[0] : p.stock.width
+    const sizes = [p.stock.length, p.stock.height, p.stock.width]
+    const depthMax = face ? (face.sign === 1 ? face.plane : sizes[face.axis] - face.plane) : sizes[task.entryAxis]
+    const op = operationFor(p, selected, l, selectedSurface)
+    const compatible = face?.axis === task.entryAxis && face?.sign === task.entrySign
+    const preview = !compatible ? { allowed: false, reason: '先选合适的进锯面。' } : sawProvider.preview(p, op)
+    return { p, task, l, face, ss, extent, depthMax, op, preview }
+  }
   function render() {
     if (disposed) return
-    const stock = currentStock(),
-      report = job && trialFit(job),
-      all = !!report?.ready
-    const tested = !!job && job.trials > 0 && !job.needsTrial
-    const stage = item ? 3 : all ? 2 : job ? 1 : 0
-    shell.querySelectorAll('.rail li').forEach((li, i) => {
-      li.className = i < stage ? 'done' : i === stage ? 'current' : ''
-    })
-    $('.drawings').innerHTML = blueprint(design, stock, selected)
-    $('#materials').hidden = !!job || !!item
-    $('#dims')
-      .querySelectorAll('input')
-      .forEach((el) => (el.disabled = !!job || !!item))
-    $('#operations').hidden = !job || all
-    $('#fitting').hidden = !all
-    $('#finish').hidden = !all
-    btn('restart').hidden = !item && !job
-    btn('restart').disabled = busy
-    btn('restart').textContent = item
-      ? '再做一件'
-      : Object.keys(job?.cuts ?? {}).length
-        ? '放弃工件…'
-        : '重新选料'
-    btn('start').disabled = stocks.length === 0
-    const allowed = job ? availableCuts(job) : []
-    cutMenu.replaceChildren(
-      ...CUTS.map((id) => {
-        const o = new Option(`${job?.cuts[id] ? '✓ ' : ''}${names[id]}`, id)
-        o.disabled = !allowed.includes(id)
-        return o
-      }),
-    )
-    cutMenu.value = selected
-    btn('rotate').disabled = busy
-    btn('mark').disabled = !job || all || busy
-    btn('rotate').setAttribute('aria-pressed', String(mode === 'rotate'))
-    btn('mark').setAttribute('aria-pressed', String(mode === 'mark'))
-    btn('ruler').disabled = !job || all || busy || caps.straightedge === false
-    btn('ruler').setAttribute('aria-pressed', String(useRuler))
-    btn('cut').disabled = !job?.marks[selected] || caps.saw === false || busy
-    btn('erase').disabled = !job?.marks[selected] || busy
-    btn('trial').disabled = !all || busy
-    for (const side of ['near', 'far']) btn(side).disabled = !job?.trials || caps.chisel === false || busy
-    btn('finish').disabled = !tested || !report?.fits || busy
-    btn('finish').textContent = busy ? '正在收件…' : '收为成品'
-    $('#paints')
-      .querySelectorAll('button')
-      .forEach((b) => {
-        b.disabled = busy || caps.brush === false
-        b.setAttribute('aria-pressed', String((b.dataset.paint || null) === paint))
-      })
-    const remaining = Math.max(0, Math.ceil((paused ? pausedGhostMs : ghostUntil - performance.now()) / 1000))
-    $('#modeLabel').textContent = paused
-      ? '已暂停'
-      : remaining
-        ? `虚影 ${remaining} 秒`
-        : item
-          ? '已收件'
-          : mode === 'mark'
-            ? '划线模式'
-            : '观察模式'
-    $('#spec').textContent =
-      `毛料截面 ${stock.width} × ${stock.height} mm　·　榫肩距基准端 ${design.length - design.tenonLength} mm`
-    $('#guide').textContent = item
-      ? '成品预览'
-      : !job
-        ? '拖动查看成形后的直榫。图纸尺寸以毫米计。'
-        : all
-          ? '比较榫颊与试配孔的接触位置，每次薄削 0.25 mm。'
-          : `${names[selected]} · ${surfaces[CUT_FACE[selected]]}　${mode === 'rotate' ? '拖动转动木料，切换划线后落笔。' : '沿木面拖出墨线，松手落笔。'}`
-    $('#fit').textContent =
-      tested && report
-        ? `${report.fits ? '试配合格' : report.issues.join('；')}　·　最大侧偏 ${report.clearance.toFixed(2)} mm`
-        : '试配后可查看接触情况。'
-    $('#note').textContent = message
-    const marks = (m: Job['marks']) => Object.values(m).map((l) => ({ face: l.face, points: [l.a, l.b] }))
-    const target = job && idealMark(job, selected)
-    const view = {
-      ...stock,
-      target: design,
-      job: job ?? undefined,
-      mode,
-      ghost: remaining > 0,
-      strokes: job ? marks(job.marks) : [],
-      kerfs: job ? marks(job.cuts) : [],
-      pigment: paint ?? undefined,
-    } as WorkView
-    if (job) {
-      if (target && !all) {
-        const span = target.face === 'end' ? stock.width : stock.length
-        const zone = Math.min(2, Math.floor((3 * target.a.u) / span))
-        view.heat = {
-          face: target.face,
-          u: ((zone + 0.5) * span) / 3,
-          v: target.b.v / 2,
-          radiusU: span * 0.22,
-          radiusV: target.b.v * 0.45,
-        }
-      }
-      if (tested)
-        view.socket = {
-          width: design.tenonWidth,
-          depth: design.tenonLength,
-          interference: report?.interference,
-        }
-    } else if (item) {
-      const e = item.envelope
-      view.envelope = e
-      view.length = e.length
-      view.width = e.width
-      view.height = e.height
+    let c: ReturnType<typeof current>
+    try { c = current() } catch (e) { setMessage(e); $('#message').textContent = message; btn('start').disabled = true; return }
+    const { p, task, l, face, ss, extent, depthMax, op, preview } = c
+    if (selectedSurface && !face) selectedSurface = null
+    const report = inspectTenon(p), checked = showingInspection && p.inspectedAt === p.operations.length
+    $('#setup').hidden = !!job || completed; $('#working').hidden = !job || completed; $('#done').hidden = !completed
+    $('#receipt').textContent = receipt
+    btn('start').disabled = !stocks.length || invalidInput || pending
+    $('#stock-spec').textContent = `${stock().length} × ${stock().width} × ${stock().height} mm · ${stocks.length ? '已备好的方料' : '当前没有可用方料'}`
+    $('#message').textContent = message
+    $('#face-label').textContent = face ? surfaceName(face, p) : '尚未选择工作面'
+    $('#cut-count').textContent = job ? `${p.stock.length} × ${p.stock.width} × ${p.stock.height} mm` : ''
+    $('.drawings').innerHTML = blueprint(p.design, p.stock, selected)
+    $('.tasks').querySelectorAll<HTMLButtonElement>('button').forEach(b => { b.classList.toggle('active', b.dataset.task === selected); b.setAttribute('aria-pressed', String(b.dataset.task === selected)) })
+    $('#task-hint').textContent = ({ trim: '截齐端头', cheekNear: '沿木纹锯近侧榫颊', cheekFar: '沿木纹锯远侧榫颊', shoulderNear: '锯开近侧榫肩', shoulderFar: '锯开远侧榫肩' })[selected]
+    $('.operation-inputs').hidden = checked
+    $('.steps').hidden = checked
+    $('.inspection').hidden = !checked
+    shell.querySelectorAll<HTMLElement>('[data-section]').forEach(el => el.hidden = el.dataset.section !== stage)
+    shell.querySelectorAll<HTMLElement>('[data-stage]').forEach(el => el.setAttribute('aria-pressed', String(el.dataset.stage === stage && !checked)))
+    btn('next-line').disabled = !face
+    btn('next-depth').disabled = !face || invalidInput
+    btn('measure-tool').disabled = !job
+    btn('saw-tool').disabled = !job
+    btn('measure-tool').setAttribute('aria-pressed', String(!!job && stage === 'line' && !checked))
+    btn('saw-tool').setAttribute('aria-pressed', String(!!job && stage !== 'line' && !checked))
+    btn('trial').setAttribute('aria-pressed', String(checked))
+    const s = select('surface')
+    s.replaceChildren(new Option('点选木料或从这里选择', ''))
+    for (const f of ss) s.add(new Option(surfaceName(f, p), f.id))
+    s.value = selectedSurface ?? ''
+    select('reference').options[0].text = task.planeAxis === 0 ? '左基准端 A' : '近侧基准 B'
+    select('reference').options[1].text = task.planeAxis === 0 ? '现有端面' : '远侧边'
+    select('reference').value = l.reference
+    const offset = round(l.reference === 'low' ? l.position : extent - l.position)
+    for (const id of ['offset-number', 'offset-range']) { const i = input(id); i.min = '0'; i.max = String(extent); if (!invalidInput || shadow.activeElement !== i) i.value = String(offset) }
+    for (const id of ['depth-number', 'depth-range']) { const i = input(id); i.max = String(depthMax); if (!invalidInput || shadow.activeElement !== i) i.value = String(l.depth) }
+    select('waste').options[0].text = task.planeAxis === 0 ? '标线右侧（朝端头）' : '标线远侧'
+    select('waste').options[1].text = task.planeAxis === 0 ? '标线左侧（朝基准端）' : '标线近侧'
+    select('waste').value = String(l.wasteSide); select('fixture').value = l.fixture
+    const previous = p.operations.filter(o => o.kind === 'saw.sweep' && o.entrySurface === op.entrySurface && o.planeAxis === op.planeAxis && Math.abs(o.position - op.position) < EPS && o.wasteSide === op.wasteSide)
+    const priorDepth = Math.max(0, ...previous.map(o => o.kind === 'saw.sweep' ? o.depth : 0))
+    $('#depth-note').textContent = priorDepth ? `已锯 ${priorDepth.toFixed(1)} mm` : '从选中的木面量起。'
+    $('#cut-hint').textContent = invalidInput ? '请检查数值。' : preview.allowed ? '确认后下锯。' : selectedSurface ? '当前木面无法这样下锯。' : '先选一个木面。'
+    btn('cut').textContent = priorDepth ? '继续锯' : '下锯'
+    btn('cut').disabled = !job || !preview.allowed || invalidInput || pending || paused || job.repaired || options.tools?.saw === false
+    $('#score').textContent = checked ? (report.status === 'incomplete' ? '尚未成形' : `工艺 ${report.score} 分`) : ''
+    $('#issues').replaceChildren()
+    if (checked) {
+      const lines = report.issues.length ? report.issues : ['试配合格，可以收件。']
+      for (const text of lines) { const el = document.createElement('p'); el.textContent = text; $('#issues').append(el) }
     }
-    viewport.update(view)
+    btn('repair').hidden = !(checked && report.status === 'repairable')
+    btn('repair').textContent = `收尾修整 · ${report.repairedScore ?? '—'} 分`
+    btn('repair').disabled = pending || options.tools?.autoFinish === false || (options.tools?.autoFinish === undefined && options.tools?.chisel === false)
+    $('#finish').hidden = !(checked && report.status === 'pass'); select('paint').value = paint ?? ''; select('paint').disabled = options.tools?.brush === false
+    btn('finish').disabled = pending; btn('discard').disabled = pending; btn('trial').disabled = pending || !job
+    const balance = materialBalance(p)
+    $('#balance').textContent = `${(balance.retainedMm3 / 1000).toFixed(2)} cm³ 在制`
+    $('#materials').textContent = `原料 ${(balance.stockMm3 / 1000).toFixed(2)} cm³；在制 ${(balance.retainedMm3 / 1000).toFixed(2)}；已脱离 ${(balance.offcutsMm3 / 1000).toFixed(2)}；锯屑 ${(balance.sawdustMm3 / 1000).toFixed(2)}；收尾薄屑 ${(balance.shavingsMm3 / 1000).toFixed(2)}。可用余段 ${p.ledger.offcuts.filter(o => o.kind === 'reusable').length} 件。`
+    viewport.update({ piece: p, selectedSurface, operation: job && !checked ? op : undefined, preview: job && !checked ? preview : undefined, conflictSurfaces: checked ? report.conflictSurfaces : [], paint, setup: !job, socket: checked && report.metrics ? { fits: report.status === 'pass', width: p.design.tenonWidth, depth: p.design.tenonLength } : undefined })
+    shell.inert = paused || pending
+    shell.setAttribute('aria-busy', String(pending))
     timber.refresh()
   }
-  shell.addEventListener('change', (event) => {
-    if (busy || paused) return
-    const field = event.target
-    if (field === cutMenu && job) {
-      selected = cutMenu.value as CutId
-      message = `下一笔画在${surfaces[CUT_FACE[selected]]}。`
-      emit()
+  function editMeasure(which: 'offset' | 'depth', n: number) {
+    if (!job) return
+    const c = current(), max = which === 'depth' ? c.depthMax : c.extent
+    if (!Number.isFinite(n) || n < (which === 'depth' ? .1 : 0) || n > max + EPS) { invalidInput = true; render(); return }
+    invalidInput = false
+    if (which === 'depth') c.l.depth = round(n)
+    else c.l.position = round(c.l.reference === 'low' ? n : c.extent - n)
+    showingInspection = false; message = which === 'depth' ? '止点已更新。' : '锯线已更新。'; emit(); render()
+  }
+  shell.addEventListener('input', event => {
+    if (paused || pending || disposed) return
+    const target = event.target as HTMLInputElement
+    if (target.id.startsWith('offset-')) editMeasure('offset', target.value === '' ? NaN : Number(target.value))
+    else if (target.id.startsWith('depth-')) editMeasure('depth', target.value === '' ? NaN : Number(target.value))
+    else if (['length', 'tenonLength', 'tenonWidth'].includes(target.name)) {
+      const candidate = { ...design, [target.name]: Number(target.value) }
+      try { createPiece(candidate, stock()); design = candidate; invalidInput = false; message = '图纸尺寸已更新。'; render() } catch (e) { invalidInput = true; setMessage(e); $('#message').textContent = message; btn('start').disabled = true }
     }
-    if (field instanceof HTMLInputElement && !job && !item && field.name in design) {
-      const value = field.valueAsNumber
-      if (Number.isFinite(value) && value > 0) design = { ...design, [field.name]: value }
-      else {
-        field.value = String(design[field.name as keyof Design])
-        message = '尺寸须大于零。'
-      }
-    }
-    render()
   })
-  shell.addEventListener('click', async (event) => {
-    if (paused || busy) return
-    const feature =
-      event.target instanceof Element
-        ? (event.target.closest('[data-cut]')?.getAttribute('data-cut') as CutId | null)
-        : null
-    if (feature && !busy) {
-      if (!job || availableCuts(job).includes(feature)) {
-        selected = feature
-        message = `${names[feature]} · ${surfaces[CUT_FACE[feature]]}`
-        emit()
-      } else message = job.cuts[feature] ? '这道锯口已经完成。' : '先完成前一道工序，再划这条线。'
-      render()
-      return
-    }
-    const button = event.target instanceof Element ? event.target.closest('button') : null
-    if (!button || button.disabled || busy) return
+  shell.addEventListener('change', event => {
+    if (paused || pending || disposed) return
+    const target = event.target as HTMLSelectElement
     try {
-      if (button.hasAttribute('data-paint')) {
-        paint = button.dataset.paint || null
+      if (target.id === 'stocks') { invalidInput = false; layouts = {}; message = '已换方料，请确认图纸放得下。' }
+      else if (job) {
+        if (target.id !== 'paint') showingInspection = false
+        const l = layout(job)
+        if (target.id === 'surface') { selectedSurface = target.value || null; viewport.update({ piece: job, selectedSurface }) }
+        if (target.id === 'reference') l.reference = target.value as Layout['reference']
+        if (target.id === 'waste') l.wasteSide = Number(target.value) as Sign
+        if (target.id === 'fixture') l.fixture = target.value as Layout['fixture']
+        if (target.id === 'paint') paint = target.value || null
         emit()
-        render()
-        return
       }
-      switch (button.dataset.a) {
-        case 'start': {
-          if (!stocks.length) return
-          job = createJob(design, currentStock())
-          selected = 'trim'
-          mode = 'rotate'
-          paint = null
-          startClock(options.ghostEligible === false || ghostUsed ? 0 : 5000)
-          ghostUsed = true
-          message = ghostUntil ? '观察虚影，依图在顶面画截断线。' : '依图在顶面画截断线。'
+      render()
+    } catch (e) { setMessage(e); render() }
+  })
+  const dialog = $<HTMLDialogElement>('#discard-dialog')
+  const paper = $<HTMLDialogElement>('#paper-dialog')
+  paper.addEventListener('close', () => btn('paper').focus())
+  async function discard() {
+    if (!job) return
+    const held = getDraft()!
+    pending = true; render()
+    try { if (job.operations.length) await options.onDiscard?.(held); if (disposed) return; job = null; selectedSurface = null; layouts = {}; completed = true; receipt = '这根料已放弃，可用余段已保留。'; options.onDraftChange?.(null) }
+    catch (e) { setMessage(e) } finally { pending = false; render() }
+  }
+  dialog.addEventListener('close', () => { if (dialog.returnValue === 'discard' && !paused && !pending) void discard() })
+  shell.addEventListener('click', async event => {
+    if (paused || pending || disposed) return
+    const target = (event.target as HTMLElement).closest<HTMLButtonElement>('button')
+    if (!target || target.disabled) return
+    try {
+      if (target.dataset.stage && job) { stage = target.dataset.stage as typeof stage; showingInspection = false; render(); return }
+      if (target.dataset.task && job) { stage = 'face'; showingInspection = false; selected = target.dataset.task as TaskId; selectedSurface = null; invalidInput = false; message = '选择进锯面。'; emit(); render(); return }
+      if (target.dataset.step && job) { const [key, sign] = target.dataset.step.split(':'); const value = Number(input(`${key}-number`).value); editMeasure(key as 'offset' | 'depth', round(value + Number(sign) * .1)); return }
+      switch (target.dataset.a) {
+        case 'start': stage = 'face'; lastPiece = null; showingInspection = false; job = createPiece(design, stock()); layouts = {}; selected = 'trim'; selectedSurface = null; message = '选择顶面，准备截端。'; emit(); break
+        case 'suggest-face': if (job) { showingInspection = false; selectedSurface = recommendedSurface(job, selected); message = '建议面已选好。'; emit(); render() } return
+        case 'next-line': case 'measure-tool': if (job) { stage = 'line'; showingInspection = false; render() } return
+        case 'next-depth': case 'saw-tool': if (job) { stage = 'depth'; showingInspection = false; render() } return
+        case 'paper': paper.showModal(); btn('close-paper').focus(); return
+        case 'close-paper': paper.close(); return
+        case 'back-work': showingInspection = false; render(); return
+        case 'turn-up': case 'turn-down': case 'turn-left': case 'turn-right': viewport.turn(target.dataset.a.slice(5) as 'up'|'down'|'left'|'right'); return
+        case 'zoom-in': viewport.zoom(1.12); return
+        case 'zoom-out': viewport.zoom(1/1.12); return
+        case 'face': viewport.orient('face', selectedSurface); return
+        case 'depth-view': viewport.orient('depth', selectedSurface); return
+        case 'iso': viewport.orient('iso'); return
+        case 'through': if (job) editMeasure('depth', current().depthMax); return
+        case 'cut': if (job) {
+          const c = current(), before = job.ledger.offcuts.length
+          if (!c.preview.allowed) throw new Error(c.preview.reason)
+          job = executeSaw(job, c.op)
+          const detached = job.ledger.offcuts.length - before
+          message = detached ? `锯缝已接通，${detached} 块废料脱离。` : '锯口还未接通。'
           emit()
-          break
-        }
-        case 'restart':
-          if (item) {
-            resetBench(true)
-            break
-          }
-          if (!job) break
-          if (!Object.keys(job.cuts).length) {
-            resetBench(false)
-            break
-          }
-          if (options.onComplete && !options.onDiscard) throw new Error('当前工房未开放弃料，请保留工件。')
-          discardDialog.showModal()
-          break
-        case 'keep':
-          discardDialog.close()
-          break
-        case 'discard': {
-          if (!discardDialog.open || !job) break
-          discardDialog.close()
-          const draft = getDraft()!
-          busy = true
-          render()
+        } break
+        case 'trial': if (job) { showingInspection = true; job = inspectPiece(job); message = '试配后再决定是否修整。'; emit(); render() } return
+        case 'repair': if (job) { showingInspection = true; job = inspectPiece(repairTenon(job)); message = '收尾完成。'; emit() } break
+        case 'finish': if (job) {
+          const held = getDraft()!, result = finishTenon(job, paint); pending = true; render()
           try {
-            await options.onDiscard?.(draft)
-          } finally {
-            busy = false
-          }
-          if (!disposed) resetBench(true)
-          break
-        }
-        case 'rotate':
-          mode = 'rotate'
-          break
-        case 'mark':
-          mode = 'mark'
-          break
-        case 'ruler':
-          useRuler = !useRuler
-          message = useRuler ? '直角尺沿落笔的位置扶正墨线。' : '已收起直角尺。'
-          break
-        case 'face':
-          viewport.orient(CUT_FACE[selected])
-          break
-        case 'iso':
-          viewport.orient('iso')
-          break
-        case 'erase':
-          if (job) {
-            job = clearMark(job, selected)
-            message = '墨线已擦除。'
-            emit()
-          }
-          break
-        case 'cut':
-          if (job) {
-            job = cut(job, selected)
-            selected = availableCuts(job)[0] ?? selected
-            mode = 'rotate'
-            message = trialFit(job).ready
-              ? '榫头已开好，可以试配。'
-              : `锯切完成，可以开始${names[selected]}。`
-            emit()
-          }
-          break
-        case 'trial':
-          if (job) {
-            job = recordTrial(job)
-            mode = 'rotate'
-            viewport.orient('iso')
-            message = trialFit(job).fits ? '试配合格，可以上漆收件。' : '查看试配反馈，决定修整或重新选料。'
-            emit()
-          }
-          break
-        case 'near':
-        case 'far':
-          if (job) {
-            job = pare(job, button.dataset.a)
-            message = '已薄削 0.25 mm，请重新试配。'
-            emit()
-          }
-          break
-        case 'finish':
-          if (job) {
-            const completed = finish(job, paint),
-              draft = getDraft()!
-            busy = true
-            render()
-            try {
-              receipt = await options.onComplete?.(structuredClone(completed), job.stock.id, draft)
-            } finally {
-              busy = false
-            }
+            const response = await options.onComplete?.(result, job.stock.id, held)
             if (disposed) return
-            item = completed
-            finishedStock = job.stock
-            job = null
-            mode = 'rotate'
-            message = [`已收件 · 工艺分 ${item.score}`, receipt?.rarityLabel, ...(receipt?.traits ?? [])]
-              .filter(Boolean)
-              .join('　·　')
-            emit()
-          }
-          break
+            receipt = [`工艺 ${result.score} 分`, response?.rarityLabel, ...(response?.traits ?? [])].filter(Boolean).join(' · ')
+            lastPiece = job; completed = true; job = null; options.onDraftChange?.(null); message = '成品已收好。'
+          } finally { pending = false }
+        } break
+        case 'discard': if (job?.operations.length) dialog.showModal(); else await discard(); return
+        case 'new': if (options.onNew) { options.onNew(); return } completed = false; job = null; lastPiece = null; showingInspection = false; layouts = {}; selectedSurface = null; message = '开始下一根方料。'; break
       }
-    } catch (e) {
-      error(e)
-    }
+    } catch (e) { setMessage(e); pending = false }
     render()
   })
   render()
-  function setPaused(value: boolean) {
-    if (paused === value || disposed) return
-    paused = value
-    if (paused) {
-      pausedGhostMs = Math.max(0, ghostUntil - performance.now())
-      stopClock()
-      viewport.cancelGesture?.()
-      if (discardDialog.open) discardDialog.close()
-    } else {
-      startClock(pausedGhostMs)
-      pausedGhostMs = 0
-    }
-    shell.inert = paused
-    render()
-  }
-  return {
-    getDraft,
-    setPaused,
-    destroy() {
-      disposed = true
-      stopClock()
-      viewport.destroy()
-      timber.dispose()
-      mount.remove()
-    },
-  }
+  return { getDraft, setPaused(value) { if (disposed) return; paused = value; viewport.setPaused(value); if (paper.open) paper.close(); if (dialog.open) dialog.close('cancel'); render() }, destroy() { disposed = true; viewport.destroy(); timber.dispose(); mount.remove() } }
 }

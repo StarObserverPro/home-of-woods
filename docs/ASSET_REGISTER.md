@@ -228,3 +228,7 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 ## Timber UI 1（2026-11-13）
 
 `src/ui/timber/surface.ts` 为本项目独立编写的程序化SVG表面：纵剖、横截、树皮、刨花和凹槽。输入为语义、尺寸和seed，无摄影贴图、外部图片、字体或第三方生成代码。生成器和运行时缓存负责派生资源，不产生需要逐张登记的图片文件；正式交付为源码。保留原R1图标授权与来源不变。旧R2木纹资源保留历史引用，当前活跃UI不再拉伸它们。外部设计研究仅借方法，来源与Saltline镜像许可边界见 [研究记录](UI_DESIGN_REFERENCES.md)。
+
+## 木作台近景（独立施工分支）
+
+采用 Poly Haven 的 CC0 Handsaw Wood（Konrad Szałankiewicz，2,548 三角面）与 Wood Table（Dimitrios Savva）1k 输入。原始模型、贴图、CC0 全文、作者和修改说明保留在 `sources/polyhaven/woodworking/`；规范化脚本为 `sandbox/woodworking/tools/prepare-stage-assets.py`。运行时模型和贴图随木作单文件/ESM 打包，不请求第三方网络。木料仍按实际加工几何命中，连续端纹/侧纹为本项目着色器；贴图和视觉处理不改切削尺寸或材料账。可见效果与预算以本分支实际截图验收为准。

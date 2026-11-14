@@ -1,0 +1,27 @@
+[
+  {
+    "file": "handsaw_wood_1k.gltf",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/handsaw_wood/handsaw_wood_1k.gltf",
+    "bytes": 2762
+  },
+  {
+    "file": "handsaw_wood.bin",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/4k/handsaw_wood/handsaw_wood.bin",
+    "bytes": 89624
+  },
+  {
+    "file": "handsaw_wood_nor_gl_1k.jpg",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/handsaw_wood/handsaw_wood_nor_gl_1k.jpg",
+    "bytes": 716898
+  },
+  {
+    "file": "handsaw_wood_diff_1k.jpg",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/handsaw_wood/handsaw_wood_diff_1k.jpg",
+    "bytes": 737874
+  },
+  {
+    "file": "handsaw_wood_arm_1k.jpg",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/handsaw_wood/handsaw_wood_arm_1k.jpg",
+    "bytes": 932131
+  }
+]
