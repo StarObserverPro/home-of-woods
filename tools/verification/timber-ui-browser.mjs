@@ -15,15 +15,18 @@ const origin='http://127.0.0.1:5193';
 const fixturePath='/__timber-review';
 const desktop={width:1280,height:800};
 const smallViews=[{width:390,height:844},{width:320,height:720},{width:844,height:390}];
+const guidedFrames=new Set(['01-desktop-hud','02-desktop-items','06-desktop-pause','game-390x844-items','game-844x390-items','game-390x844-items-notice','gallery-desktop','cabin-844x390-initial','woodworking-offline-390x844']);
 const report={
   result:'running',startedAt:new Date().toISOString(),sourceRevision:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),
-  scope,origin,browser:null,buildEntrySha256:null,woodworkingEntrySha256:null,frames:[],flows:[],focusChecks:[],journeys:[],layoutIssues:[],errors:[],failedRequests:[],warnings:[],failures:[],
+  scope,origin,browser:null,buildEntrySha256:null,woodworkingEntrySha256:null,frames:[],flows:[],focusChecks:[],journeys:[],gridChecks:[],noticeChecks:[],layoutIssues:[],errors:[],failedRequests:[],warnings:[],failures:[],
   captureMethod:{viewport:'CDP Page.captureScreenshot: PNG, fromSurface=true, captureBeyondViewport=false',fullPage:'Playwright page.screenshot: fullPage=true, animations=disabled'},
-  inputs:{seed:104729,clock:'time=0, speed=0; 14:00 production calendar',save:'isolated in-memory WorldSaveStore',stock:'ten active production item IDs granted through inventoryTransaction',dpr:1},
+  inputs:{seed:104729,clock:'time=0, speed=0; 14:00 production calendar',save:'isolated in-memory WorldSaveStore',persistentNotice:'gridNotice=1 deliberately fails isolated store.read; the production save controller creates the warning',stock:'ten active production item IDs granted through inventoryTransaction',dpr:1},
   limits:[
     'The main UI uses the real App/runtime through a Vite review entry; npm run build is a separate required gate.',
     'Mobile checks synthesize touch in Chromium; they are not physical-device or GPU-performance certification.',
     'Screenshots require visual review. Bounds and target checks do not certify the artistic result.',
+    'Guide captures enable the shared diagnostic overlay only after the clean frame, then remove it before interaction resumes; guides never change player layout.',
+    'Grid checks compare declared UI relationships within 1 CSS px; world labels and drag-following previews are not screen-aligned notices.',
     'The game clock is fixed; decorative animation phases depend on elapsed rendering time.',
     'Story travel uses the existing DEV fixed-step owner in bounded 2-second steps after real UI commands; recorded steps are simulation advancement, not travel performance.',
     'The woodworking package is opened from its built single HTML file in an offline browser context; its full craft progression is outside this UI review.',
@@ -108,8 +111,9 @@ async function newPage(viewport,touch=false){
 async function gameState(page){
   return page.evaluate(()=>JSON.parse(document.querySelector('#runtime-stats').textContent).current.worldState);
 }
-async function loadGame(page){
-  await page.goto(`${origin}${fixturePath}?inspect=1`);
+async function loadGame(page,parameters={}){
+  const query=new URLSearchParams({inspect:'1',...parameters});
+  await page.goto(`${origin}${fixturePath}?${query}`);
   await page.waitForFunction(()=>{
     const data=document.querySelector('#runtime-stats')?.textContent;
     if(!data||document.querySelector('.loading'))return false;
@@ -189,6 +193,177 @@ async function layout(page,{fitViewport=true}={}){
   },{fitViewport});
 }
 
+async function gridGeometry(page){
+  return page.evaluate(()=>{
+    const tolerance=1,issues=[],checks=[];
+    const scopes=[document];
+    for(let index=0;index<scopes.length;index++)for(const element of scopes[index].querySelectorAll('*'))if(element.shadowRoot)scopes.push(element.shadowRoot);
+    const query=selector=>[...new Set(scopes.flatMap(scope=>[...scope.querySelectorAll(selector)]))];
+    const visible=element=>element.checkVisibility({checkOpacity:true,checkVisibilityCSS:true})&&element.getClientRects().length>0;
+    const box=element=>{const r=element.getBoundingClientRect();return {left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height};};
+    const label=element=>element.id||element.getAttribute('aria-label')||(typeof element.className==='string'?element.className:'')||element.tagName.toLowerCase();
+    const compare=(kind,element,actual,expected,reference)=>{
+      const check={kind,element:label(element),reference,actual,expected,delta:actual-expected};checks.push(check);
+      if(!Number.isFinite(actual)||!Number.isFinite(expected)||Math.abs(actual-expected)>tolerance)issues.push({...check,rect:box(element)});
+    };
+    const roots=query('[data-how-ui="timber"]'),regions=query('[data-ui-grid]').filter(visible);
+    const rootInfo=roots.map(root=>{
+      const style=getComputedStyle(root),unit=parseFloat(style.getPropertyValue('--how-grid-unit'));
+      // Resolve env()/max() through CSS without assuming safe-area insets are zero.
+      const probe=document.createElement('i');
+      probe.dataset.uiGridProbe='true';
+      probe.style.cssText='position:fixed;inset:var(--how-safe-top,0px) var(--how-safe-right,0px) var(--how-safe-bottom,0px) var(--how-safe-left,0px);visibility:hidden;pointer-events:none';
+      root.append(probe);const resolved=getComputedStyle(probe);
+      const safe=Object.fromEntries(['left','right','top','bottom'].map(edge=>[edge,parseFloat(resolved[edge])]));probe.remove();
+      if(!['viewport','module'].includes(root.dataset.uiGridRoot))issues.push({kind:'missing-grid-root',element:label(root)});
+      compare('shared-grid-unit',root,unit,4,'4 CSS px grid');
+      return {element:label(root),kind:root.dataset.uiGridRoot,rect:box(root),unit,safe};
+    });
+    if(!regions.length)issues.push({kind:'missing-grid-regions'});
+    const overlays=query('[data-ui-grid-overlay]');
+    if(overlays.length)issues.push({kind:'guides-visible-in-normal-mode',count:overlays.length});
+    const standard=query('.game-shell :is(.warehouse-dock,.route-sheet,.help-sheet,.target-card)').filter(visible);
+    const windows=standard.map(panel=>({element:label(panel),rect:box(panel)}));
+    const game=roots.find(root=>root.matches('.game-shell'));
+    if(game){
+      const safe=rootInfo[roots.indexOf(game)].safe;
+      for(const hud of [...game.querySelectorAll('.topbar,.hud-dock,.minimap-card,.hud-notices')].filter(visible)){
+        const r=box(hud);
+        if(hud.matches('.topbar,.hud-notices'))compare('hud-safe-left',hud,r.left,safe.left,'viewport left rail');
+        if(hud.matches('.topbar,.hud-dock,.minimap-card'))compare('hud-safe-right',hud,r.right,innerWidth-safe.right,'viewport right rail');
+        if(hud.matches('.topbar'))compare('hud-safe-top',hud,r.top,safe.top,'viewport top rail');
+        if(hud.matches('.hud-dock'))compare('hud-safe-bottom',hud,r.bottom,innerHeight-safe.bottom,'viewport bottom rail');
+        if(hud.matches('.hud-notices')&&r.right>innerWidth-safe.right+tolerance)issues.push({kind:'notice-stack-outside-safe-rail',element:label(hud),rect:r,safe});
+      }
+      for(const notice of [...game.querySelectorAll('.hud-notices > [data-ui-grid="notice"]')].filter(visible)){
+        const n=box(notice);compare('notice-safe-left',notice,n.left,safe.left,'viewport left rail');
+        if(n.right>innerWidth-safe.right+tolerance)issues.push({kind:'notice-outside-safe-rail',element:label(notice),rect:n,safe});
+        for(const panel of standard){const p=box(panel);if(Math.min(n.right,p.right)-Math.max(n.left,p.left)>tolerance&&Math.min(n.bottom,p.bottom)-Math.max(n.top,p.top)>tolerance)issues.push({kind:'notice-overlaps-window',element:label(notice),rect:n,window:label(panel),windowRect:p});}
+      }
+    }
+    for(const panel of standard){
+      const root=panel.closest('[data-how-ui="timber"]'),rootIndex=roots.indexOf(root),safe=rootInfo[rootIndex]?.safe;
+      const r=box(panel),style=getComputedStyle(panel);
+      if(panel.dataset.uiGrid!=='window')issues.push({kind:'missing-window-grid-role',element:label(panel)});
+      if(safe){compare('window-safe-top',panel,r.top,safe.top,'viewport top rail');compare('window-safe-right',panel,r.right,innerWidth-safe.right,'viewport right rail');}
+      const left=r.left+parseFloat(style.borderLeftWidth)+parseFloat(style.paddingLeft),right=r.right-parseFloat(style.borderRightWidth)-parseFloat(style.paddingRight);
+      const spans=[...panel.querySelectorAll(':scope > .wood-heading,:scope > .target-top,:scope > .panel-heading,:scope > .wood-tabs,:scope > .warehouse-tools,:scope > footer.wood-status,:scope > .action-message,:scope > .item-browser,:scope > .item-browser > .browser-toolbar,:scope > .item-browser > .browser-toolbar > .wood-tabs,:scope > .item-browser > .browser-body')].filter(visible);
+      for(const element of spans){const child=box(element);compare('window-content-left',element,child.left,left,label(panel));compare('window-content-right',element,child.right,right,label(panel));}
+    }
+    for(const body of query('.game-shell .browser-body').filter(visible)){
+      const catalog=body.querySelector(':scope > .browser-catalog'),detail=body.querySelector(':scope > .wood-detail');
+      if(!catalog||!visible(catalog))continue;
+      const r=box(body),c=box(catalog);
+      compare('catalog-content-left',catalog,c.left,r.left,label(body));
+      if(detail&&visible(detail)){
+        const d=box(detail);compare('detail-content-right',detail,d.right,r.right,label(body));
+        if(d.top>=c.bottom-tolerance){compare('stacked-catalog-right',catalog,c.right,r.right,label(body));compare('stacked-detail-left',detail,d.left,r.left,label(body));}
+      }else compare('catalog-content-right',catalog,c.right,r.right,label(body));
+      const cells=[...catalog.querySelectorAll('.browser-slots > .wood-slot')].filter(visible),rows=[];
+      for(const cell of cells){const r=box(cell);let row=rows.find(row=>Math.abs(row[0].rect.top-r.top)<=tolerance);if(!row)rows.push(row=[]);row.push({element:cell,rect:r});}
+      for(const row of rows){
+        row.sort((a,b)=>a.rect.left-b.rect.left);
+        compare('slot-row-left',row[0].element,row[0].rect.left,c.left,label(catalog));compare('slot-row-right',row.at(-1).element,row.at(-1).rect.right,c.right,label(catalog));
+        for(const [index,cell] of row.entries()){
+          compare('slot-equal-width',cell.element,cell.rect.width,rows[0][0].rect.width,label(rows[0][0].element));
+          if(rows[0][index])compare('slot-column-alignment',cell.element,cell.rect.left,rows[0][index].rect.left,label(rows[0][index].element));
+        }
+      }
+    }
+    for(const row of regions.filter(element=>element.dataset.uiGrid==='row')){
+      const children=[...row.children].filter(visible),controls=children.flatMap(child=>{
+        const fields=child.matches('label')?[...child.querySelectorAll('select,input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"])')].filter(visible):[];
+        const targets=fields.length?fields:child.matches('button,summary,select,input:not([type="hidden"]),[role="button"]')||child.matches('label:has(input[type="checkbox"],input[type="radio"])')?[child]:[];
+        return targets.map(element=>({element,rect:box(element),groupRect:box(child)}));
+      });
+      const lines=[];
+      for(const control of controls){const r=control.groupRect;let line=lines.find(line=>Math.min(line[0].groupRect.bottom,r.bottom)-Math.max(line[0].groupRect.top,r.top)>Math.min(line[0].groupRect.height,r.height)/2);if(!line)lines.push(line=[]);line.push(control);}
+      for(const line of lines){
+        line.sort((a,b)=>a.rect.left-b.rect.left);const first=line[0];
+        for(const member of line){compare('control-row-top',member.element,member.rect.top,first.rect.top,label(row));compare('control-row-bottom',member.element,member.rect.bottom,first.rect.bottom,label(row));}
+        if(controls.length===children.length&&line.length>2){
+          const gap=line[1].rect.left-first.rect.right;
+          for(let index=2;index<line.length;index++)compare('control-row-gap',line[index].element,line[index].rect.left-line[index-1].rect.right,gap,label(row));
+        }
+      }
+    }
+    const modal=query('dialog:modal,[aria-modal="true"]').filter(visible).at(-1),foreground=standard.at(-1);
+    const active=element=>{
+      if(modal)return modal.contains(element);
+      const window=element.closest('.game-shell [data-ui-grid="window"]');
+      return !foreground||!window||window===foreground;
+    };
+    const notices=regions.filter(element=>element.dataset.uiGrid==='notice'&&active(element));
+    const controls=query('[data-how-ui="timber"] :is(button,summary,select,input:not([type="hidden"]))').filter(element=>visible(element)&&active(element));
+    for(const notice of notices){
+      const n=box(notice);
+      for(const control of controls){
+        if(notice.contains(control)||control.contains(notice)||notice.getRootNode()!==control.getRootNode())continue;
+        const c=box(control),width=Math.min(n.right,c.right)-Math.max(n.left,c.left),height=Math.min(n.bottom,c.bottom)-Math.max(n.top,c.top);
+        if(width>tolerance&&height>tolerance)issues.push({kind:'notice-overlaps-control',element:label(notice),rect:n,control:label(control),controlRect:c,overlap:{width,height}});
+      }
+    }
+    return {viewport:{width:innerWidth,height:innerHeight},roots:rootInfo,regions:regions.map(element=>({role:element.dataset.uiGrid,element:label(element),rect:box(element)})),windows,checks,issues};
+  });
+}
+
+async function captureGuides(page,name,frame){
+  const key='__HOW_REVIEW_GRID_ROOTS__';
+  frame.guides={file:null,capture:'viewport',overlays:0,layout:[]};
+  const unchanged=async stage=>{
+    const checks=await page.evaluate(key=>(window[key]?.anchors??[]).map(({element,label,before})=>{
+      const r=element.getBoundingClientRect(),after={x:r.x,y:r.y,width:r.width,height:r.height};
+      return {element:label,connected:element.isConnected,before,after,maxDelta:Math.max(...Object.keys(before).map(axis=>Math.abs(after[axis]-before[axis])))};
+    }),key);
+    frame.guides.layout.push({stage,checks});
+    assert.ok(checks.length&&checks.every(check=>check.connected&&check.maxDelta<=1),`${stage}: alignment guides must preserve existing window/control geometry: ${JSON.stringify(checks)}`);
+  };
+  try{
+    const expectedRoots=await page.evaluate(key=>{
+      const scopes=[document];
+      for(let index=0;index<scopes.length;index++)for(const element of scopes[index].querySelectorAll('*'))if(element.shadowRoot)scopes.push(element.shadowRoot);
+      const roots=[...new Set(scopes.flatMap(scope=>[...scope.querySelectorAll('[data-how-ui="timber"]')]))];
+      const visible=element=>element.checkVisibility({checkOpacity:true,checkVisibilityCSS:true})&&element.getClientRects().length>0;
+      const anchors=[...new Set(roots.flatMap(root=>{
+        const windows=[...root.querySelectorAll('[data-ui-grid="window"]')].filter(visible);
+        const control=[...root.querySelectorAll('button,summary,select')].find(visible);
+        return control?[...windows,control]:windows;
+      }))].map(element=>{const r=element.getBoundingClientRect();return {element,label:element.id||element.getAttribute('aria-label')||element.className,before:{x:r.x,y:r.y,width:r.width,height:r.height}};});
+      window[key]={roots:roots.map(root=>({root,value:root.getAttribute('data-ui-grid-debug')})),active:document.activeElement,anchors};
+      for(const root of roots)root.setAttribute('data-ui-grid-debug','true');
+      return roots.length;
+    },key);
+    await page.waitForFunction(expectedRoots=>{
+      const scopes=[document];
+      for(let index=0;index<scopes.length;index++)for(const element of scopes[index].querySelectorAll('*'))if(element.shadowRoot)scopes.push(element.shadowRoot);
+      const overlays=scopes.flatMap(scope=>[...scope.querySelectorAll('[data-ui-grid-overlay]')]);
+      return overlays.length===expectedRoots&&overlays.every(element=>element.querySelector('svg')&&Number(element.dataset.uiGridBoxes)>0);
+    },expectedRoots,{polling:100,timeout:30000});
+    const overlays=await page.evaluate(()=>{
+      const scopes=[document];
+      for(let index=0;index<scopes.length;index++)for(const element of scopes[index].querySelectorAll('*'))if(element.shadowRoot)scopes.push(element.shadowRoot);
+      return scopes.flatMap(scope=>[...scope.querySelectorAll('[data-ui-grid-overlay]')].map(element=>({hidden:element.getAttribute('aria-hidden'),inert:element.inert,pointerEvents:getComputedStyle(element).pointerEvents,boxes:Number(element.dataset.uiGridBoxes),drawn:!!element.querySelector('svg'),topLayer:element.matches(':popover-open'),visible:element.checkVisibility()})));
+    });
+    assert.ok(overlays.length&&overlays.every(overlay=>overlay.hidden==='true'&&overlay.inert&&overlay.pointerEvents==='none'&&overlay.drawn&&overlay.boxes>0),'Shared guides must be drawn, hidden from accessibility, and transparent to pointer input');
+    if(await page.locator('dialog:modal').count())assert.ok(overlays.every(overlay=>overlay.topLayer&&overlay.visible),'Guides over a native modal must enter the visible top layer');
+    assert.equal(await page.evaluate(key=>window[key].active===document.activeElement,key),true,'Enabling alignment guides must preserve keyboard focus');
+    await unchanged('enabled');
+    await takeScreenshot(page,{path:path.join(out,`${name}-guides.png`),timeout:60000});
+    Object.assign(frame.guides,{file:`${name}-guides.png`,expectedRoots,overlays});
+  }catch(error){await recordFailure(`guides-${name}`,page,error,{kind:'grid-guides',frame:name,screenshot:false});}
+  finally{
+    await page.evaluate(key=>{
+      for(const {root,value} of window[key]?.roots??[]){if(value===null)root.removeAttribute('data-ui-grid-debug');else root.setAttribute('data-ui-grid-debug',value);}
+    },key);
+    await page.waitForFunction(()=>{
+      const scopes=[document];
+      for(let index=0;index<scopes.length;index++)for(const element of scopes[index].querySelectorAll('*'))if(element.shadowRoot)scopes.push(element.shadowRoot);
+      return scopes.every(scope=>!scope.querySelector('[data-ui-grid-overlay]'));
+    },null,{polling:100,timeout:30000});
+    try{await unchanged('disabled');}finally{await page.evaluate(key=>{delete window[key];},key);}
+  }
+}
+
 async function capture(page,name,options={}){
   await page.waitForFunction(()=>{
     const scopes=[document];
@@ -197,6 +372,14 @@ async function capture(page,name,options={}){
   },null,{timeout:30000});
   await frames(page,4);
   const measured=await layout(page,options);
+  const grid=await gridGeometry(page);
+  const previous=report.gridChecks.find(check=>check.viewport.width===grid.viewport.width&&check.viewport.height===grid.viewport.height&&check.windows.length);
+  if(previous)for(const window of grid.windows){
+    const expected=previous.windows[0];
+    for(const edge of ['left','right'])if(Math.abs(window.rect[edge]-expected.rect[edge])>1)grid.issues.push({kind:'main-windows-share-rails',element:window.element,edge,actual:window.rect[edge],expected:expected.rect[edge],referenceFrame:previous.frame,referenceWindow:expected.element});
+  }
+  report.gridChecks.push({frame:name,...grid});
+  measured.issues.push(...grid.issues);
   const stats=await page.evaluate(()=>{
     const text=document.querySelector('#runtime-stats')?.textContent;
     if(text){const s=JSON.parse(text).current;return {seed:s.seed,gameTime:s.gameTime,shaderErrors:s.shaderErrors,contextLost:s.contextLost,drawCalls:s.drawCalls,triangles:s.triangles,graphicsBackend:s.graphicsBackend};}
@@ -217,6 +400,7 @@ async function capture(page,name,options={}){
     // Do not retry a failed screenshot while the same renderer is still busy.
     await recordFailure(`capture-${name}`,page,error,{kind:'screenshot',frame:name,measured,screenshot:false});
   }
+  if(frame.screenshotStatus==='passed'&&guidedFrames.has(name))await captureGuides(page,name,frame);
   await saveReport();console.log(`CAPTURE ${name}: ${frame.screenshotStatus}; ${measured.issues.length} layout issue(s)`);
 }
 
@@ -479,6 +663,28 @@ async function mobileGame(){
         await page.locator('.help-sheet').waitFor({state:'hidden'});
       },()=>restoreGameUi(page));
     }
+    await scenario('game-390x844-persistent-notice',page,async()=>{
+      await page.setViewportSize(smallViews[0]);
+      await loadGame(page,{gridNotice:'1'});
+      const warning=page.locator('.save-warning');await warning.waitFor();
+      await capture(page,'game-390x844-notice');
+      await openItems(page,true);
+      assert.equal(await warning.isVisible(),true,'The real save warning must remain visible while the inventory is open');
+      const notice=await page.evaluate(()=>{
+        const shell=document.querySelector('.game-shell'),stack=document.querySelector('.hud-notices'),warning=document.querySelector('.save-warning'),panel=document.querySelector('.warehouse-dock');
+        const rect=element=>{const r=element.getBoundingClientRect();return {left:r.left,top:r.top,right:r.right,bottom:r.bottom};};
+        const style=getComputedStyle(stack);
+        return {display:getComputedStyle(shell).display,row:style.gridRowStart,position:style.position,inStack:warning.parentElement===stack,stack:rect(stack),warning:rect(warning),window:rect(panel)};
+      });
+      report.noticeChecks.push({phase,viewport:page.viewportSize(),...notice});
+      assert.equal(notice.display,'grid','The shared viewport must reserve normal layout space for notices');
+      assert.equal(notice.row,'2','Persistent notices must occupy the second viewport grid row');
+      assert.ok(notice.inStack&&!['absolute','fixed'].includes(notice.position),'The warning must participate in the normal notice stack');
+      assert.ok(notice.window.bottom<=notice.stack.top+1,'The inventory must finish above the reserved notice row');
+      await capture(page,'game-390x844-items-notice');
+      await page.getByRole('button',{name:'关闭仓库',exact:true}).tap();
+      await page.locator('.warehouse-dialog').waitFor({state:'hidden'});
+    },()=>restoreGameUi(page));
   }finally{await session.close();}
 }
 

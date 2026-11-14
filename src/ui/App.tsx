@@ -414,7 +414,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
     if(warehouseOpen||readerOpen||mapOpen||help||snapshot.selected||snapshot.paused)stickEnd();
   },[warehouseOpen,readerOpen,mapOpen,help,snapshot.selected,snapshot.paused]);
   return (
-    <main data-how-ui="timber" className={`game-shell${warehouseOpen?' warehouse-is-open':''}${(warehouseOpen||readerOpen||mapOpen||help||selected)&&!snapshot.placement&&!snapshot.woodcraft.dropping?' menu-is-open':''}`} onPointerDownCapture={event=>{
+    <main data-how-ui="timber" data-ui-grid-root="viewport" className={`game-shell${warehouseOpen?' warehouse-is-open':''}${(warehouseOpen||readerOpen||mapOpen||help||selected)&&!snapshot.placement&&!snapshot.woodcraft.dropping?' menu-is-open':''}`} onPointerDownCapture={event=>{
       swallowedPointer.current=false;
       const target=event.target;
       if(!(target instanceof Element)||snapshot.placement||snapshot.woodcraft.dropping||itemDrag.drag)return;
@@ -602,10 +602,18 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
       <WoodDropControls active={snapshot.woodcraft.dropping} onCancel={()=>runtime.current?.cancelWoodDrop()}/>
       <PlacementControls draft={snapshot.placement} onRotate={()=>runtime.current?.rotatePlacement()} onConfirm={()=>runtime.current?.confirmPlacement()} onCancel={()=>runtime.current?.cancelPlacement()}/>
 
+      <div className="hud-notices" data-ui-grid="hud">
       {['protected','conflict','failed'].includes(snapshot.save.state) && <aside className="save-warning" role="alert">{snapshot.save.message}</aside>}
       {!selected && !mapOpen && !help && !activeAction && !warehouseOpen && !readerOpen && messageVisible && <div className="message" role="status" aria-live="polite">
         {snapshot.message}
       </div>}
+      {activeAction && activeAction.treeId !== treeAction?.id && !mapOpen && !help && (
+        <aside className="active-work" aria-label="当前林业动作">
+          <span>{activeAction.phase === "chopping" ? `挥斧 ${activeAction.hits}/${activeAction.totalHits}` : "树干正在倒下，留出距离"}</span>
+          {activeAction.phase === "chopping" && <button onClick={()=>runtime.current?.cancelChop()}>停止挥斧</button>}
+        </aside>
+      )}
+      </div>
       {selected && !snapshot.placement && !readerOpen && !snapshot.woodcraft.dropping && !warehouseOpen && (
         <aside key={snapshot.selected} tabIndex={-1} role="dialog" aria-label="当前目标" className={`target-card${snapshot.selected===CAMP_VISITOR.id?' is-merchant':''}${gatherAction?.sourceId === gatherTarget?.id && gatherAction?.motionTag === 'gather.pickup' && ['approaching','performing'].includes(gatherAction.phase) ? ' target-card--pickup-active' : ''}`}>
           <div className="target-top">
@@ -690,12 +698,6 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
               树位 {selectedTree.id.replace("tree-slot-", "")} · 个体 {treeAction?.individualId ?? selectedTree.individualId}
             </span>
           )}
-        </aside>
-      )}
-      {activeAction && activeAction.treeId !== treeAction?.id && !mapOpen && !help && (
-        <aside className="active-work" aria-label="当前林业动作">
-          <span>{activeAction.phase === "chopping" ? `挥斧 ${activeAction.hits}/${activeAction.totalHits}` : "树干正在倒下，留出距离"}</span>
-          {activeAction.phase === "chopping" && <button onClick={()=>runtime.current?.cancelChop()}>停止挥斧</button>}
         </aside>
       )}
       {mapOpen && (

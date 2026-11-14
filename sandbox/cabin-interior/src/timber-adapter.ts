@@ -9,7 +9,18 @@ function surface(element:HTMLElement,role:Surface,material:Material,tone:Tone,se
 /** This adapter supplies UI roles only; the shared owner generates and releases every surface. */
 export function mountCabinTimber(root:HTMLElement){
   root.dataset.howUi='timber';
+  root.dataset.uiGridRoot='module';
   function refresh(){
+    const grids:readonly [string,string][]=[
+      ['.masthead,.stage','hud'],
+      ['.workspace,.stage-controls,.item-list,.inspector','content'],
+      ['.collection,.placement-panel','window'],
+      ['.stage-bar,.presets,.header-tools,.view-dock,.walk-controls,.stage-footer,.collection-title,.item-row,.item-actions,.move-pad,.placement-actions','row'],
+      ['.stage-caption,.toast,#navigation-hint,.collection-intro,.audit-result,.sandbox-note','notice'],
+    ];
+    for(const [selector,kind] of grids)root.querySelectorAll<HTMLElement>(selector).forEach(element=>{
+      if(element.dataset.uiGrid!==kind)element.dataset.uiGrid=kind;
+    });
     const panels:readonly [string,Surface,Material,Tone][]=[
       ['.masthead','heading','plank','dark'],
       ['.collection','panel','bark','dark'],

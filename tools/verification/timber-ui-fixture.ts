@@ -21,8 +21,13 @@ export function mountTimberReview(host:HTMLElement){
     'canvas-roll','hardware-kit','food-rice','food-oats','food-black-bread',
   ].map((itemId,index)=>({itemId,qualityId:'ordinary',delta:3+index})));
   let records:SaveRecords={primary:null,backup:null};
+  const noticeReview=new URLSearchParams(location.search).get('gridNotice')==='1';
   const store:WorldSaveStore={
-    async read(){return {...records};},
+    async read(){
+      // A stable, production-owned alert for cross-layer layout review. No real save is read.
+      if(noticeReview)throw new Error('UI grid review: in-memory store unavailable');
+      return {...records};
+    },
     async compareAndSwap(expected,next){
       if(records.primary!==expected.primary||records.backup!==expected.backup)return false;
       records={...next};return true;

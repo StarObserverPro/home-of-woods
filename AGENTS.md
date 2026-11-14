@@ -29,7 +29,9 @@
 
 - 当前统一视觉契约为 [DESIGN.md](DESIGN.md)。新增玩家窗口、HUD、模块和活跃沙盒都消费 `src/ui/timber/`，不另画木框、按钮皮肤或根路径木纹。
 - 普通容器不用细线描边；长板、短木块、拼板按语义与真实尺寸生成。材质只绘装饰，不裁文字、焦点和命中区。
+- 跨层对齐遵循 DESIGN 的根安全框、窗口内容框、行内控件三层网格。基本单位 4px，常用间隔 8px、区段间隔 12px；HUD、窗口和阅读器共享安全边线，标题、tabs、工具行、browser、footer 共享内容边线，关闭按钮不得用负 margin 单独挪位。全局非空间提示进入 `hud-notices`，窗口内提示沿所属内容框排布。
 - 控件目标至少 44×44 CSS px；窄屏优先减页容量和换排列。材质、状态和焦点样式由共享层维护；活动窗口另按 DESIGN 接入唯一焦点所有者，视觉 Panel 不会自动接管键盘。业务样式只负责布局，不要新增反盖主题的 `!important`。
+- 新模块标记 `data-ui-grid-root`（`viewport` 或 `module`）及对应的 `data-ui-grid`（`window`、`content`、`row`、`notice`、`hud` 中的一种）。辅助线复用 `grid-guides.ts`，由 `mountTimberTheme` 管理；通过 `?uiGrid=1` 或主题根 `data-ui-grid-debug="true"` 开启，默认关闭且不参与布局、输入。用真实矩形检查同轨误差不超过 1 CSS px、同排顶底、首末列与间隔，保留同状态的辅助线图和干净图；木头切角不是对齐锚点，分数坐标不必强制取整。
 - 新沙盒在 `tools/ui-contract.json` 登记并运行 `npm run verify:ui`。历史工具恢复开发时先转为活跃接入；图片与操作验收按实际入口进行，样板页不替代主游戏。
 
 ## 美工、建模与外部工具

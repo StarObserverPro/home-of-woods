@@ -45,6 +45,7 @@ async function files(dir) {
 for (const module of registry.active) {
   const entry = await fs.readFile(module.entry,'utf8').catch(()=>null);
   if (!entry?.includes(module.themeOwner)) errors.push(`${module.entry}: missing shared theme owner ${module.themeOwner}`);
+  if (!/data-ui-grid-root|uiGridRoot/.test(entry??'')) errors.push(`${module.entry}: declare the viewport/module grid owner for cross-layer review`);
   for (const name of (await files(module.root)).filter(name=>name.endsWith('.css'))) {
     const css = await fs.readFile(name,'utf8');
     checkCss(name,css);

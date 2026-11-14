@@ -9,7 +9,18 @@ function mark(node:HTMLElement,role:TimberRole,material:TimberMaterial,tone:Timb
 /** Only the host's UI roles live here. Materials and observers remain shared with the game. */
 export function mountWoodworkingTimber(shell:HTMLElement,shadow:ShadowRoot){
   shell.dataset.howUi='timber'
+  shell.dataset.uiGridRoot='module'
   function refresh(){
+    const grids:readonly [string,string][]=[
+      ['header','hud'],
+      ['.layout,.body,.drawings','content'],
+      ['.panel,dialog','window'],
+      ['.rail,.bar,.tools,.row,.actions','row'],
+      ['.foot,.hint,.note','notice'],
+    ]
+    for(const [selector,kind] of grids)shell.querySelectorAll<HTMLElement>(selector).forEach(node=>{
+      if(node.dataset.uiGrid!==kind)node.dataset.uiGrid=kind
+    })
     const surfaces:readonly [string,TimberRole,TimberMaterial,TimberTone][]=[
       ['header','heading','plank','dark'],
       ['.seal','badge','endgrain','warm'],

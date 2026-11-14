@@ -1,6 +1,6 @@
 # 森林之家：木质界面语言
 
-版本：Timber UI 1，2026-11-13。适用于主游戏、当前活跃沙盒及以后新增的玩法模块。实现与验证范围见 [本轮记录](docs/scopes/timber-ui-system.md)，外部设计来源和取舍见 [研究记录](docs/UI_DESIGN_REFERENCES.md)。
+版本：Timber UI 1；网格对齐补充于 2026-11-14。适用于主游戏、当前活跃沙盒及以后新增的玩法模块。实现与验证范围见 [本轮记录](docs/scopes/timber-ui-system.md)，外部设计来源和取舍见 [研究记录](docs/UI_DESIGN_REFERENCES.md)。
 
 ## 从玩家看到的东西出发
 
@@ -8,7 +8,7 @@
 
 常驻状态尽量轻。能按的控件有清楚的木块正面与底面；整理、制作和交易用一个主要工作窗口。内部分类、物品格和说明靠留白、凹入面及标题组织，不再逐层套外框。外壳与内部凹面合计最多两层。
 
-本轮木质系统管理 UI 表面。场景木料仍由 `scene/wood-grain.ts` 管理；两者遵循相同材料理解，各用适合其尺度的实现，不为二维 HUD 增加 Three.js 渲染器。
+本轮木质系统管理 UI 表面、共享间距和对齐规则。场景木料仍由 `scene/wood-grain.ts` 管理；两者遵循相同材料理解，各用适合其尺度的实现，不为二维 HUD 增加 Three.js 渲染器。
 
 ## 材料有明确用途
 
@@ -35,7 +35,7 @@
 
 生成器的切角限定在 3–10 CSS px，按钮底面厚度限定在 3–6 px，窗口可到 10 px；刨花反馈采用独立的薄木片轮廓，底面只有 1.5–2.5 px。这些是当前实现参数，唯一来源是 [surface.ts](src/ui/timber/surface.ts)。用实际宽高重建局部轮廓；禁止把窄条 `border-image` 拉满四边，也不再用同一张木纹 `cover` 所有长宽。
 
-主窗口内边距同时给外缘和底面留空间：正常为上/侧 24px、下 32px，窄屏与短横屏为上/侧 20px、下 30px；布局消费共享 `--how-panel-padding`，不能让最后一行文字压到木框。
+主窗口内边距同时给外缘和底面留空间：正常为上/侧 24px，视口宽度不大于 540px 或高度不大于 520px 时为上/侧 20px；下方统一为 32px。布局消费共享 `--how-panel-padding`，不能让最后一行文字压到木框。
 
 缺角只存在于绘制层。内容、焦点和命中区不使用同一个 `clip-path`；文字不会被木头缺口削掉。
 
@@ -68,6 +68,36 @@
 
 强制颜色模式可使用系统色实边，这是可访问性替代显示，不是普通风格；图纸尺寸线、地图路径、场景选择标记属于信息图形，也不受普通容器禁细线的约束。
 
+## 跨层次网格与辅助线
+
+基本间距单位为 4px，常用控件间隔为 8px，区段间隔为 12px。对齐沿根安全框、窗口内容框和行内控件三层传递。锚点取元素真实布局矩形及内容安全区；木头的切角、毛边、底面和文字的光学校正不改变这些锚点。
+
+| 层次 | 统一规则 |
+| --- | --- |
+| 屏幕安全框 | 桌面四边 24px；视口宽度不大于 700px 或高度不大于 520px 时改为 8px。每边取此值与相应 `env(safe-area-inset-*)` 的较大者；可用宽高减去实际两侧安全边距。 |
+| 窗口内容框 | 使用共享的上/侧 24px 或 20px、下 32px 内边距。标题板、tabs、工具行、browser 和 footer 的外边界共用这条内容边线；嵌套组不再各加 3px、4px 横向缩进。 |
+| 行内控件 | 同排控件齐顶齐底，首末列对齐所属内容框，重复列和按钮组使用等距间隔。标题共用 44px 关闭动作列，关闭按钮负 margin 归零。长文字需要增高时整行增高或换行。 |
+
+HUD、主窗口和阅读窗口消费同一组屏幕安全边线；居中模态以安全框中心为锚。接入新窗口时明确其 `inset`、`width`、`max-width` 与 `margin`，清除旧规则的剩余限制，不能只设置宽度却留下另一套最大宽度。依附控件的弹出层以触发器边缘加共享间隔定位，不用固定像素猜测触发器高度。
+
+非空间全局提示 `.message`、`.save-warning`、`.active-work` 放入统一的 `.hud-notices` 网格区域，由区域决定位置和间距。窗口中的状态、缺料原因和操作结果归属自身内容框。拖拽 ghost 与场景标签继续跟随指针或世界位置，不进入全局消息网格。
+
+辅助线由共享 [grid-guides.ts](src/ui/timber/grid-guides.ts) 提供，并随 `mountTimberTheme` 挂载和清理。默认关闭；入口加 `?uiGrid=1`，或在主题根设置 `data-ui-grid-debug="true"` 时开启。辅助线只用于检视，使用 `aria-hidden` 和 `pointer-events:none`，不占布局空间、不接管输入，也不作为正式界面的细线装饰。
+
+根和已有结构使用以下标记；无需为了画线额外套外框：
+
+| 标记 | 表达 |
+| --- | --- |
+| `data-ui-grid-root="viewport"` | 主游戏的屏幕级根，显示共享安全边线。 |
+| `data-ui-grid-root="module"` | 沙盒、独立模块或 Shadow DOM 内的主题根，以本模块为对齐范围。 |
+| `data-ui-grid="window"` | 窗口外框。 |
+| `data-ui-grid="content"` | 窗口或模块的内容区域。 |
+| `data-ui-grid="row"` | 需要检查同排、首末列和间隔的标题、tabs、工具或按钮行。 |
+| `data-ui-grid="notice"` | 全局消息区或归属于窗口的状态信息。 |
+| `data-ui-grid="hud"` | 常驻 HUD 组。 |
+
+对齐验收读取真实 `getBoundingClientRect()`：同一边线的误差不超过 1 CSS px，并检查同排顶底、首末列和等距关系。网格列宽、字形和缩放允许分数坐标，不要求所有坐标都取 4px 整数。相同视口、seed 和状态分别留一张辅助线图与一张干净图；开启辅助线前后布局矩形与操作行为应保持不变。
+
 ## 布局与密度
 
 桌面物品格与选中详情并排，手机上下排列。主游戏每页最多 8 项；宽度不大于 540px 或高度不大于 520px 时最多 4 项。分页放在物品列下方，不让右侧说明与动作额外让出整行。
@@ -76,21 +106,24 @@
 
 常规视口通过分页与排列适配，不以小字体、32px 按钮或隐藏溢出挤进屏幕。极短屏或用户大幅放大文字时，顶层窗口保留可达的滚动退路，避免关闭/确认永远落出屏幕；这不作为常规视口验收通过的理由。普通桌面/手机样本必须检查是否本来能放下。
 
-布局使用 4/8/12/16/24px 为主的间距等级。正文通常 14px，次级标签至少 12px；数量采用稳定数字宽度。标题、图标、主动作和副说明依此区分，不靠每块多加一个框。
+布局沿用上述网格，常用间距等级为 4/8/12/16/24/32px。正文通常 14px，次级标签至少 12px；数量采用稳定数字宽度。标题、图标、主动作和副说明依此区分，不靠每块多加一个框。
 
 ## 接入方法
 
 React 新模块优先使用 [components.tsx](src/ui/timber/components.tsx) 的 `TimberButton`、`TimberPanel`、`TimberHeading`，物品选择复用现有 `ItemBrowser`。主游戏由 `mountGameTimber` 管理绘面与释放，不给每个控件各开一套观察器。
 
-`TimberPanel` 是视觉容器，`mountTimberTheme` 只管理绘面；两者不会自动把内容变成活动窗口。新增主游戏窗口须接入 App 的活动窗口状态和 [useWindowFocus](src/ui/timber/use-window-focus.ts)，提供当前窗口选择器、稳定身份，以及暂停/阅读等更高层窗口接管时的 suspended 状态。由这一窗口所有者维护打开、Tab 和返回焦点；Esc、外点关闭及世界输入仍由 App/runtime 处理。独立沙盒若新增模态窗口，也须显式指定一个焦点所有者，不能仅添加 `role="dialog"` 后假定行为已齐全。
+`TimberPanel` 是视觉容器，`mountTimberTheme` 管理绘面、尺寸观察和检视辅助线；两者不会自动把内容变成活动窗口。新增主游戏窗口须接入 App 的活动窗口状态和 [useWindowFocus](src/ui/timber/use-window-focus.ts)，提供当前窗口选择器、稳定身份，以及暂停/阅读等更高层窗口接管时的 suspended 状态。由这一窗口所有者维护打开、Tab 和返回焦点；Esc、外点关闭及世界输入仍由 App/runtime 处理。独立沙盒若新增模态窗口，也须显式指定一个焦点所有者，不能仅添加 `role="dialog"` 后假定行为已齐全。
 
 原生 DOM 使用相同语义属性：
 
 ```html
-<div data-how-ui="timber">
-  <section data-timber-surface="panel" data-timber-seed="my-module">
-    <header data-timber-surface="heading">工作台</header>
-    <button data-timber-surface="button">开始制作</button>
+<div data-how-ui="timber" data-ui-grid-root="module">
+  <section data-timber-surface="panel" data-timber-seed="my-module" data-ui-grid="window">
+    <div data-ui-grid="content">
+      <header data-timber-surface="heading" data-ui-grid="row">工作台</header>
+      <div data-ui-grid="row"><button data-timber-surface="button">开始制作</button></div>
+      <p data-ui-grid="notice" role="status">等待选料</p>
+    </div>
   </section>
 </div>
 ```
@@ -105,7 +138,7 @@ React 新模块优先使用 [components.tsx](src/ui/timber/components.tsx) 的 `
 
 生成只依赖角色、材料、色调、seed 和实际尺寸。重新开窗、改数量、悬停和按下不会随机换木纹；seed 不来自时间、DOM 序号或 `Math.random()`。
 
-共享挂载器只在尺寸或绘面参数变化时重绘，使用一个尺寸观察器与有限的调度，缓存上限 96 项 SVG 字符串。缓存不持有 DOM；移除组件即解除观察，卸载断开所有监听。不为装饰建立持续 RAF 循环。
+材质绘面只在尺寸或绘面参数变化时重建，使用一个尺寸观察器与有限的调度，缓存上限 96 项 SVG 字符串。缓存不持有 DOM；移除组件即解除观察，卸载断开所有监听。辅助线随布局和视口变化按需刷新，不为装饰或检视建立持续 RAF 循环。
 
 生成失败时退回按角色设置的 CSS 渐变切面，保留全部文字与交互。检视页的“纯色回退”是另一项无纹理可读性检查：主动撤去绘面，以纯色和宽阴影检查内容层级；它不等于故障注入，也不作为生成异常路径已经验证的证据。Saltline 的确定性、缓存和分模块检视思想作为参考；本项目生成器为独立实现，未复制其镜像代码。
 
@@ -117,8 +150,8 @@ React 新模块优先使用 [components.tsx](src/ui/timber/components.tsx) 的 `
 
 1. 写清玩家要做的动作和哪些部分常驻，然后选已有窗口与控件。
 2. 在 [UI 入口登记](tools/ui-contract.json) 中标明活跃入口；历史沙盒恢复开发时转入活跃组。
-3. 使用主题层和共享语义；运行 `npm run verify:ui`。
-4. 在桌面、390px、320px 和 844×390 中检查实际画面、主操作和键盘焦点；有新的状态再补相应样例。
-5. 把具体已验证范围记在本轮 scope；构建、样板渲染、主游戏操作和实体手机性能分别记录。
+3. 使用主题层、共享语义和 `data-ui-grid` 标记；运行 `npm run verify:ui`。
+4. 在桌面、390px、320px 和 844×390 中检查实际画面、主操作和键盘焦点；按三层网格检查真实矩形，并保留辅助线图与干净图。有新的状态再补相应样例。
+5. 把具体已验证范围记在本轮 scope；构建、样板渲染、主游戏操作和实体手机性能分别记录。网格对齐补充的实际通过状态以 [PR36 checks](https://github.com/StarObserverPro/home-of-woods/pull/36/checks) 中对应提交的报告与截图为准；本规范及此前木质表面验证不代表新增对齐检查已经通过。
 
 旧 `action-lab-r1`、`scene-r5`、`tree-variation`、`understory` 属历史检视工具，本轮不为它们重建界面；恢复为活跃模块时必须接入此契约。未合并 PR35 的有限锯切逻辑独立推进，合流时保留本次共享主题接线，不把旧操作流程带回 PR35。

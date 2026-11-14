@@ -6,8 +6,8 @@ export function TimberButton({emphasis='normal',children,...props}:ButtonHTMLAtt
     data-timber-tone={emphasis==='quiet'?'moss':'warm'} data-timber-intent={emphasis==='danger'?'danger':undefined}>{children}</button>;
 }
 export function TimberPanel({children,...props}:HTMLAttributes<HTMLElement>&{children:ReactNode}) {
-  return <section {...props} data-timber-surface="panel">{children}</section>;
+  return <section data-ui-grid="window" {...props} data-timber-surface="panel">{children}</section>;
 }
 export function TimberHeading({children,...props}:HTMLAttributes<HTMLElement>&{children:ReactNode}) {
-  return <header {...props} data-timber-surface="heading">{children}</header>;
+  return <header data-ui-grid="content" {...props} data-timber-surface="heading">{children}</header>;
 }

@@ -1,4 +1,5 @@
 import {timberSurface} from './surface.ts';
+import {mountGridGuides} from './grid-guides.ts';
 import type {TimberMaterial,TimberRole,TimberSurface,TimberTone} from './surface.ts';
 
 const SELECTOR = '[data-timber-surface]';
@@ -23,6 +24,7 @@ export function mountTimberTheme(root: HTMLElement | ShadowRoot, options: Timber
   const painted = new WeakMap<HTMLElement,string>();
   let frame = 0, disposed = false;
   const view = root.ownerDocument.defaultView!;
+  const guides = mountGridGuides(root);
   const inside = (node: Node) => node === root || root.contains(node);
   function paint(node: HTMLElement) {
     if (!inside(node) || !node.isConnected) return;
@@ -59,6 +61,7 @@ export function mountTimberTheme(root: HTMLElement | ShadowRoot, options: Timber
     if (disposed) return;
     for (const node of pending) paint(node);
     pending.clear();
+    guides.refresh();
   }
   function queue(node: HTMLElement) {
     pending.add(node);
@@ -76,8 +79,18 @@ export function mountTimberTheme(root: HTMLElement | ShadowRoot, options: Timber
     if (node instanceof HTMLElement && node.matches(SELECTOR)) add(node);
     node.querySelectorAll<HTMLElement>(SELECTOR).forEach(add);
   }
+  const diagnostic = (node:Node) => {
+    const element=node instanceof Element?node:node.parentElement;
+    return !!element?.closest('[data-ui-grid-overlay],[data-ui-grid-probe]');
+  };
   const mutations = new MutationObserver(records => {
+    let changed=false;
     for (const record of records) {
+      // A whole-document host also contains the guide overlay. Its SVG/probe must
+      // not feed its own mutations back into an inspection-only repaint loop.
+      if (diagnostic(record.target)) continue;
+      if (record.type==='childList' && [...record.addedNodes,...record.removedNodes].every(diagnostic)) continue;
+      changed=true;
       if (record.type === 'attributes' && record.target instanceof HTMLElement) {
         const node = record.target;
         if (node.matches(SELECTOR)) add(node);
@@ -85,18 +98,21 @@ export function mountTimberTheme(root: HTMLElement | ShadowRoot, options: Timber
       }
       for (const node of record.addedNodes) if (node instanceof HTMLElement) scan(node);
     }
+    if (!changed) return;
     // Removed components must not retain observers or DOM references after a route change.
     for (const node of nodes) if (!inside(node)) {
       resize.unobserve(node); nodes.delete(node); pending.delete(node);
     }
+    guides.sync();
   });
   scan(root);
   mutations.observe(root,{subtree:true,childList:true,attributes:true,attributeFilter:[
     'data-timber-surface','data-timber-material','data-timber-tone','data-timber-seed',
+    'data-ui-grid-debug','data-ui-grid','open','hidden','class',
   ]});
   return () => {
     if (disposed) return;
-    disposed = true; resize.disconnect(); mutations.disconnect();
+    disposed = true; resize.disconnect(); mutations.disconnect(); guides.dispose();
     if (frame) view.cancelAnimationFrame(frame);
     nodes.clear(); pending.clear();
   };

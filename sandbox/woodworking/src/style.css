@@ -10,29 +10,28 @@
   button, input, select { font: inherit; color: inherit; }
   button, select { cursor: pointer; }
   button { min-width: 44px; min-height: 44px; border: 0; padding: 8px 12px; }
-  .shell { max-width: 1400px; margin: auto; padding: clamp(12px, 2vw, 24px); }
-  header, .bar, .row, .tools, .foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  header { justify-content: space-between; gap: 14px; padding: 14px 18px; margin-bottom: 14px; }
-  .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .shell { max-width: 1400px; margin: auto; display: grid; gap: var(--how-section-gap, 12px); padding: var(--how-safe-top, 24px) var(--how-safe-right, 24px) var(--how-safe-bottom, 24px) var(--how-safe-left, 24px); }
+  header, .bar { display: flex; align-items: center; gap: var(--how-gap, 8px); flex-wrap: wrap; }
+  header { justify-content: space-between; gap: var(--how-section-gap, 12px); padding: var(--how-section-gap, 12px) var(--how-panel-inset, 24px); }
+  .brand { display: flex; align-items: center; gap: var(--how-section-gap, 12px); min-width: 0; }
   .seal { width: 48px; height: 48px; display: grid; place-items: center; flex: 0 0 48px; font-size: 24px; font-weight: 700; }
   .eyebrow, .tag, .stamp, .meta { font-size: 12px; line-height: 1.5; }
   .eyebrow, .meta { color: var(--how-muted); }
   h1, h2, h3, p, figure { margin: 0; }
-  h1 { font-size: clamp(23px, 3vw, 30px); font-weight: 700; line-height: 1.25; margin-top: 3px; }
+  h1 { font-size: clamp(23px, 3vw, 30px); font-weight: 700; line-height: 1.25; margin-top: var(--how-grid-unit, 4px); }
   h2 { font-size: 19px; line-height: 1.4; }
-  .tag, .stamp { padding: 8px 12px; }
-  .rail { display: flex; gap: 8px; list-style: none; margin: 0 0 14px; padding: 0; }
-  .rail li { flex: 1; min-width: 0; padding: 12px; font-size: 12px; line-height: 1.5; }
+  .tag, .stamp { padding: var(--how-gap, 8px) var(--how-section-gap, 12px); }
+  .rail { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--how-gap, 8px); list-style: none; margin: 0; padding: 0; }
+  .rail li { min-width: 0; padding: var(--how-section-gap, 12px); font-size: 12px; line-height: 1.5; }
   .rail li.current { font-weight: 700; }
   .rail li.done { color: var(--how-muted); }
-  .layout { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr); gap: 16px; align-items: start; }
-  .panel { min-width: 0; }
-  .bar { justify-content: space-between; padding: 10px 14px; gap: 8px; margin-bottom: 12px; }
+  .layout { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr); gap: var(--how-section-gap, 12px); align-items: start; }
+  .panel { min-width: 0; display: grid; align-content: start; gap: var(--how-section-gap, 12px); }
+  .bar { justify-content: space-between; padding: var(--how-section-gap, 12px); }
   .stage { position: relative; background: #323e34; min-height: 280px; height: clamp(300px, 37vw, 460px); overflow: hidden; }
   .stage svg, .stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
-  .tools, .foot, .body { padding: 12px 0 0; }
-  .tools { gap: 8px; }
-  .body { display: grid; gap: 12px; }
+  .tools { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: stretch; gap: var(--how-gap, 8px); }
+  .body { display: grid; gap: var(--how-section-gap, 12px); }
   /* Thin rules here convey measured geometry, not UI borders. */
   .drawings {
     display: grid;
@@ -55,47 +54,48 @@
   .tongue { fill: #c4d1b3; }
   .drawings .hit { fill: none; stroke: transparent; stroke-width: 12; pointer-events: stroke; }
   .drawings [data-cut] { cursor: pointer; }
-  .row label { display: grid; gap: 5px; font-size: 12px; flex: 1 1 80px; min-width: 0; }
-  #materials label { flex: 1 1 160px; }
+  .row { display: grid; gap: var(--how-gap, 8px); }
+  .row label { display: grid; gap: var(--how-grid-unit, 4px); font-size: 12px; min-width: 0; }
+  #dims { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #materials { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
   input, select { min-height: 44px; max-width: 100%; }
   input { width: 100%; }
-  #operations > label { display: grid; gap: 6px; font-size: 13px; }
-  .actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  #operations > label { display: grid; gap: var(--how-grid-unit, 4px); font-size: 13px; }
+  .actions { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); align-items: stretch; gap: var(--how-gap, 8px); }
+  .finish-actions { grid-auto-flow: row; grid-template-columns: auto minmax(0, 1fr); align-items: center; }
+  .finish-actions > button { grid-column: 1 / -1; }
+  #paints { display: flex; flex-wrap: wrap; gap: var(--how-gap, 8px); }
   .hint { font-size: 13px; line-height: 1.6; color: var(--how-muted); }
-  .note { padding: 12px; min-height: 44px; font-size: 13px; line-height: 1.6; }
+  .note { padding: var(--how-section-gap, 12px); min-height: 44px; font-size: 13px; line-height: 1.6; }
   .foot { font-size: 13px; line-height: 1.6; color: var(--how-muted); }
-  .inspect { margin-top: 10px; }
+  .inspect { margin-top: var(--how-gap, 8px); }
   .swatch { width: 44px; height: 44px; display: grid; place-items: center; padding: 0; }
   .swatch::before { content: ''; display: block; width: 22px; height: 22px; border-radius: 50%; background: var(--color); box-shadow: 0 0 0 3px #fff1d540; }
-  .secondary { justify-self: start; font-size: 13px; }
+  .secondary { justify-self: stretch; font-size: 13px; }
   [hidden] { display: none !important; }
-  dialog { max-width: min(30rem, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: 20px; }
+  dialog { max-width: min(30rem, calc(100vw - var(--how-safe-left, 24px) - var(--how-safe-right, 24px))); max-height: calc(100dvh - var(--how-safe-top, 24px) - var(--how-safe-bottom, 24px)); overflow: auto; padding: var(--how-panel-padding, 24px 24px 32px); }
   dialog::backdrop { background: #101d15b8; }
-  dialog p { margin: 10px 0 18px; font-size: 14px; line-height: 1.6; }
+  dialog p { margin: var(--how-section-gap, 12px) 0 16px; font-size: 14px; line-height: 1.6; }
   .shell[inert] .stage { opacity: .72; }
   .tolerance { font-size: 12px; color: var(--how-muted); }
-  .tolerance summary { cursor: pointer; width: fit-content; min-height: 44px; padding: 10px 12px; }
-  .tolerance p { margin: 10px 0 4px; line-height: 1.6; }
-  @media (max-width: 750px) {
-    .layout { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-    .shell { padding: 8px; }
-    header { padding: 12px; }
-    .brand { gap: 9px; }
-    .seal { flex-basis: 44px; width: 44px; height: 44px; }
-    .rail { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-    .rail li { min-height: 44px; padding: 10px 12px; }
-    .stage { height: clamp(240px, 62vw, 350px); min-height: 230px; }
-    .tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tolerance summary { cursor: pointer; width: fit-content; min-height: 44px; padding: var(--how-gap, 8px) var(--how-section-gap, 12px); }
+  .tolerance p { margin: var(--how-gap, 8px) 0 var(--how-grid-unit, 4px); line-height: 1.6; }
+  @media (max-width: 980px) {
+    .tools { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .tools button:last-child { grid-column: 1 / -1; }
-    .bar { padding: 10px 12px; }
+  }
+  @media (max-width: 750px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    .brand { gap: var(--how-gap, 8px); }
+    .seal { flex-basis: 44px; width: 44px; height: 44px; }
+    .rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .rail li { min-height: 44px; padding: var(--how-gap, 8px) var(--how-section-gap, 12px); }
+    .stage { height: clamp(240px, 62vw, 350px); min-height: 230px; }
     .bar h2 { font-size: 18px; }
-    .actions { gap: 8px; }
   }
   @media (max-height: 500px) and (min-width: 751px) {
-    .shell { padding: 10px; }
-    header { padding: 10px 14px; margin-bottom: 10px; }
+    header { padding-block: var(--how-gap, 8px); }
     h1 { font-size: 24px; }
-    .rail { margin-bottom: 10px; }
     .layout { grid-template-columns: minmax(0, 1.2fr) minmax(300px, 1fr); }
     .stage { min-height: 250px; height: 300px; }
   }
