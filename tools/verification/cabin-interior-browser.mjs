@@ -157,6 +157,30 @@ async function useAndWait(page, id, posture) {
 async function assertNoOverflow(page, label) {
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false, `${label}: horizontal overflow`);
 }
+async function settledCamera(page) {
+  return page.evaluate(() => new Promise((resolve, reject) => {
+    const read = () => {
+      const { camera, cameraPosition, cameraTarget, cameraQuaternion, viewport } = window.__CABIN_AUDIT__.stats();
+      return { camera, cameraPosition, cameraTarget, cameraQuaternion, viewport };
+    };
+    let previous = read(), still = 0, done = false;
+    const timeout = setTimeout(() => { done = true; reject(new Error('Camera did not settle after a real UI operation')); }, 30000);
+    const sample = () => {
+      if (done) return;
+      const next = read();
+      const stable = ['cameraPosition', 'cameraTarget', 'cameraQuaternion'].every(key => next[key].every((value, i) => Math.abs(value - previous[key][i]) < 1e-7));
+      still = stable ? still + 1 : 0; previous = next;
+      if (still >= 6) { done = true; clearTimeout(timeout); resolve(next); }
+      else requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  }));
+}
+function assertCameraUnchanged(actual, expected, label) {
+  assert.equal(actual.camera, expected.camera, `${label}: camera mode must stay selected`);
+  for (const key of ['cameraPosition', 'cameraTarget', 'cameraQuaternion'])
+    assert.ok(actual[key].every((value, i) => Math.abs(value - expected[key][i]) < 1e-4), `${label}: ${key} changed from ${expected[key]} to ${actual[key]}`);
+}
 
 try {
   await waitForPreview();
@@ -311,6 +335,35 @@ try {
     await capture(p, `${label}-seated`, 'room');
     await p.locator('#stand').tap(); await waitPosture(p, 'standing');
     await p.locator('[data-select="audit:rug"]').tap();
+    if (viewport.width > viewport.height) {
+      phase = `${label} placement preserves orbit and detail cameras`;
+      const beforeOrbit = await settledCamera(p), canvas = p.locator('.cabin-canvas');
+      await canvas.scrollIntoViewIfNeeded();
+      const bounds = await canvas.boundingBox(); assert.ok(bounds, 'The actual scene canvas must be visible for orbiting');
+      const x = bounds.x + bounds.width * .58, y = bounds.y + bounds.height * .65;
+      await p.mouse.move(x, y); await p.mouse.down();
+      await p.mouse.move(x + 68, y - 22, { steps: 12 }); await p.mouse.up();
+      const orbited = await settledCamera(p);
+      assert.ok(orbited.cameraPosition.some((value, i) => Math.abs(value - beforeOrbit.cameraPosition[i]) > .05), 'The pointer drag must actually change the scene viewpoint');
+      for (const mode of ['orbit', 'detail']) {
+        if (mode === 'detail') await p.locator('[data-action="detail"]').tap();
+        const before = await settledCamera(p), committed = await snapshot(p);
+        if (mode === 'detail') assert.equal(before.camera, 'detail', 'The real close-up action must select the detail camera');
+        await p.locator('[data-action="move"]').tap();
+        await p.locator('#placement-panel').waitFor();
+        const during = await settledCamera(p);
+        assert.notDeepEqual(during.viewport, before.viewport, 'Landscape placement must really resize the scene canvas');
+        assertCameraUnchanged(during, before, `${label} ${mode} entering placement`);
+        await p.locator('#place-cancel').tap();
+        const after = await settledCamera(p);
+        assertCameraUnchanged(after, before, `${label} ${mode} canceling placement`);
+        assert.deepEqual(after.viewport, before.viewport, 'Cancel must restore the normal canvas space');
+        assert.deepEqual(await snapshot(p), committed, 'Cancel must preserve the committed cabin state');
+        report.flows.push({ name: `${label}-${mode}-placement-keeps-camera`, passed: true, before, during, after });
+      }
+      await p.locator('#view-toggle').tap();
+      await p.locator('[data-camera="room"]').tap(); await settledCamera(p);
+    }
     await p.locator('[data-action="move"]').tap();
     await p.locator('[data-nudge="right"]').tap();
     assert.equal(await p.locator('#place-confirm').isEnabled(), true);
@@ -318,7 +371,18 @@ try {
     await p.locator('#leave').tap(); await waitIdle(p);
     assert.ok((await snapshot(p)).player.z > 3.5);
     await p.locator('#daylight').tap();
-    if(await p.locator('#view-toggle').isVisible())await p.locator('#view-toggle').tap();
+    if(await p.locator('#view-toggle').isVisible()){
+      phase = `${label} camera menu Escape from select`;
+      await p.locator('#view-toggle').tap();
+      const mode = await p.locator('#cut-mode').inputValue();
+      await p.locator('#cut-mode').focus(); await p.keyboard.press('Escape');
+      assert.equal(await p.locator('#view-dock').isVisible(), false, 'Escape from the cut-mode select must close the camera menu');
+      assert.equal(await p.locator('#view-toggle').getAttribute('aria-expanded'), 'false');
+      assert.equal(await p.locator('#view-toggle').evaluate(element => element === document.activeElement), true, 'Closing the camera menu must return focus to its toggle');
+      assert.equal(await p.locator('#cut-mode').inputValue(), mode, 'Escape must keep the chosen wall mode');
+      report.flows.push({ name: `${label}-camera-menu-select-Escape`, passed: true });
+      await p.locator('#view-toggle').tap();
+    }
     await p.locator('#cut-mode').selectOption('stage');
     await assertNoOverflow(p, label);
     await capture(p, `${label}-evening`, 'room');

@@ -16,6 +16,7 @@ const viewport={width:1280,height:800};
 const report={
   result:'running',optional:true,startedAt:new Date().toISOString(),sourceRevision,
   testedRevision:null,fixtureSha256:null,dependencyLocks:null,browser:null,
+  captureMethod:'Chromium Page.captureScreenshot, fromSurface; unchanged viewport and renderer',
   viewport,dpr:1,frames:[],failures:[],errors:[],failedRequests:[],warnings:[],serverMessages:[],
   inputs:{seed:104729,clock:'time=0, speed=0; 14:00 production calendar',save:'same in-memory fixture copied byte for byte from the candidate checkout'},
   limits:[
@@ -39,12 +40,26 @@ const frames=()=>page.evaluate(()=>new Promise(resolve=>{
   let count=4;const step=()=>count-->0?requestAnimationFrame(step):resolve();step();
 }));
 
+async function screenshot(file,timeout=90000){
+  // Match the repository's east-bank review: read the composited viewport directly.
+  // Playwright's screenshot preparation can wait on RAF stability in the slow software renderer.
+  const session=await page.context().newCDPSession(page);
+  let timer;
+  try{
+    const frame=await Promise.race([
+      session.send('Page.captureScreenshot',{format:'png',fromSurface:true,captureBeyondViewport:false}),
+      new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`Viewport screenshot timed out after ${timeout}ms`)),timeout);}),
+    ]);
+    await fs.writeFile(file,Buffer.from(frame.data,'base64'));
+  }finally{clearTimeout(timer);await session.detach().catch(()=>{});}
+}
+
 async function failure(name,error){
   const entry={name,message:String(error),stack:error.stack?.slice(0,5000)};
   report.failures.push(entry);
   if(page&&!page.isClosed()){
     entry.image=`failure-${name}.png`;
-    await page.screenshot({path:path.join(out,entry.image),fullPage:false,timeout:15000}).catch(()=>{delete entry.image;});
+    await screenshot(path.join(out,entry.image),15000).catch(()=>{delete entry.image;});
     entry.dom=await page.locator('body').innerText({timeout:3000}).catch(()=>null);
     const html=await page.content().catch(()=>null);
     if(html){entry.html=`failure-${name}.html`;await fs.writeFile(path.join(out,entry.html),html);}
@@ -78,7 +93,7 @@ async function capture(name){
       brokenImages:[...document.images].filter(image=>!image.naturalWidth).map(image=>image.currentSrc||image.src),
     };
   });
-  await page.screenshot({path:path.join(out,`${name}.png`),fullPage:false,animations:'disabled',timeout:60000});
+  await screenshot(path.join(out,`${name}.png`));
   report.frames.push({name,file:`${name}.png`,comparesTo:`../${name}.png`,viewport,...state});
   if(state.shaderErrors||state.contextLost)append(report.errors,{phase,message:'Renderer reported an error or lost context',...state});
   for(const url of state.brokenImages)append(report.failedRequests,{phase,url,message:'Image did not decode'});

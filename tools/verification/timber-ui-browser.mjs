@@ -17,13 +17,15 @@ const desktop={width:1280,height:800};
 const smallViews=[{width:390,height:844},{width:320,height:720},{width:844,height:390}];
 const report={
   result:'running',startedAt:new Date().toISOString(),sourceRevision:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),
-  scope,origin,browser:null,buildEntrySha256:null,woodworkingEntrySha256:null,frames:[],flows:[],focusChecks:[],layoutIssues:[],errors:[],failedRequests:[],warnings:[],failures:[],
+  scope,origin,browser:null,buildEntrySha256:null,woodworkingEntrySha256:null,frames:[],flows:[],focusChecks:[],journeys:[],layoutIssues:[],errors:[],failedRequests:[],warnings:[],failures:[],
+  captureMethod:{viewport:'CDP Page.captureScreenshot: PNG, fromSurface=true, captureBeyondViewport=false',fullPage:'Playwright page.screenshot: fullPage=true, animations=disabled'},
   inputs:{seed:104729,clock:'time=0, speed=0; 14:00 production calendar',save:'isolated in-memory WorldSaveStore',stock:'ten active production item IDs granted through inventoryTransaction',dpr:1},
   limits:[
     'The main UI uses the real App/runtime through a Vite review entry; npm run build is a separate required gate.',
     'Mobile checks synthesize touch in Chromium; they are not physical-device or GPU-performance certification.',
     'Screenshots require visual review. Bounds and target checks do not certify the artistic result.',
     'The game clock is fixed; decorative animation phases depend on elapsed rendering time.',
+    'Story travel uses the existing DEV fixed-step owner in bounded 2-second steps after real UI commands; recorded steps are simulation advancement, not travel performance.',
     'The woodworking package is opened from its built single HTML file in an offline browser context; its full craft progression is outside this UI review.',
   ],
 };
@@ -34,23 +36,50 @@ const frames=(page,count=3)=>page.evaluate(count=>new Promise(resolve=>{
   const step=()=>count-->0?requestAnimationFrame(step):resolve();step();
 }),count);
 
+async function takeScreenshot(page,{path:filename,fullPage=false,timeout=60000}){
+  if(fullPage)return page.screenshot({path:filename,fullPage:true,animations:'disabled',timeout});
+  // The game canvas has a fixed viewport. Use the repository's existing CDP path
+  // so software-rendered frames do not enter Playwright's screenshot stability wait.
+  const session=await page.context().newCDPSession(page);
+  let timer;
+  try{
+    const frame=await Promise.race([
+      session.send('Page.captureScreenshot',{format:'png',fromSurface:true,captureBeyondViewport:false}),
+      new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`CDP Page.captureScreenshot timed out after ${timeout}ms`)),timeout);}),
+    ]);
+    await fs.writeFile(filename,Buffer.from(frame.data,'base64'));
+  }finally{clearTimeout(timer);await session.detach().catch(()=>{});}
+}
+
+async function recordFailure(name,page,error,{kind='interaction',frame,measured,screenshot=true}={}){
+  const failure={name,phase,kind,...(frame?{frame}:{}),message:String(error),stack:error.stack};
+  report.failures.push(failure);console.error(`FAIL ${name}: ${error}`);
+  if(!page.isClosed()){
+    if(screenshot){
+      const fullPage=await page.locator('main.game-shell').count()===0;
+      await takeScreenshot(page,{path:path.join(out,`failure-${name}.png`),fullPage,timeout:15000}).catch(captureError=>{
+        failure.screenshotError=String(captureError);
+      });
+    }
+    failure.dom=await page.locator('body').innerText({timeout:3000}).catch(()=>null);
+    failure.layout=measured??await layout(page,{fitViewport:false}).catch(()=>null);
+    const html=await page.content().catch(()=>null);
+    if(html){failure.html=`failure-${name}.html`;await fs.writeFile(path.join(out,failure.html),html);}
+  }
+  await saveReport();
+}
+
 async function scenario(name,page,operation,cleanup){
   phase=name;activePage=page;
+  const failureCount=report.failures.length;
   let passed=true;
-  try{await operation();report.flows.push({name,result:'passed'});console.log(`PASS ${name}`);}
+  try{await operation();passed=report.failures.length===failureCount;}
   catch(error){
     passed=false;
-    const failure={name,message:String(error),stack:error.stack};
-    report.failures.push(failure);report.flows.push({name,result:'failed'});
-    console.error(`FAIL ${name}: ${error}`);
-    if(!page.isClosed()){
-      await page.screenshot({path:path.join(out,`failure-${name}.png`),fullPage:true,timeout:15000}).catch(()=>{});
-      failure.dom=await page.locator('body').innerText({timeout:3000}).catch(()=>null);
-      failure.layout=await layout(page,{fitViewport:false}).catch(()=>null);
-      const html=await page.content().catch(()=>null);
-      if(html){failure.html=`failure-${name}.html`;await fs.writeFile(path.join(out,failure.html),html);}
-    }
+    await recordFailure(name,page,error);
   }finally{
+    report.flows.push({name,result:passed?'passed':'failed'});
+    console.log(`${passed?'PASS':'FAIL'} ${name}`);
     // Preserve the failed UI before recovering it for the next independent scenario.
     if(cleanup)passed=await scenario(`${name}-cleanup`,page,cleanup)&&passed;
   }
@@ -173,12 +202,22 @@ async function capture(page,name,options={}){
     if(text){const s=JSON.parse(text).current;return {seed:s.seed,gameTime:s.gameTime,shaderErrors:s.shaderErrors,contextLost:s.contextLost,drawCalls:s.drawCalls,triangles:s.triangles,graphicsBackend:s.graphicsBackend};}
     const api=window.__CABIN_AUDIT__;return api?api.stats():null;
   });
-  await page.screenshot({path:path.join(out,`${name}.png`),fullPage:options.fitViewport===false,animations:'disabled',timeout:60000});
-  report.frames.push({name,file:`${name}.png`,...measured,stats});
+  const frame={name,file:null,screenshotStatus:'pending',...measured,stats};
+  report.frames.push(frame);
   report.layoutIssues.push(...measured.issues.map(issue=>({frame:name,...issue})));
   if(stats?.shaderErrors)report.errors.push({phase,name,message:`${stats.shaderErrors} shader errors`});
   if(stats?.contextLost)report.errors.push({phase,name,message:'WebGL context lost'});
-  await saveReport();console.log(`CAPTURE ${name}: ${measured.issues.length} layout issue(s)`);
+  await saveReport();
+  try{
+    await takeScreenshot(page,{path:path.join(out,`${name}.png`),fullPage:options.fitViewport===false,timeout:60000});
+    frame.file=`${name}.png`;frame.screenshotStatus='passed';
+  }catch(error){
+    frame.screenshotStatus='failed';
+    // Keep the flow failed, but still run its keyboard assertions and real UI close.
+    // Do not retry a failed screenshot while the same renderer is still busy.
+    await recordFailure(`capture-${name}`,page,error,{kind:'screenshot',frame:name,measured,screenshot:false});
+  }
+  await saveReport();console.log(`CAPTURE ${name}: ${frame.screenshotStatus}; ${measured.issues.length} layout issue(s)`);
 }
 
 async function openItems(page,touch=false){
@@ -196,11 +235,75 @@ async function openSettings(page,touch=false){
   assert.equal(await page.getByRole('radio',{name:'简化',exact:true}).isChecked(),true);
 }
 
+async function restoreGameUi(page,{viewport,releasePointer=false}={}){
+  try{
+    if(releasePointer){
+      try{
+        if(await page.locator('.item-drag-ghost').isVisible()||await page.locator('.warehouse-dock.is-dragging').isVisible()){
+          await page.keyboard.press('Escape');
+          await page.locator('.item-drag-ghost').waitFor({state:'hidden',timeout:10000});
+        }
+      }finally{await page.mouse.up();}
+    }
+    for(const selector of ['.forest-reader','.pause-dialog[open]']){
+      const panel=page.locator(selector);
+      if(await panel.isVisible()){
+        await page.keyboard.press('Escape');await panel.waitFor({state:'hidden',timeout:10000});
+      }
+    }
+    for(const [selector,label] of [
+      ['.warehouse-dialog','关闭仓库'],['.route-sheet','收起路线'],
+      ['.help-sheet','关闭操作说明'],['.target-card','关闭目标详情'],
+    ]){
+      const panel=page.locator(selector);
+      if(await panel.isVisible()){
+        await panel.getByRole('button',{name:label,exact:true}).click({timeout:10000});
+        await panel.waitFor({state:'hidden',timeout:10000});
+      }
+    }
+    const weather=page.locator('.weather-menu[open]');
+    if(await weather.isVisible()){
+      await weather.locator('summary').click({timeout:10000});
+      await page.locator('.weather-panel').waitFor({state:'hidden',timeout:10000});
+    }
+  }finally{
+    if(viewport){await page.setViewportSize(viewport);await frames(page,2);}
+  }
+}
+
+async function advanceJourney(page,name,ready,maxSteps=30){
+  const snapshot=state=>({player:state.player,route:state.route,selected:state.selected});
+  const before=await gameState(page);
+  const journey={phase,name,advance:'existing DEV fixed-step owner',secondsPerStep:2,maxSteps,before:snapshot(before),steps:[],result:'running'};
+  report.journeys.push(journey);
+  try{
+    assert.ok(before.route.length>0,`${name}: the real UI command must create a route before fixed-step advancement`);
+    let previous=before,stalled=0;
+    for(let step=0;step<=maxSteps;step++){
+      if(await ready()){journey.result='passed';return;}
+      assert.ok(step<maxSteps,`${name}: did not arrive within ${maxSteps} fixed 2-second steps`);
+      await page.evaluate(async()=>{
+        if(typeof window.__HOW_ADVANCE_SIMULATION__!=='function')throw new Error('The existing DEV fixed-step inspection hook is unavailable');
+        window.__HOW_ADVANCE_SIMULATION__(2);
+        // Yield one task for React's published snapshot, independent of slow GL RAFs.
+        await new Promise(resolve=>setTimeout(resolve,0));
+      });
+      const current=await gameState(page);
+      journey.steps.push({step:step+1,...snapshot(current)});
+      const distance=Math.hypot(current.player.x-previous.player.x,current.player.z-previous.player.z);
+      stalled=current.route.length&&distance<1e-6?stalled+1:0;
+      assert.ok(stalled<2,`${name}: an active route made no movement for two fixed steps: ${JSON.stringify(snapshot(current))}`);
+      previous=current;
+    }
+  }catch(error){journey.result='failed';throw error;}
+  finally{journey.after=snapshot(await gameState(page));await saveReport();}
+}
+
 async function desktopGame(){
   const session=await newPage(desktop),page=session.page;
   try{
     if(!await scenario('desktop-load',page,()=>loadGame(page)))return;
-    await scenario('desktop-hud',page,()=>capture(page,'01-desktop-hud'));
+    await scenario('desktop-hud',page,()=>capture(page,'01-desktop-hud'),()=>restoreGameUi(page));
     await scenario('desktop-items-keyboard-focus',page,async()=>{
       await openItems(page);
       const slots=page.getByRole('group',{name:'营地材料图标',exact:true}).getByRole('button');
@@ -216,7 +319,7 @@ async function desktopGame(){
       assert.equal(await page.locator('.bottom-toolbar').getByRole('button',{name:'打开仓库',exact:true}).evaluate(element=>element===document.activeElement),true,'Closing the inventory must return focus to its opener');
       await page.keyboard.press('b');await page.locator('.warehouse-dialog').waitFor();
       await page.keyboard.press('Escape');await page.locator('.warehouse-dialog').waitFor({state:'hidden'});
-    });
+    },()=>restoreGameUi(page));
     await scenario('desktop-route-and-outside-dismiss',page,async()=>{
       await page.locator('.bottom-toolbar').getByRole('button',{name:'路线',exact:true}).click();
       await page.locator('.route-sheet').waitFor();
@@ -250,13 +353,7 @@ async function desktopGame(){
       assert.deepEqual(after.player,before.player,'An outside-dismiss click must not move the player');
       assert.deepEqual(after.route,before.route,'An outside-dismiss click must not add a route');
       assert.equal(after.selected,before.selected,'An outside-dismiss click must not select a world object');
-    },async()=>{
-      const route=page.locator('.route-sheet');
-      if(await route.isVisible()){
-        await route.getByRole('button',{name:'收起路线',exact:true}).click({timeout:10000});
-        await route.waitFor({state:'hidden',timeout:10000});
-      }
-    });
+    },()=>restoreGameUi(page));
     await scenario('desktop-weather-keyboard',page,async()=>{
       const summary=page.locator('summary[aria-label="天气与木料湿度"]');
       await summary.focus();await page.keyboard.press('Enter');await page.locator('.weather-panel').waitFor();
@@ -266,7 +363,7 @@ async function desktopGame(){
       await page.keyboard.press('Escape');
       assert.equal(await page.locator('.weather-menu').evaluate(element=>element.open),false);
       assert.equal(await summary.evaluate(element=>element===document.activeElement),true);
-    });
+    },()=>restoreGameUi(page));
     await scenario('desktop-pause-focus',page,async()=>{
       const opener=page.getByRole('button',{name:'暂停',exact:true});
       await opener.focus();await page.keyboard.press('Enter');await page.locator('.pause-dialog[open]').waitFor();
@@ -275,11 +372,11 @@ async function desktopGame(){
       await capture(page,'07-desktop-pause-display');
       await page.keyboard.press('Escape');await page.locator('.pause-dialog[open]').waitFor({state:'hidden'});
       assert.equal(await opener.evaluate(element=>element===document.activeElement),true);
-    });
+    },()=>restoreGameUi(page));
     await scenario('desktop-settings',page,async()=>{
       await openSettings(page);await capture(page,'08-desktop-settings');
       await page.keyboard.press('Escape');await page.locator('.help-sheet').waitFor({state:'hidden'});
-    });
+    },()=>restoreGameUi(page));
     await scenario('route-selection-survives-narrow-layout',page,async()=>{
       await page.locator('.bottom-toolbar').getByRole('button',{name:'路线',exact:true}).click();
       const route=page.locator('.route-sheet');await route.waitFor();
@@ -299,14 +396,7 @@ async function desktopGame(){
       await page.keyboard.press('Tab');await assertFocusIn(page,'.route-sheet','Tab after resize');
       await page.keyboard.press('Shift+Tab');await assertFocusIn(page,'.route-sheet','Shift+Tab after resize');
       await capture(page,'10-route-selected-390x844');
-    });
-    // Restore the test viewport and close the actual panel even when its assertions failed.
-    await scenario('restore-desktop-after-route-resize',page,async()=>{
-      await page.setViewportSize(desktop);await frames(page,2);
-      if(await page.locator('.route-sheet').isVisible()){
-        await page.keyboard.press('Escape');await page.locator('.route-sheet').waitFor({state:'hidden'});
-      }
-    });
+    },()=>restoreGameUi(page,{viewport:desktop}));
     await scenario('warehouse-drag-skips-hidden-tab-targets',page,async()=>{
       await openItems(page);
       const before=await gameState(page);
@@ -326,15 +416,7 @@ async function desktopGame(){
       await page.mouse.up();
       assert.equal(await page.locator('.warehouse-dock').isVisible(),true,'Escape must cancel the drag before closing the warehouse');
       assert.deepEqual((await gameState(page)).inventory,before.inventory,'Cancelled drag and keyboard traversal must preserve inventory');
-    });
-    // Failure evidence above is captured while the drag is still active, before this recovery.
-    await scenario('restore-after-warehouse-drag',page,async()=>{
-      try{if(await page.locator('.item-drag-ghost').isVisible())await page.keyboard.press('Escape');}
-      finally{await page.mouse.up();}
-      if(await page.locator('.warehouse-dock').isVisible()){
-        await page.keyboard.press('Escape');await page.locator('.warehouse-dock').waitFor({state:'hidden'});
-      }
-    });
+    },()=>restoreGameUi(page,{releasePointer:true}));
     await scenario('story-reader-focus-pages-and-return',page,async()=>{
       // Use the real route list and approach command; no injected target or test-only button.
       await page.locator('.bottom-toolbar').getByRole('button',{name:'路线',exact:true}).click();
@@ -345,17 +427,19 @@ async function desktopGame(){
       const fireItems=page.getByRole('group',{name:'火塘图标',exact:true});
       if(!await fireItems.isVisible()){
         await target.getByRole('button',{name:'走近',exact:true}).first().click();
-        await fireItems.waitFor({timeout:45000});
+        await advanceJourney(page,'approach-fire-through-route',()=>fireItems.isVisible());
       }
       await fireItems.getByRole('button',{name:'森林故事',exact:true}).click();
       const read=target.getByRole('button',{name:'坐下阅读',exact:true});
       await read.click();await frames(page,2);
       // Sitting may first queue an ordinary walk to the clear front of the stump.
       if(!await page.locator('.forest-reader').isVisible()){
-        await page.waitForFunction(()=>{
-          const state=JSON.parse(document.querySelector('#runtime-stats').textContent).current.worldState;
-          return state.route.length===0&&!state.player.moving;
-        },null,{timeout:45000});
+        const walking=await gameState(page);
+        if(walking.route.length){
+          await advanceJourney(page,'approach-reading-seat-through-route',async()=>{
+            const state=await gameState(page);return state.route.length===0&&!state.player.moving;
+          });
+        }else assert.equal(walking.player.moving,false,'A reading attempt without a route must have completed its approach');
         await read.click();
       }
       const reader=page.locator('.forest-reader');await reader.waitFor();
@@ -373,7 +457,7 @@ async function desktopGame(){
       await capture(page,'12-story-reader-keyboard');
       await page.keyboard.press('Escape');await reader.waitFor({state:'hidden'});
       await frames(page,2);await assertFocusIn(page,'.target-card','after closing the story');
-    });
+    },()=>restoreGameUi(page));
   }finally{await session.close();}
 }
 
@@ -388,12 +472,12 @@ async function mobileGame(){
         await openItems(page,true);await capture(page,`game-${label}-items`);
         await page.getByRole('button',{name:'关闭仓库',exact:true}).tap();
         await page.locator('.warehouse-dialog').waitFor({state:'hidden'});
-      });
+      },()=>restoreGameUi(page));
       await scenario(`game-${label}-touch-settings`,page,async()=>{
         await openSettings(page,true);await capture(page,`game-${label}-settings`);
         await page.getByRole('button',{name:'关闭操作说明',exact:true}).tap();
         await page.locator('.help-sheet').waitFor({state:'hidden'});
-      });
+      },()=>restoreGameUi(page));
     }
   }finally{await session.close();}
 }
@@ -417,6 +501,12 @@ async function cabin(viewport,touch=false){
       await capture(page,`${label}-placement`,{fitViewport:false});
       await page.locator('#place-cancel').click();
       assert.deepEqual(await page.evaluate(()=>window.__CABIN_AUDIT__.getSnapshot()),before,'Cancel must preserve the committed cabin state');
+    },async()=>{
+      const cancel=page.locator('#place-cancel');
+      if(await cancel.isVisible()){
+        await cancel.click({timeout:10000});
+        await page.locator('#placement-panel').waitFor({state:'hidden',timeout:10000});
+      }
     });
     await scenario(`${label}-empty-restore`,page,async()=>{
       await page.locator('[data-preset="empty"]').click();
@@ -450,6 +540,8 @@ async function gallery(){
       await capture(page,'gallery-after-interaction',{fitViewport:false});
       await page.getByRole('button',{name:'长文字',exact:true}).click();
       await page.setViewportSize(smallViews[0]);await capture(page,'gallery-390x844-long-text',{fitViewport:false});
+      await page.setViewportSize(smallViews[1]);await capture(page,'gallery-320x720-long-text',{fitViewport:false});
+      await page.setViewportSize(smallViews[0]);
       await page.getByRole('button',{name:'纯色回退',exact:true}).click();
       await capture(page,'gallery-390x844-fallback',{fitViewport:false});
     });
@@ -482,10 +574,13 @@ async function woodworking(){
       assert.equal(await page.locator('[data-a="mark"]').getAttribute('aria-pressed'),'false');
       await capture(page,'woodworking-offline-started',{fitViewport:false});
     });
-    await scenario('woodworking-offline-390x844',page,async()=>{
-      await page.setViewportSize(smallViews[0]);
-      await capture(page,'woodworking-offline-390x844',{fitViewport:false});
-    });
+    for(const viewport of smallViews){
+      const name=`woodworking-offline-${viewport.width}x${viewport.height}`;
+      await scenario(name,page,async()=>{
+        await page.setViewportSize(viewport);
+        await capture(page,name,{fitViewport:false});
+      });
+    }
   }finally{await session.close();}
 }
 
@@ -523,7 +618,10 @@ try{
 }catch(error){
   report.result='failed';report.failure={phase,message:String(error),stack:error.stack};
   console.error(error);process.exitCode=1;
-  if(activePage&&!activePage.isClosed())await activePage.screenshot({path:path.join(out,'failure.png'),timeout:15000,fullPage:true}).catch(()=>{});
+  if(activePage&&!activePage.isClosed()){
+    const fullPage=await activePage.locator('main.game-shell').count()===0;
+    await takeScreenshot(activePage,{path:path.join(out,'failure.png'),timeout:15000,fullPage}).catch(()=>{});
+  }
 }finally{
   await browser?.close().catch(()=>{});await server?.close();
   report.finishedAt=new Date().toISOString();

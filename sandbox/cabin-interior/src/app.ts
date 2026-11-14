@@ -121,7 +121,16 @@ export async function mountCabinAudit(container:HTMLElement,options:CabinAuditOp
     trigger?.focus({preventScroll:true});
     if(window.matchMedia('(max-width: 760px)').matches)trigger?.scrollIntoView({block:'nearest',behavior:'auto'});
   }
-  function renderPlacement(){const panel=$('#placement-panel');panel.hidden=!placement;stage.classList.toggle('is-placing',!!placement);if(!placement)return;const item=state!.items.find(i=>i.instanceId===placement!.id)!;$('#placement-title').textContent=`挪动 · ${definitionFor(item.definitionId).label}`;$('#placement-reason').textContent=placementReason;$('#placement-reason').classList.toggle('invalid',!placement.valid);$('#place-confirm').toggleAttribute('disabled',!placement.valid);}
+  function renderPlacement(){
+    const panel=$('#placement-panel'),layoutChanged=stage.classList.contains('is-placing')!==!!placement;
+    panel.hidden=!placement;stage.classList.toggle('is-placing',!!placement);
+    if(layoutChanged)view.resizePreservingCamera();
+    if(!placement)return;
+    const item=state!.items.find(i=>i.instanceId===placement!.id)!;
+    $('#placement-title').textContent=`挪动 · ${definitionFor(item.definitionId).label}`;
+    $('#placement-reason').textContent=placementReason;$('#placement-reason').classList.toggle('invalid',!placement.valid);
+    $('#place-confirm').toggleAttribute('disabled',!placement.valid);
+  }
   function nudge(dx:number,dz:number){if(!placement)return;previewAt(placement.location.x+dx,placement.location.z+dz);}
   function rotate(){if(!placement)return;placement.location.yaw=(placement.location.yaw+Math.PI/2)%(Math.PI*2);updatePreview();}
   function describeAction(item:CabinItem){const action=definitionFor(item.definitionId).action;if(action==='rest')return '走近并休息';if(action==='sit')return '走近并坐下';if(action==='open')return item.open?'走近并合上':'走近并打开';if(action==='light')return item.lit?'走近并熄灭':'走近并点亮';return '走近查看';}
@@ -178,12 +187,15 @@ export async function mountCabinAudit(container:HTMLElement,options:CabinAuditOp
   $('#occlusion').addEventListener('change',event=>settings={...settings,occlusion:(event.target as HTMLInputElement).checked},{signal:abort.signal});
   $('#spaces').addEventListener('change',event=>settings={...settings,spaces:(event.target as HTMLInputElement).checked},{signal:abort.signal});
   window.addEventListener('keydown',event=>{
-    if((event.target as HTMLElement).matches('input,select,textarea')||event.metaKey||event.ctrlKey||event.altKey)return;
+    if(event.metaKey||event.ctrlKey||event.altKey)return;
     const key=event.key.toLowerCase();
+    if(key==='escape'&&shortLandscape.matches&&stage.classList.contains('view-dock-open')){
+      event.preventDefault();setViewDock(false,true);return;
+    }
+    if((event.target as HTMLElement).matches('input,select,textarea'))return;
     if(key==='escape'){
       event.preventDefault();
-      if(shortLandscape.matches&&stage.classList.contains('view-dock-open'))setViewDock(false,true);
-      else if(placement)endPlacement();
+      if(placement)endPlacement();
       else{stopRoute();renderUI();}
       return;
     }

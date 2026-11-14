@@ -87,6 +87,7 @@ WASD/方向键或点地面移动，拖动旋转、滚轮/按钮缩放，R/按钮
 | [木作图纸、放样与加工](docs/WOODWORKING_HANDWORK.md) | 手作规划，涵盖三视图读图、工件划线、按线加工和直榫试配 |
 | [物品扩展与存档兼容方案](docs/ITEM_DATA_EVOLUTION.md) | 已实现身份、品质堆叠和库存兼容；细分类与深加工后续接入 |
 | [美术、建模与 HUD](docs/ART_HUD.md) | 视觉规格、操作体验、首版资产清单 |
+| [木质界面语言与模块接入](DESIGN.md) | 程序化粗木表面、比例、状态、窗口行为与活跃沙盒的统一要求 |
 | [资产获取与接入](docs/ASSET_PIPELINE.md) | CC0 优先、许可审查、Marble 2 / Midjourney、修整和整批接入 |
 | [资产登记](docs/ASSET_REGISTER.md) | 实际模型、地表和程序资产的来源、授权边界、修整与接入记录 |
 | [开发约定](AGENTS.md) | 基线优先级、scope、验证、PR 与发布纪律 |

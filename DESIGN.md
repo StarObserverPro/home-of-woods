@@ -82,6 +82,8 @@
 
 React 新模块优先使用 [components.tsx](src/ui/timber/components.tsx) 的 `TimberButton`、`TimberPanel`、`TimberHeading`，物品选择复用现有 `ItemBrowser`。主游戏由 `mountGameTimber` 管理绘面与释放，不给每个控件各开一套观察器。
 
+`TimberPanel` 是视觉容器，`mountTimberTheme` 只管理绘面；两者不会自动把内容变成活动窗口。新增主游戏窗口须接入 App 的活动窗口状态和 [useWindowFocus](src/ui/timber/use-window-focus.ts)，提供当前窗口选择器、稳定身份，以及暂停/阅读等更高层窗口接管时的 suspended 状态。由这一窗口所有者维护打开、Tab 和返回焦点；Esc、外点关闭及世界输入仍由 App/runtime 处理。独立沙盒若新增模态窗口，也须显式指定一个焦点所有者，不能仅添加 `role="dialog"` 后假定行为已齐全。
+
 原生 DOM 使用相同语义属性：
 
 ```html

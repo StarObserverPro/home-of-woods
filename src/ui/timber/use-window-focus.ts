@@ -14,7 +14,19 @@ function anotherModal(panel?:HTMLElement) {
 /** A window owns keyboard focus; App still owns Escape and outside-pointer dismissal. */
 export function useWindowFocus(selector:string|null, identity:string|null=selector, suspended=false) {
   const owner=useRef<HTMLElement|null>(null),opener=useRef<HTMLElement|null>(null);
+  const idleFocus=useRef<HTMLElement|null>(null);
   const restoring=useRef(0),handoff=useRef(suspended);
+  useEffect(()=>{
+    const rememberFocus=(event?:FocusEvent)=>{
+      if(owner.current || opener.current || handoff.current || anotherModal())return;
+      const target=event?.target??document.activeElement;
+      if(target instanceof HTMLElement && target!==document.body && target!==document.documentElement && visible(target))
+        idleFocus.current=target;
+    };
+    rememberFocus();
+    document.addEventListener('focusin',rememberFocus);
+    return()=>document.removeEventListener('focusin',rememberFocus);
+  },[]);
   useEffect(()=>{
     handoff.current=suspended;
     cancelAnimationFrame(restoring.current);
@@ -38,7 +50,14 @@ export function useWindowFocus(selector:string|null, identity:string|null=select
       if(!suspended)restore();
       return()=>cancelAnimationFrame(restoring.current);
     }
-    if(!opener.current?.isConnected)opener.current=document.activeElement instanceof HTMLElement?document.activeElement:null;
+    if(!opener.current?.isConnected){
+      const active=document.activeElement;
+      // Opening hides the HUD before this effect; its last focused trigger remains the return target.
+      // Keep that connected trigger even while hidden, and retain it across window/modal handoffs.
+      opener.current=active instanceof HTMLElement && active!==document.body && active!==document.documentElement
+        && !panel.contains(active) && visible(active)?active:
+        idleFocus.current?.isConnected && !panel.contains(idleFocus.current)?idleFocus.current:null;
+    }
     owner.current=panel;
     const ownsFocus=()=>owner.current===panel && !handoff.current && visible(panel) && !anotherModal(panel);
     const eligible=()=>[...panel.querySelectorAll<HTMLElement>(FOCUSABLE)]
