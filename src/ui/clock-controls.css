@@ -1,10 +1,11 @@
+@layer how-layout {
 .topbar .clock-controls{position:relative;display:flex;align-items:center;gap:6px;flex-shrink:0;pointer-events:auto}
 .game-shell .topbar:has(.clock-menu[open]){z-index:21}
-.clock-controls .clock-menu>summary{min-height:44px;min-width:104px;padding:4px 9px;gap:5px;border:1px solid var(--hud-line);border-radius:10px;background:#18392ec9;white-space:nowrap;touch-action:manipulation}
+.clock-controls .clock-menu>summary{min-height:44px;min-width:104px;padding:4px 9px;gap:5px;border: 0;border-radius:10px;background:#18392ec9;white-space:nowrap;touch-action:manipulation}
 .clock-menu>summary strong{font-size:12px;font-weight:500}.clock-menu>summary>span:last-child{font-size:11px;opacity:.8}
 .clock-controls .hourglass{z-index:30;min-width:216px;flex-wrap:wrap;justify-content:center;color:#fcfaed;box-shadow:0 8px 24px #081e1b55}
 .clock-controls .hourglass p{flex-basis:100%;font-size:11px;line-height:1.6;margin:4px 2px 0}
-.clock-resume{display:flex;align-items:center;justify-content:center;gap:4px;min-height:44px;padding:4px 9px;border:1px solid #e7d6a28c;border-radius:10px;background:#d7dabd20;font-size:12px;white-space:nowrap}
+.clock-resume{display:flex;align-items:center;justify-content:center;gap:4px;min-height:44px;padding:4px 9px;border: 0;border-radius:10px;background:#d7dabd20;font-size:12px;white-space:nowrap}
 .clock-caption{display:grid;gap:1px;text-align:left}.clock-caption small{font-size:10px;line-height:1.4;color:#eadab7}
 @media(max-width:700px){
   .game-shell .topbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px 6px;align-items:start}
@@ -15,4 +16,6 @@
   .clock-controls .clock-menu>summary{min-width:104px;font-size:12px}
   .clock-controls .hourglass{left:0;right:auto}
   .game-shell .minimap-card{top:136px}
+}
+
 }

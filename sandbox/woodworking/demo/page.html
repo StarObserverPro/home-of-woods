@@ -3,9 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-    <meta name="theme-color" content="#e9e4d5" />
+    <meta name="theme-color" content="#18291f" />
     <title>森林之家 · 木作间</title>
     <style>
+      @layer how-layout {
       * {
         box-sizing: border-box;
       }
@@ -20,22 +21,24 @@
           -apple-system,
           'Microsoft YaHei',
           sans-serif;
-        color: #34483e;
-        background: #e9e6db;
-        padding: clamp(8px, 2.1vw, 30px);
+        color: var(--how-ink, #fff1d5);
+        background: var(--how-recess, #18291f);
+        padding: 0;
       }
       main,
       footer {
-        max-width: 1280px;
+        max-width: 1400px;
         margin: auto;
       }
       footer {
-        display: flex;
+        width: calc(100% - var(--how-safe-left, 24px) - var(--how-safe-right, 24px));
+        max-width: calc(1400px - var(--how-safe-left, 24px) - var(--how-safe-right, 24px));
+        margin-bottom: var(--how-safe-bottom, 24px);
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
         align-items: flex-start;
-        gap: 12px;
-        justify-content: space-between;
-        padding: 12px 5px;
-        color: #526258;
+        gap: var(--how-section-gap, 12px);
+        color: var(--how-muted);
         font-size: 13px;
       }
       summary,
@@ -44,17 +47,23 @@
       }
       summary {
         font-weight: 650;
+        min-height: 44px;
+        padding: var(--how-gap, 8px) var(--how-section-gap, 12px);
       }
+      #gallery { grid-column: 1; grid-row: 1; min-width: 0; }
+      #replenish { grid-column: 2; grid-row: 1; }
       #ledger {
         max-height: 195px;
         overflow: auto;
-        margin: 8px 0;
+        margin: var(--how-gap, 8px) 0;
       }
       #ledger div {
         display: flex;
         align-items: center;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: var(--how-gap, 8px);
+        padding: var(--how-gap, 8px) var(--how-section-gap, 12px);
+        margin-bottom: var(--how-gap, 8px);
       }
       #ledger i {
         width: 12px;
@@ -64,26 +73,30 @@
       footer button {
         background: transparent;
         border: 0;
-        color: #576458;
+        color: var(--how-muted);
         font: inherit;
-        padding: 0;
+        min-height: 44px;
+        padding: var(--how-gap, 8px) var(--how-section-gap, 12px);
       }
       #notice:empty {
         display: none;
       }
       #notice {
-        padding: 6px 12px;
+        grid-column: 1 / -1;
+        min-width: 0;
+        padding: var(--how-gap, 8px) var(--how-section-gap, 12px);
+      }
       }
     </style>
   </head>
-  <body>
-    <main id="workshop"></main>
-    <footer>
+  <body data-how-ui="timber" data-ui-grid-root="module">
+    <main id="workshop" data-ui-grid="content"></main>
+    <footer data-ui-grid="window" data-timber-surface="panel" data-timber-material="bark" data-timber-tone="dark" data-timber-seed="woodworking-gallery">
       <details id="gallery">
-        <summary>作品匣 · <span id="count">0</span></summary>
+        <summary data-timber-surface="button" data-timber-material="plank" data-timber-tone="moss" data-timber-seed="woodworking-gallery-open">作品匣 · <span id="count">0</span></summary>
         <div id="ledger"></div>
       </details>
-      <span id="notice" role="status"></span><button id="replenish" type="button">重置练习台</button>
+      <span id="notice" role="status" data-ui-grid="notice" data-timber-surface="badge" data-timber-material="recess" data-timber-seed="woodworking-host-notice"></span><button id="replenish" type="button" data-timber-surface="button" data-timber-tone="moss" data-timber-intent="danger" data-timber-seed="woodworking-replenish">重置练习台</button>
     </footer>
     <!-- APPLICATION -->
   </body>

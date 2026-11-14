@@ -28,5 +28,5 @@ export default defineConfig({
     }
   }],
   server: { host: "127.0.0.1", port: 5286, strictPort: true },
-  build: { target: "es2022", rolldownOptions: { input: { game: resolve(import.meta.dirname,'index.html'), cabin: resolve(import.meta.dirname,'sandbox/cabin-interior/index.html') } } },
+  build: { target: "es2022", rolldownOptions: { input: { game: resolve(import.meta.dirname,'index.html'), cabin: resolve(import.meta.dirname,'sandbox/cabin-interior/index.html'), timber: resolve(import.meta.dirname,'sandbox/timber-ui/index.html') } } },
 });

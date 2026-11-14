@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "active": [
+    {"name":"game","root":"src/ui","entry":"src/ui/App.tsx","themeOwner":"mountGameTimber"},
+    {"name":"cabin-interior","root":"sandbox/cabin-interior","entry":"sandbox/cabin-interior/src/timber-adapter.ts","themeOwner":"mountTimberTheme"},
+    {"name":"woodworking","root":"sandbox/woodworking","entry":"sandbox/woodworking/src/timber-adapter.ts","themeOwner":"mountTimberTheme"},
+    {"name":"timber-ui","root":"sandbox/timber-ui","entry":"sandbox/timber-ui/main.ts","themeOwner":"mountTimberTheme"}
+  ],
+  "inlineStyleSources": [
+    "sandbox/timber-ui/main.ts",
+    "sandbox/woodworking/demo/page.html"
+  ],
+  "archivedSandboxes": ["action-lab-r1","scene-r5","tree-variation","understory"]
+}

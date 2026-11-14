@@ -1,4 +1,13 @@
 import {useEffect,useState} from 'react';
+import {TimberButton,TimberHeading} from './timber/components.tsx';
+
+function usePageCapacity(maximum:number){
+  const read=()=>Math.min(maximum,window.innerWidth<=540||window.innerHeight<=520?4:8);
+  const [size,setSize]=useState(read);
+  useEffect(()=>{const resize=()=>setSize(read());window.addEventListener('resize',resize);resize();return()=>window.removeEventListener('resize',resize);},[maximum]);
+  return size;
+}
+
 import type {ReactNode,PointerEvent} from 'react';
 import {GameIcon} from './GameIcon.tsx';
 import type {ArtIconName} from './art-icons.ts';
@@ -9,7 +18,7 @@ export function IconTabs({tabs,value,onChange,label}:{tabs:readonly MenuTab[];va
   return <nav className="wood-tabs" aria-label={label}>{tabs.map(tab=><button type="button" key={tab.id} aria-label={tab.name} aria-pressed={value===tab.id} onClick={()=>onChange(tab.id)}>{tab.icon&&<GameIcon name={tab.icon} size={27}/>}<span>{tab.name}</span></button>)}</nav>;
 }
 export function WoodHeading({title,icon,onClose,closeLabel='关闭窗口',children}:{title:string;icon?:ArtIconName;onClose?:()=>void;closeLabel?:string;children?:ReactNode}){
-  return <header className="wood-heading">{icon&&<GameIcon name={icon} size={32}/>}<h2>{title}</h2>{children}{onClose&&<button type="button" className="wood-close" aria-label={closeLabel} onClick={onClose}>×</button>}</header>;
+  return <TimberHeading className="wood-heading">{icon&&<GameIcon name={icon} size={32}/>}<h2>{title}</h2>{children}{onClose&&<button type="button" className="wood-close" aria-label={closeLabel} onClick={onClose}>×</button>}</TimberHeading>;
 }
 export function Pager({page,pages,onChange,label='物品分页'}:{page:number;pages:number;onChange:(page:number)=>void;label?:string}){
   if(pages<=1)return null;
@@ -20,36 +29,41 @@ export function ItemBrowser<T extends MenuItem>({items,categories,renderDetail,l
   items:readonly T[];categories?:readonly MenuTab[];renderDetail:(item:T)=>ReactNode;label:string;empty?:string;pageSize?:number;tools?:ReactNode;
   onItemPointerDown?:(event:PointerEvent<HTMLElement>,item:T)=>void;canDragItem?:(item:T)=>boolean;
 }){
-  const [category,setCategory]=useState('all'),[page,setPage]=useState(0),[selection,setSelection]=useState('');
+  const [category,setCategory]=useState('all');
+  const [selection,setSelection]=useState(()=>({id:items[0]?.id??'',index:0}));
+  pageSize=usePageCapacity(pageSize);
   const filtered=items.filter(item=>category==='all'||item.category===category);
-  const pages=Math.max(1,Math.ceil(filtered.length/pageSize)),current=Math.min(page,pages-1);
+  const retained=filtered.findIndex(item=>item.id===selection.id);
+  const index=retained>=0?retained:Math.min(selection.index,Math.max(0,filtered.length-1));
+  const selected=filtered[index],selectedId=selected?.id??'';
+  const pages=Math.max(1,Math.ceil(filtered.length/pageSize)),current=Math.floor(index/pageSize);
   const shown=filtered.slice(current*pageSize,(current+1)*pageSize);
-  const selected=shown.find(item=>item.id===selection)??shown[0];
-  // A removal can shrink the last page. Keep the next interaction on the page actually shown.
-  useEffect(()=>{if(page!==current)setPage(current);},[page,current]);
+  // Keep the item as the page anchor. If it is removed, retain its nearest remaining position.
+  useEffect(()=>{setSelection(previous=>previous.id===selectedId&&previous.index===index?previous:{id:selectedId,index});},[selectedId,index,selection.id,selection.index]);
   return <section className="item-browser" aria-label={label}>
-    {(categories||tools)&&<div className="browser-toolbar">{categories&&<IconTabs tabs={categories} value={category} label={`${label}分类`} onChange={id=>{setCategory(id);setPage(0);setSelection('');}}/>}{tools}</div>}
+    {(categories||tools)&&<div className="browser-toolbar">{categories&&<IconTabs tabs={categories} value={category} label={`${label}分类`} onChange={id=>{setCategory(id);setSelection({id:'',index:0});}}/>}{tools}</div>}
     <div className="browser-body">
-      <div className="browser-slots" role="group" aria-label={`${label}图标`}>
-        {shown.map(item=>{
+      <div className="browser-catalog"><div className="browser-slots" role="group" aria-label={`${label}图标`}>
+        {shown.map((item,offset)=>{
           const draggable=!!onItemPointerDown&&(!canDragItem||canDragItem(item));
-          return <button type="button" className={'wood-slot'+(item.muted?' is-muted':'')+(draggable?' is-draggable':'')} key={item.id} aria-pressed={selected?.id===item.id} aria-label={item.name+(item.quantity!==undefined?`，${item.quantity}份`:'')+(item.badge?`，${item.badge}`:'')} title={draggable?'按住图标拖到场景，松手放下':undefined} onPointerDown={event=>{if(draggable)onItemPointerDown?.(event,item);}} onClick={()=>setSelection(item.id)}>
+          return <button type="button" className={'wood-slot'+(item.muted?' is-muted':'')+(draggable?' is-draggable':'')} key={item.id} data-timber-seed={item.id} aria-pressed={selected?.id===item.id} aria-label={item.name+(item.quantity!==undefined?`，${item.quantity}份`:'')+(item.badge?`，${item.badge}`:'')} title={draggable?'按住图标拖到场景，松手放下':undefined} onPointerDown={event=>{if(draggable)onItemPointerDown?.(event,item);}} onClick={()=>setSelection({id:item.id,index:current*pageSize+offset})}>
           <GameIcon name={item.icon} size={60}/>{selected?.id===item.id&&<span className="slot-mark" aria-hidden="true">◆</span>}{item.quantity!==undefined&&<strong className="slot-quantity">{item.quantity}</strong>}{item.badge&&<span className="slot-badge">{item.badge}</span>}
         </button>;
         })}
         {shown.length>0&&Array.from({length:pageSize-shown.length},(_,i)=><div className="wood-slot empty-slot" key={`empty-${i}`} aria-hidden="true"/>)}
         {!shown.length&&<p className="wood-empty">{empty}</p>}
       </div>
+      <Pager page={current} pages={pages} onChange={next=>{const index=next*pageSize;setSelection({id:filtered[index]?.id??'',index});}}/>
+      </div>
       {selected&&<section key={selected.id} className="wood-detail" aria-label="选中详情">{renderDetail(selected)}</section>}
     </div>
-    <Pager page={current} pages={pages} onChange={next=>{setPage(next);setSelection('');}}/>
   </section>;
 }
 export function ItemHeading({name,icon,subtitle}:{name:string;icon:ArtIconName|null;subtitle?:ReactNode}){
   return <div className="wood-item-heading"><GameIcon name={icon} size={46}/><div><h3>{name}</h3>{subtitle&&<small>{subtitle}</small>}</div></div>;
 }
 export function MenuAction({icon,children,disabled,onClick,secondary=false,label}:{icon?:ArtIconName;children:ReactNode;disabled?:boolean;onClick:()=>void;secondary?:boolean;label?:string}){
-  return <button type="button" aria-label={label} className={secondary?'wood-action secondary':'wood-action'} disabled={disabled} onClick={onClick}>{icon&&<GameIcon name={icon} size={25}/>}<span>{children}</span></button>;
+  return <TimberButton aria-label={label} emphasis={secondary?'quiet':'normal'} className={secondary?'wood-action secondary':'wood-action'} disabled={disabled} onClick={onClick}>{icon&&<GameIcon name={icon} size={25}/>}<span>{children}</span></TimberButton>;
 }
 export type MaterialCount={name:string;available?:number;quantity:number;icon?:ArtIconName};
 export function materialIcon(name:string):ArtIconName{

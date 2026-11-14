@@ -1,4 +1,6 @@
 import css from './style.css?inline'
+import timberCss from '../../../src/ui/timber/theme.css?inline'
+import {mountWoodworkingTimber} from './timber-adapter.js'
 import {
   availableCuts,
   clearMark,
@@ -71,7 +73,7 @@ export function mountWoodworking(container: HTMLElement, options: WoodworkingOpt
   const mount = document.createElement('div')
   const shadow = mount.attachShadow({ mode: 'open' })
   const style = document.createElement('style')
-  style.textContent = css
+  style.textContent = css + '\n' + timberCss
   const shell = document.createElement('section')
   shell.className = 'shell'
   shell.innerHTML = `<header><div class="brand"><span class="seal">木</span><div><div class="eyebrow">森林之家 ／ 木工房</div><h1>榫作练习台</h1></div></div><span class="stamp">习作 01 · 直榫</span></header>
@@ -83,12 +85,13 @@ export function mountWoodworking(container: HTMLElement, options: WoodworkingOpt
     <div id="materials" class="row"><label>毛料<select id="stocks"></select></label><button data-a="start" class="primary">选料开工</button></div>
     <small id="spec" class="hint"></small><details class="tolerance"><summary>试配公差</summary><p>单侧榫颊可留 0.25 mm 过盈，侧隙须在 1.5 mm 以内。榫头允许短 2 mm、长 0.75 mm，两肩沿长度方向最多错开 2 mm。</p></details><div id="operations"><label>工作线　<select id="cuts"></select></label><div class="actions inspect"><button data-a="cut" class="primary">沿墨线下锯</button><button data-a="erase">擦线重画</button></div></div>
     <div id="fitting"><div class="actions"><button data-a="trial" class="primary">试插榫孔</button><button data-a="near">薄削近颊</button><button data-a="far">薄削远颊</button></div><p class="hint" id="fit"></p></div>
-    <div id="finish"><div class="actions">面漆 <span id="paints" class="actions"></span><button data-a="finish" class="primary">收为成品</button></div></div>
+    <div id="finish"><div class="actions finish-actions"><span>面漆</span><span id="paints" class="actions"></span><button data-a="finish" class="primary">收为成品</button></div></div>
     <div class="note" id="note" role="status" aria-live="polite"></div><button class="secondary" data-a="restart" hidden>另取毛料</button>
     <dialog id="discard-dialog" aria-labelledby="discard-title"><h2 id="discard-title">放弃当前工件？</h2><p>这块料已经下锯，放弃后不能恢复。</p><div class="actions"><button data-a="keep" autofocus>继续做</button><button data-a="discard" class="discard">确认放弃这块料</button></div></dialog>
     </div></section></div>`
   shadow.append(style, shell)
   container.append(mount)
+  const timber = mountWoodworkingTimber(shell, shadow)
   const $ = <T extends HTMLElement = HTMLElement>(selector: string) => shell.querySelector<T>(selector)!
   const btn = (a: string) => $<HTMLButtonElement>(`[data-a="${a}"]`)
   const stocks = options.stocks ?? [DEFAULT_STOCK, { id: 'wide-blank', length: 100, width: 36, height: 30 }]
@@ -312,6 +315,7 @@ export function mountWoodworking(container: HTMLElement, options: WoodworkingOpt
       view.height = e.height
     }
     viewport.update(view)
+    timber.refresh()
   }
   shell.addEventListener('change', (event) => {
     if (busy || paused) return
@@ -500,6 +504,7 @@ export function mountWoodworking(container: HTMLElement, options: WoodworkingOpt
       disposed = true
       stopClock()
       viewport.destroy()
+      timber.dispose()
       mount.remove()
     },
   }

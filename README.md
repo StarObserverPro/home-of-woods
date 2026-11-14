@@ -1,5 +1,7 @@
 # 森林之家 · Home of Woods
 
+2026-11-13 粗木 UI 共用语言：主游戏、木屋展台与木作组件统一消费程序化木质表面；开发入口 `/sandbox/timber-ui/` 可检视比例、状态、长文字和纯色回退。当前契约见 [DESIGN](DESIGN.md)，实现与实际验证见 [本轮范围](docs/scopes/timber-ui-system.md)。
+
 2026-11-12 木屋内部新增独立审计入口：开发时打开 `/sandbox/cabin-interior/`，或 `npm run dev:cabin`。默认摆出床、桌、凳、灯，可主动切换完整陈设、逐件查看与重新摆放。规划、PR31 改正及实际验证状态见 [规划胶囊](docs/scopes/cabin-interior-audit.md)，运行、操作和后续接线见 [展台说明](sandbox/cabin-interior/README.md)。正式游戏的家具取得与存档尚未接入。
 
 2026-11-06 合批包含：山谷景观 R2、近景木纹与枝杈/碎柴表现、木料取放及晾晒修复、粗木分页菜单、跑动与道具拖动，以及晴阴雨雪和木材湿度联动。完整范围、实际检查与回退见 [本轮合批](docs/scopes/daily-gameplay-weather-pr.md)。
@@ -85,6 +87,7 @@ WASD/方向键或点地面移动，拖动旋转、滚轮/按钮缩放，R/按钮
 | [木作图纸、放样与加工](docs/WOODWORKING_HANDWORK.md) | 手作规划，涵盖三视图读图、工件划线、按线加工和直榫试配 |
 | [物品扩展与存档兼容方案](docs/ITEM_DATA_EVOLUTION.md) | 已实现身份、品质堆叠和库存兼容；细分类与深加工后续接入 |
 | [美术、建模与 HUD](docs/ART_HUD.md) | 视觉规格、操作体验、首版资产清单 |
+| [木质界面语言与模块接入](DESIGN.md) | 程序化粗木表面、比例、状态、窗口行为与活跃沙盒的统一要求 |
 | [资产获取与接入](docs/ASSET_PIPELINE.md) | CC0 优先、许可审查、Marble 2 / Midjourney、修整和整批接入 |
 | [资产登记](docs/ASSET_REGISTER.md) | 实际模型、地表和程序资产的来源、授权边界、修整与接入记录 |
 | [开发约定](AGENTS.md) | 基线优先级、scope、验证、PR 与发布纪律 |

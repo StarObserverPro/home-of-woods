@@ -1,3 +1,4 @@
+@layer how-layout {
 :root {
   font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
   color: #fcfaed;
@@ -129,13 +130,13 @@ button:not(:disabled):hover { color: #fff3bd; }
   white-space: nowrap;
   pointer-events: none;
 }
-.input-hint kbd { font: 10px inherit; border: 1px solid #f7faeb66; border-radius: 3px; padding: 2px 4px; }
+.input-hint kbd { font: 10px inherit; border: 0; border-radius: 3px; padding: 2px 4px; }
 .input-hint i { width: 1px; height: 9px; background: var(--hud-line); }
 .message { position: absolute; bottom: 97px; left: 50%; transform: translateX(-50%); max-width: 60vw; padding: 2px 5px; font-size: 11px; line-height: 1.7; text-align: center; pointer-events: none; }
 .target-card, .panel {
   position: absolute;
   background: linear-gradient(100deg, #0b211c66, #0b211c26);
-  border-left: 1px solid #fff5;
+  border-left: 0;
   border-radius: 3px 15px 15px 3px;
   backdrop-filter: blur(3px);
 }
@@ -145,23 +146,23 @@ button:not(:disabled):hover { color: #fff3bd; }
 .target-card h2 { font-size: 22px; font-weight: 500; letter-spacing: .07em; margin: 5px 0 10px; }
 .target-card p { font-size: 11px; line-height: 1.85; margin: 8px 0; }
 .tree-identity { font: 9px monospace; display: block; margin-top: 10px; opacity: .65; overflow-wrap: anywhere; }
-.tree-work { margin-top: 13px; border-top: 1px solid var(--hud-line); padding-top: 10px; }
+.tree-work { margin-top: 13px; border-top: 0; padding-top: 10px; }
 .tree-facts { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; }
 .tree-cost { color: #fff2c8; }
 .tree-cost span { display: block; font-size: 10px; opacity: .85; }
 .target-card .action-reason { font-size: 11px; opacity: .9; }
 .tree-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 12px; }
 .tree-actions:empty { display: none; }
-.context-button { display: inline-flex; justify-content: center; align-items: center; gap: 8px; min-width: 98px; min-height: 46px; padding: 8px 14px; border: 1px solid #fff9; border-radius: 10px; background: #c0d7a412; font-size: 12px; }
+.context-button { display: inline-flex; justify-content: center; align-items: center; gap: 8px; min-width: 98px; min-height: 46px; padding: 8px 14px; border: 0; border-radius: 10px; background: #c0d7a412; font-size: 12px; }
 .context-button:disabled { border-color: #fff5; }
 .work-progress { height: 3px; border-radius: 3px; margin-top: 12px; overflow: hidden; background: #fff3; }
 .work-progress > span { display: block; height: 100%; background: #fff0a9; }
 .active-work { position: absolute; bottom: 104px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 16px; max-width: 80vw; font-size: 12px; }
-.active-work button { border-bottom: 1px solid #fff8; font-size: 11px; }
+.active-work button { border-bottom: 0; font-size: 11px; }
 .panel-heading h2 { font-size: 21px; font-weight: 500; letter-spacing: .06em; margin: 5px 0; }
 .route-sheet { width: 316px; right: 29px; top: 112px; padding: 20px; max-height: calc(100dvh - 225px); overflow: auto; }
 .route-sheet > p { font-size: 11px; line-height: 1.8; margin: 12px 0; }
-.route-stop { display: flex; width: 100%; align-items: center; gap: 13px; text-align: left; border-top: 1px solid #fff3; min-height: 62px; padding: 10px 0; }
+.route-stop { display: flex; width: 100%; align-items: center; gap: 13px; text-align: left; border-top: 0; min-height: 62px; padding: 10px 0; }
 .stop-number { display: grid; place-items: center; width: 28px; flex-shrink: 0; color: #fff0b6; font-size: 11px; }
 .route-stop strong { display: block; font-size: 13px; font-weight: 500; }
 .route-stop small { display: block; font-size: 10px; margin-top: 4px; opacity: .8; }
@@ -170,27 +171,27 @@ button:not(:disabled):hover { color: #fff3bd; }
 .help-sheet .panel-heading h2 { font-size: 18px; }
 .help-sheet p { font-size: 11px; line-height: 1.9; }
 .help-sheet b { font-weight: 600; }
-.reduced { display: flex; align-items: center; gap: 9px; min-height: 44px; font-size: 11px; border-top: 1px solid #fff4; margin-top: 14px; padding-top: 8px; }
+.reduced { display: flex; align-items: center; gap: 9px; min-height: 44px; font-size: 11px; border-top: 0; margin-top: 14px; padding-top: 8px; }
 .reduced input { width: 20px; height: 20px; accent-color: #e1eabb; }
-.pause-dialog { color: #fcfaed; width: 340px; max-width: calc(100vw - 40px); padding: 30px 30px 20px; border: 1px solid #fff6; border-radius: 20px; text-align: center; text-shadow: var(--hud-shadow); background: #102b1f66; backdrop-filter: blur(5px); }
+.pause-dialog { color: #fcfaed; width: 340px; max-width: calc(100vw - 40px); padding: 30px 30px 20px; border: 0; border-radius: 20px; text-align: center; text-shadow: var(--hud-shadow); background: #102b1f66; backdrop-filter: blur(5px); }
 .pause-dialog::backdrop { background: #0d211b55; backdrop-filter: blur(2px); }
 .pause-dialog > svg { display: block; margin: 0 auto 16px; }
 .pause-dialog h2 { font-size: 25px; letter-spacing: .1em; font-weight: 500; margin: 16px 0 12px; }
 .pause-dialog p { font-size: 12px; line-height: 1.8; margin: 0 0 22px; }
-.primary-button { min-height: 48px; padding: 10px 22px; border: 1px solid #fff8; border-radius: 10px; background: #d6e9c41a; font-size: 13px; }
+.primary-button { min-height: 48px; padding: 10px 22px; border: 0; border-radius: 10px; background: #d6e9c41a; font-size: 13px; }
 .pause-dialog .primary-button { width: 100%; }
 .text-button { display: inline-block; min-height: 44px; padding: 10px 0 0; font-size: 11px; }
 .loading { position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: #1b382d; color: #fcfaed; }
 .loading h2 { font-weight: 500; letter-spacing: .12em; font-size: 25px; margin: 8px 0; }
 .loading p { font-size: 12px; max-width: 85vw; overflow-wrap: anywhere; margin: 0 0 12px; }
-.joystick { display: none; position: absolute; left: 24px; bottom: calc(25px + env(safe-area-inset-bottom)); width: 106px; height: 106px; border-radius: 50%; border: 1px solid #fff9; background: #e7f0d909; box-shadow: 0 2px 13px #10291e36, inset 0 0 0 1px #10291e33; }
+.joystick { display: none; position: absolute; left: 24px; bottom: calc(25px + env(safe-area-inset-bottom)); width: 106px; height: 106px; border-radius: 50%; border: 0; background: #e7f0d909; box-shadow: 0 2px 13px #10291e36, inset 0 0 0 1px #10291e33; }
 .stick-guides { position: absolute; inset: 0; display: grid; place-items: center; font-size: 38px; color: #fff5; pointer-events: none; }
-.stick { position: absolute; left: 29px; top: 29px; width: 46px; height: 46px; border-radius: 50%; border: 2px solid #fffd; background: #eef4d92b; box-shadow: 0 2px 8px #10291e66; pointer-events: none; }
+.stick { position: absolute; left: 29px; top: 29px; width: 46px; height: 46px; border-radius: 50%; border: 4px solid #fffd; background: #eef4d92b; box-shadow: 0 2px 8px #10291e66; pointer-events: none; }
 .joystick, .stick { touch-action: none; user-select: none; -webkit-user-select: none; }
 .build-mark { position: absolute; left: 31px; bottom: 9px; font-size: 8px; letter-spacing: .1em; opacity: .55; pointer-events: none; }
-.diagnostics { position: absolute; z-index: 20; top: 138px; left: 30px; max-width: 410px; max-height: 65vh; overflow: auto; background: #0c201df0; padding: 7px; border: 1px solid #fff4; border-radius: 7px; font: 11px monospace; text-shadow: none; }
+.diagnostics { position: absolute; z-index: 20; top: 138px; left: 30px; max-width: 410px; max-height: 65vh; overflow: auto; background: #0c201df0; padding: 7px; border: 0; border-radius: 7px; font: 11px monospace; text-shadow: none; }
 .diagnostics summary { min-height: 24px; padding: 3px; cursor: pointer; }
-.diagnostics button { padding: 8px; margin: 3px; border: 1px solid #fff5; font-size: 10px; text-shadow: none; }
+.diagnostics button { padding: 8px; margin: 3px; border: 0; font-size: 10px; text-shadow: none; }
 .diagnostics pre { font: 9px monospace; white-space: pre-wrap; }
 .diagnostics video { display: block; max-width: 100%; margin-top: 9px; }
 .diagnostics p { font-size: 10px; overflow-wrap: anywhere; }
@@ -276,17 +277,17 @@ button:not(:disabled):hover { color: #fff3bd; }
 }
 
 /* World-save controls share the existing pause lifecycle. */
-.scene-inspector{border:1px solid #a3b28f66;margin:8px 0;padding:8px;display:grid;gap:6px}
-.scene-inspector label{display:grid;gap:4px}.scene-inspector select{max-width:100%;min-height:44px;background:#263e35;color:#fff6d8;border:1px solid #a3b28f66}
+.scene-inspector{border: 0;margin:8px 0;padding:8px;display:grid;gap:6px}
+.scene-inspector label{display:grid;gap:4px}.scene-inspector select{max-width:100%;min-height:44px;background:#263e35;color:#fff6d8;border: 0}
 .scene-inspector button{min-height:44px}.scene-options{display:flex;flex-wrap:wrap;gap:4px}.scene-options button{flex:1;margin:0}.scene-options button[aria-pressed=true]{background:#e4d4a6;color:#263e35}
 .scene-inspector small{font-size:10px;opacity:.75}.diagnostics[open]{max-height:80dvh;overflow:auto}
 .pause-dialog { max-height: calc(100dvh - 32px); overflow: auto; }
-.save-controls { margin: 20px 0; border-top: 1px solid #8a967a55; padding-top: 12px; text-align: left; }
+.save-controls { margin: 20px 0; border-top: 0; padding-top: 12px; text-align: left; }
 .save-controls h3 { margin: 0 0 8px; font-size: 17px; }
 .save-controls p { font-size: 12px; overflow-wrap: anywhere; }
 .save-controls small, .save-controls summary { font-size: 11px; line-height: 1.6; }
 .save-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
-.save-actions button { min-height: 44px; padding: 6px 12px; font-size: 12px; border: 1px solid #8a967a66; border-radius: 6px; }
+.save-actions button { min-height: 44px; padding: 6px 12px; font-size: 12px; border: 0; border-radius: 6px; }
 .save-actions button:disabled { opacity: .45; cursor: default; }
 .save-indicator { position: absolute; right: 22px; top: 66px; z-index: 5; font-size: 11px; color: #f8efd6; text-shadow: var(--hud-shadow); min-height: 44px; padding: 4px 8px; }
 .save-warning { position: absolute; left: 50%; top: 95px; transform: translateX(-50%); z-index: 6; width: min(420px,calc(100vw - 32px)); padding: 10px 14px; border-radius: 8px; background: #483d27eb; color: #fff1cb; font-size: 12px; }
@@ -309,4 +310,6 @@ button:not(:disabled):hover { color: #fff3bd; }
 
 @media (max-width: 359px) and (min-height: 501px) {
   .target-card--pickup-active { bottom: calc(167px + env(safe-area-inset-bottom)); }
+}
+
 }

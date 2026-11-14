@@ -1,6 +1,7 @@
 import {mountCabinAudit} from './app.ts';
 import type {CabinAuditHandle} from './app.ts';
 import './style.css';
+import '../../../src/ui/timber/theme.css';
 
 const host=document.querySelector<HTMLElement>('#cabin-audit')!;
 let retired=false;

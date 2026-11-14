@@ -131,8 +131,17 @@ export async function createCabinView(host:HTMLElement,callbacks:ViewCallbacks){
     if(instant){camera.position.copy(position);camera.quaternion.copy(tempCamera.quaternion);controls.target.copy(target);controls.update();transition=null;}
     else transition={from:camera.position.clone(),to:position,fromQ:camera.quaternion.clone(),toQ:tempCamera.quaternion.clone(),fromTarget:controls.target.clone(),target,time:0};
   }
-  function resize(){const rect=host.getBoundingClientRect();camera.aspect=Math.max(1,rect.width)/Math.max(1,rect.height);camera.updateProjectionMatrix();renderer.setPixelRatio(Math.min(devicePixelRatio||1,settings.quality==='fine'?2:1.35));renderer.setSize(rect.width,rect.height,false);if(currentCamera!=='detail')setView(currentCamera,true);}
-  const observer=new ResizeObserver(resize);observer.observe(host);resize();setView('room',true);
+  let measuredWidth=0,measuredHeight=0;
+  function resize(preserveCamera=false){
+    const rect=host.getBoundingClientRect(),changed=rect.width!==measuredWidth||rect.height!==measuredHeight;
+    measuredWidth=rect.width;measuredHeight=rect.height;
+    camera.aspect=Math.max(1,rect.width)/Math.max(1,rect.height);camera.updateProjectionMatrix();
+    renderer.setPixelRatio(Math.min(devicePixelRatio||1,settings.quality==='fine'?2:1.35));renderer.setSize(rect.width,rect.height,false);
+    // A placement toolbar can resize the canvas without asking for a new viewpoint.
+    // Its explicit resize also consumes the following observer notification for that size.
+    if(changed&&!preserveCamera&&currentCamera!=='detail')setView(currentCamera,true);
+  }
+  const observer=new ResizeObserver(()=>resize());observer.observe(host);resize();setView('room',true);
   const abort=new AbortController();const signal=abort.signal;
   let pointerStart:{x:number;y:number;id:number}|null=null,activePointers=new Set<number>(),hadMultiTouch=false;
   function pointerRay(event:PointerEvent){const rect=renderer.domElement.getBoundingClientRect();pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);}
@@ -195,5 +204,5 @@ export async function createCabinView(host:HTMLElement,callbacks:ViewCallbacks){
   function project(x:number,y:number,z:number){const p=new THREE.Vector3(x,y,z).project(camera),bounds=renderer.domElement.getBoundingClientRect();return {x:bounds.left+(p.x+1)*bounds.width/2,y:bounds.top+(1-p.y)*bounds.height/2};}
   function movementVector(x:number,z:number){const forward=camera.getWorldDirection(new THREE.Vector3());forward.y=0;if(forward.lengthSq()<.001)forward.set(0,0,-1);forward.normalize();const right=new THREE.Vector3().crossVectors(forward,new THREE.Vector3(0,1,0));return forward.multiplyScalar(-z).addScaledVector(right,x).normalize();}
   function dispose(){if(disposed)return;disposed=true;abort.abort();observer.disconnect();for(const group of [overlay,selection,previewGroup])clearGroup(group);localOcclusion.dispose();character.dispose();controls.dispose();sunlight.shadow.map?.dispose();resources.dispose();renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();}
-  return {sync,update,setView,stats,capture,project,movementVector,dispose,canvas:renderer.domElement};
+  return {sync,update,setView,resizePreservingCamera:()=>resize(true),stats,capture,project,movementVector,dispose,canvas:renderer.domElement};
 }

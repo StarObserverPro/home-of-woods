@@ -9,6 +9,13 @@ import {
 import type { InventoryState } from '../../../src/domain/inventory.ts'
 import { restoreJob } from '../src/domain.ts'
 import { rarityDefinition, isRarityId } from '../../../src/content/rarities.ts'
+import timberCss from '../../../src/ui/timber/theme.css?inline'
+import {mountTimberTheme} from '../../../src/ui/timber/mount.ts'
+
+const themeStyle=document.createElement('style')
+themeStyle.textContent=timberCss
+document.head.append(themeStyle)
+const disposeTimber=mountTimberTheme(document.body)
 
 type Session = { version: 1; inventory: InventoryState; serial: number; draft: WoodworkingDraft | null }
 const key = 'home-of-woods.handwork.sandbox.v1'
@@ -100,6 +107,9 @@ function shelves() {
     name.textContent = data.sourceMaterial + ' · 直榫样件'
     const grade = isRarityId(item.rarityId) ? rarityDefinition(item.rarityId).name : '普通'
     detail.textContent = `${grade}　工艺 ${data.score}　·　榫宽 ${data.envelope.tenonWidth.toFixed(1)} mm`
+    row.dataset.timberSurface='slot'
+    row.dataset.timberMaterial='recess'
+    row.dataset.timberSeed=`woodworking-ledger:${item.instanceId}`
     row.append(swatch, name, detail)
     ledger.append(row)
   }
@@ -138,5 +148,10 @@ document.querySelector('#replenish')!.addEventListener('click', () => {
   open()
 })
 document.addEventListener('visibilitychange', () => handle?.setPaused(document.hidden))
+window.addEventListener('pagehide',event=>{
+  if(event.persisted)return
+  handle?.destroy()
+  disposeTimber()
+})
 shelves()
 open()
