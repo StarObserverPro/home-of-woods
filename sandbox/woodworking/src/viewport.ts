@@ -49,7 +49,7 @@ export function createWorkbenchViewport(canvas:HTMLCanvasElement,onSelect:(id:st
   const fitMat=new THREE.MeshStandardMaterial({color:'#8b6948',roughness:.85})
   const rootMaterials=[wood,tint,conflict,previewMat,cutLineMat,fitMat]
   const surfacesMeshes:THREE.Mesh[]=[];let hover:string|null=null,view:WorkView|null=null,geometryKey='',stockKey=''
-  let frame=0,disposed=false,paused=false,contextUnavailable=false,zoom=1,size=[90,30,30],wpp=1
+  let draws=0,frame=0,disposed=false,paused=false,contextUnavailable=false,zoom=1,size=[90,30,30],wpp=1
   let drag:{id:number;x:number;y:number;sx:number;sy:number;moved:boolean}|null=null
   let cue:{start:number;operation:SawOperation;preview:OperationPreview}|null=null
   const home=()=>new THREE.Quaternion().setFromEuler(new THREE.Euler(.12,-.42,0,'YXZ'))
@@ -111,7 +111,7 @@ export function createWorkbenchViewport(canvas:HTMLCanvasElement,onSelect:(id:st
     renderer.setSize(r.width,r.height,false)
     wpp=worldPerPixel(size[0],size[1],size[2],r.width,r.height,zoom)
     camera.left=-r.width*wpp/2;camera.right=r.width*wpp/2;camera.top=r.height*wpp/2;camera.bottom=-r.height*wpp/2;camera.updateProjectionMatrix()
-    canvas.dataset.viewScale=String(1/wpp);canvas.dataset.viewZoom=String(zoom)
+    canvas.dataset.viewScale=String(1/wpp);canvas.dataset.viewZoom=String(zoom);canvas.dataset.viewProjection=camera.projectionMatrix.elements.join(',')
   }
   function draw(now:number){frame=0;if(disposed||paused||contextUnavailable)return
     updatePlacement()
@@ -126,6 +126,7 @@ export function createWorkbenchViewport(canvas:HTMLCanvasElement,onSelect:(id:st
       if(t<1)invalidate();else{cue=null;activeSaw.visible=false;parked.visible=true}
     }
     renderer.render(scene,camera)
+    canvas.dataset.draws=String(++draws);canvas.dataset.objectScale=pivot.scale.toArray().join(',')
     canvas.dataset.renderCalls=String(renderer.info.render.calls);canvas.dataset.triangles=String(renderer.info.render.triangles)
     canvas.dataset.viewQuaternion=pivot.quaternion.toArray().join(',')
   }

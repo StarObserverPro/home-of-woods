@@ -175,14 +175,18 @@ export function mountWoodworking(container: HTMLElement, options: WoodworkingOpt
     const previous = p.operations.filter(o => o.kind === 'saw.sweep' && o.entrySurface === op.entrySurface && o.planeAxis === op.planeAxis && Math.abs(o.position - op.position) < EPS && o.wasteSide === op.wasteSide)
     const priorDepth = Math.max(0, ...previous.map(o => o.kind === 'saw.sweep' ? o.depth : 0))
     $('#depth-note').textContent = priorDepth ? `已锯 ${priorDepth.toFixed(1)} mm` : '从选中的木面量起。'
-    $('#cut-hint').textContent = invalidInput ? '请检查数值。' : preview.allowed ? '确认后下锯。' : selectedSurface ? '当前木面无法这样下锯。' : '先选一个木面。'
+    $('#cut-hint').textContent = options.tools?.saw === false ? '需要一把手锯。' : p.repaired ? '已经收尾，可以试配收好。' : invalidInput ? '请检查数值。' : preview.allowed ? '确认后下锯。' : !selectedSurface ? '先选一个木面。' : preview.reason.includes('已经锯过') ? '这里已经锯过，请加深止点。' : preview.reason.includes('夹持区') ? '锯路碰到夹持处了。' : preview.reason.includes('夹持') ? '换成建议的夹持方式。' : preview.reason.includes('挡住') ? '入口前方还有木料挡住。' : preview.reason.includes('范围') ? '锯线没有落在这块木面上。' : '换一个进锯面。'
     btn('cut').textContent = priorDepth ? '继续锯' : '下锯'
     btn('cut').disabled = !job || !preview.allowed || invalidInput || pending || paused || job.repaired || options.tools?.saw === false
     $('#score').textContent = checked ? (report.status === 'incomplete' ? '尚未成形' : `工艺 ${report.score} 分`) : ''
     $('#issues').replaceChildren()
     if (checked) {
       const lines = report.issues.length ? report.issues : ['试配合格，可以收件。']
-      for (const text of lines) { const el = document.createElement('p'); el.textContent = text; $('#issues').append(el) }
+      for (const text of lines) {
+        const el = document.createElement('p')
+        el.textContent = text.includes('内部损伤') ? '锯伤了榫头，不能修补。' : text.includes('尚未形成') ? '废料还连着，请把锯口接通。' : text.includes('最低要求') ? '偏差过大，这件不能使用。' : text
+        $('#issues').append(el)
+      }
     }
     btn('repair').hidden = !(checked && report.status === 'repairable')
     btn('repair').textContent = `收尾修整 · ${report.repairedScore ?? '—'} 分`
@@ -190,8 +194,8 @@ export function mountWoodworking(container: HTMLElement, options: WoodworkingOpt
     $('#finish').hidden = !(checked && report.status === 'pass'); select('paint').value = paint ?? ''; select('paint').disabled = options.tools?.brush === false
     btn('finish').disabled = pending; btn('discard').disabled = pending; btn('trial').disabled = pending || !job
     const balance = materialBalance(p)
-    $('#balance').textContent = `${(balance.retainedMm3 / 1000).toFixed(2)} cm³ 在制`
-    $('#materials').textContent = `原料 ${(balance.stockMm3 / 1000).toFixed(2)} cm³；在制 ${(balance.retainedMm3 / 1000).toFixed(2)}；已脱离 ${(balance.offcutsMm3 / 1000).toFixed(2)}；锯屑 ${(balance.sawdustMm3 / 1000).toFixed(2)}；收尾薄屑 ${(balance.shavingsMm3 / 1000).toFixed(2)}。可用余段 ${p.ledger.offcuts.filter(o => o.kind === 'reusable').length} 件。`
+    $('#balance').textContent = `${(balance.retainedMm3 / 1000).toFixed(2)} cm³ 木料`
+    $('#materials').textContent = `原料 ${(balance.stockMm3 / 1000).toFixed(2)} cm³；木料 ${(balance.retainedMm3 / 1000).toFixed(2)}；已脱离 ${(balance.offcutsMm3 / 1000).toFixed(2)}；锯屑 ${(balance.sawdustMm3 / 1000).toFixed(2)}；收尾薄屑 ${(balance.shavingsMm3 / 1000).toFixed(2)}。可用余段 ${p.ledger.offcuts.filter(o => o.kind === 'reusable').length} 件。`
     viewport.update({ piece: p, selectedSurface, operation: job && !checked ? op : undefined, preview: job && !checked ? preview : undefined, conflictSurfaces: checked ? report.conflictSurfaces : [], paint, setup: !job, socket: checked && report.metrics ? { fits: report.status === 'pass', width: p.design.tenonWidth, depth: p.design.tenonLength } : undefined })
     shell.inert = paused || pending
     shell.setAttribute('aria-busy', String(pending))

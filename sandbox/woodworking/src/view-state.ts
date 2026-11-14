@@ -11,5 +11,5 @@ export function zoomView(view: ViewState, factor: number): ViewState {
 /** Initial stock fixes the ruler scale. Only viewport dimensions or explicit zoom change px/mm. */
 export function worldPerPixel(length: number, height: number, width: number, pixelsW: number, pixelsH: number, zoom: number): number {
   const diameter = Math.hypot(length, height, width)
-  return Math.max(diameter * 1.9 / Math.max(1, pixelsW), diameter * 1.58 / Math.max(1, pixelsH)) / zoom
+  return Math.max(diameter * (pixelsW < 480 ? 1.55 : 1.9) / Math.max(1, pixelsW), diameter * (pixelsW < 480 ? 1.18 : 1.58) / Math.max(1, pixelsH)) / zoom
 }

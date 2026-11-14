@@ -80,7 +80,9 @@ export function inspectTenon(piece: Workpiece, allowRepair = true): Inspection {
   const m = metrics(piece)
   if (!m) return { ...result, issues: ['榫颊或榫肩尚未形成。检查锯缝是否真正接通，仍连着的废料不能试配。'] }
   result.metrics = m
-  if (m.missingMm3 > EPS * 100) return { ...result, status: 'scrap', issues: ['保留结构中有额外锯缝或缺口；表面修整不能补回内部损伤。'] }
+  // A notch in excess stock may disappear when that stock is pared away.
+  // Judge the retained result after the bounded subtraction, never fill a missing voxel.
+  if (m.missingMm3 > EPS * 100) result.issues.push('有额外锯口；仅能修去余量，不能补回内部损伤。')
   const gaps = [m.near - N, F - m.far], shoulders = [m.nearShoulder - S, m.farShoulder - S]
   result.score = Math.max(0, Math.round(100 - 20 * Math.max(...gaps.map(Math.abs)) - 12 * Math.max(...shoulders.map(Math.abs)) - 10 * Math.abs(m.length - L) - (piece.repaired ? TENON_LIMITS.repairPenalty : 0)))
   gaps.forEach((gap, i) => {
@@ -107,7 +109,7 @@ export function inspectTenon(piece: Workpiece, allowRepair = true): Inspection {
     if (cutters.length) {
       const candidate = applyFinish(piece, { kind: 'finish.auto', id: `finish:${piece.operations.length}`, cutters })
       const after = inspectTenon(candidate, false)
-      if (after.status === 'pass') return { ...result, status: 'repairable', repairCutters: cutters, repairedScore: after.score }
+      if (after.status === 'pass') return { ...result, issues: result.issues.filter(text => !text.includes('内部损伤')), status: 'repairable', repairCutters: cutters, repairedScore: after.score }
     }
   }
   return { ...result, status: 'scrap' }

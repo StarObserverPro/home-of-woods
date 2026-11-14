@@ -18,7 +18,9 @@ export function mountWoodworkingTimber(shell:HTMLElement,shadow:ShadowRoot){
       for(const[k,v]of Object.entries(attrs))if(el.dataset[k]!==v)el.dataset[k]=v
       if(el instanceof HTMLButtonElement&&!el.closest('form'))el.type='button'
       if(el.classList.contains('danger'))el.dataset.timberIntent='danger'
+      if(el.matches('.tasks button,.steps button,.tool-dock button'))el.dataset.timberDensity='compact'
     })
   }
+  shell.querySelector<HTMLElement>('.tool-dock')!.dataset.timberVariant='dock'
   refresh();const dispose=mountTimberTheme(shadow);return{refresh,dispose}
 }

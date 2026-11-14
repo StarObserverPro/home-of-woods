@@ -15,16 +15,18 @@ try {
   const tap=async selector=>{const el=page.locator(selector).first();await el.scrollIntoViewIfNeeded();if(mobile)await el.tap();else await el.click()}
   const shot=async name=>{await page.waitForTimeout(120);await page.screenshot({path:resolve(out,`${label}-${name}.png`),timeout:20000})}
   const session=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('home-of-woods.handwork.sandbox.v2')||'null'))
-  const scale=()=>page.locator('canvas').getAttribute('data-view-scale')
+  const scale=()=>page.locator('canvas').evaluate(c=>JSON.stringify([c.dataset.viewScale,c.dataset.viewProjection,c.dataset.objectScale]))
   const measure=async(id,v)=>{await page.locator(`#${id}-number`).fill(String(v));await page.locator(`#${id}-number`).dispatchEvent('input')}
   const choose=async(id,pos,depth)=>{await tap(`[data-task=${id}]`);await tap('[data-a=suggest-face]');await tap('[data-stage=line]');await page.locator('#reference').selectOption('low');await measure('offset',pos);await tap('[data-stage=depth]');await measure('depth',depth)}
   const cut=async(id,pos,depth)=>{await choose(id,pos,depth);await tap('[data-a=cut]');await page.waitForTimeout(700)}
   const enter=async()=>{await page.goto(pathToFileURL(resolve(root,'dist/woodworking.html')).href);await page.waitForFunction(()=>document.querySelector('#workshop')?.firstElementChild?.shadowRoot?.querySelector('canvas')?.dataset.assets==='ready');await page.waitForTimeout(200)}
   await enter(); await shot('setup');await tap('[data-a=start]');
   const initialScale=await scale(),initial=await session()
+  await page.waitForTimeout(200);const idle=await page.locator('canvas').getAttribute('data-draws');await page.waitForTimeout(150);assert.equal(await page.locator('canvas').getAttribute('data-draws'),idle,'idle workbench must not keep rendering')
   for(const a of ['turn-left','turn-up','turn-right','turn-down','iso'])await tap(`[data-a=${a}]`)
   assert.equal(await scale(),initialScale);assert.equal((await session()).draft.job.operations.length,initial.draft.job.operations.length)
   if(!mobile){const r=await page.locator('canvas').boundingBox();await page.mouse.move(r.x+r.width*.53,r.y+r.height*.4);await page.mouse.down();await page.mouse.move(r.x+r.width*.65,r.y+r.height*.35,{steps:12});await page.mouse.up();assert.equal(await scale(),initialScale);assert.equal((await session()).draft.job.operations.length,0);await tap('[data-a=iso]')}
+  await tap('[data-a=zoom-in]');await page.waitForTimeout(80);const enlarged=await scale();assert.notEqual(enlarged,initialScale);await tap('[data-a=iso]');await page.waitForTimeout(80);assert.equal(await scale(),enlarged,'reset angle must preserve explicit zoom');await tap('[data-a=zoom-out]');await page.waitForTimeout(80)
   await choose('trim',80,10);for(const a of ['face','depth-view','iso'])await tap(`[data-a=${a}]`);assert.equal(await scale(),initialScale)
   await page.evaluate(()=>window.scrollTo(0,0));await shot('depth')
   await tap('[data-a=paper]');await shot('drawing');await tap('[data-a=close-paper]');assert.equal(await scale(),initialScale)
@@ -42,6 +44,7 @@ try {
   const metrics=await page.locator('canvas').evaluate(c=>({...c.dataset}))
   const layout=await page.locator('.shell').evaluate(s=>({scroll:s.scrollWidth,width:s.clientWidth,small:[...s.querySelectorAll('button')].filter(e=>e.getClientRects().length&&e.getBoundingClientRect().width<43.9).map(e=>e.dataset.a||e.textContent)}))
   assert.ok(layout.scroll<=layout.width+1,JSON.stringify(layout));assert.deepEqual(layout.small,[])
+  const controlsRect=await page.locator('.controls').boundingBox(),canvasRect=await page.locator('canvas').boundingBox();assert.ok(controlsRect.y>=canvasRect.y+canvasRect.height-1 || controlsRect.x>=canvasRect.x+canvasRect.width-1,'controls must not cover the workpiece canvas');
   assert.deepEqual(errors,[])
   results.push({label,errors,metrics,layout,viewScalePreserved:true,cameraActionsDoNotCut:true,realReload:label==='desktop'||label==='mobile'})
   await context.close()

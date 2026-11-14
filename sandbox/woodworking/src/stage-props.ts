@@ -13,7 +13,7 @@ export function createStageProps(invalidate: () => void): StageProps {
   const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>(), textures = new Set<THREE.Texture>()
   let disposed = false
   const ownMaterial = <T extends THREE.Material>(m:T): T => { materials.add(m); return m }
-  const wood = ownMaterial(new THREE.MeshStandardMaterial({ color: '#ac865a', roughness: .86 }))
+  const wood = ownMaterial(new THREE.MeshStandardMaterial({ color: '#d8c7b3', roughness: .86 }))
   const fallback = grainTexture(); textures.add(fallback); wood.map=fallback
   const loader = new THREE.TextureLoader()
   loader.load(tableColor,t=>{if(disposed){t.dispose();return}t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;textures.add(t);wood.map=t;wood.needsUpdate=true;invalidate()})
@@ -21,10 +21,18 @@ export function createStageProps(invalidate: () => void): StageProps {
   const darkWood = ownMaterial(new THREE.MeshStandardMaterial({ color:'#5e4933',roughness:.91,map:fallback }))
   const box = (w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.Material=wood,r=.7) => {
     const geometry = new RoundedBoxGeometry(w,h,d,1,Math.min(r,w/6,h/6,d/6));geometries.add(geometry)
+    if (m === wood) {
+      const pos = geometry.getAttribute('position'), normal = geometry.getAttribute('normal'), uv = geometry.getAttribute('uv')
+      for (let i = 0; i < pos.count; i++) {
+        const top = Math.abs(normal.getY(i)) > .5
+        uv.setXY(i, (pos.getX(i) + x + 245) / 300, top ? (pos.getZ(i) + z + 150) / 300 : pos.getY(i) / 300)
+      }
+      uv.needsUpdate = true
+    }
     const mesh=new THREE.Mesh(geometry,m);mesh.position.set(x,y,z);mesh.receiveShadow=true;mesh.castShadow=true;group.add(mesh);return mesh
   }
-  // Five thick boards. No unseen tessellation, interior joinery or ornate workshop shell.
-  for(let i=0;i<5;i++)box(490,12,59,-8,-7,-115+i*60)
+  // A single solid top; the texture carries the boards, rather than repeating all boards on each strip.
+  box(490,12,300,-8,-7,0)
   box(490,26,10,-8,-24,150,darkWood); box(490,24,10,-8,-24,-150,darkWood)
   for(const x of [-180,180])for(const z of [-110,110])box(22,130,24,x,-79,z,darkWood)
   box(380,16,18,0,-105,110,darkWood)

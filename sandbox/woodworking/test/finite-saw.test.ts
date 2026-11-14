@@ -136,3 +136,29 @@ test('120 seeded partial-cut combinations preserve volume and never create negat
     assert.ok(p.geometry.boxes.every(b=>volume(b)>0));assert.ok(p.ledger.offcuts.every(o=>o.volumeMm3>0))
   }
 })
+
+// The old browser path exposed a false scrap: the shoulder notch was wholly in
+// the 0.4 mm allowance being pared away. Check the post-removal shape instead.
+test('a notch confined to removable allowance is repairable, but a retained-core notch is not', () => {
+  function notched(depth: number) {
+    let p = saw(fresh(), 'trim', 80, 30)
+    p = saw(p, 'cheekNear', 7.6, 20)
+    p = saw(p, 'cheekFar', 22, 20)
+    p = saw(p, 'shoulderNear', 60, depth)
+    return saw(p, 'shoulderFar', 60, 8)
+  }
+  const allowance = notched(8)
+  assert.equal(inspectTenon(allowance).status, 'repairable')
+  const repaired = repairTenon(inspectPiece(allowance))
+  assert.equal(inspectTenon(repaired).status, 'pass')
+  assert.equal(inspectTenon(repaired).score, 94)
+  assert.equal(totalVolume(repaired.geometry.boxes), 62400)
+  assert.ok(totalVolume(repaired.geometry.boxes) < totalVolume(allowance.geometry.boxes))
+  conserved(repaired)
+  assert.deepEqual(restorePiece(JSON.parse(JSON.stringify(repaired))), repaired)
+  for (const depth of [8.01, 8.1, 9]) {
+    const damaged = notched(depth)
+    assert.equal(inspectTenon(damaged).status, 'scrap')
+    assert.throws(() => repairTenon(inspectPiece(damaged)))
+  }
+})
