@@ -4,28 +4,106 @@ on:
     branches: [feat/woodworking-game-stage]
     paths: [.github/workflows/woodworking-stage-session.yml]
 permissions:
-  contents: read
+  contents: write
+concurrency:
+  group: woodworking-stage-session
+  cancel-in-progress: false
 jobs:
-  inputs:
+  candidate:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     steps:
-      - name: Official texture and license inputs
-        run: |
-          mkdir -p /tmp/woodworking-table
-          python3 - <<'PY'
-          import json,pathlib,urllib.request
-          root=pathlib.Path('/tmp/woodworking-table')
-          def get(url):
-              r=urllib.request.Request(url,headers={'User-Agent':'HomeOfWoods-asset-preparation/1.0'})
-              with urllib.request.urlopen(r,timeout=50) as f:return f.read()
-          data=json.loads(get('https://api.polyhaven.com/files/wood_table'))
-          for k in ['Diffuse','nor_gl','Rough']:
-              item=data[k]['1k']['jpg'];url=item['url'];(root/url.split('/')[-1]).write_bytes(get(url))
-          (root/'CC0-1.0.txt').write_bytes(get('https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt'))
-          PY
-      - uses: actions/upload-artifact@v4
+      - uses: actions/checkout@v7
         with:
-          name: woodworking-table
-          path: /tmp/woodworking-table
-          retention-days: 1
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22.16.0'
+          package-manager-cache: false
+      - name: Apply scoped source and verify original asset inputs
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = 'feat/woodworking-game-stage'
+          python3 - <<'PY'
+          import pathlib, json, hashlib, lzma, base64, subprocess, urllib.request, urllib.parse, shutil
+          raw=lzma.decompress(base64.b64decode(''.join(pathlib.Path(f'.woodworking-stage-transfer/part-{i}.txt').read_text().strip() for i in range(3)),validate=True))
+          assert hashlib.sha256(raw).hexdigest()=='76fba669cb314d81240ccb42f5586a4681c2debe36225c9d263a2246ba49d396'
+          p=json.loads(raw)
+          assert p['main']=='81a01f8519b921128575f6cf462416c191ae392c'
+          assert p['finite']=='675063f6a8724f0941ca344dd2c7bf192da26f8f'
+          subprocess.run(['git','merge-base','--is-ancestor',p['main'],'HEAD'],check=True)
+          def allowed(n):
+              q=pathlib.Path(n)
+              return not q.is_absolute() and '..' not in q.parts and (n.startswith('sandbox/woodworking/') or n.startswith('sources/polyhaven/woodworking/') or n in ['docs/WOODWORKING_HANDWORK.md','docs/WOODWORKING_TOOLS.md','docs/ASSET_REGISTER.md','src/ui/timber/theme.css'])
+          for n in p['imports']:
+              assert allowed(n)
+              q=pathlib.Path(n);q.parent.mkdir(parents=True,exist_ok=True)
+              q.write_bytes(subprocess.check_output(['git','show',p['finite']+':'+n]))
+          for n,c in p['files'].items():
+              assert allowed(n)
+              q=pathlib.Path(n);assert not q.is_symlink()
+              if 'base_sha256' in c:assert hashlib.sha256(q.read_bytes()).hexdigest()==c['base_sha256'],n
+              if 'content' in c:s=c['content']
+              else:
+                  s=q.read_text()
+                  for start,end,t in reversed(c['spans']):s=s[:start]+t+s[end:]
+              assert hashlib.sha256(s.encode()).hexdigest()==c['sha256'],n
+              q.parent.mkdir(parents=True,exist_ok=True);q.write_text(s)
+          for d in p['downloads']:
+              assert allowed(d['path']) and urllib.parse.urlparse(d['url']).hostname=='dl.polyhaven.org'
+              request=urllib.request.Request(d['url'],headers={'User-Agent':'HomeOfWoods-asset-preparation/1.0'})
+              with urllib.request.urlopen(request,timeout=60) as r:b=r.read()
+              assert hashlib.sha256(b).hexdigest()==d['sha256'],d['path']
+              q=pathlib.Path(d['path']);q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(b)
+          pathlib.Path('/tmp/woodworking-stage-evidence').mkdir(exist_ok=True)
+          pathlib.Path('/tmp/expected-stage-assets.json').write_text(json.dumps(p['assets']))
+          pathlib.Path('/tmp/woodworking-stage-evidence/source-hashes.json').write_text(json.dumps({n:c['sha256'] for n,c in p['files'].items()},indent=2))
+          shutil.rmtree('.woodworking-stage-transfer')
+          print('SCOPED_SOURCE_AND_ORIGINAL_ASSETS_VERIFIED')
+          PY
+      - run: python3 -m pip install Pillow==12.3.0
+      - name: Rebuild normalized runtime assets
+        run: |
+          python3 sandbox/woodworking/tools/prepare-stage-assets.py
+          python3 - <<'PY'
+          import json,pathlib,hashlib
+          e=json.loads(pathlib.Path('/tmp/expected-stage-assets.json').read_text())
+          for n,v in e['files'].items():assert hashlib.sha256((pathlib.Path('sandbox/woodworking/assets')/n).read_bytes()).hexdigest()==v['sha256'],n
+          print('RUNTIME_ASSET_BYTES_MATCH_LOCAL_BUILD')
+          PY
+      - run: npm ci && npm ci --prefix sandbox/woodworking
+      - name: Focused tests, current UI contract and build
+        run: |
+          set -o pipefail
+          npm --prefix sandbox/woodworking test | tee /tmp/woodworking-stage-evidence/unit.log
+          npm run verify:ui | tee /tmp/woodworking-stage-evidence/ui.log
+          npm --prefix sandbox/woodworking run build | tee /tmp/woodworking-stage-evidence/build.log
+          git diff --check
+      - name: Save candidate source only to its feature branch
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/feat/woodworking-game-stage | cut -f1)" = "$GITHUB_SHA"
+          git add sandbox/woodworking sources/polyhaven/woodworking docs/WOODWORKING_HANDWORK.md docs/WOODWORKING_TOOLS.md docs/ASSET_REGISTER.md src/ui/timber/theme.css
+          git add -u .woodworking-stage-transfer
+          test -z "$(git diff --cached --name-only -- .github/workflows)"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat: game-stage woodworking with CC0 handsaw and independent view controls'
+          git push origin HEAD:refs/heads/feat/woodworking-game-stage
+          git rev-parse HEAD > /tmp/woodworking-stage-evidence/candidate-head.txt
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get install -y fonts-noto-cjk
+      - name: Inspect real WebGL stage and player operations
+        env:
+          QA_EVIDENCE_DIR: /tmp/woodworking-stage-evidence
+        run: node sandbox/woodworking/test/browser.mjs
+      - name: Keep candidate and screenshots outside source tree
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: woodworking-stage-review
+          path: |
+            /tmp/woodworking-stage-evidence
+            sandbox/woodworking/dist/woodworking.html
+          if-no-files-found: warn
+          retention-days: 7
