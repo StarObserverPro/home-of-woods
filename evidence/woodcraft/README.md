@@ -1,7 +1,5 @@
-# Woodcraft 本轮证据
+# 木料加工——历史验收入口
 
-本轮在 PR #7（7bfc749）的实际运行代码上新增局部物理；不是独立网页演示。测试环境为 Linux / Node.js 22，浏览器为 Chromium 156.0.8078.4 + ANGLE SwiftShader。
+此目录的旧版原始证据已于 2026-11-14 从 main 工作树清理，以减少旧日志、浏览器快照、录屏和打包产物。完整原始说明、校验清单及文件字节没有被重写，仍可通过[固定 Git 历史快照](https://github.com/StarObserverPro/home-of-woods/tree/5911ac2fdf3ca25615a8292180207ef3ead9f758/evidence/woodcraft)查阅。
 
-`browser.log` 保存成功一轮的控制台记录。测试使用隔离存档的 8 根原木和 4 份枝杈；先验证 11 根搬入、一根留库，再实际点击投放最后一根，随后检查暂停、保存、刷新和手机视口。没有改写用户已有浏览器站点数据。
-
-`tests/woodcraft.test.ts` 中 18 项新增测试与旧测试合计 118 项通过；完整命令为 npm run check。详细已测与未测边界见 ../../docs/WOODCRAFT_VERIFICATION.md。历史审计只核验各自冻结源码和原证据，不替代本轮运行验证。真实手机性能和完整视觉验收尚未完成。
+这些记录只适用于当时的提交及验收环境，不能替代当前主线的检查结果。可使用 `npm run verify:evidence` 在隔离的历史工作树中复查；PR #35 仍是独立待审分支，不在本次清理范围。

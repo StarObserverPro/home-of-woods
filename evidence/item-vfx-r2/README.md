@@ -1,9 +1,5 @@
-# Rarity VFX R2 evidence
+# 物品表现 R2——历史验收入口
 
-Production renderer/scene screenshots from isolated five-tier fixture. No real save was modified. See [implementation and limitations](../../docs/RARITY_VFX_R2.md).
+此目录的旧版原始证据已于 2026-11-14 从 main 工作树清理，以减少旧日志、浏览器快照、录屏和打包产物。完整原始说明、校验清单及文件字节没有被重写，仍可通过[固定 Git 历史快照](https://github.com/StarObserverPro/home-of-woods/tree/5911ac2fdf3ca25615a8292180207ef3ead9f758/evidence/item-vfx-r2)查阅。
 
-![Daylight crop](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/item-vfx-r2/day-crop.webp)
-
-![Actual render sequence, 36 frames at 0.1 seconds](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/item-vfx-r2/surface-motion.gif)
-
-Night, orbit, normal-distance and narrow-viewport PNG captures accompany `verification.json`. Occlusion uses a separate fixture with the actual effect module. Runtime data source remains unchanged.
+这些记录只适用于当时的提交及验收环境，不能替代当前主线的检查结果。可使用 `npm run verify:evidence` 在隔离的历史工作树中复查；PR #35 仍是独立待审分支，不在本次清理范围。

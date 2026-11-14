@@ -5,9 +5,6 @@ coverage/
 .env.*
 !.env.example
 *.log
-!evidence/**/check.log
-!evidence/**/forestry-decode.log
-!evidence/**/walk-decode.log
 *.tsbuildinfo
 *.tmp
 .DS_Store
@@ -15,34 +12,7 @@ coverage/
 playwright-report/
 test-results/
 
-# Review evidence required by read-only audits and linked verification reports.
-!evidence/characters/tests.log
-!evidence/characters/build.log
-!evidence/characters/contact-tests.log
-!evidence/item-stack-compatibility/historical-evidence.log
-!evidence/world-save/world-tests.log
-!evidence/scene-r5/*-tests.log
-!evidence/scene-r5/*-build.log
-!evidence/scene-r5/*-check.log
-!sandbox/scene-r5/evidence/check-*.log
-!sandbox/scene-r5/evidence/r5*-check-*.log
-!sandbox/scene-r5/evidence/r5b-final-tests.log
-!evidence/scene-r5/assets.log
-!evidence/scene-r5/build.log
-!evidence/scene-r5/tests.log
-!evidence/scene-r5/history-evidence.log
-!evidence/delivery/sandbox-tests.log
-
-!evidence/action-wood/*.log
-
-# Verification captures are temporary/CI artifacts; production textures remain tracked.
-/evidence/**/*.png
-/evidence/**/*.jpg
-/evidence/**/*.jpeg
-/evidence/**/*.webp
-/evidence/**/*.gif
-/sandbox/**/evidence/**/*.png
-/sandbox/**/evidence/**/*.jpg
-/sandbox/**/evidence/**/*.jpeg
-/sandbox/**/evidence/**/*.webp
-/sandbox/**/evidence/**/*.gif
+# Archived legacy evidence and new runtime captures belong in Git history or CI
+# artifacts. The tracked lightweight index/manifests are intentionally retained.
+/evidence/**
+/sandbox/**/evidence/**

@@ -1,35 +1,31 @@
-/**
- * The project no longer keeps bulky screenshots in the current tree.
- * Historical audits still verify the exact original binary receipts from a
- * pinned, reachable pre-cleanup commit. Files are restored only temporarily.
- */
+/** Run old evidence checks in a detached historical worktree, without restoring old receipts to main. */
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync, unlinkSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const archive = '79f4375ec2ddd3a4528eab0c6a9f34c4c203502e';
-const image = /\.(?:png|jpe?g|webp|gif)$/i;
-const evidence = /^(?:evidence\/|sandbox\/[^/]+\/evidence\/)/;
-const git = (...args) => execFileSync('git', args, { maxBuffer: 32 * 1024 * 1024 });
-
-const restored = [];
-let result = 1;
+const archive = '5911ac2fdf3ca25615a8292180207ef3ead9f758';
+const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
+const base = mkdtempSync(join(tmpdir(), 'how-historical-evidence-'));
+const worktree = join(base, 'checkout');
+let attached = false;
+let status = 1;
+const git = (...args) => execFileSync('git', args, { cwd: root, maxBuffer: 32 * 1024 * 1024 });
 try {
-  const paths = git('ls-tree', '-r', '--name-only', archive).toString('utf8')
-    .split('\n').filter(path => evidence.test(path) && image.test(path));
-  if (paths.length !== 193) throw new Error('Archived screenshot inventory has changed');
-  for (const path of paths) {
-    if (existsSync(path)) continue;
-    const bytes = git('show', `${archive}:${path}`);
-    mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(path, bytes);
-    restored.push(path);
-  }
-  console.log(`Checking ${paths.length} original screenshots against immutable historical receipts (temporary restore)`);
-  const check = spawnSync('npm', ['run', 'verify:evidence:raw'], { stdio: 'inherit' });
-  if (check.error) throw check.error;
-  result = check.status ?? 1;
+  try { git('cat-file', '-e', archive + '^{commit}'); }
+  catch { throw new Error('Archived evidence commit missing: ' + archive + '. Fetch full Git history before running this optional audit.'); }
+  git('worktree', 'add', '--detach', worktree, archive);
+  attached = true;
+  console.log('Auditing original historical receipts in detached checkout ' + archive.slice(0, 7));
+  const run = spawnSync(process.execPath, ['tools/run-archived-evidence-audits.mjs'], { cwd: worktree, stdio: 'inherit' });
+  if (run.error) throw run.error;
+  status = run.status ?? 1;
 } finally {
-  for (const path of restored.reverse()) unlinkSync(path);
+  if (attached) {
+    const cleanup = spawnSync('git', ['worktree', 'remove', '--force', worktree], { cwd: root, encoding: 'utf8' });
+    if (cleanup.status !== 0) console.error('Could not remove temporary historical worktree:', cleanup.stderr);
+  }
+  rmSync(base, { recursive: true, force: true });
 }
-process.exitCode = result;
+process.exitCode = status;
