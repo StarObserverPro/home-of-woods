@@ -156,7 +156,10 @@ h1, h2, h3, p { margin: 0; }
   .header-tools { grid-column: 1 / -1; margin-left: 0; justify-content: flex-end; }
   .header-tools button { min-height: 44px; font-size: 13px; padding: var(--how-gap, 8px) var(--how-section-gap, 12px); }
   .workspace { display: flex; flex-direction: column; min-height: 0; }
-  .stage { height: clamp(500px, 66dvh, 660px); min-height: 500px; flex: none; }
+  /* Keep the furniture observable while the control stack grows during placement. */
+  .stage { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: clamp(320px, 48dvh, 440px) auto; height: auto; min-height: 0; flex: none; }
+  .viewport { position: relative; inset: auto; grid-row: 1; min-height: 320px; }
+  .stage-controls { position: static; grid-row: 2; margin: var(--how-section-gap, 12px) var(--how-safe-right, 8px) var(--how-safe-bottom, 8px) var(--how-safe-left, 8px); }
   .presets button { padding: var(--how-gap, 8px); font-size: 12px; }
   .round-button { padding: var(--how-gap, 8px); }
   .round-button span { font-size: 12px; }

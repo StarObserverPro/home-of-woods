@@ -32,6 +32,7 @@ jobs:
     env:
       TIMBER_EVIDENCE_DIR: /tmp/how-timber-evidence
       TIMBER_REVIEW_SCOPE: ${{ matrix.scope }}
+      PLAYWRIGHT_LEGACY_SCREENSHOT: '1'
     steps:
       - uses: actions/checkout@v7
         with:

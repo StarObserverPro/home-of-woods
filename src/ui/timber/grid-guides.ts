@@ -55,6 +55,8 @@ export function mountGridGuides(root: GridRoot) {
     line(safe.left,0,safe.left,view.innerHeight,'#7ee8ff');
     line(safe.right,0,safe.right,view.innerHeight,'#7ee8ff');
     const visible = (node:HTMLElement) => {
+      // Closed details can retain descendant boxes; only inspect painted content.
+      if (typeof node.checkVisibility==='function' && !node.checkVisibility({checkOpacity:true,checkVisibilityCSS:true})) return false;
       const r = node.getBoundingClientRect(), s = view.getComputedStyle(node);
       return r.width>0 && r.height>0 && r.bottom>0 && r.top<view.innerHeight && r.right>0 && r.left<view.innerWidth && s.visibility!=='hidden' && s.display!=='none';
     };
@@ -81,7 +83,9 @@ export function mountGridGuides(root: GridRoot) {
     legend.textContent = '4px · 青：安全边 / 金：内容边 / 绿：控件行 / 粉：消息';
     overlay.replaceChildren(svg);
     overlay.dataset.uiGridBoxes = String(root.querySelectorAll('[data-ui-grid]').length);
-    const dialog = doc.querySelector('dialog[open]');
+    // A module can open a native dialog inside its own Shadow DOM after guides
+    // were enabled; document selectors cannot see that new top-layer owner.
+    const dialog = root.querySelector('dialog[open]') ?? doc.querySelector('dialog[open]');
     if (dialog!==lastDialog) { lastDialog=dialog; front(); }
   }
   function refresh() {
@@ -89,7 +93,7 @@ export function mountGridGuides(root: GridRoot) {
   }
   function clear() {
     if (frame) view.cancelAnimationFrame(frame);
-    frame=0; overlay?.remove(); probe?.remove(); overlay=undefined; probe=undefined;
+    frame=0; overlay?.remove(); probe?.remove(); overlay=undefined; probe=undefined; lastDialog=null;
     view.removeEventListener('resize',refresh); doc.removeEventListener('scroll',refresh,true);
     view.visualViewport?.removeEventListener('resize',refresh);
     view.visualViewport?.removeEventListener('scroll',refresh);

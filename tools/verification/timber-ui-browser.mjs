@@ -18,8 +18,8 @@ const smallViews=[{width:390,height:844},{width:320,height:720},{width:844,heigh
 const guidedFrames=new Set(['01-desktop-hud','02-desktop-items','06-desktop-pause','game-390x844-items','game-844x390-items','game-390x844-items-notice','gallery-desktop','cabin-844x390-initial','woodworking-offline-390x844']);
 const report={
   result:'running',startedAt:new Date().toISOString(),sourceRevision:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),
-  scope,origin,browser:null,buildEntrySha256:null,woodworkingEntrySha256:null,frames:[],flows:[],focusChecks:[],journeys:[],gridChecks:[],noticeChecks:[],layoutIssues:[],errors:[],failedRequests:[],warnings:[],failures:[],
-  captureMethod:{viewport:'CDP Page.captureScreenshot: PNG, fromSurface=true, captureBeyondViewport=false',fullPage:'Playwright page.screenshot: fullPage=true, animations=disabled'},
+  scope,origin,browser:null,buildEntrySha256:null,woodworkingEntrySha256:null,frames:[],flows:[],focusChecks:[],journeys:[],gridChecks:[],noticeChecks:[],guideDialogChecks:[],cabinSceneChecks:[],layoutIssues:[],errors:[],failedRequests:[],warnings:[],failures:[],
+  captureMethod:{viewport:'CDP Page.captureScreenshot: PNG, fromSurface=true, captureBeyondViewport=false',fullPage:'Playwright page.screenshot: fullPage=true, animations=disabled',mode:process.env.PLAYWRIGHT_LEGACY_SCREENSHOT?'legacy ForceRedraw':'CDPScreenshotNewSurface (Playwright default)',legacyScreenshotEnv:process.env.PLAYWRIGHT_LEGACY_SCREENSHOT??null},
   inputs:{seed:104729,clock:'time=0, speed=0; 14:00 production calendar',save:'isolated in-memory WorldSaveStore',persistentNotice:'gridNotice=1 deliberately fails isolated store.read; the production save controller creates the warning',stock:'ten active production item IDs granted through inventoryTransaction',dpr:1},
   limits:[
     'The main UI uses the real App/runtime through a Vite review entry; npm run build is a separate required gate.',
@@ -667,6 +667,13 @@ async function mobileGame(){
       await page.setViewportSize(smallViews[0]);
       await loadGame(page,{gridNotice:'1'});
       const warning=page.locator('.save-warning');await warning.waitFor();
+      // An unreadable save starts the real runtime paused. Resume through its UI
+      // before checking the persistent warning beside normal game windows.
+      const pause=page.locator('.pause-dialog[open]');await pause.waitFor();
+      await pause.getByRole('button',{name:'回到山谷',exact:true}).tap();
+      await pause.waitFor({state:'hidden'});
+      assert.equal(await warning.isVisible(),true,'Resuming the valley must retain the unreadable-save warning');
+      report.noticeChecks.push({phase,stage:'resume-after-store-read-failure',action:'回到山谷',pauseClosed:true,warningVisible:true});
       await capture(page,'game-390x844-notice');
       await openItems(page,true);
       assert.equal(await warning.isVisible(),true,'The real save warning must remain visible while the inventory is open');
@@ -676,7 +683,7 @@ async function mobileGame(){
         const style=getComputedStyle(stack);
         return {display:getComputedStyle(shell).display,row:style.gridRowStart,position:style.position,inStack:warning.parentElement===stack,stack:rect(stack),warning:rect(warning),window:rect(panel)};
       });
-      report.noticeChecks.push({phase,viewport:page.viewportSize(),...notice});
+      report.noticeChecks.push({phase,stage:'window-and-notice',viewport:page.viewportSize(),...notice});
       assert.equal(notice.display,'grid','The shared viewport must reserve normal layout space for notices');
       assert.equal(notice.row,'2','Persistent notices must occupy the second viewport grid row');
       assert.ok(notice.inStack&&!['absolute','fixed'].includes(notice.position),'The warning must participate in the normal notice stack');
@@ -691,12 +698,29 @@ async function mobileGame(){
 async function cabin(viewport,touch=false){
   const session=await newPage(viewport,touch),page=session.page;
   const label=`cabin-${viewport.width}x${viewport.height}`;
+  const checkScene=async state=>{
+    if(viewport.width>760)return;
+    const measured=await page.evaluate(()=>{
+      const rect=element=>{const r=element.getBoundingClientRect();return {left:r.left,top:r.top,right:r.right,bottom:r.bottom,height:r.height};};
+      const scene=document.querySelector('.viewport'),controls=document.querySelector('.stage-controls'),placement=document.querySelector('#placement-panel');
+      return {scene:rect(scene),controls:rect(controls),placement:placement.checkVisibility()?rect(placement):null};
+    });
+    report.cabinSceneChecks.push({phase,state,viewport,...measured});
+    assert.ok(measured.scene.height>=320,'Phone cabin scene must retain at least 320 CSS px of height');
+    assert.ok(measured.controls.top>=measured.scene.bottom-1,'Phone cabin controls must follow the scene instead of covering it');
+    if(state==='placement'){
+      assert.ok(measured.placement,'The placement control panel must be visible');
+      const a=measured.scene,b=measured.placement;
+      assert.ok(Math.min(a.right,b.right)-Math.max(a.left,b.left)<=1||Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)<=1,'Phone placement controls must not intersect the scene viewport');
+    }
+  };
   try{
     if(!await scenario(`${label}-load`,page,async()=>{
       await page.goto(`${origin}/sandbox/cabin-interior/`);
       await page.waitForFunction(()=>window.__VISUAL_READY__===true&&!!window.__CABIN_AUDIT__,null,{timeout:150000});
     }))return;
     await scenario(`${label}-move-cancel`,page,async()=>{
+      await checkScene('initial');
       await capture(page,`${label}-initial`,{fitViewport:false});
       // Discover a real, already placed item. No fixture-only furniture command.
       const item=page.locator('[data-select]:enabled').first();
@@ -704,6 +728,7 @@ async function cabin(viewport,touch=false){
       const before=await page.evaluate(()=>window.__CABIN_AUDIT__.getSnapshot());
       await page.locator('[data-action="move"]').click();
       await page.locator('#placement-panel').waitFor();
+      await checkScene('placement');
       await capture(page,`${label}-placement`,{fitViewport:false});
       await page.locator('#place-cancel').click();
       assert.deepEqual(await page.evaluate(()=>window.__CABIN_AUDIT__.getSnapshot()),before,'Cancel must preserve the committed cabin state');
@@ -787,6 +812,56 @@ async function woodworking(){
         await capture(page,name,{fitViewport:false});
       });
     }
+    const guideKey='__HOW_SHADOW_DIALOG_GUIDES__',component=page.locator('#workshop [data-how-ui="timber"]');
+    const inspection={kind:'native-dialog inspection',trigger:'existing #discard-dialog.showModal(); no cutting or business discard',result:'running'};
+    report.guideDialogChecks.push(inspection);
+    const readInspection=()=>page.evaluate(key=>{
+      const state=window[key];if(!state)return {};
+      const {dialog,overlay}=state,active=dialog.getRootNode().activeElement;
+      const r=dialog.getBoundingClientRect();
+      return {openedAt:state.openedAt,events:state.events,modal:dialog.matches(':modal'),topLayer:!!overlay?.matches(':popover-open'),visible:!!overlay?.checkVisibility(),focusInDialog:dialog.contains(active),active:active?.getAttribute('data-a')||active?.tagName,dialogRect:{x:r.x,y:r.y,width:r.width,height:r.height}};
+    },guideKey);
+    const inspected=await scenario('woodworking-shadow-native-dialog-guides',page,async()=>{
+      await page.setViewportSize(desktop);await frames(page,2);
+      assert.equal(await page.locator('[data-ui-grid-overlay]').count(),0,'The native-dialog inspection must begin with guides disabled');
+      await component.evaluate((root,key)=>{
+        window[key]={root,previous:root.getAttribute('data-ui-grid-debug'),dialog:root.querySelector('#discard-dialog'),events:[]};
+        root.setAttribute('data-ui-grid-debug','true');
+      },guideKey);
+      await page.waitForFunction(()=>{
+        const overlays=document.querySelectorAll('[data-ui-grid-overlay]');
+        return overlays.length===1&&overlays[0].matches(':popover-open')&&!!overlays[0].querySelector('svg')&&Number(overlays[0].dataset.uiGridBoxes)>0;
+      },null,{polling:100,timeout:30000});
+      await page.evaluate(key=>{
+        const state=window[key];state.overlay=document.querySelector('[data-ui-grid-overlay]');
+        state.listener=event=>state.events.push({oldState:event.oldState,newState:event.newState,at:performance.now()});
+        state.overlay.addEventListener('beforetoggle',state.listener);
+        state.openedAt=performance.now();state.dialog.showModal();
+      },guideKey);
+      // A still-open popover can remain behind a newly opened modal. Require the
+      // existing overlay to close/reopen after showModal(), not merely exist.
+      await page.waitForFunction(key=>window[key].events.some(event=>event.newState==='open'&&event.at>=window[key].openedAt),guideKey,{polling:100,timeout:30000});
+      Object.assign(inspection,await readInspection());
+      assert.ok(inspection.modal&&inspection.topLayer&&inspection.visible,'The Shadow DOM modal and raised guide overlay must both be visible in the top layer');
+      assert.ok(inspection.focusInDialog,'Raising guides above the Shadow DOM modal must preserve its keyboard focus');
+      const name='woodworking-shadow-native-dialog-guides';
+      await takeScreenshot(page,{path:path.join(out,`${name}.png`),timeout:60000});
+      report.frames.push({name,file:`${name}.png`,screenshotStatus:'passed',viewport:page.viewportSize(),inspection:'native-dialog inspection',guideDialog:{...inspection,result:'passed'}});
+    },async()=>{
+      Object.assign(inspection,await readInspection());
+      await page.evaluate(key=>{const state=window[key];state?.overlay?.removeEventListener('beforetoggle',state.listener);},guideKey);
+      if(await page.locator('#discard-dialog').isVisible()){
+        await page.locator('[data-a="keep"]').click();
+        await page.locator('#discard-dialog').waitFor({state:'hidden'});
+      }
+      await page.evaluate(key=>{
+        const state=window[key];if(!state)return;
+        if(state.previous===null)state.root.removeAttribute('data-ui-grid-debug');else state.root.setAttribute('data-ui-grid-debug',state.previous);
+        delete window[key];
+      },guideKey);
+      await page.waitForFunction(()=>!document.querySelector('[data-ui-grid-overlay]'),null,{polling:100,timeout:30000});
+    });
+    inspection.result=inspected?'passed':'failed';
   }finally{await session.close();}
 }
 

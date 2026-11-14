@@ -16,7 +16,7 @@ const viewport={width:1280,height:800};
 const report={
   result:'running',optional:true,startedAt:new Date().toISOString(),sourceRevision,
   testedRevision:null,fixtureSha256:null,dependencyLocks:null,browser:null,
-  captureMethod:'Chromium Page.captureScreenshot, fromSurface; unchanged viewport and renderer',
+  captureMethod:{viewport:'Chromium Page.captureScreenshot, fromSurface; unchanged viewport and renderer',mode:process.env.PLAYWRIGHT_LEGACY_SCREENSHOT?'legacy ForceRedraw':'CDPScreenshotNewSurface (Playwright default)',legacyScreenshotEnv:process.env.PLAYWRIGHT_LEGACY_SCREENSHOT??null},
   viewport,dpr:1,frames:[],failures:[],errors:[],failedRequests:[],warnings:[],serverMessages:[],
   inputs:{seed:104729,clock:'time=0, speed=0; 14:00 production calendar',save:'same in-memory fixture copied byte for byte from the candidate checkout'},
   limits:[

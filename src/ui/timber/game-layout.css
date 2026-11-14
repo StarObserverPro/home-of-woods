@@ -123,7 +123,7 @@
     .game-shell[data-how-ui] .wood-tabs button,.game-shell[data-how-ui] .wood-tabs button[aria-pressed="true"] {padding:8px;}
     .game-shell[data-how-ui] .wood-tabs .game-icon {width:22px;height:22px;}
     .game-shell[data-how-ui] .browser-body {grid-template-columns:minmax(0,1fr);gap:var(--how-section-gap);}
-    .game-shell[data-how-ui] .wood-slot {min-height:52px;max-height:72px;}
+    .game-shell[data-how-ui] .wood-slot {width:100%;min-height:52px;max-height:72px;}
     .game-shell[data-how-ui] .wood-slot .game-icon {width:48px;height:48px;}
     .game-shell[data-how-ui] .wood-detail {padding:12px;gap:8px;}
     .game-shell[data-how-ui] .wood-item-heading h3 {font-size:15px;}
