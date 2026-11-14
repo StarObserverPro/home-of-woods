@@ -76,7 +76,11 @@
 
 主游戏证据使用真实 App/runtime、正常内容与事务，只隔离存档并固定 seed `104729`、时间及检视用库存。仓库/路线/故事通过正常界面进入；阅读途中由实际“走近”动作生成路径后，沿项目既有 `__HOW_ADVANCE_SIMULATION__` 检视入口分段推进同一个固定步长所有者，避免软件渲染每帧数秒与 0.1 秒 dt 上限使行走等待失真。报告单独记录该推进，未直接改写人物位置、选择或阅读状态，不能由此推断实体设备帧率或操作耗时。
 
-主游戏与旧版对照使用 Chromium CDP 合成视口截图，避开 Playwright 截图准备阶段的 RAF 稳定等待。针对首轮软件渲染截图超时，Timber 工作流显式设置现有 `PLAYWRIGHT_LEGACY_SCREENSHOT=1` 开关，采用等待重绘的截图路径，并在两份报告记录该模式；[Chromium 对应特性定义](https://chromium.googlesource.com/chromium/src/+/refs/heads/main/content/common/features.cc)说明了两条路径的差异。分辨率、场景、帧调度和布局不改变，截图超时不放宽。模块长页继续保留全页截图。截图失败仍写入失败报告，流程的真实关闭/清理随后执行，避免把一次截图超时误诊成后续所有菜单都不可用。木作从实际构建的 `woodworking.html` 在离线 context 打开。没有用主题样板替代主游戏，也没有通过改写产品状态绕过待检查的操作。
+主游戏与旧版对照使用 Chromium CDP 合成视口截图，避开 Playwright 截图准备阶段的 RAF 稳定等待。Timber 工作流显式设置现有 `PLAYWRIGHT_LEGACY_SCREENSHOT=1` 开关，采用等待重绘的截图路径，并在两份报告记录该模式；[Chromium 对应特性定义](https://chromium.googlesource.com/chromium/src/+/refs/heads/main/content/common/features.cc)说明了两条路径的差异。分辨率、场景和布局保持原样，截图超时不放宽。
+
+针对软件渲染环境中反复出现的截图超时，主游戏在 `DEV + inspect` 条件下提供受控取图接口 `__HOW_CAPTURE_HOLD__`。取图瞬间通过既有唯一主循环暂挂渲染，读取浏览器已经呈现的真实画面；`finally` 按当前暂停所有者恢复循环。它不发布游戏暂停状态，捕获期间保留实际世界状态、输入与固定步长余量。报告须确认持有期间帧数和世界状态不变、焦点与窗口矩形不变，恢复后运行中的循环继续推进，原本暂停的循环继续暂停。正常操作及交互断言在释放后执行；这些截图不能用于判断实体设备帧率或真实操作耗时。
+
+模块长页继续保留全页截图。截图失败仍写入失败报告，流程的真实关闭/清理随后执行，避免把一次截图超时误诊成后续所有菜单都不可用。木作从实际构建的 `woodworking.html` 在离线 context 打开。没有用主题样板替代主游戏，也没有通过改写产品状态绕过待检查的操作。
 
 **最终检查结果与图片请按 [PR36 的 Checks](https://github.com/StarObserverPro/home-of-woods/pull/36/checks) 读取。** PR body 记录接受的代码提交与对应运行；Actions artifact 保存截图与结构化报告（当前保留 7 天），图片不提交仓库。GitHub 的 PR 检查可能记录合成 merge commit，因此还须结合该次 run 的 head SHA 追溯分支版本。
 

@@ -18,8 +18,8 @@ const smallViews=[{width:390,height:844},{width:320,height:720},{width:844,heigh
 const guidedFrames=new Set(['01-desktop-hud','02-desktop-items','06-desktop-pause','game-390x844-items','game-844x390-items','game-390x844-items-notice','gallery-desktop','cabin-844x390-initial','woodworking-offline-390x844']);
 const report={
   result:'running',startedAt:new Date().toISOString(),sourceRevision:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),
-  scope,origin,browser:null,buildEntrySha256:null,woodworkingEntrySha256:null,frames:[],flows:[],focusChecks:[],journeys:[],gridChecks:[],noticeChecks:[],guideDialogChecks:[],cabinSceneChecks:[],layoutIssues:[],errors:[],failedRequests:[],warnings:[],failures:[],
-  captureMethod:{viewport:'CDP Page.captureScreenshot: PNG, fromSurface=true, captureBeyondViewport=false',fullPage:'Playwright page.screenshot: fullPage=true, animations=disabled',mode:process.env.PLAYWRIGHT_LEGACY_SCREENSHOT?'legacy ForceRedraw':'CDPScreenshotNewSurface (Playwright default)',legacyScreenshotEnv:process.env.PLAYWRIGHT_LEGACY_SCREENSHOT??null},
+  scope,origin,browser:null,buildEntrySha256:null,woodworkingEntrySha256:null,frames:[],flows:[],focusChecks:[],journeys:[],gridChecks:[],noticeChecks:[],guideDialogChecks:[],cabinSceneChecks:[],captureHolds:[],layoutIssues:[],errors:[],failedRequests:[],warnings:[],failures:[],
+  captureMethod:{viewport:'CDP Page.captureScreenshot: PNG, fromSurface=true, captureBeyondViewport=false',fullPage:'Playwright page.screenshot: fullPage=true, animations=disabled',mode:process.env.PLAYWRIGHT_LEGACY_SCREENSHOT?'legacy ForceRedraw':'CDPScreenshotNewSurface (Playwright default)',legacyScreenshotEnv:process.env.PLAYWRIGHT_LEGACY_SCREENSHOT??null,hold:'When available, DEV inspect holds the sole runtime loop through the actual screenshot, then restores its current pause owners'},
   inputs:{seed:104729,clock:'time=0, speed=0; 14:00 production calendar',save:'isolated in-memory WorldSaveStore',persistentNotice:'gridNotice=1 deliberately fails isolated store.read; the production save controller creates the warning',stock:'ten active production item IDs granted through inventoryTransaction',dpr:1},
   limits:[
     'The main UI uses the real App/runtime through a Vite review entry; npm run build is a separate required gate.',
@@ -28,6 +28,7 @@ const report={
     'Guide captures enable the shared diagnostic overlay only after the clean frame, then remove it before interaction resumes; guides never change player layout.',
     'Grid checks compare declared UI relationships within 1 CSS px; world labels and drag-following previews are not screen-aligned notices.',
     'The game clock is fixed; decorative animation phases depend on elapsed rendering time.',
+    'Main-game capture holds are diagnostic only: actual world/input, focus and window bounds must stay unchanged while held; a running loop must resume afterward. These captures do not measure frame rate.',
     'Story travel uses the existing DEV fixed-step owner in bounded 2-second steps after real UI commands; recorded steps are simulation advancement, not travel performance.',
     'The woodworking package is opened from its built single HTML file in an offline browser context; its full craft progression is outside this UI review.',
   ],
@@ -39,19 +40,94 @@ const frames=(page,count=3)=>page.evaluate(count=>new Promise(resolve=>{
   const step=()=>count-->0?requestAnimationFrame(step):resolve();step();
 }),count);
 
+async function finishScreenshotHold(page,started,filename,captureError){
+  const summary=({world,...snapshot})=>({...snapshot,worldSha256:createHash('sha256').update(world).digest('hex')});
+  const evidence={phase,file:path.basename(filename),result:'running',before:summary(started.before),heldStart:started.held,screenshotError:captureError?String(captureError):null};
+  report.captureHolds.push(evidence);
+  try{
+    const finished=await page.evaluate(()=>{
+      const held=window.__HOW_REVIEW_CAPTURE_HOLD__;
+      if(!held)throw new Error('Capture hold context disappeared');
+      let result,dom;
+      try{
+        const current=held.visibleWindows();
+        dom={focusUnchanged:document.activeElement===held.active,focus:held.focus,
+          sameWindows:current.length===held.windows.length&&current.every((node,index)=>node===held.windows[index].node),
+          windows:held.windows.map(({node,label,before})=>({label,connected:node.isConnected,before,after:held.rect(node)}))};
+      }finally{
+        // Release before any Node-side assertion, including a failed DOM check.
+        try{result=held.hook.end(held.token);}
+        finally{delete window.__HOW_REVIEW_CAPTURE_HOLD__;}
+      }
+      dom.focusUnchanged&&=document.activeElement===held.active;
+      return {...result,dom};
+    });
+    Object.assign(evidence,{released:finished.released,heldEnd:summary(finished.held),after:summary(finished.after),dom:finished.dom});
+    assert.ok(finished.released,'The screenshot must release its own capture hold');
+    assert.ok(started.held.loop.paused&&!started.held.loop.running&&!started.held.loop.scheduled,'Capture must hold the existing loop');
+    for(const snapshot of [started.held,finished.held,finished.after])assert.equal(snapshot.loop.frames,started.before.loop.frames,'Runtime frames must not advance during capture');
+    for(const snapshot of [finished.held,finished.after]){
+      assert.equal(snapshot.world,started.before.world,'Capture must preserve the actual runtime world state');
+      assert.equal(snapshot.accumulator,started.before.accumulator,'Capture must preserve the fixed-step remainder');
+      assert.deepEqual(snapshot.input,started.before.input,'Capture must preserve input intent');
+    }
+    assert.ok(finished.dom.focusUnchanged,'Capture must retain the actual focused node');
+    assert.ok(finished.dom.sameWindows,'Capture must retain the same visible window nodes');
+    for(const window of finished.dom.windows){
+      assert.ok(window.connected,`Capture disconnected ${window.label}`);
+      window.maxDelta=Math.max(...['x','y','width','height'].map(key=>Math.abs(window.after[key]-window.before[key])));
+      assert.ok(window.maxDelta<=1,`Capture changed ${window.label} bounds by ${window.maxDelta}px`);
+    }
+    const paused=Object.values(finished.after.owners).some(Boolean);
+    assert.equal(finished.after.loop.paused,paused,'Release must respect current pause owners');
+    assert.equal(finished.after.loop.running,!paused,'Release must restore the loop running state');
+    assert.equal(finished.after.loop.scheduled,!paused,'Release must restore the sole RAF schedule');
+    if(!paused){
+      await page.waitForFunction(frames=>{
+        const current=window.__HOW_CAPTURE_HOLD__?.read();
+        return current&&(current.loop.frames>frames||Object.values(current.owners).some(Boolean));
+      },finished.after.loop.frames,{polling:100,timeout:30000});
+      evidence.resumed=await page.evaluate(()=>window.__HOW_CAPTURE_HOLD__?.read());
+      assert.ok(evidence.resumed,'The live runtime capture interface must remain available');
+      const nowPaused=Object.values(evidence.resumed.owners).some(Boolean);
+      assert.equal(evidence.resumed.loop.paused,nowPaused,'A new pause owner must remain authoritative');
+      assert.ok(nowPaused||evidence.resumed.loop.frames>finished.after.loop.frames,'The released loop must advance a real frame');
+    }else evidence.resumed={loop:finished.after.loop,owners:finished.after.owners};
+    evidence.result='passed';
+  }catch(error){evidence.result='failed';evidence.error=String(error);throw error;}
+}
+
 async function takeScreenshot(page,{path:filename,fullPage=false,timeout=60000}){
-  if(fullPage)return page.screenshot({path:filename,fullPage:true,animations:'disabled',timeout});
+  const held=await page.evaluate(()=>{
+    const hook=window.__HOW_CAPTURE_HOLD__;
+    if(!hook)return null;
+    if(window.__HOW_REVIEW_CAPTURE_HOLD__)throw new Error('A screenshot capture is already active');
+    const rect=node=>{const r=node.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};};
+    const visibleWindows=()=>[...document.querySelectorAll('[data-ui-grid="window"],dialog[open],[aria-modal="true"]')].filter(node=>node.checkVisibility({checkOpacity:true,checkVisibilityCSS:true})&&node.getClientRects().length);
+    const active=document.activeElement;
+    const windows=visibleWindows().map(node=>({node,label:node.getAttribute('aria-label')||node.id||node.className,before:rect(node)}));
+    const started=hook.begin();
+    window.__HOW_REVIEW_CAPTURE_HOLD__={hook,token:started.token,active,focus:active?.getAttribute('aria-label')||active?.tagName,windows,visibleWindows,rect};
+    return started;
+  });
   // The game canvas has a fixed viewport. Use the repository's existing CDP path
   // so software-rendered frames do not enter Playwright's screenshot stability wait.
-  const session=await page.context().newCDPSession(page);
-  let timer;
+  let session,timer,captureError;
   try{
+    if(fullPage)return await page.screenshot({path:filename,fullPage:true,animations:'disabled',timeout});
+    session=await page.context().newCDPSession(page);
     const frame=await Promise.race([
       session.send('Page.captureScreenshot',{format:'png',fromSurface:true,captureBeyondViewport:false}),
       new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`CDP Page.captureScreenshot timed out after ${timeout}ms`)),timeout);}),
     ]);
     await fs.writeFile(filename,Buffer.from(frame.data,'base64'));
-  }finally{clearTimeout(timer);await session.detach().catch(()=>{});}
+  }catch(error){captureError=error;throw error;}
+  finally{
+    clearTimeout(timer);
+    try{if(held)await finishScreenshotHold(page,held,filename,captureError);}
+    catch(error){if(captureError)throw new AggregateError([captureError,error],'Screenshot and capture-hold verification failed');throw error;}
+    finally{await session?.detach().catch(()=>{});}
+  }
 }
 
 async function recordFailure(name,page,error,{kind='interaction',frame,measured,screenshot=true}={}){

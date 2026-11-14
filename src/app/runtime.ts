@@ -141,6 +141,8 @@ export async function createRuntime(
   let placement:PlacementDraft|null=null;
   let reading=false;
   let captureAt:number|null=null;
+  let captureHoldToken:number|null=null;
+  let restoringCaptureHold=false;
   const keys = new Set<string>(),
     stick = { x: 0, z: 0 };
   let runToggle=false;
@@ -285,9 +287,8 @@ export async function createRuntime(
       cancel: (id) => cancelAnimationFrame(id),
     },
     () => {
-      accumulator = 0;
+      if(!restoringCaptureHold){accumulator=0;resetMovementInput();}
       lastSampleAt=null;
-      resetMovementInput();
     },
   );
   const stats = () => {
@@ -372,8 +373,9 @@ export async function createRuntime(
       appearance:view.getAppearance(),
     });
   }
+  const loopPauseRequired=()=>captureHoldToken!==null||manualPause||inspectionOpen||contextLost||document.hidden||destroyed;
   const syncPause = () => {
-    loop.setPaused(manualPause || inspectionOpen || contextLost || document.hidden);
+    loop.setPaused(loopPauseRequired());
     resetMovementInput();
     state.player.moving = false;
     publishSnapshot();
@@ -469,19 +471,50 @@ export async function createRuntime(
   const transferBlocked=()=>destroyed||manualPause||inspectionOpen||contextLost||document.hidden||!!placement||workshopBusy(state)||!!state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state);
   const itemTransfers=createItemTransfers(state,woodcraft,view,activeColliders,transferBlocked);
   const clearPlacement=()=>{placement=null;view.setPlacement(null);};
-  loop.setPaused(manualPause || document.hidden);
+  loop.setPaused(loopPauseRequired());
   publishSnapshot();
   // DEV inspection advances the existing fixed-step owner between captured frames.
   // It neither changes movement speed nor creates a second clock/RAF in the shipped game.
-  type InspectionWindow=Window&{__HOW_ADVANCE_SIMULATION__?:(seconds:number)=>void};
+  function createCaptureHoldInspection(){
+    let nextToken=0;
+    const read=()=>({loop:loop.stats(),owners:{manualPause,inspectionOpen,contextLost,hidden:document.hidden,destroyed}});
+    const snapshot=()=>({...read(),world:JSON.stringify(state),accumulator,input:{keys:[...keys],stick:{...stick},runToggle}});
+    return {
+      read,
+      begin(){
+        if(destroyed||captureHoldToken!==null)throw new Error('Capture hold unavailable or already active');
+        const before=snapshot(),token=++nextToken;
+        captureHoldToken=token;loop.setPaused(true);
+        return {token,before,held:read()};
+      },
+      end(token:number){
+        const held=snapshot();
+        if(token!==captureHoldToken)return {released:false,held,after:snapshot()};
+        captureHoldToken=null;
+        // Capture release keeps the fixed-step remainder and input intent. Only
+        // the existing loop's wall-time/sampling baselines restart after the hold.
+        restoringCaptureHold=true;
+        try{loop.setPaused(loopPauseRequired());}
+        finally{restoringCaptureHold=false;}
+        return {released:true,held,after:snapshot()};
+      },
+    };
+  }
+  type InspectionWindow=Window&{
+    __HOW_ADVANCE_SIMULATION__?:(seconds:number)=>void;
+    __HOW_CAPTURE_HOLD__?:ReturnType<typeof createCaptureHoldInspection>;
+  };
   const inspectionWindow=window as InspectionWindow;
   let advanceInspection:((seconds:number)=>void)|undefined;
+  let captureInspection:ReturnType<typeof createCaptureHoldInspection>|undefined;
   if(import.meta.env.DEV&&new URLSearchParams(window.location.search).has('inspect')){
+    captureInspection=createCaptureHoldInspection();
+    inspectionWindow.__HOW_CAPTURE_HOLD__=captureInspection;
     advanceInspection=seconds=>{
-      if(blocked()||interfaceOpen||!Number.isFinite(seconds)||seconds<=0||seconds>5)throw new Error('Inspection step unavailable');
+      if(captureHoldToken!==null||blocked()||interfaceOpen||!Number.isFinite(seconds)||seconds<=0||seconds>5)throw new Error('Inspection step unavailable');
       loop.setPaused(true);
       try{tick(seconds,performance.now());}
-      finally{loop.setPaused(manualPause||inspectionOpen||contextLost||document.hidden);publishSnapshot();}
+      finally{loop.setPaused(loopPauseRequired());publishSnapshot();}
     };
     inspectionWindow.__HOW_ADVANCE_SIMULATION__=advanceInspection;
   }
@@ -692,7 +725,7 @@ export async function createRuntime(
     },
     getState:()=>state,
     stepReviewSimulation(seconds:number){
-      if(!import.meta.env.DEV||!new URLSearchParams(window.location.search).has('inspect')||blocked()||placement||!Number.isFinite(seconds)||seconds<=0||seconds>20)return;
+      if(!import.meta.env.DEV||!new URLSearchParams(window.location.search).has('inspect')||captureHoldToken!==null||blocked()||placement||!Number.isFinite(seconds)||seconds<=0||seconds>20)return;
       // Reuse the sole fixed-step simulation, including walking, calendar stops
       // and ordinary transactions; no direct position or material assignments.
       tick(seconds,performance.now());publishSnapshot();
@@ -788,6 +821,8 @@ export async function createRuntime(
       if (destroyed) return;
       destroyed = true;
       if(import.meta.env.DEV&&inspectionWindow.__HOW_ADVANCE_SIMULATION__===advanceInspection)delete inspectionWindow.__HOW_ADVANCE_SIMULATION__;
+      if(import.meta.env.DEV&&inspectionWindow.__HOW_CAPTURE_HOLD__===captureInspection)delete inspectionWindow.__HOW_CAPTURE_HOLD__;
+      captureHoldToken=null;
       unsubscribeSave();
       void persistence.saveNow(state);
       loop.destroy();
