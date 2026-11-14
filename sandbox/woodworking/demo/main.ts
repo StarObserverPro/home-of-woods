@@ -1,3 +1,5 @@
+import timberCss from '../../../src/ui/timber/theme.css?inline'
+import { mountTimberTheme } from '../../../src/ui/timber/mount.ts'
 import { mountCampHandwork } from '../integration/mount-camp.ts'
 import type { WoodworkingDraft, WoodworkingMount } from '../src/workbench.ts'
 import {
@@ -7,18 +9,13 @@ import {
   woodBatch,
 } from '../../../src/domain/inventory.ts'
 import type { InventoryState } from '../../../src/domain/inventory.ts'
-import { restoreJob } from '../src/domain.ts'
+import { restoreDraft } from '../src/workbench.ts'
 import { rarityDefinition, isRarityId } from '../../../src/content/rarities.ts'
-import timberCss from '../../../src/ui/timber/theme.css?inline'
-import {mountTimberTheme} from '../../../src/ui/timber/mount.ts'
 
-const themeStyle=document.createElement('style')
-themeStyle.textContent=timberCss
-document.head.append(themeStyle)
-const disposeTimber=mountTimberTheme(document.body)
-
-type Session = { version: 1; inventory: InventoryState; serial: number; draft: WoodworkingDraft | null }
-const key = 'home-of-woods.handwork.sandbox.v1'
+type Session = { version: 2; inventory: InventoryState; serial: number; draft: WoodworkingDraft | null }
+const sharedStyle = document.createElement('style'); sharedStyle.textContent = timberCss; document.head.append(sharedStyle)
+const sharedTimber = mountTimberTheme(document.body)
+const key = 'home-of-woods.handwork.sandbox.v2'
 const root = document.querySelector<HTMLElement>('#workshop')!
 const ledger = document.querySelector<HTMLElement>('#ledger')!
 const gallery = document.querySelector<HTMLDetailsElement>('#gallery')!
@@ -32,7 +29,7 @@ function fresh(): Session {
     { id: 'offcut', label: '短枫木料', length: 69, section: 28, quantity: 3 },
   ]
   return {
-    version: 1,
+    version: 2,
     serial: 1,
     draft: null,
     inventory: inventoryTransaction(
@@ -64,9 +61,9 @@ function load(): Session {
     const raw = storage?.getItem(key)
     if (raw) {
       const s: Session = JSON.parse(raw)
-      if (s.version !== 1 || !Number.isSafeInteger(s.serial) || s.serial < 1) throw Error()
+      if (s.version !== 2 || !Number.isSafeInteger(s.serial) || s.serial < 1) throw Error()
       validateInventory(s.inventory)
-      if (s.draft) s.draft.job = restoreJob(s.draft.job)
+      if (s.draft) s.draft = restoreDraft(s.draft)
       return s
     }
   } catch {
@@ -89,7 +86,7 @@ function shelves() {
   document.querySelector('#count')!.textContent = String(items.length)
   ledger.replaceChildren()
   if (!items.length) {
-    ledger.textContent = '收好第一件榫样，就能领用直角尺。'
+    ledger.textContent = '这里还没有作品。'
     return
   }
   for (const item of [...items].sort((a, b) => b.createdAt - a.createdAt)) {
@@ -107,9 +104,6 @@ function shelves() {
     name.textContent = data.sourceMaterial + ' · 直榫样件'
     const grade = isRarityId(item.rarityId) ? rarityDefinition(item.rarityId).name : '普通'
     detail.textContent = `${grade}　工艺 ${data.score}　·　榫宽 ${data.envelope.tenonWidth.toFixed(1)} mm`
-    row.dataset.timberSurface='slot'
-    row.dataset.timberMaterial='recess'
-    row.dataset.timberSeed=`woodworking-ledger:${item.instanceId}`
     row.append(swatch, name, detail)
     ledger.append(row)
   }
@@ -129,13 +123,12 @@ function open() {
         if (draft !== null || session.draft !== null) save({ ...session, draft })
       },
       commit: (inventory, serial) => {
-        save({ version: 1, inventory, serial, draft: null })
+        save({ version: 2, inventory, serial, draft: null })
         shelves()
       },
     },
     session.draft,
-    () => ({ straightedge: (session.inventory.instances?.length ?? 0) > 0 }),
-    '收好第一件榫样后可领用直角尺',
+    () => ({ saw: true, autoFinish: true, brush: true, straightedge: true }),
   )
 }
 document.querySelector('#replenish')!.addEventListener('click', () => {
@@ -148,10 +141,7 @@ document.querySelector('#replenish')!.addEventListener('click', () => {
   open()
 })
 document.addEventListener('visibilitychange', () => handle?.setPaused(document.hidden))
-window.addEventListener('pagehide',event=>{
-  if(event.persisted)return
-  handle?.destroy()
-  disposeTimber()
-})
 shelves()
 open()
+
+window.addEventListener('pagehide', () => { handle?.destroy(); sharedTimber(); sharedStyle.remove() }, { once: true })

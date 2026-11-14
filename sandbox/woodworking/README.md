@@ -1,69 +1,33 @@
-# 森林之家 · 木作间
+# 森林之家 · 木作台 0.3
 
-一根方料、一把手锯和一副开口试配槽。在纸上定总长、榫长和榫宽，翻转工件划出五道墨线，锯出直榫。可以把近侧榫颊刻意留厚一点，看看试配时哪一侧顶住，再用凿子薄削。首件收进作品匣后，下一件可领用直角尺。尺子只沿玩家选定的落笔位置扶正线条。
+在同一张工作台上选面、定线、定深、下锯和试配。加工用按钮；拖动木料、方向按钮与正面/侧看只改变观察角度。旋转、换工序与试配不改变比例；只有显式加减缩放、换料或视口尺寸改变才重新设定画面尺度。
 
-## 试玩和打包
+## 运行与接入
 
-在仓库根目录执行以下命令。需要 Node.js 22.14 或更新版本。
+在仓库根目录先 `npm ci`，再进入本目录执行 `npm ci && npm test && npm run build`。使用 Node.js 22.14+；当前浏览器工作流锁定 22.16.0。打开 `dist/woodworking.html` 即可离线试玩；Three.js、手锯 GLB、桌面贴图和共享 Timber UI 都已打入文件，不依赖 CDN。该页是提供练习材料的独立宿主，不是主游戏免费发料入口。
 
-```sh
-cd sandbox/woodworking
-npm ci
-npm test
-npm run build
-npm pack
-```
+`npm pack` 产生 `@home-of-woods/woodworking` 组件包，导出 `mountWoodworking`。原 `WoodworkingOptions` / `WoodworkingMount` 合同保留；`getDraft()`、`setPaused()`、`destroy()` 分别取草稿、暂停和卸载。宿主仍负责唯一材料事务与保存；`integration/mount-camp.ts` 是现有营地适配器。正式营地菜单、角色进出工作台和方料供应尚未接入本版本。
 
-- **直接试玩**　用浏览器打开 `dist/woodworking.html`。它包含完整画面、工序和示例宿主，可离线使用。样件、方料与草稿存在试玩页自己的存储空间。浏览器限制文件存储时可在同一会话继续操作。
-- **挂载包**　`home-of-woods-woodworking-0.1.0.tgz` 可用 `npm install ./home-of-woods-woodworking-0.1.0.tgz` 安装。包内是浏览器 ESM 模块、内嵌样式和 TypeScript 声明，没有运行时依赖。普通静态页面也可直接导入 `dist/woodworking.js`。
-- **正式工作台入口**　游戏仓库中的[营地挂载入口](integration/mount-camp.ts)已将该视图接到[库存适配器](integration/camp.ts)。示例宿主通过同一个入口挂载。游戏默认入口尚未启用这个沙盒。
+操作记录与材料守恒沿用有限锯切 V2；0.1 手绘草稿不静默转换。浅锯、续锯、两刀接通后脱料、一次自动修整、不可修复损伤、真实库存重试/重复收件规则保留。锯口完全处于待削余量时，按修整后的实际几何判断能否补救；只减材，不填回缺口。完整凿槽、斜切、圆孔和手动凿削未实现。
 
-## 在宿主中挂载
+## 画面与资产
 
-```ts
-import { mountWoodworking } from '@home-of-woods/woodworking'
+`src/viewport.ts` 使用按需绘制的 3D 工作台。没有背景常驻动画循环；只有输入、尺寸/状态变化、资源加载和短时锯切表现请求帧。选面网格直接来自 `solid.ts` 的实际暴露表面；端纹和侧纹在原始木料坐标中连续。锯切动画不结算资源。
 
-const view = mountWoodworking(panel, {
-  stocks: availableBlanks,
-  draft: savedDraft,
-  tools: { saw: true, chisel: true, brush: true, straightedge: hasSquare },
-  onDraftChange: saveWorkshopDraft,
-  onComplete: settleWorkpiece,
-  onDiscard: discardSawnBlank
-})
-view.setPaused(true)    // 随游戏暂停，冻结输入与虚影余时
-view.setPaused(false)
-view.destroy()         // 离开工作台，释放画布输入、计时器和尺寸监听
-```
+手锯采用 Poly Haven CC0 模型，不是工具图标挤出；工作台为简单厚台面与腿，贴图按实际坐标铺设，不把整张多板贴图挤进每根窄板。原始输入、作者、许可、修改和复建入口见 [资产来源](../../sources/polyhaven/woodworking/README.md)。手锯运行模型 2,548 三角面，纹理经过降采样与风格化；木料使用程序木纹，直角尺和静态环境为项目几何。单文件 HTML、ESM 文件及包内独立声明均附完整 Three.js MIT 与 CC0 许可文字。
 
-| 交接 | 职责 |
-| --- | --- |
-| 选料与图纸 | 宿主提供可用木坯的稳定批次 ID、显示名和毫米尺寸。传空数组代表没有可用料。进入工作台的距离、图纸知识和工具权限由宿主判定。练习宿主提供两种常规方料和一批短料 |
-| 加工中 | `onDraftChange(draft)` 回传可序列化工件，宿主决定保存位置。下一次挂载传回 `draft`，保留墨线与切面。退出工作台继续保留草稿，暂停/重开不会补发五秒虚影 |
-| 收件 | `onComplete(preview, stockId, draft)` 可异步返回稀有度名称和词条展示名。适配器从草稿重建实际几何并复查材料，单次提交扣料、足尺寸余料、成品和流水号。若结算失败可在原工件上重试 |
-| 换料或弃料 | 第一刀以前可以换料。实际下锯后须确认放弃，`onDiscard(draft)` 扣除这根方料并保留可用截余，不发成品。关闭界面不会触发弃料 |
-| 成品 | 成品记录实际端面、两侧榫颊和两肩的上下边界，从少量参数重建斜度与轮廓。宿主用原有图纸档次和种子决定稀有度，面漆单独保存。当前普通习作没有附加词条 |
+## 共享 UI 约定
 
-营地侧可以直接调用以下入口。工件批次必须标有方截面 `wood.spec.section = 'square'` 和稳定 `blankLot`，并通过原有材料位置与库存校验。这样一根圆木不会在打开工作台时被当作已刨方的坯料。正式回接时需要接入工作台菜单、登记习作图纸与成品，并把已有方料供应和活动工单槽交给宿主。渲染、放样、试配和结算逻辑均在此目录。
+直接复用 [DESIGN.md](../../DESIGN.md) 与 `src/ui/timber/`，不保留第二套木框/按钮皮肤。以下显式语义由共享主题绘制，业务 CSS 只布局：
 
-```ts
-import { mountCampHandwork } from './sandbox/woodworking/integration/mount-camp.ts'
+- `data-how-camera`：半透明观察按钮，只改变角度/显式缩放，不能执行加工。
+- `data-timber-density="compact"`：短工序、阶段和工具按钮；只减文字周边内边距，不减少 44px 命中目标。
+- `data-timber-variant="dock"`：紧凑工具匣；不改变其他窗口的统一内边距。
 
-const view = mountCampHandwork(panel, {
-  read: () => gameState,
-  checkpoint: saveWorkshopDraft,
-  commit: commitInventorySerialAndClearDraft
-}, savedDraft, availableTools)
-```
+手机把观察区、方向按钮、工具栏和操作卡分行；操作卡独立滚动，不盖住木料。桌面右侧操作卡与场景分列。图纸模态退出后返回图纸按钮焦点；暂停时关闭模态且停止输入与动态表现。
 
-## 几何与检验
+## 验证
 
-[设计规划](../../docs/WOODWORKING_HANDWORK.md)规定图纸目标、玩家墨线和加工实物各自的用途。首期实现一个可调的贯通直榫族。截端露出新面后，可在端面上放两条榫颊线，再从两侧锯肩。锯缝与纵锯止点相交才脱料。过厚能薄削，过薄会留下侧隙。试配使用真实端长、接触间隙、错肩及有效咬合。纸图和工件使用同一毫米坐标。画布按输入、工序变化和尺寸变化重绘，显示短工具动作，组件不创建常驻渲染循环。
+`npm test` 为加工、库存与视角比例单测；`node test/browser.mjs` 运行构建页面的真实浏览器操作与文件刷新。`node test/mount-browser.mjs` 用独立 ESM 宿主检查暂停、恢复、三次销毁重挂、图纸 Esc 返回焦点、44px 控件和离线资源/许可。使用 `QA_EVIDENCE_DIR` 指定临时截图/报告目录，`CHROME_PATH` 可指定 Chromium。
 
-`npm test` 覆盖几何、返工、报废、库存事务、重复收件与保存恢复。可选浏览器验收使用真实鼠标及模拟触控，在构建之后执行。桌面和手机都从落笔走到返工收件。传入 `QA_EVIDENCE_DIR` 可将检查图写入指定的临时目录。
-
-```sh
-CHROME_PATH=/path/to/chromium PLAYWRIGHT_CORE=/path/to/playwright-core node test/browser.mjs
-```
-
-本阶段提供直榫试件和预制槽。自行凿槽、多零件家具、雕刻和拆解回收仍按后续工序开发。本沙盒使用原创程序几何和系统字体。
+注入 HTML 的截图不替代真实刷新验证；软件 WebGL 与触控模拟不认证实体手机性能。具体已通过结果、画面审查和未接线部分见 [本批记录](../../docs/scopes/woodworking-game-stage.md)。
