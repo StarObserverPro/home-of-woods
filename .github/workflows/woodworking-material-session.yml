@@ -1,0 +1,27 @@
+name: Woodworking Material Inputs
+on:
+  push:
+    branches: [feat/woodworking-game-stage]
+    paths: [.github/workflows/woodworking-material-session.yml]
+permissions:
+  contents: read
+jobs:
+  inputs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Export current source and superseded implementation for comparison
+        run: |
+          mkdir -p /tmp/woodworking-material-inputs
+          git archive HEAD | gzip > /tmp/woodworking-material-inputs/current.tgz
+          git archive 675063f6a8724f0941ca344dd2c7bf192da26f8f sandbox/woodworking docs/WOODWORKING_HANDWORK.md docs/WOODWORKING_TOOLS.md | gzip > /tmp/woodworking-material-inputs/pr35.tgz
+          git rev-parse HEAD > /tmp/woodworking-material-inputs/head.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: woodworking-material-inputs
+          path: /tmp/woodworking-material-inputs
+          retention-days: 1
