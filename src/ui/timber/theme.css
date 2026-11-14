@@ -1,0 +1,89 @@
+/* Material and interaction owner. Existing feature styles live in how-layout. */
+@layer how-layout, how-timber;
+@layer how-timber {
+  [data-how-ui="timber"] {
+    --how-ink:#fff1d5; --how-muted:#d0c6a7; --how-surface:#25382d;
+    --how-recess:#18291f; --how-wood:#765039; --how-wood-light:#b17b48;
+    --how-focus:#ffe6a0; --how-accent:#e4b46e; --how-danger:#f3b09b;
+    --how-space-1:4px; --how-space-2:8px; --how-space-3:12px;
+    --how-space-4:16px; --how-space-6:24px;
+    --how-target:44px; --how-text-sm:12px; --how-text:14px;
+    --how-shadow:0 8px 20px #10180f40;
+    color:var(--how-ink);
+    font-family:"Noto Sans SC","Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+    font-size:var(--how-text); line-height:1.5; color-scheme:dark;
+    text-shadow:none;
+  }
+  [data-how-ui] *, [data-how-ui] *::before, [data-how-ui] *::after {box-sizing:border-box;}
+  :is([data-how-ui][data-timber-surface],[data-how-ui] [data-timber-surface]) {
+    --how-surface-image:linear-gradient(177deg,#a47b49 0 7%,#795333 8% 88%,#30271d 89%);
+    border:0; border-image:none; border-radius:0; clip-path:none;
+    background-color:transparent;
+    background-image:var(--how-surface-image);
+    background-size:100% 100%; background-repeat:no-repeat; background-position:center;
+    box-shadow:none; color:var(--how-ink); backdrop-filter:none;
+    text-shadow:none;
+  }
+  :is([data-how-ui][data-timber-surface="panel"],[data-how-ui] [data-timber-surface="panel"]) {
+    --how-surface-image:linear-gradient(177deg,#775538 0 3%,#25382d 4% 96%,#30271d 97%);
+    padding:var(--how-space-4);
+  }
+  :is([data-how-ui][data-timber-surface="slot"],[data-how-ui] [data-timber-surface="slot"]) {
+    --how-surface-image:linear-gradient(177deg,#101e18 0 9%,#21372a 10% 93%,#506044 94%);
+  }
+  [data-how-ui] :is(button,summary,select,input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),[data-timber-surface="button"]) {
+    min-width:var(--how-target); min-height:var(--how-target);
+    font:inherit; font-size:var(--how-text-sm); line-height:1.4;
+    touch-action:manipulation;
+  }
+  [data-how-ui] :is(button,summary) {
+    cursor:pointer; -webkit-tap-highlight-color:transparent;
+    transition:filter 120ms ease, translate 120ms ease;
+  }
+  [data-how-ui] [data-timber-surface="button"] {
+    padding:8px 14px 11px; font-weight:600;
+  }
+  [data-how-ui] [data-timber-material="endgrain"][data-timber-surface="button"] {font-size:22px;padding:6px;}
+  [data-how-ui] :is(button,summary):not(:disabled):hover {filter:brightness(1.13);color:var(--how-ink);}
+  [data-how-ui] button:not(:disabled):active {translate:0 2px;filter:brightness(.96);}
+  [data-how-ui] :is([aria-pressed="true"],[aria-selected="true"],.is-selected) {
+    box-shadow:inset 0 -5px 0 var(--how-accent); color:#fff8e6;
+  }
+  [data-how-ui] :is(button,summary,a,select,input,textarea,[tabindex]):focus-visible {
+    outline:3px solid var(--how-focus); outline-offset:3px;
+  }
+  [data-how-ui] :is(button,input,select):disabled {
+    opacity:.62; filter:saturate(.3); cursor:not-allowed; translate:none;
+  }
+  [data-how-ui] [aria-busy="true"] {cursor:progress;filter:saturate(.65);}
+  [data-how-ui] [data-timber-intent="danger"] {color:var(--how-danger);}
+  [data-how-ui] :is(select,textarea,input:not([type="checkbox"]):not([type="radio"]):not([type="range"])) {
+    background:var(--how-recess); color:var(--how-ink); border:0;
+    border-radius:4px; box-shadow:inset 0 3px 0 #0d1e17,inset 0 -3px 0 #526047;
+    padding:8px 12px; max-width:100%; min-width:0;
+  }
+  [data-how-ui] :is(input,textarea) {user-select:text;}
+  [data-how-ui] input[type="range"] {accent-color:var(--how-accent);min-height:44px;cursor:pointer;}
+  [data-how-ui] :is(input[type="radio"],input[type="checkbox"]) {accent-color:var(--how-accent);width:18px;height:18px;}
+  [data-how-ui] label:has(> :is(input[type="checkbox"],input[type="radio"])) {min-height:44px;display:flex;align-items:center;gap:8px;}
+  [data-how-ui] [hidden] {display:none!important;}
+  [data-how-ui] .how-texture-off [data-timber-surface],
+  [data-how-ui].how-texture-off [data-timber-surface] {
+    background-image:none; background-color:var(--how-wood);
+    border-radius:4px; box-shadow:inset 0 5px #a47b49,inset 0 -6px #30271d;
+  }
+  [data-how-ui].how-texture-off :is([data-timber-surface="panel"],[data-timber-surface="slot"]) {
+    background-color:var(--how-surface);box-shadow:inset 0 5px #14251b,inset 0 -6px #4b573b;
+  }
+  [data-how-ui].how-texture-off :is([aria-pressed="true"],[aria-selected="true"]) {
+    box-shadow:inset 0 -5px var(--how-accent);
+  }
+  @media(prefers-reduced-motion:reduce) {
+    [data-how-ui] :is(button,summary) {transition:none;}
+    [data-how-ui] button:not(:disabled):active {translate:none;}
+  }
+  @media(forced-colors:active) {
+    [data-how-ui] [data-timber-surface] {background:none;border:2px solid ButtonText;color:CanvasText;}
+    [data-how-ui] :is([aria-pressed="true"],[aria-selected="true"]) {outline:3px solid Highlight;}
+  }
+}

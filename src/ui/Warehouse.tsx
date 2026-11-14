@@ -24,7 +24,6 @@ export function Warehouse({open,view,woodcraft,onClose,onApproach,onFocus,onThro
   const panel=useRef<HTMLElement>(null),closeRef=useRef(onClose);closeRef.current=onClose;
   const [amount,setAmount]=useState<TransferAmount>('max');
   const [category,setCategory]=useState('carrying'),[materialFilter,setMaterialFilter]=useState('all');
-  useEffect(()=>{if(!open)return;const previous=document.activeElement as HTMLElement|null;panel.current?.focus();return()=>{if(previous?.isConnected)previous.focus({preventScroll:true});};},[open]);
   useEffect(()=>{if(!open)return;const key=(event:KeyboardEvent)=>{if(event.key==='Escape'&&!event.defaultPrevented){event.preventDefault();closeRef.current();}};window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);},[open]);
   const items=view.items.filter(i=>i.quantity>0&&(materialFilter==='all'||i.category===materialFilter)).map(item=>({...item,id:item.key,icon:itemIcon(item.itemId),badge:item.qualityName}));
   if(!open)return null;

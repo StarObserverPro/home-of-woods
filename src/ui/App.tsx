@@ -1,3 +1,7 @@
+import {mountGameTimber} from './timber/game-adapter.ts';
+import {useWindowFocus} from './timber/use-window-focus.ts';
+import './timber/theme.css';
+import './timber/game-layout.css';
 import {ItemBrowser,ItemHeading,MenuAction,IconTabs,TextPages} from './ItemBrowser.tsx';
 import {ownedIcon} from './art-icons.ts';
 import {CraftingMenu} from './CraftingMenu.tsx';
@@ -312,6 +316,8 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
     document.addEventListener('keydown',close,true);
     return()=>document.removeEventListener('keydown',close,true);
   },[mapOpen,help,cameraOpen,warehouseOpen,readerOpen,snapshot.paused,snapshot.selected,snapshot.placement,snapshot.woodcraft.dropping]);
+  useEffect(()=>mountGameTimber(host.current!.parentElement!),[]);
+  useWindowFocus(snapshot.paused||readerOpen?null:warehouseOpen?'.warehouse-dock':mapOpen?'.route-sheet':help?'.help-sheet':snapshot.selected&&!snapshot.placement&&!snapshot.woodcraft.dropping?'.target-card':null,warehouseOpen?'warehouse':mapOpen?'route':help?'help':snapshot.selected);
   const [targetPage,setTargetPage]=useState('use'),[helpPage,setHelpPage]=useState('move'),[pausePage,setPausePage]=useState('main');
   useEffect(()=>setTargetPage('use'),[snapshot.selected]);
   useEffect(()=>{runtime.current?.setMenuOpen(warehouseOpen||readerOpen||mapOpen||help||!!snapshot.selected&&!snapshot.placement&&!snapshot.woodcraft.dropping);},[warehouseOpen,readerOpen,mapOpen,help,snapshot.selected,snapshot.placement,snapshot.woodcraft.dropping,ready]);
@@ -408,7 +414,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
     if(warehouseOpen||readerOpen||mapOpen||help||snapshot.selected||snapshot.paused)stickEnd();
   },[warehouseOpen,readerOpen,mapOpen,help,snapshot.selected,snapshot.paused]);
   return (
-    <main className={`game-shell${warehouseOpen?' warehouse-is-open':''}${(warehouseOpen||readerOpen||mapOpen||help||selected)&&!snapshot.placement&&!snapshot.woodcraft.dropping?' menu-is-open':''}`} onPointerDownCapture={event=>{
+    <main data-how-ui="timber" className={`game-shell${warehouseOpen?' warehouse-is-open':''}${(warehouseOpen||readerOpen||mapOpen||help||selected)&&!snapshot.placement&&!snapshot.woodcraft.dropping?' menu-is-open':''}`} onPointerDownCapture={event=>{
       swallowedPointer.current=false;
       const target=event.target;
       if(!(target instanceof Element)||snapshot.placement||snapshot.woodcraft.dropping||itemDrag.drag)return;
@@ -601,7 +607,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
         {snapshot.message}
       </div>}
       {selected && !snapshot.placement && !readerOpen && !snapshot.woodcraft.dropping && !warehouseOpen && (
-        <aside key={snapshot.selected} className={`target-card${snapshot.selected===CAMP_VISITOR.id?' is-merchant':''}${gatherAction?.sourceId === gatherTarget?.id && gatherAction?.motionTag === 'gather.pickup' && ['approaching','performing'].includes(gatherAction.phase) ? ' target-card--pickup-active' : ''}`}>
+        <aside key={snapshot.selected} tabIndex={-1} role="dialog" aria-label="当前目标" className={`target-card${snapshot.selected===CAMP_VISITOR.id?' is-merchant':''}${gatherAction?.sourceId === gatherTarget?.id && gatherAction?.motionTag === 'gather.pickup' && ['approaching','performing'].includes(gatherAction.phase) ? ' target-card--pickup-active' : ''}`}>
           <div className="target-top">
             <h2 className={selectedOwnedItem?'rarity-name':undefined} data-rarity={selectedOwnedItem?itemRarity(selectedOwnedItem).id:undefined} style={selectedOwnedItem?rarityStyle(selectedOwnedItem):undefined}>{selected.title}</h2>
             <button
@@ -693,7 +699,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
         </aside>
       )}
       {mapOpen && (
-        <aside className="route-sheet panel">
+        <aside className="route-sheet panel" tabIndex={-1} role="dialog" aria-label="路线">
           <div className="panel-heading">
             <div>
               <h2>路线</h2>
@@ -709,7 +715,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
         </aside>
       )}
       {help && (
-        <aside className="help-sheet panel">
+        <aside className="help-sheet panel" tabIndex={-1} role="dialog" aria-label="操作说明">
           <div className="panel-heading">
             <h2>操作</h2>
             <button aria-label="关闭操作说明" onClick={() => setHelp(false)}>

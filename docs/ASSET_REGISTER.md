@@ -223,3 +223,8 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 | 林区远近表现 | 原创区块管理，近处 Mesh、远处共享实例；按可见数量压缩批次，保留受保护巨木作地标。 | src/scene/streamed-forest.ts；原 scene 主循环驱动，反复往返不重复缓存共享形态。 |
 
 实际构建、图像、手机布局与绘制量记录归 [WORLD_EXPANSION](WORLD_EXPANSION.md)。截图存临时验证目录，不入当前源码树。
+
+
+## Timber UI 1（2026-11-13）
+
+`src/ui/timber/surface.ts` 为本项目独立编写的程序化SVG表面：纵剖、横截、树皮、刨花和凹槽。输入为语义、尺寸和seed，无摄影贴图、外部图片、字体或第三方生成代码。生成器和运行时缓存负责派生资源，不产生需要逐张登记的图片文件；正式交付为源码。保留原R1图标授权与来源不变。旧R2木纹资源保留历史引用，当前活跃UI不再拉伸它们。外部设计研究仅借方法，来源与Saltline镜像许可边界见 [研究记录](UI_DESIGN_REFERENCES.md)。

@@ -1,4 +1,6 @@
 import css from './style.css?inline'
+import timberCss from '../../../src/ui/timber/theme.css?inline'
+import {mountWoodworkingTimber} from './timber-adapter.js'
 import {
   availableCuts,
   clearMark,
@@ -71,7 +73,7 @@ export function mountWoodworking(container: HTMLElement, options: WoodworkingOpt
   const mount = document.createElement('div')
   const shadow = mount.attachShadow({ mode: 'open' })
   const style = document.createElement('style')
-  style.textContent = css
+  style.textContent = css + '\n' + timberCss
   const shell = document.createElement('section')
   shell.className = 'shell'
   shell.innerHTML = `<header><div class="brand"><span class="seal">木</span><div><div class="eyebrow">森林之家 ／ 木工房</div><h1>榫作练习台</h1></div></div><span class="stamp">习作 01 · 直榫</span></header>
@@ -89,6 +91,7 @@ export function mountWoodworking(container: HTMLElement, options: WoodworkingOpt
     </div></section></div>`
   shadow.append(style, shell)
   container.append(mount)
+  const timber = mountWoodworkingTimber(shell, shadow)
   const $ = <T extends HTMLElement = HTMLElement>(selector: string) => shell.querySelector<T>(selector)!
   const btn = (a: string) => $<HTMLButtonElement>(`[data-a="${a}"]`)
   const stocks = options.stocks ?? [DEFAULT_STOCK, { id: 'wide-blank', length: 100, width: 36, height: 30 }]
@@ -312,6 +315,7 @@ export function mountWoodworking(container: HTMLElement, options: WoodworkingOpt
       view.height = e.height
     }
     viewport.update(view)
+    timber.refresh()
   }
   shell.addEventListener('change', (event) => {
     if (busy || paused) return
@@ -500,6 +504,7 @@ export function mountWoodworking(container: HTMLElement, options: WoodworkingOpt
       disposed = true
       stopClock()
       viewport.destroy()
+      timber.dispose()
       mount.remove()
     },
   }

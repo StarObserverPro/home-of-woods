@@ -1,3 +1,4 @@
+@layer how-layout {
 .guided-presets,.guided-adjust { display:flex; flex-wrap:wrap; gap:6px; }
 .guided-presets button[aria-pressed=true] { background:#d3b378; color:#263327; }
 .guided-presets button { flex:1; }
@@ -12,4 +13,6 @@
 @media (max-height:480px) and (orientation:landscape) {
   .guided-job { gap:5px; }
   .guided-job .tree-actions { flex-wrap:wrap; }
+}
+
 }

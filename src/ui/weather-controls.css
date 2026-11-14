@@ -1,3 +1,4 @@
+@layer how-layout {
 .weather-controls {
   position: relative;
   flex-shrink: 0;
@@ -11,7 +12,7 @@
   min-height: 44px;
   min-width: 88px;
   padding: 4px 9px;
-  border: 1px solid #ead7a361;
+  border: 0;
   border-radius: 10px;
   background: #18392ec9;
   font-size: 12px;
@@ -32,7 +33,7 @@
   overflow: auto;
   padding: 12px;
   border: 8px solid #715035;
-  border-image: url('/assets/ui-r2/wood-bark.svg') 12 stretch;
+
   border-radius: 10px;
   background: #213e2f;
   box-shadow: 0 8px 24px #081e1b66;
@@ -54,7 +55,7 @@
 }
 .weather-options button > span { font-size: 20px; line-height: 1; }
 .weather-options button[aria-pressed="true"] {
-  background: #926339 url('/assets/ui-r2/wood-split.svg') center / cover;
+  background: #926339;
   box-shadow: inset 0 2px #c69a59, inset 0 -3px #4d331f;
 }
 .weather-intensity { display: grid; gap: 5px; margin: 12px 0 4px; }
@@ -62,7 +63,7 @@
 .weather-intensity input { width: 100%; min-height: 32px; accent-color: #dab777; margin: 0; }
 .weather-automatic { display: flex; align-items: center; gap: 6px; min-height: 44px; }
 .weather-automatic input { width: 18px; height: 18px; accent-color: #dab777; }
-.weather-wood { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid #edc77e45; padding-top: 10px; }
+.weather-wood { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 0; padding-top: 10px; }
 .weather-wood-group { display: grid; gap: 5px; min-width: 0; }
 .weather-wood-group > div { display: flex; flex-wrap: wrap; gap: 5px; justify-content: space-between; }
 .weather-wood-group strong { font-size: 12px; font-weight: 500; }
@@ -76,4 +77,6 @@
 }
 @media (max-height: 500px) and (min-width: 701px) {
   .weather-panel { max-height: calc(100dvh - 85px); }
+}
+
 }
