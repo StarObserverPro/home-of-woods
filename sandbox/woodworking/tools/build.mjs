@@ -16,10 +16,15 @@ const inlineCss = {
     }))
   },
 }
+const notices = 'Three.js — MIT license\n\n'
+  + await readFile(resolve(root, '../../node_modules/three/LICENSE'), 'utf8')
+  + '\n\nPoly Haven: Handsaw Wood by Konrad Szałankiewicz; Wood Table by Dimitrios Savva. CC0-1.0; modified.\n\n'
+  + await readFile(resolve(root, '../../sources/polyhaven/woodworking/CC0-1.0.txt'), 'utf8')
 const shared = {
   absWorkingDir: root,
   bundle: true,
   legalComments: 'inline',
+  banner: { js: '/*!\n' + notices.replace(/\*\//g, '* /') + '\n*/' },
   target: 'es2022',
   charset: 'utf8',
   plugins: [inlineCss],
@@ -39,5 +44,4 @@ await writeFile(
   resolve(root, 'dist/woodworking.html'),
   template.replace('<!-- APPLICATION -->', () => '<script>' + script + '</script>'),
 )
-
-await writeFile(resolve(root, 'dist/THIRD_PARTY_NOTICES.txt'), 'Three.js — MIT license\n\n' + await readFile(resolve(root, '../../node_modules/three/LICENSE'), 'utf8') + '\n\nPoly Haven: Handsaw Wood by Konrad Szalankiewicz; Wood Table by Dimitrios Savva. CC0-1.0; modified.\n\n' + await readFile(resolve(root, '../../sources/polyhaven/woodworking/CC0-1.0.txt'), 'utf8'))
+await writeFile(resolve(root, 'dist/THIRD_PARTY_NOTICES.txt'), notices)
