@@ -1,5 +1,7 @@
 # 森林之家 · Home of Woods
 
+> 2026-11-14 归档说明：历史原始录屏、构建包、日志和快照已从 main 清理；[只读旧版证据索引](evidence/README.md)可按旧提交追溯。PR #35 的独立证据未动。历史结论不等于当前主线验收。
+
 2026-11-13 粗木 UI 共用语言：主游戏、木屋展台与木作组件统一消费程序化木质表面；开发入口 `/sandbox/timber-ui/` 可检视比例、状态、长文字和纯色回退。当前契约见 [DESIGN](DESIGN.md)，实现与实际验证见 [本轮范围](docs/scopes/timber-ui-system.md)。
 
 2026-11-12 木屋内部新增独立审计入口：开发时打开 `/sandbox/cabin-interior/`，或 `npm run dev:cabin`。默认摆出床、桌、凳、灯，可主动切换完整陈设、逐件查看与重新摆放。规划、PR31 改正及实际验证状态见 [规划胶囊](docs/scopes/cabin-interior-audit.md)，运行、操作和后续接线见 [展台说明](sandbox/cabin-interior/README.md)。正式游戏的家具取得与存档尚未接入。
@@ -61,7 +63,7 @@ WASD/方向键或点地面移动，拖动旋转、滚轮/按钮缩放，R/按钮
 
 本轮包括连续山坡/溪谷、帐篷与破屋、五个定制 GLB、固定树位、碰撞寻路、透明 HUD、地被色块、PNW 风格雪山和程序河水。追加有限砍伐链路包含四次挥斧、倾倒、短暂躺地、树桩与原位补生；24 点及成长耗时为候选参数，尚未实现完整年度经济与修屋；现有世界状态已接通完整保存与恢复。
 
-验收入口：[当前验证与边界](VERIFICATION.md)、[参数](PARAMETERS.md)、[R4 图像/空间来源](art-direction-r3/PIPELINE.md)、[实机全景](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/r4/desktop-home.png)、[采伐实录](evidence/r4/forestry.webm)。原 R4 冻结证据与回接验证分别保存在 `evidence/r4/`、`evidence/integration/`；不把历史录制作当前源码的未经复测证明。
+验收入口：[当前验证与边界](VERIFICATION.md)、[参数](PARAMETERS.md)、[R4 图像/空间来源](art-direction-r3/PIPELINE.md)、[实机全景](https://raw.githubusercontent.com/StarObserverPro/home-of-woods/79f4375ec2ddd3a4528eab0c6a9f34c4c203502e/evidence/r4/desktop-home.png)、[采伐实录](https://github.com/StarObserverPro/home-of-woods/blob/5911ac2fdf3ca25615a8292180207ef3ead9f758/evidence/r4/forestry.webm)。原 R4 冻结证据与回接验证分别保存在 `evidence/r4/`、`evidence/integration/`；不把历史录制作当前源码的未经复测证明。
 
 2026-10-30 角色回接：黑发、微调眉眼的 KayKit 玩家和营地访客已接入本地实现分支。玩家使用独立骨架，双手持斧横砍按实际树干限制止点；竖劈按承托桩顶面停止，目前通过 `?inspect=1` 的动作检视入口验证，尚未开放劈柴制作。行走、采集、NPC 局部挥手和取消共用应用时钟；来源、许可及组合版证据见 [角色回接记录](evidence/characters/README.md)。该批已通过 PR #4 合并至 main，未部署。
 

@@ -1,5 +1,5 @@
-# 稀有特效 R3 验证
+# 物品表现 R3——历史验收入口
 
-实现与复现说明见 [RARITY_VFX_R3](../../docs/RARITY_VFX_R3.md)。before-* 是 R2 对照；full/simple/off-* 是本轮生产场景，simple-* 另含相机、手机视口与遮挡夹具；settings-* 是正常界面操作截图。所有数据为隔离合成样品。
+此目录的旧版原始证据已于 2026-11-14 从 main 工作树清理，以减少旧日志、浏览器快照、录屏和打包产物。完整原始说明、校验清单及文件字节没有被重写，仍可通过[固定 Git 历史快照](https://github.com/StarObserverPro/home-of-woods/tree/5911ac2fdf3ca25615a8292180207ef3ead9f758/evidence/item-vfx-r3)查阅。
 
-完整检查 138/0；视觉与 UI 回执独立存放，真实设备 GPU 未测。
+这些记录只适用于当时的提交及验收环境，不能替代当前主线的检查结果。可使用 `npm run verify:evidence` 在隔离的历史工作树中复查；PR #35 仍是独立待审分支，不在本次清理范围。
