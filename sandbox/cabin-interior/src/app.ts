@@ -26,7 +26,7 @@ export async function mountCabinAudit(container:HTMLElement,options:CabinAuditOp
   state=state??createCabinState('starter');
   let selected:string|null=null,previous:CabinState|null=null,placement:PlacementPreview|null=null,placementReason='';
   let settings:ViewSettings={cut:'auto',light:'day',material:'normal',spaces:false,quality:'balanced',occlusion:new URLSearchParams(window.location.search).get('ao')!=='off'};
-  let route:Point[]=[],pendingAction:string|null=null,paused=false,manualPause=false,disposed=false,lastTime=0,frameId=0,toastTimer=0,statsTime=0,hoverTime=0;
+  let route:Point[]=[],pendingAction:string|null=null,paused=false,manualPause=false,disposed=false,lastTime=0,frameId=0,toastTimer=0,statsTime=0,hoverTime=0,placementFocusFrame=0;
   const keys=new Set<string>(),abort=new AbortController();
   const mountHost=container as HTMLElement&{[key:symbol]:MountOwner|undefined};
   const globals=window as unknown as Record<string,unknown>;
@@ -35,18 +35,19 @@ export async function mountCabinAudit(container:HTMLElement,options:CabinAuditOp
   container.className='cabin-app';
   container.innerHTML=`
     <header class="masthead"><a class="brand" href="/" aria-label="返回森林之家"><svg viewBox="0 0 32 36" aria-hidden="true"><path d="M16 1 4 18h6L2 29h12v6h4v-6h12l-8-11h6Z"/></svg><span>森林之家<small>HOME OF WOODS</small></span></a><div class="page-title"><span class="eyebrow">山间营地</span><h1>木屋内装</h1></div><div class="header-tools"><span class="save-note" id="save-note">独立布置展台</span><button class="text-button" id="undo" disabled>撤销</button><button class="text-button" id="export">导出布置</button></div></header>
-    <main class="workspace"><section class="stage" aria-label="木屋三维展台"><div class="stage-bar"><div class="presets" aria-label="陈设样板"><button data-preset="starter">初住</button><button data-preset="full">完整陈设</button><button data-preset="empty">空屋</button></div><button id="daylight" class="round-button" aria-label="切换至傍晚">☀ <span>白昼</span></button></div><div class="stage-caption"><span class="overline">一间山林里的家</span><p id="preset-description">先住下来，再慢慢添置。</p></div><div class="viewport" id="viewport"><div class="loading" id="loading"><span></span>正在安置木屋与家具…</div></div><div class="view-dock" aria-label="视角"><button data-camera="room" title="回到三分之四视角">全景</button><button data-camera="opposite" title="从相反一侧检查">背面</button><button data-camera="plan" title="检查俯视布局">俯看</button><button data-camera="inside" title="与角色相近的观察高度">屋内</button><span></span><select id="cut-mode" aria-label="墙面展示"><option value="auto">随视角剖墙</option><option value="stage">舞台半墙</option><option value="closed">完整外壳</option></select></div><div class="walk-controls"><button id="enter">走进木屋</button><button id="leave">走到门前</button><button id="stand" hidden>起身</button><button id="door">关门</button></div><div class="stage-footer"><span id="navigation-hint">拖动看四周 · 滚轮缩放 · 点空地行走</span><span id="stage-count">4 / 10 件</span></div><section class="placement-panel" id="placement-panel" hidden aria-label="调整物品位置"><div><strong id="placement-title"></strong><p id="placement-reason" aria-live="polite"></p></div><div class="move-pad"><button data-nudge="left" aria-label="向左移动">←</button><button data-nudge="back" aria-label="向后移动">↑</button><button data-nudge="front" aria-label="向前移动">↓</button><button data-nudge="right" aria-label="向右移动">→</button><button id="rotate">转 90°</button></div><div class="placement-actions"><button id="place-cancel">取消</button><button class="primary" id="place-confirm">放在这里</button></div></section><div class="toast" id="toast" role="status" hidden></div></section>
+    <main class="workspace"><section class="stage" aria-label="木屋三维展台"><div class="stage-bar"><div class="presets" aria-label="陈设样板"><button data-preset="starter">初住</button><button data-preset="full">完整陈设</button><button data-preset="empty">空屋</button></div><button id="daylight" class="round-button" aria-label="切换至傍晚">☀ <span>白昼</span></button></div><div class="stage-caption"><span class="overline">一间山林里的家</span><p id="preset-description">先住下来，再慢慢添置。</p></div><div class="viewport" id="viewport"><div class="loading" id="loading"><span></span>正在安置木屋与家具…</div></div><button class="view-toggle" id="view-toggle" aria-expanded="false" aria-controls="view-dock">视角与剖墙</button><div class="view-dock" id="view-dock" aria-label="视角"><button data-camera="room" title="回到三分之四视角">全景</button><button data-camera="opposite" title="从相反一侧检查">背面</button><button data-camera="plan" title="检查俯视布局">俯看</button><button data-camera="inside" title="与角色相近的观察高度">屋内</button><span></span><select id="cut-mode" aria-label="墙面展示"><option value="auto">随视角剖墙</option><option value="stage">舞台半墙</option><option value="closed">完整外壳</option></select></div><div class="walk-controls"><button id="enter">走进木屋</button><button id="leave">走到门前</button><button id="stand" hidden>起身</button><button id="door">关门</button></div><div class="stage-footer"><span id="navigation-hint">拖动看四周 · 滚轮缩放 · 点空地行走</span><span id="stage-count">4 / 10 件</span></div><section class="placement-panel" id="placement-panel" tabindex="-1" hidden aria-label="调整物品位置"><div><strong id="placement-title"></strong><p id="placement-reason" aria-live="polite"></p></div><div class="move-pad"><button data-nudge="left" aria-label="向左移动">←</button><button data-nudge="back" aria-label="向后移动">↑</button><button data-nudge="front" aria-label="向前移动">↓</button><button data-nudge="right" aria-label="向右移动">→</button><button id="rotate">转 90°</button></div><div class="placement-actions"><button id="place-cancel">取消</button><button class="primary" id="place-confirm">放在这里</button></div></section><div class="toast" id="toast" role="status" hidden></div></section>
     <aside class="collection"><div class="collection-title"><div><span class="eyebrow">添置与摆放</span><h2>屋里的物件</h2></div><span id="collection-total">10</span></div><p class="collection-intro">按需摆出，慢慢住满。点物件可走近使用。</p><div class="item-list" id="item-list"></div><section class="inspector" id="inspector"><div class="empty-selection"><span>⌖</span><p>点选一件家具</p><small>可以近看、使用或重新摆放</small></div></section><details class="audit-panel"><summary>空间与材质检查 <span>＋</span></summary><label class="check-row"><input type="checkbox" id="spaces"/> 显示占地、使用点与支撑面</label><label class="check-row"><input type="checkbox" id="occlusion" checked/> 局部遮蔽与接触暗部</label><label>表面显示<select id="material-mode"><option value="normal">原材质</option><option value="clay">素模</option><option value="wire">线框</option></select></label><label>画面精度<select id="quality"><option value="balanced">均衡</option><option value="fine">精细</option></select></label><p class="audit-result" id="audit-result"></p><p class="metrics" id="metrics">正在准备画面</p><button class="text-button" id="capture">保存当前画面</button></details><p class="sandbox-note">这里的陈设只用于检视；正式游戏中的取得与解锁另行接入。</p></aside></main>`;
   const timber=mountCabinTimber(container);
   const $=<T extends HTMLElement=HTMLElement>(selector:string)=>container.querySelector<T>(selector)!;
-  const viewport=$('#viewport');$('#occlusion').toggleAttribute('checked',!!settings.occlusion);
+  const viewport=$('#viewport'),stage=$('.stage');$('#occlusion').toggleAttribute('checked',!!settings.occlusion);
+  const shortLandscape=window.matchMedia('(max-height: 500px) and (min-width: 761px)');
   const owner:MountOwner={dispose:disposeMount};
   mountHost[MOUNT_OWNER]=owner;
   const ownsViewport=()=>mountHost[MOUNT_OWNER]===owner&&container.querySelector('#viewport')===viewport;
   function disposeMount(){
     if(disposed)return;
     const ownsDom=ownsViewport();
-    disposed=true;paused=true;manualPause=true;cancelAnimationFrame(frameId);keys.clear();
+    disposed=true;paused=true;manualPause=true;cancelAnimationFrame(frameId);cancelAnimationFrame(placementFocusFrame);keys.clear();
     abort.abort();clearTimeout(toastTimer);releaseView?.();releaseView=null;timber.dispose();
     if(ownsDom)container.replaceChildren();
     if(inspection&&globals.__CABIN_AUDIT__===inspection){
@@ -55,6 +56,16 @@ export async function mountCabinAudit(container:HTMLElement,options:CabinAuditOp
     if(mountHost[MOUNT_OWNER]===owner)delete mountHost[MOUNT_OWNER];
   }
   function toast(message:string){if(disposed||!ownsViewport())return;const element=$('#toast');element.textContent=message;element.hidden=false;window.clearTimeout(toastTimer);toastTimer=window.setTimeout(()=>element.hidden=true,4200);}
+  function setViewDock(open:boolean,focus=false){
+    stage.classList.toggle('view-dock-open',open);
+    $('#view-toggle').setAttribute('aria-expanded',String(open));
+    if(focus&&shortLandscape.matches)(open?$('#view-dock').querySelector<HTMLElement>('button'):$('#view-toggle'))?.focus({preventScroll:true});
+  }
+  shortLandscape.addEventListener('change',()=>{
+    const focused=$('#view-dock').contains(document.activeElement)||document.activeElement===$('#view-toggle');
+    setViewDock(false,focused);
+    if(focused&&!shortLandscape.matches)$('#view-dock').querySelector<HTMLElement>('button')?.focus({preventScroll:true});
+  },{signal:abort.signal});
   function save(event:string){
     if(persist){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));$('#save-note').textContent='布置已保存';}catch{$('#save-note').textContent='本次尚未保存';toast('本机保存失败，可以导出布置保留本次修改。');}}
     options.onChange?.(clone(state!),event);
@@ -88,8 +99,29 @@ export async function mountCabinAudit(container:HTMLElement,options:CabinAuditOp
   function preset(next:CabinPreset){stopRoute();placement=null;selected=null;previous=clone(state!);state=createCabinState(next);save('preset');view.setView('room');renderUI();}
   function previewAt(x:number,z:number){if(!placement)return;placement.location={...placement.location,x:Math.round(x*20)/20,z:Math.round(z*20)/20};updatePreview();}
   function updatePreview(){if(!placement)return;const result=validatePlacement(state!,placement.id,placement.location);placement.valid=result.ok;placementReason=result.reason??'位置可用，通路与使用空间均已保留。';renderPlacement();}
-  function beginPlacement(){if(!selected||selected==='door')return;stopRoute();const item=state!.items.find(i=>i.instanceId===selected)!;if(item.location.kind!=='floor')return;placement={id:selected,location:{...item.location},valid:true};updatePreview();renderUI();}
-  function renderPlacement(){const panel=$('#placement-panel');panel.hidden=!placement;if(!placement)return;const item=state!.items.find(i=>i.instanceId===placement!.id)!;$('#placement-title').textContent=`挪动 · ${definitionFor(item.definitionId).label}`;$('#placement-reason').textContent=placementReason;$('#placement-reason').classList.toggle('invalid',!placement.valid);$('#place-confirm').toggleAttribute('disabled',!placement.valid);}
+  function beginPlacement(){
+    if(!selected||selected==='door')return;
+    stopRoute();const item=state!.items.find(i=>i.instanceId===selected)!;
+    if(item.location.kind!=='floor')return;
+    setViewDock(false);
+    window.clearTimeout(toastTimer);$('#toast').hidden=true;
+    placement={id:selected,location:{...item.location},valid:true};updatePreview();renderUI();
+    cancelAnimationFrame(placementFocusFrame);
+    placementFocusFrame=requestAnimationFrame(()=>{
+      if(disposed||!ownsViewport()||!placement)return;
+      if(window.matchMedia('(max-width: 760px)').matches)stage.scrollIntoView({block:'start',behavior:'auto'});
+      else $('#placement-panel').scrollIntoView({block:'nearest',behavior:'auto'});
+      $('#place-cancel').focus({preventScroll:true});
+    });
+  }
+  function endPlacement(){
+    cancelAnimationFrame(placementFocusFrame);
+    placement=null;renderUI();
+    const trigger=$('#inspector').querySelector<HTMLElement>('[data-action="move"]');
+    trigger?.focus({preventScroll:true});
+    if(window.matchMedia('(max-width: 760px)').matches)trigger?.scrollIntoView({block:'nearest',behavior:'auto'});
+  }
+  function renderPlacement(){const panel=$('#placement-panel');panel.hidden=!placement;stage.classList.toggle('is-placing',!!placement);if(!placement)return;const item=state!.items.find(i=>i.instanceId===placement!.id)!;$('#placement-title').textContent=`挪动 · ${definitionFor(item.definitionId).label}`;$('#placement-reason').textContent=placementReason;$('#placement-reason').classList.toggle('invalid',!placement.valid);$('#place-confirm').toggleAttribute('disabled',!placement.valid);}
   function nudge(dx:number,dz:number){if(!placement)return;previewAt(placement.location.x+dx,placement.location.z+dz);}
   function rotate(){if(!placement)return;placement.location.yaw=(placement.location.yaw+Math.PI/2)%(Math.PI*2);updatePreview();}
   function describeAction(item:CabinItem){const action=definitionFor(item.definitionId).action;if(action==='rest')return '走近并休息';if(action==='sit')return '走近并坐下';if(action==='open')return item.open?'走近并合上':'走近并打开';if(action==='light')return item.lit?'走近并熄灭':'走近并点亮';return '走近查看';}
@@ -115,7 +147,7 @@ export async function mountCabinAudit(container:HTMLElement,options:CabinAuditOp
   container.addEventListener('click',event=>{
     const button=(event.target as Element).closest<HTMLButtonElement>('button');if(!button||button.disabled)return;
     if(button.dataset.preset){preset(button.dataset.preset as CabinPreset);return;}
-    if(button.dataset.camera){view.setView(button.dataset.camera as CameraView);return;}
+    if(button.dataset.camera){view.setView(button.dataset.camera as CameraView);setViewDock(false,shortLandscape.matches);return;}
     if(button.dataset.select){select(button.dataset.select);return;}
     if(button.dataset.restore){stopRoute();placement=null;if(commit(restoreItem(state!,button.dataset.restore),'restore'))selected=button.dataset.restore;renderUI();return;}
     if(button.dataset.nudge){const delta={left:[-.15,0],right:[.15,0],back:[0,-.15],front:[0,.15]}[button.dataset.nudge as 'left'];nudge(delta[0],delta[1]);return;}
@@ -129,17 +161,18 @@ export async function mountCabinAudit(container:HTMLElement,options:CabinAuditOp
     if(button.id==='enter'||button.id==='leave'){
       if(!state!.doorOpen&&!commit(setDoorOpen(state!,true),'door'))return;
       walkTo(button.id==='enter'?ENTRY_POINT:PORCH_POINT);
-    }else if(button.id==='stand'){stopRoute();commit(standUp(state!),'stand');}
+    }else if(button.id==='view-toggle')setViewDock(!stage.classList.contains('view-dock-open'),true);
+    else if(button.id==='stand'){stopRoute();commit(standUp(state!),'stand');}
     else if(button.id==='door')toggleDoor();
     else if(button.id==='daylight'){settings={...settings,light:settings.light==='day'?'evening':'day'};button.innerHTML=settings.light==='day'?'☀ <span>白昼</span>':'☾ <span>傍晚</span>';button.setAttribute('aria-label',settings.light==='day'?'切换至傍晚':'切换至白昼');}
     else if(button.id==='rotate')rotate();
-    else if(button.id==='place-cancel'){placement=null;renderUI();}
-    else if(button.id==='place-confirm'&&placement){if(commit(moveItem(state!,placement.id,placement.location),'move')){placement=null;renderUI();}}
+    else if(button.id==='place-cancel')endPlacement();
+    else if(button.id==='place-confirm'&&placement){if(commit(moveItem(state!,placement.id,placement.location),'move'))endPlacement();}
     else if(button.id==='undo'&&previous){stopRoute();placement=null;const swap=state!;state=previous;previous=swap;save('undo');renderUI();}
     else if(button.id==='export')download('home-of-woods-cabin.json',URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'})),true);
     else if(button.id==='capture')download('home-of-woods-cabin.png',view.capture());
   },{signal:abort.signal});
-  $('#cut-mode').addEventListener('change',event=>settings={...settings,cut:(event.target as HTMLSelectElement).value as ViewSettings['cut']},{signal:abort.signal});
+  $('#cut-mode').addEventListener('change',event=>{settings={...settings,cut:(event.target as HTMLSelectElement).value as ViewSettings['cut']};setViewDock(false,shortLandscape.matches);},{signal:abort.signal});
   $('#material-mode').addEventListener('change',event=>settings={...settings,material:(event.target as HTMLSelectElement).value as ViewSettings['material']},{signal:abort.signal});
   $('#quality').addEventListener('change',event=>settings={...settings,quality:(event.target as HTMLSelectElement).value as ViewSettings['quality']},{signal:abort.signal});
   $('#occlusion').addEventListener('change',event=>settings={...settings,occlusion:(event.target as HTMLInputElement).checked},{signal:abort.signal});
@@ -147,7 +180,13 @@ export async function mountCabinAudit(container:HTMLElement,options:CabinAuditOp
   window.addEventListener('keydown',event=>{
     if((event.target as HTMLElement).matches('input,select,textarea')||event.metaKey||event.ctrlKey||event.altKey)return;
     const key=event.key.toLowerCase();
-    if(key==='escape'){placement=null;stopRoute();renderUI();return;}
+    if(key==='escape'){
+      event.preventDefault();
+      if(shortLandscape.matches&&stage.classList.contains('view-dock-open'))setViewDock(false,true);
+      else if(placement)endPlacement();
+      else{stopRoute();renderUI();}
+      return;
+    }
     if(placement){if(['r','arrowleft','arrowright','arrowup','arrowdown'].includes(key)){event.preventDefault();if(key==='r')rotate();else nudge(key==='arrowleft'?-.15:key==='arrowright'?.15:0,key==='arrowup'?-.15:key==='arrowdown'?.15:0);}return;}
     if(['w','a','s','d','arrowleft','arrowright','arrowup','arrowdown'].includes(key)){event.preventDefault();route=[];pendingAction=null;keys.add(key);}
   },{signal:abort.signal});

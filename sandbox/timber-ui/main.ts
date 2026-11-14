@@ -135,7 +135,17 @@ const find = <T extends HTMLElement = HTMLElement>(selector: string): T => root.
 
 let seed = 1;
 const paintNodes = [...root.querySelectorAll<HTMLElement>('[data-timber-surface]'), ...shadowRoot.querySelectorAll<HTMLElement>('[data-timber-surface]')];
-paintNodes.forEach((node, index) => {node.dataset.labSeed = node.dataset.timberSeed ?? `part-${index}`;});
+paintNodes.forEach(node => {
+  const semanticKey = node.dataset.timberSeed || node.id
+    || (node.dataset.shape ? `shape-choice:${node.dataset.shape}` : '')
+    || (node.dataset.campTab ? `camp-category:${node.dataset.campTab}` : '')
+    || (node.dataset.item ? `recipe:${node.dataset.item}` : '')
+    || node.getAttribute('href') || node.getAttribute('aria-label')
+    || node.textContent?.trim().replace(/\s+/g, ' ').slice(0, 120)
+    || `${node.tagName.toLowerCase()}:${node.dataset.timberSurface}`;
+  node.dataset.labSeed = `timber-lab:${semanticKey}`;
+  node.dataset.timberSeed = `${node.dataset.labSeed}:${seed}`;
+});
 on(find('#change-seed'), 'click', () => {
   seed++;
   paintNodes.forEach(node => {node.dataset.timberSeed = `${node.dataset.labSeed}:${seed}`;});

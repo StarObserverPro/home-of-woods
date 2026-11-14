@@ -89,6 +89,58 @@ export function timberShape(width: number, height: number, role: TimberRole = 'b
   return 'block';
 }
 
+/** A thin shaving has its own silhouette. The curls stay at the two ends. */
+function shavingBadge(width: number, height: number, tone: TimberTone, seed: string | number): TimberSurface {
+  const short = Math.min(width, height);
+  const depth = px(clamp(short * .045, 1.5, 2.5));
+  const corner = px(clamp(short * .13, 3, 10));
+  const shape = timberShape(width, height, 'badge');
+  const vertical = shape === 'post';
+  const along = vertical ? height - depth : width;
+  const across = vertical ? width : height - depth;
+  const end = Math.min(along * .19, clamp(across * .32, 5, 16));
+  const lift = Math.min(corner * .65, across * .14);
+  const bend = (randomFrom(seedHash(seed))() - .5) * Math.min(3, lift * .65);
+  const paint = TIMBER_PALETTE[tone];
+  const orient = (u: number, v: number): Point => vertical ? [v, u] : [u, v];
+  const front = [
+    [0, across * .34], [end * .3, across * .08], [end * .85, 0],
+    [end * 1.35, lift], [along - end * 1.35, lift + bend],
+    [along - end * .8, 0], [along - end * .15, across * .1], [along, across * .34],
+    [along - end * .1, across * .78], [along - end * .7, across],
+    [along - end * 1.35, across - lift], [end * 1.2, across - lift + bend],
+    [end * .35, across], [0, across * .73],
+  ].map(([u, v]) => orient(u, v));
+  const clipId = `shaving-${seedHash(`${width}:${height}:${tone}:${seed}`)}`;
+  const shapes: string[] = [];
+  let facetCount = 0;
+  const addWorld = (points: readonly Point[], fill: string, opacity = 1) => {
+    const bounded = points.map(([x, y]) => [clamp(x, 0, width), clamp(y, 0, height)] as Point);
+    shapes.push(`<polygon points="${polygon(bounded)}" fill="${fill}"${opacity < 1 ? ` opacity="${px(opacity)}"` : ''}/>`);
+    facetCount++;
+  };
+  const add = (points: readonly Point[], fill: string, opacity = 1) => addWorld(points.map(([u, v]) => orient(u, v)), fill, opacity);
+  addWorld(front.map(([x, y]) => [x, y + depth] as Point), paint.depth);
+  addWorld(front, paint.face);
+  shapes.push(`<g clip-path="url(#${clipId})">`);
+  // A quiet, continuous strip through the middle; no knot or curl behind text.
+  add([[end * 1.35, lift], [along * .55, lift + bend], [along - end * 1.35, lift + bend], [along - end * 1.4, lift + 3], [end * 1.4, lift + 2]], paint.grain, .3);
+  add([[end * 1.2, across - lift + bend], [along - end * 1.35, across - lift], [along - end * 1.4, across - lift - 2], [end * 1.35, across - lift - 2]], paint.shade, .3);
+  // Left roll: raised outer face, broad inner shadow and thin returning lip.
+  add([[0, across * .34], [end * .3, across * .08], [end * .85, 0], [end * 1.35, lift], [end * 1.12, across * .35], [end * .65, across * .65], [0, across * .73]], paint.grain);
+  add([[end * .22, across * .32], [end * .7, across * .18], [end * 1.02, across * .3], [end * .75, across * .56], [end * .25, across * .62]], paint.shade);
+  add([[0, across * .73], [end * .65, across * .65], [end * 1.2, across - lift + bend], [end * .35, across], [0, across * .87]], paint.cut, .8);
+  add([[end * .3, across * .08], [end * .85, 0], [end * 1.35, lift], [end * .86, lift * .9]], paint.cut, .7);
+  // Right roll mirrors the construction without repeating a central symbol.
+  add([[along - end * 1.35, lift + bend], [along - end * .8, 0], [along - end * .15, across * .1], [along, across * .34], [along - end * .1, across * .78], [along - end * .65, across * .65], [along - end * 1.08, across * .32]], paint.grain);
+  add([[along - end * 1.02, across * .3], [along - end * .7, across * .18], [along - end * .22, across * .32], [along - end * .25, across * .62], [along - end * .75, across * .56]], paint.shade);
+  add([[along - end * .65, across * .65], [along - end * .1, across * .78], [along - end * .3, across * .92], [along - end * .7, across], [along - end * 1.35, across - lift]], paint.cut, .8);
+  add([[along - end * 1.35, lift + bend], [along - end * .8, 0], [along - end * .15, across * .1], [along - end * .82, lift * .8]], paint.cut, .7);
+  shapes.push('</g>');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" fill="none"><defs><clipPath id="${clipId}"><polygon points="${polygon(front)}"/></clipPath></defs>${shapes.join('')}</svg>`;
+  return {svg, dataUri: `data:image/svg+xml,${encodeURIComponent(svg)}`, shape, facetCount, width, height, corner, depth};
+}
+
 /**
  * Generate in CSS pixels: corners and depth stop growing, while long faces gain
  * a bounded number of broad grain facets. No fine-line wood texture is used.
@@ -98,6 +150,7 @@ export function timberSurface(options: TimberSurfaceOptions): TimberSurface {
   const role = ROLES.includes(options.role as TimberRole) ? options.role! : 'button';
   const material = MATERIALS.includes(options.material as TimberMaterial) ? options.material! : 'plank';
   const tone = TONES.includes(options.tone as TimberTone) ? options.tone! : 'warm';
+  if (material === 'shaving' && role === 'badge') return shavingBadge(width, height, tone, options.seed ?? 'home-of-woods');
   const shape = timberShape(width, height, role);
   const short = Math.min(width, height);
   const corner = px(clamp(short * .13, 3, 10));

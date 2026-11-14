@@ -22,7 +22,7 @@ export function mountWoodworkingTimber(shell:HTMLElement,shadow:ShadowRoot){
       ['dialog','panel','bark','dark'],
     ]
     for(const [selector,role,material,tone] of surfaces)
-      shell.querySelectorAll<HTMLElement>(selector).forEach((node,index)=>mark(node,role,material,tone,`woodworking:${selector}:${index}`))
+      shell.querySelectorAll<HTMLElement>(selector).forEach(node=>mark(node,role,material,tone,`woodworking:${selector}:${node.id||node.querySelector('h2')?.textContent||node.className||selector}`))
     shell.querySelectorAll<HTMLElement>('button,summary').forEach(node=>{
       const swatch=node.classList.contains('swatch')
       mark(node,'button',swatch?'endgrain':'plank',node.classList.contains('primary')?'warm':'moss',`woodworking:${node.dataset.a??node.dataset.paint??node.id??'summary'}`)

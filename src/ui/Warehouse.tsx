@@ -31,8 +31,8 @@ export function Warehouse({open,view,woodcraft,onClose,onApproach,onFocus,onThro
     <WoodHeading title="物品" icon="inventory" onClose={onClose} closeLabel="关闭仓库"/>
     <IconTabs tabs={[...TABS,{id:'ground',name:'木料堆',icon:'wood-log'}]} value={category} onChange={setCategory} label="物品位置"/>
     {category==='carrying'&&<><div className="warehouse-carry-summary">{carrySummary}</div>{carrying}</>}
-    {category==='all'&&<TransferQuantity value={amount} onChange={setAmount}/>}
-    {category==='all'&&<ItemBrowser items={items} label="营地材料" canDragItem={item=>!!item.movableWood} onItemPointerDown={(event,item)=>onDragStart(event,{kind:'material',key:item.key,name:item.name})} tools={<select aria-label="材料分类" value={materialFilter} onChange={e=>setMaterialFilter(e.target.value)}><option value="all">全部类别</option>{view.categories.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select>} renderDetail={item=><>
+    {category==='all'&&<div className="warehouse-tools"><TransferQuantity value={amount} onChange={setAmount}/><select aria-label="材料分类" value={materialFilter} onChange={e=>setMaterialFilter(e.target.value)}><option value="all">全部类别</option>{view.categories.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></div>}
+    {category==='all'&&<ItemBrowser items={items} label="营地材料" canDragItem={item=>!!item.movableWood} onItemPointerDown={(event,item)=>onDragStart(event,{kind:'material',key:item.key,name:item.name})} renderDetail={item=><>
       <ItemHeading name={item.name} icon={item.icon} subtitle={`${item.qualityName} · ${item.quantity} 份`}/>
       <ItemNotes text={`${item.description} ${item.specification??''} ${item.uses.join('、')}`}><div className="wood-actions">
       {item.recognized&&<MenuAction icon="small-pack" onClick={()=>storageNear?onWithdraw(item.key,transferAmount(amount,item.quantity)):onApproachStore()}>{storageNear?'取出所选数量':'走近取出'}</MenuAction>}

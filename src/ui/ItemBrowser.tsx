@@ -29,28 +29,31 @@ export function ItemBrowser<T extends MenuItem>({items,categories,renderDetail,l
   items:readonly T[];categories?:readonly MenuTab[];renderDetail:(item:T)=>ReactNode;label:string;empty?:string;pageSize?:number;tools?:ReactNode;
   onItemPointerDown?:(event:PointerEvent<HTMLElement>,item:T)=>void;canDragItem?:(item:T)=>boolean;
 }){
-  const [category,setCategory]=useState('all'),[page,setPage]=useState(0),[selection,setSelection]=useState('');
+  const [category,setCategory]=useState('all');
+  const [selection,setSelection]=useState(()=>({id:items[0]?.id??'',index:0}));
   pageSize=usePageCapacity(pageSize);
   const filtered=items.filter(item=>category==='all'||item.category===category);
-  const pages=Math.max(1,Math.ceil(filtered.length/pageSize)),current=Math.min(page,pages-1);
+  const retained=filtered.findIndex(item=>item.id===selection.id);
+  const index=retained>=0?retained:Math.min(selection.index,Math.max(0,filtered.length-1));
+  const selected=filtered[index],selectedId=selected?.id??'';
+  const pages=Math.max(1,Math.ceil(filtered.length/pageSize)),current=Math.floor(index/pageSize);
   const shown=filtered.slice(current*pageSize,(current+1)*pageSize);
-  const selected=shown.find(item=>item.id===selection)??shown[0];
-  // A removal can shrink the last page. Keep the next interaction on the page actually shown.
-  useEffect(()=>{if(page!==current)setPage(current);},[page,current]);
+  // Keep the item as the page anchor. If it is removed, retain its nearest remaining position.
+  useEffect(()=>{setSelection(previous=>previous.id===selectedId&&previous.index===index?previous:{id:selectedId,index});},[selectedId,index,selection.id,selection.index]);
   return <section className="item-browser" aria-label={label}>
-    {(categories||tools)&&<div className="browser-toolbar">{categories&&<IconTabs tabs={categories} value={category} label={`${label}分类`} onChange={id=>{setCategory(id);setPage(0);setSelection('');}}/>}{tools}</div>}
+    {(categories||tools)&&<div className="browser-toolbar">{categories&&<IconTabs tabs={categories} value={category} label={`${label}分类`} onChange={id=>{setCategory(id);setSelection({id:'',index:0});}}/>}{tools}</div>}
     <div className="browser-body">
       <div className="browser-catalog"><div className="browser-slots" role="group" aria-label={`${label}图标`}>
-        {shown.map(item=>{
+        {shown.map((item,offset)=>{
           const draggable=!!onItemPointerDown&&(!canDragItem||canDragItem(item));
-          return <button type="button" className={'wood-slot'+(item.muted?' is-muted':'')+(draggable?' is-draggable':'')} key={item.id} aria-pressed={selected?.id===item.id} aria-label={item.name+(item.quantity!==undefined?`，${item.quantity}份`:'')+(item.badge?`，${item.badge}`:'')} title={draggable?'按住图标拖到场景，松手放下':undefined} onPointerDown={event=>{if(draggable)onItemPointerDown?.(event,item);}} onClick={()=>setSelection(item.id)}>
+          return <button type="button" className={'wood-slot'+(item.muted?' is-muted':'')+(draggable?' is-draggable':'')} key={item.id} data-timber-seed={item.id} aria-pressed={selected?.id===item.id} aria-label={item.name+(item.quantity!==undefined?`，${item.quantity}份`:'')+(item.badge?`，${item.badge}`:'')} title={draggable?'按住图标拖到场景，松手放下':undefined} onPointerDown={event=>{if(draggable)onItemPointerDown?.(event,item);}} onClick={()=>setSelection({id:item.id,index:current*pageSize+offset})}>
           <GameIcon name={item.icon} size={60}/>{selected?.id===item.id&&<span className="slot-mark" aria-hidden="true">◆</span>}{item.quantity!==undefined&&<strong className="slot-quantity">{item.quantity}</strong>}{item.badge&&<span className="slot-badge">{item.badge}</span>}
         </button>;
         })}
         {shown.length>0&&Array.from({length:pageSize-shown.length},(_,i)=><div className="wood-slot empty-slot" key={`empty-${i}`} aria-hidden="true"/>)}
         {!shown.length&&<p className="wood-empty">{empty}</p>}
       </div>
-      <Pager page={current} pages={pages} onChange={next=>{setPage(next);setSelection('');}}/>
+      <Pager page={current} pages={pages} onChange={next=>{const index=next*pageSize;setSelection({id:filtered[index]?.id??'',index});}}/>
       </div>
       {selected&&<section key={selected.id} className="wood-detail" aria-label="选中详情">{renderDetail(selected)}</section>}
     </div>

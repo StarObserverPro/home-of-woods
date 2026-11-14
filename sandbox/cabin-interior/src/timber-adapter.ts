@@ -15,7 +15,7 @@ export function mountCabinTimber(root:HTMLElement){
       ['.collection','panel','bark','dark'],
       ['.collection-title','heading','plank','warm'],
       ['.inspector','slot','recess','dark'],
-      ['.view-dock','panel','recess','dark'],
+      ['.view-dock','slot','recess','dark'],
       ['.placement-panel','panel','bark','dark'],
       ['.stage-caption','badge','recess','dark'],
       ['#navigation-hint','badge','recess','dark'],

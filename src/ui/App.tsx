@@ -317,7 +317,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
     return()=>document.removeEventListener('keydown',close,true);
   },[mapOpen,help,cameraOpen,warehouseOpen,readerOpen,snapshot.paused,snapshot.selected,snapshot.placement,snapshot.woodcraft.dropping]);
   useEffect(()=>mountGameTimber(host.current!.parentElement!),[]);
-  useWindowFocus(snapshot.paused||readerOpen?null:warehouseOpen?'.warehouse-dock':mapOpen?'.route-sheet':help?'.help-sheet':snapshot.selected&&!snapshot.placement&&!snapshot.woodcraft.dropping?'.target-card':null,warehouseOpen?'warehouse':mapOpen?'route':help?'help':snapshot.selected);
+  useWindowFocus(snapshot.paused||readerOpen?null:warehouseOpen?'.warehouse-dock':mapOpen?'.route-sheet':help?'.help-sheet':snapshot.selected&&!snapshot.placement&&!snapshot.woodcraft.dropping?'.target-card':null,warehouseOpen?'warehouse':mapOpen?'route':help?'help':snapshot.selected,snapshot.paused||readerOpen);
   const [targetPage,setTargetPage]=useState('use'),[helpPage,setHelpPage]=useState('move'),[pausePage,setPausePage]=useState('main');
   useEffect(()=>setTargetPage('use'),[snapshot.selected]);
   useEffect(()=>{runtime.current?.setMenuOpen(warehouseOpen||readerOpen||mapOpen||help||!!snapshot.selected&&!snapshot.placement&&!snapshot.woodcraft.dropping);},[warehouseOpen,readerOpen,mapOpen,help,snapshot.selected,snapshot.placement,snapshot.woodcraft.dropping,ready]);

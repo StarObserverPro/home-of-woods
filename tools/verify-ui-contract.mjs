@@ -20,9 +20,9 @@ for (const module of registry.active) {
     if (!/@layer how-(layout|timber)/.test(css)) errors.push(`${name}: place styles in the shared layer order`);
     if (/border-image\s*:[^;{}]*url\(/.test(css) || /url\([^)]*ui-r2\//.test(css)) errors.push(`${name}: stretched legacy timber image`);
     // Drawing strokes and grid lines are semantic SVG/technical diagrams, not container chrome.
-    const thin = [...css.matchAll(/border(?:-(?:top|right|bottom|left))?\s*:\s*([\d.]+)px\s+(solid|dashed|dotted)/g)].filter(m=>Number(m[1])>0 && Number(m[1])<3);
     const regular = css.replace(/@media\s*\(forced-colors:[\s\S]*$/,'');
-    if (thin.length && /border(?:-(?:top|right|bottom|left))?\s*:\s*[12](?:\.\d+)?px\s+(solid|dashed|dotted)/.test(regular)) errors.push(`${name}: thin decorative border; use spacing, depth or a shared surface`);
+    const thin = [...regular.matchAll(/border(?:-(?:top|right|bottom|left))?\s*:\s*([\d.]+)px\s+(solid|dashed|dotted)/g)].some(m=>Number(m[1])>0 && Number(m[1])<3);
+    if (thin) errors.push(`${name}: thin decorative border; use spacing, depth or a shared surface`);
   }
 }
 for (const directory of await fs.readdir('sandbox',{withFileTypes:true})) {

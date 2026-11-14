@@ -26,7 +26,7 @@ export function mountTimberTheme(root: HTMLElement | ShadowRoot, options: Timber
   const inside = (node: Node) => node === root || root.contains(node);
   function paint(node: HTMLElement) {
     if (!inside(node) || !node.isConnected) return;
-    // offset size is unaffected by the pressed/hover transform, so states never redraw grain.
+    // Interaction paint offsets do not change this layout size; states never redraw grain.
     const width = Math.round(node.offsetWidth), height = Math.round(node.offsetHeight);
     if (width < 1 || height < 1) return;
     const role = node.dataset.timberSurface as TimberRole;

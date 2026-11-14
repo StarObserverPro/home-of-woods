@@ -1,7 +1,5 @@
 name: Timber UI Review
 on:
-  push:
-    branches: [feat/timber-ui-system]
   pull_request:
     paths:
       - 'src/ui/**'
@@ -27,13 +25,18 @@ jobs:
   timber-ui:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        scope: [desktop, mobile, modules, baseline]
     env:
       TIMBER_EVIDENCE_DIR: /tmp/how-timber-evidence
+      TIMBER_REVIEW_SCOPE: ${{ matrix.scope }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22.14.0'
           cache: npm
@@ -44,6 +47,7 @@ jobs:
           node --experimental-strip-types --test tests/timber-surface.test.ts
       - run: npm run build
       - name: Build the standalone woodworking module
+        if: matrix.scope == 'modules'
         run: |
           npm ci --prefix sandbox/woodworking
           npm run build --prefix sandbox/woodworking
@@ -52,12 +56,16 @@ jobs:
           npx playwright install --with-deps chromium
           sudo apt-get install -y fonts-noto-cjk
       - name: Review real game UI and shared sandbox surfaces
+        if: matrix.scope != 'baseline'
         run: node tools/verification/timber-ui-browser.mjs
+      - name: Capture the original main UI for comparison
+        if: matrix.scope == 'baseline'
+        run: node tools/verification/timber-ui-baseline.mjs
       - name: Upload screenshots and specific layout failures
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: timber-ui-evidence
+          name: timber-ui-evidence-${{ matrix.scope }}
           path: /tmp/how-timber-evidence/
           if-no-files-found: warn
           retention-days: 7

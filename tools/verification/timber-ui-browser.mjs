@@ -10,13 +10,14 @@ import {chromium} from 'playwright';
 
 const root=fileURLToPath(new URL('../../',import.meta.url));
 const out=path.resolve(process.env.TIMBER_EVIDENCE_DIR??'/tmp/how-timber-evidence');
+const scope=process.env.TIMBER_REVIEW_SCOPE??'all';
 const origin='http://127.0.0.1:5193';
 const fixturePath='/__timber-review';
 const desktop={width:1280,height:800};
 const smallViews=[{width:390,height:844},{width:320,height:720},{width:844,height:390}];
 const report={
   result:'running',startedAt:new Date().toISOString(),sourceRevision:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),
-  origin,browser:null,buildEntrySha256:null,woodworkingEntrySha256:null,frames:[],flows:[],layoutIssues:[],errors:[],failedRequests:[],warnings:[],failures:[],
+  scope,origin,browser:null,buildEntrySha256:null,woodworkingEntrySha256:null,frames:[],flows:[],focusChecks:[],layoutIssues:[],errors:[],failedRequests:[],warnings:[],failures:[],
   inputs:{seed:104729,clock:'time=0, speed=0; 14:00 production calendar',save:'isolated in-memory WorldSaveStore',stock:'ten active production item IDs granted through inventoryTransaction',dpr:1},
   limits:[
     'The main UI uses the real App/runtime through a Vite review entry; npm run build is a separate required gate.',
@@ -33,7 +34,7 @@ const frames=(page,count=3)=>page.evaluate(count=>new Promise(resolve=>{
   const step=()=>count-->0?requestAnimationFrame(step):resolve();step();
 }),count);
 
-async function scenario(name,page,operation){
+async function scenario(name,page,operation,cleanup){
   phase=name;activePage=page;
   let passed=true;
   try{await operation();report.flows.push({name,result:'passed'});console.log(`PASS ${name}`);}
@@ -49,6 +50,9 @@ async function scenario(name,page,operation){
       const html=await page.content().catch(()=>null);
       if(html){failure.html=`failure-${name}.html`;await fs.writeFile(path.join(out,failure.html),html);}
     }
+  }finally{
+    // Preserve the failed UI before recovering it for the next independent scenario.
+    if(cleanup)passed=await scenario(`${name}-cleanup`,page,cleanup)&&passed;
   }
   await saveReport();
   return passed;
@@ -91,6 +95,22 @@ async function loadGame(page){
   assert.equal((await gameState(page)).seed,report.inputs.seed);
 }
 
+async function assertFocusIn(page,selector,stage){
+  const focus=await page.evaluate(selector=>{
+    const owner=document.querySelector(selector),active=document.activeElement;
+    const box=active?.getBoundingClientRect();
+    return {
+      owner:selector,inside:!!owner?.contains(active),tag:active?.tagName.toLowerCase(),
+      label:active?.getAttribute('aria-label')||active?.textContent?.trim().replace(/\s+/g,' ').slice(0,100),
+      visible:!!active?.checkVisibility({checkOpacity:true,checkVisibilityCSS:true})&&!!active?.getClientRects().length,
+      inert:!!active?.closest('[inert]'),
+      rect:box?{x:box.x,y:box.y,width:box.width,height:box.height}:null,
+    };
+  },selector);
+  report.focusChecks.push({phase,stage,...focus});
+  assert.ok(focus.inside&&focus.visible&&!focus.inert,`${stage}: focus must stay in a visible, active control or panel: ${JSON.stringify(focus)}`);
+}
+
 async function layout(page,{fitViewport=true}={}){
   return page.evaluate(({fitViewport})=>{
     const rect=element=>{const r=element.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom};};
@@ -104,7 +124,7 @@ async function layout(page,{fitViewport=true}={}){
     const issues=[];
     if(!roots.length)return {issues:[{kind:'missing-theme-root'}],viewport:{width:innerWidth,height:innerHeight}};
     const query=(scopes,selector)=>[...new Set(scopes.flatMap(scope=>[...scope.querySelectorAll(selector)]))];
-    const modal=query(roots,'dialog[open]').filter(visible).at(-1);
+    const modal=query(roots,'dialog[open],[role="dialog"][aria-modal="true"]').filter(visible).at(-1);
     const foreground=query(roots,'.warehouse-dialog,.route-sheet,.help-sheet,.weather-panel,.target-card').filter(visible).at(-1);
     const scopes=modal?[modal]:foreground?[foreground]:roots;
     const controls=[];const seen=new Set();
@@ -116,7 +136,7 @@ async function layout(page,{fitViewport=true}={}){
       if(info.rect.width<43.5||info.rect.height<43.5)issues.push({kind:'target-smaller-than-project-44px',...info});
       if(fitViewport&&(info.rect.x<-.5||info.rect.y<-.5||info.rect.right>innerWidth+.5||info.rect.bottom>innerHeight+.5))issues.push({kind:'control-outside-viewport',...info});
     }
-    const panels=query(roots,'.warehouse-dialog,.route-sheet,.help-sheet,.weather-panel,.pause-dialog[open],.target-card').filter(visible);
+    const panels=query(roots,'.warehouse-dialog,.route-sheet,.help-sheet,.weather-panel,.pause-dialog[open],.target-card,.forest-reader').filter(visible);
     const content=query(scopes,'.item-browser,.browser-body,.wood-detail,.wood-tabs,.rarity-vfx-controls').filter(visible);
     for(const element of [...panels,...content]){
       const info=description(element);
@@ -192,6 +212,7 @@ async function desktopGame(){
         await capture(page,'03-desktop-items-next-page');
       }
       await page.keyboard.press('Escape');await page.locator('.warehouse-dialog').waitFor({state:'hidden'});
+      await frames(page,2);
       assert.equal(await page.locator('.bottom-toolbar').getByRole('button',{name:'打开仓库',exact:true}).evaluate(element=>element===document.activeElement),true,'Closing the inventory must return focus to its opener');
       await page.keyboard.press('b');await page.locator('.warehouse-dialog').waitFor();
       await page.keyboard.press('Escape');await page.locator('.warehouse-dialog').waitFor({state:'hidden'});
@@ -205,19 +226,36 @@ async function desktopGame(){
       const selected=await gameState(page);
       assert.deepEqual(selected.route,before.route,'Choosing a route row must not start walking');
       const point=await page.evaluate(()=>{
+        const shell=document.querySelector('main.game-shell');
+        const host=shell?.querySelector('.scene-host'),canvas=host?.querySelector('canvas');
+        const scene=canvas?.getBoundingClientRect(),panel=document.querySelector('.route-sheet')?.getBoundingClientRect();
+        if(!scene||!panel)return null;
+        const left=Math.max(0,scene.left),top=Math.max(0,scene.top);
+        const width=Math.min(innerWidth,scene.right)-left,height=Math.min(innerHeight,scene.bottom)-top;
+        if(width<=0||height<=0)return null;
         for(const y of [.3,.5,.7])for(const x of [.08,.25,.5,.75,.92]){
-          const p={x:innerWidth*x,y:innerHeight*y};
-          if(document.elementFromPoint(p.x,p.y) instanceof HTMLCanvasElement)return p;
+          const p={x:left+width*x,y:top+height*y};
+          if(p.x>=panel.left&&p.x<=panel.right&&p.y>=panel.top&&p.y<=panel.bottom)continue;
+          const hit=document.elementFromPoint(p.x,p.y);
+          // Open menus intentionally disable scene pointer events; the visible scene
+          // can therefore hit the game shell while its capture handler dismisses UI.
+          if(hit===shell||hit===host||hit instanceof HTMLCanvasElement&&host.contains(hit))return p;
         }
         return null;
       });
-      assert.ok(point,'The open window must leave a visible scene point for an outside click');
+      assert.ok(point,'The open window must leave a non-interactive point inside the scene rectangle for an outside click');
       await page.mouse.click(point.x,point.y);await page.locator('.route-sheet').waitFor({state:'hidden'});
       await page.waitForTimeout(350); // Allow the normal runtime snapshot publication interval.
       const after=await gameState(page);
       assert.deepEqual(after.player,before.player,'An outside-dismiss click must not move the player');
       assert.deepEqual(after.route,before.route,'An outside-dismiss click must not add a route');
       assert.equal(after.selected,before.selected,'An outside-dismiss click must not select a world object');
+    },async()=>{
+      const route=page.locator('.route-sheet');
+      if(await route.isVisible()){
+        await route.getByRole('button',{name:'收起路线',exact:true}).click({timeout:10000});
+        await route.waitFor({state:'hidden',timeout:10000});
+      }
     });
     await scenario('desktop-weather-keyboard',page,async()=>{
       const summary=page.locator('summary[aria-label="天气与木料湿度"]');
@@ -241,6 +279,100 @@ async function desktopGame(){
     await scenario('desktop-settings',page,async()=>{
       await openSettings(page);await capture(page,'08-desktop-settings');
       await page.keyboard.press('Escape');await page.locator('.help-sheet').waitFor({state:'hidden'});
+    });
+    await scenario('route-selection-survives-narrow-layout',page,async()=>{
+      await page.locator('.bottom-toolbar').getByRole('button',{name:'路线',exact:true}).click();
+      const route=page.locator('.route-sheet');await route.waitFor();
+      const slots=page.getByRole('group',{name:'路线图标',exact:true}).getByRole('button');
+      assert.ok(await slots.count()>=6,'The desktop first page must contain the sixth route item used by this resize regression');
+      const selected=slots.nth(5);
+      await selected.focus();await page.keyboard.press('Enter');
+      const label=await selected.getAttribute('aria-label');
+      const heading=await route.locator('.wood-detail h3').innerText();
+      assert.equal(await selected.getAttribute('aria-pressed'),'true');
+      assert.equal(await selected.evaluate(element=>element===document.activeElement),true,'The selected desktop slot must own focus before resizing');
+      await capture(page,'09-route-selected-desktop');
+      await page.setViewportSize(smallViews[0]);await frames(page,4);
+      assert.equal(await route.locator('.browser-slots button[aria-pressed="true"]').getAttribute('aria-label'),label,'Shrinking the page capacity must preserve the selected route');
+      assert.equal(await route.locator('.wood-detail h3').innerText(),heading,'The detail panel must still describe the same route');
+      await assertFocusIn(page,'.route-sheet','after 1280 to 390 resize');
+      await page.keyboard.press('Tab');await assertFocusIn(page,'.route-sheet','Tab after resize');
+      await page.keyboard.press('Shift+Tab');await assertFocusIn(page,'.route-sheet','Shift+Tab after resize');
+      await capture(page,'10-route-selected-390x844');
+    });
+    // Restore the test viewport and close the actual panel even when its assertions failed.
+    await scenario('restore-desktop-after-route-resize',page,async()=>{
+      await page.setViewportSize(desktop);await frames(page,2);
+      if(await page.locator('.route-sheet').isVisible()){
+        await page.keyboard.press('Escape');await page.locator('.route-sheet').waitFor({state:'hidden'});
+      }
+    });
+    await scenario('warehouse-drag-skips-hidden-tab-targets',page,async()=>{
+      await openItems(page);
+      const before=await gameState(page);
+      const source=page.locator('.warehouse-dock .wood-slot.is-draggable').first();
+      await source.waitFor();await source.focus();
+      const box=await source.boundingBox();assert.ok(box);
+      const from={x:box.x+box.width/2,y:box.y+box.height/2};
+      await page.mouse.move(from.x,from.y);await page.mouse.down();
+      await page.mouse.move(from.x-18,from.y-18,{steps:3});
+      await page.locator('.warehouse-dock.is-dragging').waitFor();
+      await page.locator('.item-drag-ghost').waitFor();await frames(page,2);
+      for(const key of ['Tab','Tab','Shift+Tab']){
+        await page.keyboard.press(key);await assertFocusIn(page,'.warehouse-dock',`${key} while item content is hidden by dragging`);
+      }
+      await capture(page,'11-warehouse-drag-keyboard');
+      await page.keyboard.press('Escape');await page.locator('.item-drag-ghost').waitFor({state:'hidden'});
+      await page.mouse.up();
+      assert.equal(await page.locator('.warehouse-dock').isVisible(),true,'Escape must cancel the drag before closing the warehouse');
+      assert.deepEqual((await gameState(page)).inventory,before.inventory,'Cancelled drag and keyboard traversal must preserve inventory');
+    });
+    // Failure evidence above is captured while the drag is still active, before this recovery.
+    await scenario('restore-after-warehouse-drag',page,async()=>{
+      try{if(await page.locator('.item-drag-ghost').isVisible())await page.keyboard.press('Escape');}
+      finally{await page.mouse.up();}
+      if(await page.locator('.warehouse-dock').isVisible()){
+        await page.keyboard.press('Escape');await page.locator('.warehouse-dock').waitFor({state:'hidden'});
+      }
+    });
+    await scenario('story-reader-focus-pages-and-return',page,async()=>{
+      // Use the real route list and approach command; no injected target or test-only button.
+      await page.locator('.bottom-toolbar').getByRole('button',{name:'路线',exact:true}).click();
+      const route=page.locator('.route-sheet');await route.waitFor();
+      await page.getByRole('group',{name:'路线图标',exact:true}).getByRole('button',{name:'火塘',exact:true}).click();
+      await route.getByRole('button',{name:'查看',exact:true}).click();
+      const target=page.locator('.target-card');await target.waitFor();
+      const fireItems=page.getByRole('group',{name:'火塘图标',exact:true});
+      if(!await fireItems.isVisible()){
+        await target.getByRole('button',{name:'走近',exact:true}).first().click();
+        await fireItems.waitFor({timeout:45000});
+      }
+      await fireItems.getByRole('button',{name:'森林故事',exact:true}).click();
+      const read=target.getByRole('button',{name:'坐下阅读',exact:true});
+      await read.click();await frames(page,2);
+      // Sitting may first queue an ordinary walk to the clear front of the stump.
+      if(!await page.locator('.forest-reader').isVisible()){
+        await page.waitForFunction(()=>{
+          const state=JSON.parse(document.querySelector('#runtime-stats').textContent).current.worldState;
+          return state.route.length===0&&!state.player.moving;
+        },null,{timeout:45000});
+        await read.click();
+      }
+      const reader=page.locator('.forest-reader');await reader.waitFor();
+      await frames(page,2);await assertFocusIn(page,'.forest-reader','two frames after opening the story');
+      const firstText=await reader.locator('.forest-reader-paper p').innerText();
+      const firstPage=await reader.locator('.forest-reader-page').innerText();
+      assert.ok(Number(firstPage.split('/')[1])>1,'The normal story must have another page for the keyboard regression');
+      await page.keyboard.press('ArrowRight');await frames(page,2);
+      assert.notEqual(await reader.locator('.forest-reader-paper p').innerText(),firstText,'ArrowRight must turn the story page');
+      assert.equal(Number((await reader.locator('.forest-reader-page').innerText()).split('/')[0]),2);
+      await assertFocusIn(page,'.forest-reader','after turning right');
+      await page.keyboard.press('ArrowLeft');await frames(page,2);
+      assert.equal(await reader.locator('.forest-reader-paper p').innerText(),firstText,'ArrowLeft must return to the first story page');
+      assert.equal(await reader.locator('.forest-reader-page').innerText(),firstPage);
+      await capture(page,'12-story-reader-keyboard');
+      await page.keyboard.press('Escape');await reader.waitFor({state:'hidden'});
+      await frames(page,2);await assertFocusIn(page,'.target-card','after closing the story');
     });
   }finally{await session.close();}
 }
@@ -302,7 +434,7 @@ async function gallery(){
   try{
     if(!await scenario('gallery-load',page,async()=>{
       await page.goto(`${origin}/sandbox/timber-ui/`);
-      await page.locator('[data-how-ui="timber"]').waitFor();
+      await page.locator('#timber-lab[data-how-ui="timber"]').waitFor();
     }))return;
     await scenario('gallery-real-controls',page,async()=>{
       assert.equal(await page.locator('.game-shell').count(),0,'The gallery URL must resolve its own entry, not the game fallback');
@@ -358,6 +490,7 @@ async function woodworking(){
 }
 
 try{
+  if(!['desktop','mobile','modules','all'].includes(scope))throw new Error(`Unknown TIMBER_REVIEW_SCOPE: ${scope}`);
   report.buildEntrySha256=createHash('sha256').update(await fs.readFile(path.join(root,'dist/index.html'))).digest('hex');
   const logger=createLogger();
   const baseInfo=logger.info.bind(logger),baseWarn=logger.warn.bind(logger),baseError=logger.error.bind(logger);
@@ -375,14 +508,18 @@ try{
   await server.listen();phase='launch Chromium';
   browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE||undefined,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});
   report.browser=await browser.version();
-  await desktopGame();await mobileGame();await gallery();
-  for(const viewport of [desktop,...smallViews])await cabin(viewport,viewport!==desktop);
-  await woodworking();
+  if(scope==='all'||scope==='desktop')await desktopGame();
+  if(scope==='all'||scope==='mobile')await mobileGame();
+  if(scope==='all'||scope==='modules'){
+    await gallery();
+    for(const viewport of [desktop,...smallViews])await cabin(viewport,viewport!==desktop);
+    await woodworking();
+  }
   assert.deepEqual(report.errors,[],'Unexpected browser console/page errors');
   assert.deepEqual(report.failedRequests,[],'Assets or modules failed to load');
   assert.deepEqual(report.layoutIssues,[],'UI target/bounds failures; see each frame and rectangle in report.json');
   assert.deepEqual(report.failures,[],'One or more interaction scenarios failed');
-  report.result='passed';console.log(`Timber UI review passed: ${report.frames.length} frames / ${report.flows.length} flows`);
+  report.result='passed';console.log(`Timber UI review passed (${scope}): ${report.frames.length} frames / ${report.flows.length} flows`);
 }catch(error){
   report.result='failed';report.failure={phase,message:String(error),stack:error.stack};
   console.error(error);process.exitCode=1;

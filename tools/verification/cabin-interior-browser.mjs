@@ -318,6 +318,7 @@ try {
     await p.locator('#leave').tap(); await waitIdle(p);
     assert.ok((await snapshot(p)).player.z > 3.5);
     await p.locator('#daylight').tap();
+    if(await p.locator('#view-toggle').isVisible())await p.locator('#view-toggle').tap();
     await p.locator('#cut-mode').selectOption('stage');
     await assertNoOverflow(p, label);
     await capture(p, `${label}-evening`, 'room');
