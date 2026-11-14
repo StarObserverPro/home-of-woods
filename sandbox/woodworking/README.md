@@ -2,20 +2,32 @@
 
 在同一张工作台上选面、定线、定深、下锯和试配。加工用按钮；拖动木料、方向按钮与正面/侧看只改变观察角度。旋转、换工序与试配不改变比例；只有显式加减缩放、换料或视口尺寸改变才重新设定画面尺度。
 
-## 运行
+## 运行与接入
 
-在仓库根目录先 `npm ci`，再进入本目录执行 `npm ci && npm test && npm run build`。使用仓库锁定的 Node.js 22.14+。打开 `dist/woodworking.html` 即可离线试玩；Three.js、手锯 GLB、桌面贴图和共享 Timber UI 都已打入文件，不依赖 CDN。该页是提供练习材料的独立宿主，不是主游戏免费发料入口。
+在仓库根目录先 `npm ci`，再进入本目录执行 `npm ci && npm test && npm run build`。使用 Node.js 22.14+；当前浏览器工作流锁定 22.16.0。打开 `dist/woodworking.html` 即可离线试玩；Three.js、手锯 GLB、桌面贴图和共享 Timber UI 都已打入文件，不依赖 CDN。该页是提供练习材料的独立宿主，不是主游戏免费发料入口。
 
-`npm pack` 产生 `@home-of-woods/woodworking` 组件包，导出 `mountWoodworking`。原 `WoodworkingOptions` / `WoodworkingMount` 合同保留；`getDraft()`、`setPaused()`、`destroy()` 分别取草稿、暂停和卸载。宿主仍负责唯一材料事务与保存；`integration/mount-camp.ts` 是现有营地适配器。正式营地菜单/材料供应没有在此分支擅自启用。
+`npm pack` 产生 `@home-of-woods/woodworking` 组件包，导出 `mountWoodworking`。原 `WoodworkingOptions` / `WoodworkingMount` 合同保留；`getDraft()`、`setPaused()`、`destroy()` 分别取草稿、暂停和卸载。宿主仍负责唯一材料事务与保存；`integration/mount-camp.ts` 是现有营地适配器。正式营地菜单、角色进出工作台和方料供应尚未接入本版本。
 
-操作记录与材料守恒沿用有限锯切 V2；0.1 手绘草稿不静默转换。断续锯切、两刀接通后脱料、一次自动修整、不可修复损伤、真实库存重试/重复收件规则保持不变。完整凿槽、斜切、圆孔和手动凿削未实现。
+操作记录与材料守恒沿用有限锯切 V2；0.1 手绘草稿不静默转换。浅锯、续锯、两刀接通后脱料、一次自动修整、不可修复损伤、真实库存重试/重复收件规则保留。锯口完全处于待削余量时，按修整后的实际几何判断能否补救；只减材，不填回缺口。完整凿槽、斜切、圆孔和手动凿削未实现。
 
 ## 画面与资产
 
 `src/viewport.ts` 使用按需绘制的 3D 工作台。没有背景常驻动画循环；只有输入、尺寸/状态变化、资源加载和短时锯切表现请求帧。选面网格直接来自 `solid.ts` 的实际暴露表面；端纹和侧纹在原始木料坐标中连续。锯切动画不结算资源。
 
-手锯采用 Poly Haven CC0 模型，不是工具图标挤出；工作台为少量板/腿几何，使用其 CC0 木桌贴图。原始输入、许可、作者、修改和复建入口见 `../../sources/polyhaven/woodworking/README.md`。运行模型 2,548 三角面，纹理经过降采样与风格化。分发包含 Three.js MIT 与 CC0 声明。UI 直接复用根目录 `DESIGN.md` 与 `src/ui/timber/`，相机按钮是共享主题内显式选择的半透明观察控件，不影响主游戏普通木块按钮。
+手锯采用 Poly Haven CC0 模型，不是工具图标挤出；工作台为简单厚台面与腿，贴图按实际坐标铺设，不把整张多板贴图挤进每根窄板。原始输入、作者、许可、修改和复建入口见 [资产来源](../../sources/polyhaven/woodworking/README.md)。手锯运行模型 2,548 三角面，纹理经过降采样与风格化；木料使用程序木纹，直角尺和静态环境为项目几何。单文件 HTML、ESM 文件及包内独立声明均附完整 Three.js MIT 与 CC0 许可文字。
+
+## 共享 UI 约定
+
+直接复用 [DESIGN.md](../../DESIGN.md) 与 `src/ui/timber/`，不保留第二套木框/按钮皮肤。以下显式语义由共享主题绘制，业务 CSS 只布局：
+
+- `data-how-camera`：半透明观察按钮，只改变角度/显式缩放，不能执行加工。
+- `data-timber-density="compact"`：短工序、阶段和工具按钮；只减文字周边内边距，不减少 44px 命中目标。
+- `data-timber-variant="dock"`：紧凑工具匣；不改变其他窗口的统一内边距。
+
+手机把观察区、方向按钮、工具栏和操作卡分行；操作卡独立滚动，不盖住木料。桌面右侧操作卡与场景分列。图纸模态退出后返回图纸按钮焦点；暂停时关闭模态且停止输入与动态表现。
 
 ## 验证
 
-`npm test` 为加工、库存与视角比例单测；`node test/browser.mjs` 运行构建页面的实际浏览器操作。使用 `QA_EVIDENCE_DIR` 指定临时截图/报告目录，`CHROME_PATH` 可指定 Chromium。默认真实文件导航，不能以注入 HTML 的截图替代真实刷新验证。具体结果与未验证边界见 `../../docs/scopes/woodworking-game-stage.md`。
+`npm test` 为加工、库存与视角比例单测；`node test/browser.mjs` 运行构建页面的真实浏览器操作与文件刷新。`node test/mount-browser.mjs` 用独立 ESM 宿主检查暂停、恢复、三次销毁重挂、图纸 Esc 返回焦点、44px 控件和离线资源/许可。使用 `QA_EVIDENCE_DIR` 指定临时截图/报告目录，`CHROME_PATH` 可指定 Chromium。
+
+注入 HTML 的截图不替代真实刷新验证；软件 WebGL 与触控模拟不认证实体手机性能。具体已通过结果、画面审查和未接线部分见 [本批记录](../../docs/scopes/woodworking-game-stage.md)。
