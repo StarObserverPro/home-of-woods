@@ -276,10 +276,7 @@ async function forestProduceSmoke(){
   }
 }
 
-async function campForestRoundtrip(){
-  if(!existsSync(path.join(cwd,'src/ui/CampForestTrip.tsx')))return;
-  phase='camp-forest-roundtrip';
-  await newPage({width:960,height:640});
+async function openCampTrail(){
   await page.goto(`${origin}/?inspect=1`);
   await page.waitForFunction(()=>window.__HOW_ADVANCE_SIMULATION__);
   await page.getByRole('button',{name:'路线',exact:true}).click();
@@ -287,6 +284,23 @@ async function campForestRoundtrip(){
   await page.getByRole('button',{name:'林地小径',exact:true}).click();
   await page.getByRole('button',{name:'进入林地',exact:true}).click();
   await page.waitForFunction(()=>window.__forestExpedition?.snapshot().activeMapId==='upper');
+}
+async function captureCampTrip(name){
+  const hold=await page.evaluate(()=>window.__HOW_CAPTURE_HOLD__.begin());
+  const session=await context.newCDPSession(page);
+  try{
+    const capture=await session.send('Page.captureScreenshot',{format:'png',fromSurface:true,captureBeyondViewport:false});
+    await fs.writeFile(path.join(out,name),Buffer.from(capture.data,'base64'));
+  }finally{
+    await session.detach();
+    await page.evaluate(token=>window.__HOW_CAPTURE_HOLD__.end(token),hold.token);
+  }
+}
+async function campForestRoundtrip(){
+  if(!existsSync(path.join(cwd,'src/ui/CampForestTrip.tsx')))return;
+  phase='camp-forest-roundtrip';
+  await newPage({width:960,height:640});
+  await openCampTrail();
   assert.equal(await page.evaluate(()=>document.querySelector('.game-shell').inert),true);
   await page.getByRole('button',{name:'物产',exact:true}).click();
   const sourceId='expedition.upper.windfall-berries';
@@ -341,8 +355,25 @@ async function campForestRoundtrip(){
   await page.locator('.target-card').getByRole('button',{name:'打开仓库',exact:true}).click();
   await warehouse.getByRole('button',{name:'营地',exact:true}).click();
   await warehouse.getByRole('button',{name:/^高林红果，1份/}).waitFor();
-  await page.screenshot({path:path.join(out,'camp-forest-return.png')});
   report.checks.push({name:phase,status:'passed',carriedAcrossReload:1,delivered:1});
+  await captureCampTrip('camp-forest-return.png');
+  await context.close();context=null;page=null;
+
+  phase='camp-forest-narrow';
+  await newPage({width:390,height:844},true);
+  await openCampTrail();
+  const exit=page.getByRole('button',{name:'回营地',exact:true});
+  const box=await exit.boundingBox();
+  assert.ok(box&&box.width>=44&&box.height>=44&&box.x>=0&&box.x+box.width<=390,JSON.stringify(box));
+  const cdp=await context.newCDPSession(page);
+  try{
+    const capture=await cdp.send('Page.captureScreenshot',{format:'png',fromSurface:true,captureBeyondViewport:false});
+    await fs.writeFile(path.join(out,'camp-forest-narrow.png'),Buffer.from(capture.data,'base64'));
+  }finally{await cdp.detach();}
+  await exit.tap();
+  await page.locator('.camp-forest-trip').waitFor({state:'detached'});
+  assert.equal((await saved()).expedition.active,false);
+  report.checks.push({name:phase,status:'passed',viewport:[390,844],exit:box});
   await context.close();context=null;page=null;
 }
 
