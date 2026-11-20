@@ -235,8 +235,9 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 
 | 内容 | 来源、修整与用途 | 运行入口与所有者 |
 | --- | --- | --- |
-| 十五种树/灌木形态 | 红杉式巨木、铁杉、云杉、冷杉、松、侧柏式针叶树、栎、枫、山毛榉、桦、杨、榆、白蜡、榛丛与果丛；本项目程序几何。松、云杉、冷杉、栎、桦、杨、榆借用既有 `forest-shapes.js` 的冠形与枝级，其余形态补充同一块面、枝干和色板语言；没有逐片树叶或外部叶卡。 | `scene/expedition-vegetation.ts`、`expedition-vegetation-geometry.ts`；固定变体、干根与冠层分离、实例批次和冠层遮挡权重由植被所有者管理；原点在树干落地点，+Y 向上，世界高度来自布局。 |
-| 七种林下地物 | 倒木、育苗倒木、翻起根盘、横枝苔帘、蕨、苔石、灌丛；本项目程序生成。倒木端面、幼苗根与承托枝为可见几何，奖励仍由独立资源来源管理。 | `scene/expedition-vegetation-features.ts`；尺寸与稳定变体由调用者传入，共享几何/材质通过植被及场景 `Resources` 释放。 |
+| 十六种树/灌木形态 | 红杉式巨木、铁杉、云杉、冷杉、松、侧柏式针叶树、栎、枫、山毛榉、桦、杨、榆、白蜡、榛丛、果丛与唐棣；本项目程序几何。松、云杉、冷杉、栎、桦、杨、榆借用既有 `forest-shapes.js` 的冠形与枝级，其余形态补充同一块面、枝干和色板语言；没有逐片树叶或外部叶卡。 | `scene/expedition-vegetation.ts`、`expedition-vegetation-geometry.ts`；固定变体、干根与冠层分离、实例批次和冠层遮挡权重由植被所有者管理；原点在树干落地点，+Y 向上，世界高度来自布局。 |
+| 八种林下地物 | 倒木、育苗倒木、翻起根盘、横枝苔帘、蕨、苔石、灌丛、旧树桩；本项目程序生成。倒木端面、幼苗根与承托枝为可见几何，奖励仍由独立资源来源管理。 | `scene/expedition-vegetation-features.ts`；尺寸与稳定变体由调用者传入，共享几何/材质通过植被及场景 `Resources` 释放。 |
+| 林果与木生菌 | 唐棣果、红莓、蓝果、带苞坚果、平菇、硫磺菌与木耳使用本仓库程序网格，参考出处见林地说明。 | `scene/expedition-produce.ts`，单点果菌合为一份网格，统一材质与场景生命周期。 |
 | 玩家与动作复用 | 沿用已登记 `public/assets/characters/player.glb`、`motions.glb`，源为上文 KayKit Adventurers 2.0 / Character Animations 1.1，保留原 CC0 通知与修整记录；本轮不引入新的角色文件或改写其许可。 | `scene/expedition-actor.ts`；沿用 `CHARACTER.worldScale`，待机、行走、跑步与拾取由宿主时钟驱动，骨架与资源归场景 owner。 |
 | 菌簇与枝料复用 | 沿用已登记 `public/assets/gathering/mushrooms.glb`、`branches.glb`，源为 Kenney Nature Kit 2.1 的既有修整产物；只在样区按用途缩放/摆放，不把第三方网格改标为原创。 | `expedition-actor.ts` 加载模板，`forest-expedition-scene.ts` 克隆并与稳定来源 ID 关联；原资源与许可文件不变。 |
 | 树皮与界面复用 | 沿用项目原创 `bark-surface.ts` 的共享颜色/法线纹理及 `ui/timber/` 的程序木质表面。树干与树冠材质分开，不增加按树生成的外部贴图组。 | 植被所有者释放树皮资源；`sandbox/forest-expedition/main.tsx` 唯一挂载、卸载 Timber 主题，React 窗口只消费共用原语。 |

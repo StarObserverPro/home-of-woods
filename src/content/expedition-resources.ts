@@ -15,7 +15,10 @@ const produce = (itemId: string, name: string, typeId: string, materialId: strin
 export const EXPEDITION_ITEMS: readonly ItemDefinition[] = [
   produce('conifer-mushroom', '针林鲜菌', 'fungus.fresh', 'fungus.unspecified', 'fresh', '针叶活树林地上的菌类；可在样区补给架晾干。', 'mushroom'),
   produce('hardwood-mushroom', '阔林鲜菌', 'fungus.fresh', 'fungus.unspecified', 'fresh', '阔叶林地上的菌类；与朽木上的菌簇分开辨认。', 'mushroom'),
-  produce('wood-mushroom', '朽木鲜菌', 'fungus.fresh', 'fungus.unspecified', 'fresh', '长在倒木上的菌簇，倒木与林地资源各有独立容量。', 'mushroom'),
+  produce('wood-mushroom', '平菇', 'fungus.fresh', 'fungus.unspecified', 'fresh', '长在朽木上的扇形鲜菌，可在补给架晾干。', 'mushroom'),
+  produce('shelf-mushroom', '硫磺菌', 'fungus.fresh', 'fungus.unspecified', 'fresh', '层层叠起的鲜菌，可在补给架晾干。', 'mushroom'),
+  produce('wood-ear', '木耳', 'fungus.fresh', 'fungus.unspecified', 'fresh', '朽木上薄而卷曲的菌类，可在补给架晾干。', 'mushroom'),
+  produce('serviceberry', '六月莓', 'forest.fruit', 'forest.fruit', 'fresh', '挂在唐棣细枝上的小果，可带回补给架晾干。'),
   produce('forest-berry', '林缘红莓', 'forest.fruit', 'forest.fruit', 'fresh', '来自明亮林缘的果丛，可晾成果干。'),
   produce('blue-forest-berry', '溪甸蓝果', 'forest.fruit', 'forest.fruit', 'fresh', '下坡亮林边的果子，可晾成果干。'),
   produce('red-forest-berry', '高林红果', 'forest.fruit', 'forest.fruit', 'fresh', '针叶林也有果灌木，光照适合的林窗可形成果源。'),
@@ -47,6 +50,8 @@ export const EXPEDITION_TAXONOMY: ItemTaxonomy = {
 export const EXPEDITION_CARRY_ITEMS: Readonly<Record<string, CarrySize>> = {
   ...CARRY_ITEMS,
   'conifer-mushroom': CARRY_ITEMS.mushroom, 'hardwood-mushroom': CARRY_ITEMS.mushroom, 'wood-mushroom': CARRY_ITEMS.mushroom,
+  'shelf-mushroom': CARRY_ITEMS.mushroom, 'wood-ear': CARRY_ITEMS.mushroom,
+  serviceberry: { weight: .3, bulk: 1, bundleFactor: 1 },
   'forest-berry': { weight: .3, bulk: 1, bundleFactor: 1 }, 'blue-forest-berry': { weight: .3, bulk: 1, bundleFactor: 1 }, 'red-forest-berry': { weight: .3, bulk: 1, bundleFactor: 1 },
   'forest-nut': { weight: .6, bulk: .8, bundleFactor: 1 }, 'tree-resin': { weight: .25, bulk: .4, bundleFactor: 1 },
   'forest-seed': { weight: .15, bulk: .4, bundleFactor: 1 }, 'dried-forest-fruit': { weight: .15, bulk: .35, bundleFactor: 1 },
@@ -65,7 +70,10 @@ const resource = (role: ExpeditionResourceRole, name: string, itemId: string, ca
 /** Recovery is sample-session time, not frozen season/day balancing. No load-time refill. */
 export const EXPEDITION_RESOURCES: Readonly<Record<ExpeditionResourceRole, ExpeditionResourceDefinition>> = {
   'soil-fungus': resource('soil-fungus', '林地菌圈', 'mushroom', 4, 1.8, 240, '活树林地上的菌圈，采下后按同一游戏时钟恢复。', { itemByMap: { upper: 'conifer-mushroom', lower: 'hardwood-mushroom' } }),
-  'wood-fungus': resource('wood-fungus', '朽木菌簇', 'wood-mushroom', 3, 1.8, 300, '保留倒木，让木生菌继续恢复。'),
+  'wood-fungus': resource('wood-fungus', '朽木平菇', 'wood-mushroom', 3, 1.8, 300, '从朽木上长出一簇浅色扇形菌盖。'),
+  'shelf-fungus': resource('shelf-fungus', '树干上的硫磺菌', 'shelf-mushroom', 3, 1.8, 340, '阔叶树干上的破损处长出橙黄色菌架。'),
+  'wood-ear': resource('wood-ear', '朽木上的木耳', 'wood-ear', 3, 1.8, 300, '潮湿的朽木侧面长出卷边的小耳片。'),
+  'tree-fruit': resource('tree-fruit', '唐棣果枝', 'serviceberry', 4, 1.6, 330, '六月莓成串挂在唐棣外侧的细枝上。'),
   berry: resource('berry', '林缘果丛', 'forest-berry', 4, 1.4, 300, '较有光的林窗结果；可带回补给架晾成果干。', { itemByMap: { upper: 'red-forest-berry', lower: 'blue-forest-berry' } }),
   nut: resource('nut', '成熟坚果', 'forest-nut', 3, 1.6, 420, '带壳原料要回补给架处理，成熟供应有上限。'),
   resin: resource('resin', '树脂挂点', 'tree-resin', 2, 2.2, 480, '缓慢积累的小份材料，逐树保留采集状态。'),
@@ -87,15 +95,15 @@ export type ExpeditionRecipe = {
   outputs: readonly { itemId: string; quantity: number }[];
 };
 export const EXPEDITION_RECIPES: readonly ExpeditionRecipe[] = [
-  { id: 'dry-mushrooms', name: '晾制菌干', durationSeconds: 8, description: '三份鲜菌制成两份轻便菌干。', inputs: [{ itemIds: ['mushroom', 'conifer-mushroom', 'hardwood-mushroom', 'wood-mushroom'], quantity: 3, label: '鲜菌' }], outputs: [{ itemId: 'dried-mushroom', quantity: 2 }] },
-  { id: 'dry-fruit', name: '晾制果干', durationSeconds: 8, description: '三份林果制成两份果干，减轻返程的体积负担。', inputs: [{ itemIds: ['forest-berry', 'blue-forest-berry', 'red-forest-berry'], quantity: 3, label: '林果' }], outputs: [{ itemId: 'dried-forest-fruit', quantity: 2 }] },
+  { id: 'dry-mushrooms', name: '晾制菌干', durationSeconds: 8, description: '三份鲜菌制成两份轻便菌干。', inputs: [{ itemIds: ['mushroom', 'conifer-mushroom', 'hardwood-mushroom', 'wood-mushroom', 'shelf-mushroom', 'wood-ear'], quantity: 3, label: '鲜菌' }], outputs: [{ itemId: 'dried-mushroom', quantity: 2 }] },
+  { id: 'dry-fruit', name: '晾制果干', durationSeconds: 8, description: '三份林果制成两份果干，减轻返程的体积负担。', inputs: [{ itemIds: ['forest-berry', 'blue-forest-berry', 'red-forest-berry', 'serviceberry'], quantity: 3, label: '林果' }], outputs: [{ itemId: 'dried-forest-fruit', quantity: 2 }] },
   { id: 'prepare-nuts', name: '处理坚果储粮', durationSeconds: 7, description: '去壳并完成所需处理，三份原料制成两份储粮。', inputs: [{ itemIds: ['forest-nut'], quantity: 3, label: '坚果' }], outputs: [{ itemId: 'nut-rations', quantity: 2 }] },
   { id: 'split-kindling', name: '劈制引火柴', durationSeconds: 4, description: '一份枝料向下加工成三份燃料；燃料不能变回结构木。', inputs: [{ itemIds: ['branch'], quantity: 1, label: '枝料' }], outputs: [{ itemId: 'scrap-fuel', quantity: 3 }] },
   { id: 'boil-sap', name: '熬制树液糖浆', durationSeconds: 10, description: '消耗一罐树液与两份柴，收好糖浆并取回空罐。', inputs: [{ itemIds: ['sap-filled-can'], quantity: 1, label: '树液罐' }, { itemIds: ['scrap-fuel'], quantity: 2, label: '引火柴' }], outputs: [{ itemId: 'forest-syrup', quantity: 1 }, { itemId: 'sap-can', quantity: 1 }] },
 ];
 
 export const EXPEDITION_RULES = {
-  schemaVersion: 1 as const, storageRange: 4.2, sourceRange: 2.4, timberAllowance: 3,
+  schemaVersion: 2 as const, storageRange: 4.2, sourceRange: 2.4, timberAllowance: 3,
   /** All three sample plots share one allowance; finite timber sources never recover. */
   mapIds: ['upper', 'mixed', 'lower'] as const,
 };

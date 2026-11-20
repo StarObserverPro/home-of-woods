@@ -7,6 +7,7 @@ import {Resources} from './resources.ts';
 import {createExpeditionActor} from './expedition-actor.ts';
 import {createExpeditionVegetation} from './expedition-vegetation.ts';
 import type {ExpeditionCrownVolume} from './expedition-vegetation.ts';
+import {populateExpeditionProduce} from './expedition-produce.ts';
 import {createForestExpeditionLighting} from './lighting/forest-expedition-lighting.ts';
 
 export type ExpeditionPick = {kind: 'source' | 'landmark'; id: string} | {kind: 'drop'; key: string} | {kind: 'supply'} | {kind: 'ground'; point: ExpeditionPoint};
@@ -132,41 +133,54 @@ export async function createForestExpeditionScene(canvas: HTMLCanvasElement) {
     }
   }
   function createSourceModels(current: ExpeditionLayout, resources: Resources) {
-    const sphere = resources.geometry('source-fruit', () => new THREE.IcosahedronGeometry(1, 1));
+    const sphere = resources.geometry('source-seed', () => new THREE.IcosahedronGeometry(1, 1));
+    const hitMaterial = resources.own(new THREE.MeshBasicMaterial({visible: false}));
+    const trees = new Map(current.trees.map(tree => [tree.id,tree]));
     for (const site of current.resourceSites) {
       const base = new THREE.Group(); base.name = site.id; base.position.set(site.x + 1.6, expeditionHeightAt(current.id, site.x + 1.6, site.z - .7), site.z - .7);
       const harvest = new THREE.Group(); harvest.name = 'harvest'; base.add(harvest);
-      if (site.role === 'soil-fungus' || site.role === 'wood-fungus') {
-        const group = actor.templates.mushrooms.clone(true); group.scale.setScalar(site.role === 'wood-fungus' ? 1.35 : 1.65); harvest.add(group);
-        if (site.role === 'wood-fungus') {
-          const log = vegetation!.createFeature({id: site.id + '-host', kind: 'nurse-log', x: .7, y: .05, z: -.7, length: 3.8, radius: .44, rotation: -.6}); base.add(log);
-          const along = -.55, side = .12, angle = -.6;
-          harvest.position.set(.7 + along * Math.cos(angle) + side * Math.sin(angle), .05 + .44 * 1.7, -.7 - along * Math.sin(angle) + side * Math.cos(angle));
-        }
-      } else if (site.role === 'branch' || site.role === 'curved-branch') {
-        const group = actor.templates.branches.clone(true); group.scale.setScalar(site.role === 'curved-branch' ? 1.65 : 1.2); group.rotation.y = .6; harvest.add(group);
-      } else if (site.role === 'long-timber') {
-        harvest.add(vegetation!.createFeature({id: site.id + '-wood', kind: 'fallen-log', x: 0, y: .05, z: 0, length: 5.4, radius: .40, rotation: 1.05}));
-        base.add(vegetation!.createFeature({id: site.id + '-root', kind: 'root-plate', x: -2.65 * Math.cos(1.05), y: 0, z: 2.65 * Math.sin(1.05), radius: .8, height: 1.7, rotation: 1.05 + Math.PI}));
-      } else if (site.role === 'berry' || site.role === 'nut') {
-        base.add(vegetation!.createFeature({id: site.id + '-bush', kind: 'shrub', x: 0, y: 0, z: 0, height: site.role === 'berry' ? 1.3 : 1.8, radius: 1.1}));
-        for (let i = 0; i < 9; i++) {
-          const fruit = primitive(sphere, resources.material(site.role === 'berry' ? current.id === 'lower' ? '#656694' : '#a54e5e' : '#a7804c', .68), harvest,
-            Math.sin(i * 2.4) * .68, .64 + (i % 3) * .22, Math.cos(i * 2.4) * .58);
-          fruit.scale.setScalar(site.role === 'berry' ? .16 : .14);
-        }
-      } else if (site.role === 'sap') {
-        primitive(resources.geometry('sap-pot', () => new THREE.CylinderGeometry(.32, .28, .44, 10, 1, true)), resources.material('#9d8868', .75), base, 0, .23, 0);
-        primitive(resources.geometry('sap-surface', () => new THREE.CircleGeometry(.27, 16)), resources.material('#a4ba96', .45), harvest, 0, .38, 0).rotation.x = -Math.PI / 2;
-      } else {
-        for (let i = 0; i < 5; i++) {
-          const item = primitive(sphere, resources.material(site.role === 'resin' ? '#d5a24d' : '#86664b', .6), harvest, Math.sin(i * 2) * .45, .16, Math.cos(i * 2) * .42);
-          item.scale.set(site.role === 'resin' ? .19 : .16, .24, .18);
+      const host = site.hostTreeId ? trees.get(site.hostTreeId) : undefined;
+      const detailed = populateExpeditionProduce(site,current.id,base,harvest,host,vegetation!,resources);
+      if (!detailed) {
+        if (site.role === 'soil-fungus') {
+          const group = actor.templates.mushrooms.clone(true); group.scale.setScalar(1.65); harvest.add(group);
+        } else if (site.role === 'branch' || site.role === 'curved-branch') {
+          const group = actor.templates.branches.clone(true); group.scale.setScalar(site.role === 'curved-branch' ? 1.65 : 1.2); group.rotation.y = .6; harvest.add(group);
+        } else if (site.role === 'long-timber') {
+          harvest.add(vegetation!.createFeature({id: site.id + '-wood', kind: 'fallen-log', x: 0, y: .05, z: 0, length: 5.4, radius: .40, rotation: 1.05}));
+          base.add(vegetation!.createFeature({id: site.id + '-root', kind: 'root-plate', x: -2.65 * Math.cos(1.05), y: 0, z: 2.65 * Math.sin(1.05), radius: .8, height: 1.7, rotation: 1.05 + Math.PI}));
+        } else if (site.role === 'sap') {
+          const surface = host && vegetation!.trunkSurface(host,new THREE.Vector3(site.x,site.y,site.z),.56);
+          if (surface && host) {
+            const outward = new THREE.Vector3(site.x-host.x,0,site.z-host.z).normalize();
+            base.position.copy(surface).addScaledVector(outward,.27);
+            base.position.y -= .43;
+          }
+          primitive(resources.geometry('sap-pot', () => new THREE.CylinderGeometry(.32, .28, .44, 10, 1, true)), resources.material('#9d8868', .75), base, 0, .23, 0);
+          primitive(resources.geometry('sap-surface', () => new THREE.CircleGeometry(.27, 16)), resources.material('#a4ba96', .45), harvest, 0, .38, 0).rotation.x = -Math.PI / 2;
+        } else {
+          for (let i = 0; i < 5; i++) {
+            const item = primitive(sphere, resources.material('#86664b', .6), harvest, Math.sin(i * 2) * .45, .16, Math.cos(i * 2) * .42);
+            item.scale.set(.16, .24, .18);
+          }
         }
       }
-      setPick(base, {kind: 'source', id: site.id});
-      const hit = new THREE.Mesh(resources.geometry('source-hit', () => new THREE.CylinderGeometry(1.5, 1.5, 1.5, 10)), resources.own(new THREE.MeshBasicMaterial({visible: false})));
-      hit.position.y = .7; hit.userData.expeditionPick = {kind: 'source', id: site.id}; base.add(hit);
+      const pick = {kind: 'source', id: site.id} as const;
+      base.updateMatrixWorld(true);
+      const bounds = new THREE.Box3().setFromObject(harvest);
+      if (detailed && bounds.isEmpty()) throw new Error(`Missing harvest geometry: ${site.id}`);
+      const center = bounds.isEmpty() ? base.position.clone() : bounds.getCenter(new THREE.Vector3());
+      base.userData.visualPoint = {x:center.x,y:center.y,z:center.z};
+      if (detailed) {
+        setPick(harvest,pick);
+        const size = bounds.getSize(new THREE.Vector3()).addScalar(.22);
+        const hit = new THREE.Mesh(resources.own(new THREE.BoxGeometry(size.x,size.y,size.z)),hitMaterial);
+        hit.position.copy(base.worldToLocal(center)); hit.userData.expeditionPick = pick; base.add(hit);
+      } else {
+        setPick(base,pick);
+        const hit = new THREE.Mesh(resources.geometry('source-hit', () => new THREE.CylinderGeometry(1.5, 1.5, 1.5, 10)),hitMaterial);
+        hit.position.y = .7; hit.userData.expeditionPick = pick; base.add(hit);
+      }
       sources.set(site.id, base); pickRoots.push(base); mapRoot.add(base);
     }
   }
@@ -285,7 +299,8 @@ export async function createForestExpeditionScene(canvas: HTMLCanvasElement) {
     },
     stats: () => ({...stats, shaderErrors, drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures,
       viewport: {width, height, dpr: renderer.getPixelRatio()}, camera: {position: camera.position.toArray(), target: cameraTarget.toArray(), distance, yaw, pitch}, renderer: renderer.capabilities.isWebGL2 ? 'WebGL2' : 'WebGL', postProcessing: false,
-      lighting:lighting?.stats(),footAnchors:actor.footStats()}),
+      lighting:lighting?.stats(),footAnchors:actor.footStats(),
+      sourceVisuals:Object.fromEntries([...sources].map(([id,root])=>[id,root.userData.visualPoint]))}),
     dispose() {if (disposed) return; disposed = true; lighting?.dispose(); actor.dispose(); vegetation?.dispose(); mapOwner?.dispose(); owner.dispose(); sun.shadow.dispose(); renderer.dispose(); renderer.forceContextLoss(); scene.clear();},
   };
 }

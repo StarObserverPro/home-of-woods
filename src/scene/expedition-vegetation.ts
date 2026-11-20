@@ -29,13 +29,15 @@ const PROFILES: Record<ExpeditionTreeKind, Profile> = {
   elm: {source:6,bark:'#817560',leaf:'#769354',crownStart:.56,roots:6},
   ash: {bark:'#a2a58d',leaf:'#8eab68',crownStart:.49,roots:5},
   hazel: {bark:'#8d785b',leaf:'#8a9f56',crownStart:.23,roots:3},
-  berry: {bark:'#827653',leaf:'#779459',crownStart:.18,roots:3},
+  berry: {bark:'#756848',leaf:'#6d8e53',crownStart:.18,roots:3},
+  serviceberry: {bark:'#837c71',leaf:'#8ba661',crownStart:.36,roots:3},
 };
 
 type TreeTemplate = {
   key: string; trunk: THREE.BufferGeometry; roots: THREE.BufferGeometry | null;
   wood: THREE.BufferGeometry; crown: THREE.BufferGeometry; moss: THREE.BufferGeometry | null;
   bounds: THREE.Box3; quality: VegetationQuality; triangles: number;
+  fruitTwigs: THREE.Vector3[];
 };
 type CrownBatch = {mesh: THREE.InstancedMesh; ids: string[]; opacity: THREE.InstancedBufferAttribute};
 type WoodSegment = {a: [number,number,number]; b: [number,number,number]; radius: number};
@@ -136,9 +138,10 @@ function authoredConifer(kind: ExpeditionTreeKind, profile: Profile, seed: numbe
 }
 
 function authoredBroadleaf(kind: ExpeditionTreeKind, profile: Profile, seed: number, radius: number, crownRadius: number,
-  crownStart: number, landmark: boolean, wood: VegetationBuilder, crown: VegetationBuilder, moss: VegetationBuilder, hasMoss: boolean) {
+  crownStart: number, landmark: boolean, wood: VegetationBuilder, crown: VegetationBuilder, moss: VegetationBuilder, hasMoss: boolean, fruitTwigs: THREE.Vector3[]) {
   const ash=kind==='ash',beech=kind==='beech',hazel=kind==='hazel',berry=kind==='berry';
-  const shrub=hazel||berry,count=shrub?6:ash?7:6;
+  const shrub=hazel||berry,count=berry?5:shrub?6:ash?7:6;
+  const fruitsOnTwigs=shrub||kind==='serviceberry';
   const lean=(noise(seed+2)-.5)*.34;
   if(!shrub)wood.branch([V(0,-.03,0),V(lean*.35,2.5,0),V(lean,crownStart+.45,.1),V(lean*.7,7.6,.08)],
     [radius*1.16,radius*.91,radius*.61,radius*.12],profile.bark);
@@ -147,7 +150,7 @@ function authoredBroadleaf(kind: ExpeditionTreeKind, profile: Profile, seed: num
     const angle=(order[i]+noise(seed+i+31)*.35)/count*Math.PI*2;
     const dx=Math.cos(angle),dz=Math.sin(angle),reach=crownRadius*(.62+noise(seed+i*11)*.22);
     const start=shrub?V(dx*radius*.7,0,dz*radius*.7):V(lean*.7,crownStart-.4+i*.16,.05);
-    const mid=V(dx*reach*.52,shrub?3.6:6+noise(seed+i+67)*.4,dz*reach*.52);
+    const mid=V(dx*reach*.52,shrub?3.0+noise(seed+i+67)*1.1:6+noise(seed+i+67)*.4,dz*reach*.52);
     const tip=V(dx*reach,shrub?6.8+noise(seed+i+17)*.6:7.5+noise(seed+i+17)*.85,dz*reach);
     const r=radius*(shrub?.40:ash?.34:.43);
     wood.branch([start,mid,tip],[r,r*.53,r*.14],profile.bark);
@@ -155,8 +158,15 @@ function authoredBroadleaf(kind: ExpeditionTreeKind, profile: Profile, seed: num
       const branchTip=tip.clone().add(V(-dz*crownRadius*.2,.66,dx*crownRadius*.2));
       wood.branch([mid.clone().lerp(tip,.55),branchTip],[r*.27,r*.035],profile.bark);
     }
-    const blobWidth=crownRadius*(shrub?.47:beech?.50:ash?.40:.48);
-    crown.cluster(tip.clone().add(V(0,.25,0)),V(blobWidth,shrub?1.6:beech?1.35:1.1,blobWidth*.88),hue(profile.leaf,seed+i),seed+i*19);
+    if(fruitsOnTwigs){
+      const twigRoot=mid.clone().lerp(tip,.66);
+      const twigTip=twigRoot.clone().add(V(dx*crownRadius*.25,-(shrub?.38:.48),dz*crownRadius*.25));
+      wood.branch([twigRoot,twigTip],[r*.25,r*.065],profile.bark,1,5);
+      fruitTwigs.push(twigRoot.clone().lerp(twigTip,.9));
+    }
+    const blobWidth=crownRadius*(berry?.40:shrub?.47:beech?.50:ash?.40:.48);
+    crown.cluster(tip.clone().add(V(0,berry?.38:.25,0)),V(blobWidth,berry?1.17:shrub?1.6:beech?1.35:1.1,blobWidth*.88),
+      hue(profile.leaf,seed+i,berry?.13:.06),seed+i*19,berry?0:undefined);
     if(hasMoss&&kind==='maple'&&i<3&&moss.quality!=='far'){
       const midpoint=mid.clone().lerp(tip,.28);
       moss.cluster(midpoint,V(reach*.21,.10,reach*.16),'#899855',seed+i+401,0);
@@ -166,7 +176,7 @@ function authoredBroadleaf(kind: ExpeditionTreeKind, profile: Profile, seed: num
       }
     }
   }
-  crown.cluster(V(lean,8.4,0),V(crownRadius*.53,1.6,crownRadius*.5),hue(profile.leaf,seed+54),seed+199);
+  crown.cluster(V(lean,8.4,0),V(crownRadius*(berry?.34:.53),berry?1.1:1.6,crownRadius*(berry?.34:.5)),hue(profile.leaf,seed+54),seed+199);
   if(landmark&&kind==='maple'){
     // Low, elbowed limb: this readable silhouette is intentionally absent from ordinary maples.
     const elbow=V(crownRadius*.63,3.6,-crownRadius*.12),tip=V(crownRadius*.94,4.1,-crownRadius*.17);
@@ -178,23 +188,25 @@ function authoredBroadleaf(kind: ExpeditionTreeKind, profile: Profile, seed: num
 }
 
 function normaliseTreeHeight(parts:(THREE.BufferGeometry|null)[]) {
-  const crown=parts[1];if(!crown)return;
+  const crown=parts[1];if(!crown)return 1;
   crown.computeBoundingBox();const scale=10/Math.max(.1,crown.boundingBox!.max.y);
   for(const geometry of parts)if(geometry){geometry.scale(1,scale,1);geometry.computeBoundingBox();geometry.computeBoundingSphere();}
+  return scale;
 }
 
-function normaliseCrownWidth(crown:THREE.BufferGeometry,trunk:THREE.BufferGeometry,moss:THREE.BufferGeometry|null,radius:number,crownRadius:number) {
+function normaliseCrownWidth(crown:THREE.BufferGeometry,trunk:THREE.BufferGeometry,moss:THREE.BufferGeometry|null,radius:number,crownRadius:number,fruitTwigs:THREE.Vector3[]) {
   const crownVertices=crown.getAttribute('position');let maximum=.01;
   for(let i=0;i<crownVertices.count;i++)maximum=Math.max(maximum,Math.hypot(crownVertices.getX(i),crownVertices.getZ(i)));
   const scale=crownRadius/maximum;
   crown.scale(scale,1,scale);
+  const lateralScale=(r:number)=>1+(scale-1)*THREE.MathUtils.smoothstep(r,radius*1.5,radius*3.5);
+  for(const twig of fruitTwigs){const s=lateralScale(Math.hypot(twig.x,twig.z));twig.x*=s;twig.z*=s;}
   // Keep the prescribed stem thickness; only the lateral branch scaffold follows crown width.
   for(const geometry of [trunk,moss])if(geometry){
     const p=geometry.getAttribute('position');
     for(let i=0;i<p.count;i++){
       const r=Math.hypot(p.getX(i),p.getZ(i));
-      const influence=THREE.MathUtils.smoothstep(r,radius*1.5,radius*3.5);
-      const localScale=1+(scale-1)*influence;p.setXYZ(i,p.getX(i)*localScale,p.getY(i),p.getZ(i)*localScale);
+      const localScale=lateralScale(r);p.setXYZ(i,p.getX(i)*localScale,p.getY(i),p.getZ(i)*localScale);
     }
     geometry.computeVertexNormals();geometry.computeBoundingBox();geometry.computeBoundingSphere();
   }
@@ -205,10 +217,11 @@ function compileTree(spec: ExpeditionTree, quality: VegetationQuality, key: stri
   const profile=PROFILES[spec.kind],radius=spec.trunkRadius/spec.height*10,crownRadius=spec.crownRadius/spec.height*10;
   const crownStart=(profile.crownStart+(spec.landmark&&['redwood','hemlock','cedar'].includes(spec.kind)?.035:0))*10;
   const seed=1031+Object.keys(PROFILES).indexOf(spec.kind)*237+spec.variant*79;
+  const fruitTwigs: THREE.Vector3[]=[];
   const wood=new VegetationBuilder(quality),leaves=new VegetationBuilder(quality),roots=new VegetationBuilder(quality),moss=new VegetationBuilder(quality);
   if(profile.source!==undefined)inheritedShape(spec.kind,profile,spec.variant,quality,radius,crownRadius,crownStart,wood,leaves);
   else if(['redwood','hemlock','cedar'].includes(spec.kind))authoredConifer(spec.kind,profile,seed,radius,crownRadius,crownStart,wood,leaves);
-  else authoredBroadleaf(spec.kind,profile,seed,radius,crownRadius,crownStart,spec.landmark,wood,leaves,moss,spec.moss);
+  else authoredBroadleaf(spec.kind,profile,seed,radius,crownRadius,crownStart,spec.landmark,wood,leaves,moss,spec.moss,fruitTwigs);
   addRoots(roots,radius,profile,seed);
   if(spec.landmark&&spec.kind==='birch'){
     for(const side of [-1,1])wood.branch([V(side*radius*.75,0,0),V(side*radius*1.2,4.3,.12),V(side*crownRadius*.22,7.1,0)],
@@ -234,11 +247,12 @@ function compileTree(spec: ExpeditionTree, quality: VegetationQuality, key: stri
     }
   }
   const trunk=wood.finish()!,crown=leaves.finish()!,rootGeometry=roots.finish(),mossGeometry=moss.finish();
-  normaliseTreeHeight([trunk,crown,rootGeometry,mossGeometry]);
-  normaliseCrownWidth(crown,trunk,mossGeometry,radius,crownRadius);
+  const yScale=normaliseTreeHeight([trunk,crown,rootGeometry,mossGeometry]);
+  for(const twig of fruitTwigs)twig.y*=yScale;
+  normaliseCrownWidth(crown,trunk,mossGeometry,radius,crownRadius,fruitTwigs);
   const mergedWood=mergeVegetation([trunk,rootGeometry])!;
   const bounds=new THREE.Box3();for(const g of [mergedWood,crown,mossGeometry])if(g)bounds.union(g.boundingBox!);
-  return {key,trunk,roots:rootGeometry,wood:mergedWood,crown,moss:mossGeometry,bounds,quality,
+  return {key,trunk,roots:rootGeometry,wood:mergedWood,crown,moss:mossGeometry,bounds,quality,fruitTwigs,
     triangles:TRIANGLES(mergedWood)+TRIANGLES(crown)+TRIANGLES(mossGeometry)};
 }
 
@@ -294,6 +308,21 @@ export function createExpeditionVegetation(owner?: Resources,options:ExpeditionV
     return result;
   };
   const matrixFor=(spec:ExpeditionTree)=>new THREE.Matrix4().compose(V(spec.x,spec.y,spec.z),new THREE.Quaternion().setFromAxisAngle(V(0,1,0),spec.rotation),V(1,1,1).multiplyScalar(spec.height/10));
+
+  function fruitTwigsFor(spec:ExpeditionTree) {
+    const matrix=matrixFor(spec);
+    return template(spec,'mid').fruitTwigs.map(point=>point.clone().applyMatrix4(matrix));
+  }
+
+  function trunkSurface(spec:ExpeditionTree, approach:THREE.Vector3, height:number) {
+    // Raycast the same trunk template and transform used by the rendered instance.
+    const probe=new THREE.Mesh(template(spec,'mid').trunk,woodMaterial);
+    probe.matrixWorld.copy(matrixFor(spec));
+    const axis=V(spec.x,spec.y+height,spec.z);
+    const outward=V(approach.x-spec.x,0,approach.z-spec.z).normalize();
+    const ray=new THREE.Raycaster(axis.clone().addScaledVector(outward,spec.trunkRadius*5+1),outward.clone().negate());
+    return ray.intersectObject(probe)[0]?.point;
+  }
 
   function groundedRoots(base:THREE.BufferGeometry,spec:ExpeditionTree,worldSpace:boolean,onlyBasalVertices=false) {
     const geometry=base.clone(),matrix=matrixFor(spec);geometry.applyMatrix4(matrix);
@@ -461,5 +490,5 @@ export function createExpeditionVegetation(owner?: Resources,options:ExpeditionV
       textureCount:[...allocated].filter(resource=>resource instanceof THREE.Texture).length,
       templateTriangles:[...templates.values()].reduce((sum,t)=>sum+t.triangles,0),disposed};
   }
-  return {createTree,batchTrees,createFeature,batchFeatures,setCrownOpacity,releaseGroup,stats,dispose};
+  return {createTree,batchTrees,createFeature,batchFeatures,fruitTwigsFor,trunkSurface,setCrownOpacity,releaseGroup,stats,dispose};
 }

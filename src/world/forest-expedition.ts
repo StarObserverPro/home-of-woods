@@ -96,12 +96,12 @@ function terrainGrid(id: ExpeditionId): ExpeditionTerrainGrid {
 
 const treeRatios: Record<ExpeditionTreeKind, [number, number]> = {
   redwood: [.049,.18], hemlock: [.036,.20], spruce: [.033,.21], fir: [.030,.17], pine: [.040,.24], cedar: [.048,.21],
-  oak: [.054,.35], maple: [.045,.34], beech: [.039,.30], birch: [.026,.19], aspen: [.024,.18], elm: [.044,.35], ash: [.034,.28], hazel: [.045,.52], berry: [.043,.54],
+  oak: [.054,.35], maple: [.045,.34], beech: [.039,.30], birch: [.026,.19], aspen: [.024,.18], elm: [.044,.35], ash: [.034,.28], hazel: [.045,.52], berry: [.043,.54], serviceberry: [.035,.36],
 };
 
 function dimensions(id: ExpeditionId, kind: ExpeditionTreeKind, variant: 0 | 1 | 2, landmarkHeight?: number) {
   const shrub = kind === 'hazel' || kind === 'berry';
-  const heights = shrub ? [2.4,3.2,4] : id === 'upper' ? (kind === 'pine' || kind === 'fir' ? [18,22,26] : [24,30,36]) : id === 'mixed' ? [12,16,20] : [10,14,18];
+  const heights = kind === 'berry' ? [1.55,1.85,2.15] : shrub ? [2.4,3.2,4] : kind === 'serviceberry' ? [5.5,6.5,7.5] : id === 'upper' ? (kind === 'pine' || kind === 'fir' ? [18,22,26] : [24,30,36]) : id === 'mixed' ? [12,16,20] : [10,14,18];
   const height = landmarkHeight ?? heights[variant], [trunk, crown] = treeRatios[kind];
   return { height, trunkRadius: height * trunk * (landmarkHeight ? 1.2 : 1), crownRadius: height * crown };
 }
@@ -200,15 +200,16 @@ export function findExpeditionPath(layout: ExpeditionLayout, from: ExpeditionPoi
 }
 
 const hostKinds: Partial<Record<ExpeditionResourceRole, readonly ExpeditionTreeKind[]>> = {
-  resin: ['pine','spruce','fir','hemlock'], sap: ['birch','maple'], nut: ['hazel','oak','beech'], berry: ['berry'], 'long-timber': ['pine','spruce','fir','ash','elm','oak','maple','beech','birch','aspen'],
+  resin: ['pine','spruce','fir','hemlock'], sap: ['birch','maple'], nut: ['hazel','oak','beech'], berry: ['berry'], 'tree-fruit': ['serviceberry'], 'shelf-fungus': ['maple','beech','elm'], 'long-timber': ['pine','spruce','fir','ash','elm','oak','maple','beech','birch','aspen'],
 };
 
 function placeResources(layout: ExpeditionLayout): ExpeditionResourceSite[] {
   const nav = navigation(layout), used = new Set<number>();
   return layout.definition.resourceAnchors.map(anchor => {
-    const allowed = hostKinds[anchor.role]; let node = -1, host: ExpeditionTree | undefined;
+    const allowed = anchor.hostKind ? [anchor.hostKind] : hostKinds[anchor.role]; let node = -1, host: ExpeditionTree | undefined;
     if (allowed) {
-      const candidates = layout.trees.filter(tree => !tree.landmark && allowed.includes(tree.kind)).sort((a,b) => distance(a,anchor)-distance(b,anchor));
+      const candidates = layout.trees.filter(tree => !tree.landmark && allowed.includes(tree.kind))
+        .sort((a,b) => Number(b.habitatId === anchor.habitatId) - Number(a.habitatId === anchor.habitatId) || distance(a,anchor)-distance(b,anchor));
       for (const tree of candidates) {
         for (let attempt = 0; attempt < 16; attempt++) {
           const angle = Math.atan2(anchor.z-tree.z,anchor.x-tree.x) + attempt * Math.PI / 8, r = expeditionTreeCollisionRadius(tree) + 2.1;
@@ -224,7 +225,7 @@ function placeResources(layout: ExpeditionLayout): ExpeditionResourceSite[] {
     }
     if (node < 0 || used.has(node)) throw new Error(`No distinct reachable resource anchor: ${layout.id}/${anchor.key}`);
     used.add(node); const p = nav.point(node);
-    return { id: `expedition.${layout.id}.${anchor.key}`, habitatId: anchor.habitatId, role: anchor.role, x: p.x, z: p.z, y: expeditionHeightAt(layout.id,p.x,p.z), ...(host ? { hostTreeId: host.id } : {}) };
+    return { id: `expedition.${layout.id}.${anchor.key}`, habitatId: anchor.habitatId, role: anchor.role, ...(anchor.substrate ? { substrate: anchor.substrate } : {}), x: p.x, z: p.z, y: expeditionHeightAt(layout.id,p.x,p.z), ...(host ? { hostTreeId: host.id } : {}) };
   });
 }
 

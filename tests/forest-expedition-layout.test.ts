@@ -11,7 +11,7 @@ test('three distinct woodlands preserve stable trees, resource identities and ex
     assert.equal(layout.habitats.length, 4);
     assert.equal(layout.routes.filter(route => route.loop).length, 1);
     assert.equal(layout.routes.filter(route => !route.loop).length, 2);
-    assert.equal(layout.resourceSites.length, 12);
+    assert.equal(layout.resourceSites.length, layout.definition.resourceAnchors.length);
     assert.equal(layout.trees.length, layout.definition.treeCount);
     assert.equal(layout.bounds.maxX - layout.bounds.minX, 180);
     for (const object of [...layout.trees, ...layout.resourceSites]) {
@@ -24,7 +24,7 @@ test('three distinct woodlands preserve stable trees, resource identities and ex
   assert.deepEqual(again.resourceSites, layouts[0].resourceSites);
   assert.ok(layouts[0].trees.some(tree => !tree.landmark && tree.height >= 30));
   assert.ok(layouts[0].trees.filter(tree => tree.landmark).every(tree => tree.height >= 40));
-  assert.ok(layouts[2].trees.filter(tree => !tree.landmark && !['hazel','berry'].includes(tree.kind)).every(tree => tree.height >= 10 && tree.height <= 18));
+  assert.ok(layouts[2].trees.filter(tree => !tree.landmark && !['hazel','berry','serviceberry'].includes(tree.kind)).every(tree => tree.height >= 10 && tree.height <= 18));
 });
 
 test('terrain render triangles and walking heights agree across hills and carved creek banks', () => {
@@ -77,4 +77,19 @@ test('large root ribs use the same expanded collision radius as route clearance'
     assert.equal(expeditionTreeCollisionRadius(tree), tree.trunkRadius * 1.55);
     assert.equal(expeditionCanStand(layout, tree.x + expeditionTreeCollisionRadius(tree) * .94, tree.z), false, tree.id);
   }
+});
+
+test('wood fungi use named substrates, and fruit branches have a host of the right kind', () => {
+  const substrates = new Set();
+  for (const layout of layouts) for (const site of layout.resourceSites) {
+    const host = layout.trees.find(tree => tree.id === site.hostTreeId);
+    if (site.substrate) substrates.add(site.substrate);
+    if (site.role === 'tree-fruit') assert.equal(host?.kind, 'serviceberry');
+    if (site.role === 'berry') {
+      assert.equal(host?.kind, 'berry');
+      assert.equal(host?.habitatId, site.habitatId);
+    }
+    if (site.substrate === 'standing-trunk') assert.ok(host && ['maple','beech','elm'].includes(host.kind));
+  }
+  assert.deepEqual(substrates, new Set(['standing-trunk','stump','fallen-log','nurse-log']));
 });

@@ -3,10 +3,11 @@ export type ExpeditionId = 'upper' | 'mixed' | 'lower';
 export type ExpeditionMapId = ExpeditionId;
 export type ExpeditionPoint = { x: number; z: number };
 export type ExpeditionPoint3 = ExpeditionPoint & { y: number };
-export type ExpeditionTreeKind = 'redwood' | 'hemlock' | 'spruce' | 'fir' | 'pine' | 'cedar' | 'oak' | 'maple' | 'beech' | 'birch' | 'aspen' | 'elm' | 'ash' | 'hazel' | 'berry';
-export type ExpeditionResourceRole = 'soil-fungus' | 'wood-fungus' | 'berry' | 'nut' | 'resin' | 'branch' | 'long-timber' | 'curved-branch' | 'seed' | 'sap';
+export type ExpeditionTreeKind = 'redwood' | 'hemlock' | 'spruce' | 'fir' | 'pine' | 'cedar' | 'oak' | 'maple' | 'beech' | 'birch' | 'aspen' | 'elm' | 'ash' | 'hazel' | 'berry' | 'serviceberry';
+export type ExpeditionResourceRole = 'soil-fungus' | 'wood-fungus' | 'berry' | 'nut' | 'resin' | 'branch' | 'long-timber' | 'curved-branch' | 'seed' | 'sap' | 'tree-fruit' | 'shelf-fungus' | 'wood-ear';
+export type ExpeditionWoodSubstrate = 'fallen-log' | 'nurse-log' | 'stump' | 'standing-trunk';
 export type ExpeditionResourceSite = ExpeditionPoint3 & {
-  id: string; habitatId: string; role: ExpeditionResourceRole; hostTreeId?: string;
+  id: string; habitatId: string; role: ExpeditionResourceRole; hostTreeId?: string; substrate?: ExpeditionWoodSubstrate;
 };
 export type ExpeditionTree = ExpeditionPoint3 & {
   id: string; kind: ExpeditionTreeKind; height: number; trunkRadius: number; crownRadius: number;
@@ -26,7 +27,7 @@ export type ExpeditionDefinition = {
   stream: { x: number; wave: number; phase: number; y: number; slope: number; halfWidth: number; bankWidth: number; deepHalfWidth: number };
   palette: { ground: string; shade: string; path: string; rock: string; water: string; fog: string; sky: string };
   landmarks: readonly { id: string; name: string; kind: ExpeditionTreeKind; x: number; z: number; height: number; habitatId: string }[];
-  resourceAnchors: readonly { key: string; role: ExpeditionResourceRole; habitatId: string; x: number; z: number }[];
+  resourceAnchors: readonly { key: string; role: ExpeditionResourceRole; habitatId: string; x: number; z: number; substrate?: ExpeditionWoodSubstrate; hostKind?: ExpeditionTreeKind }[];
 };
 
 export const EXPEDITION_TERRAIN_STEP = 2;
@@ -34,7 +35,7 @@ const bounds = { minX: -90, maxX: 90, minZ: -90, maxZ: 90 };
 const weights = (entries: readonly [ExpeditionTreeKind, number][]) => entries.map(([kind, weight]) => ({ kind, weight }));
 const route = (id: string, name: string, loop: boolean, points: readonly [number, number][]): ExpeditionRoute => ({ id, name, loop, halfWidth: loop ? 2.6 : 1.9, points: points.map(([x, z]) => ({ x, z })) });
 const habitat = (id: string, name: string, note: string, x: number, z: number, radiusX: number, radiusZ: number, moisture: number, openness: number, trees: readonly [ExpeditionTreeKind, number][]): ExpeditionHabitat => ({ id, name, note, center: { x, z }, radiusX, radiusZ, moisture, openness, trees: weights(trees) });
-const site = (key: string, role: ExpeditionResourceRole, habitatId: string, x: number, z: number) => ({ key, role, habitatId, x, z });
+const site = (key: string, role: ExpeditionResourceRole, habitatId: string, x: number, z: number, substrate?: ExpeditionWoodSubstrate, hostKind?: ExpeditionTreeKind) => ({ key, role, habitatId, x, z, ...(substrate ? { substrate } : {}), ...(hostKind ? { hostKind } : {}) });
 
 export const EXPEDITIONS: readonly ExpeditionDefinition[] = [
   {
@@ -49,7 +50,7 @@ export const EXPEDITIONS: readonly ExpeditionDefinition[] = [
     habitats: [
       habitat('upper-cathedral', '巨木厅', '高干抬起林冠，林下保留可辨认的空隙。', -17,-22,43,37,.72,.24,[['redwood',4],['hemlock',3],['spruce',2],['cedar',1]]),
       habitat('upper-ravine', '苔藓溪沟', '潮湿的沟壁、附生苔帘和朽木菌。', 37,0,27,45,.96,.30,[['hemlock',5],['cedar',3],['spruce',2]]),
-      habitat('upper-windfall', '风倒林隙', '倒木打开采光，嫩树与菌类围绕旧木更新。', -25,36,42,28,.64,.60,[['spruce',3],['hemlock',3],['fir',2],['pine',2]]),
+      habitat('upper-windfall', '风倒林隙', '倒木打开采光，嫩树与菌类围绕旧木更新。', -25,36,42,28,.64,.60,[['spruce',3],['hemlock',3],['fir',2],['pine',2],['berry',3]]),
       habitat('upper-ridge', '露岩肩坡', '较干的岩肩缩小树冠，松与冷杉形成疏林。', -27,-63,46,22,.35,.55,[['fir',4],['pine',4],['spruce',2]]),
     ],
     terrain: { base: 17, slopeZ: -.075, slopeX: -.026, relief: 3.4, rim: 7 },
@@ -61,8 +62,8 @@ export const EXPEDITIONS: readonly ExpeditionDefinition[] = [
     ],
     resourceAnchors: [
       site('floor-fungi','soil-fungus','upper-cathedral',-35,-25), site('amber','resin','upper-cathedral',-30,-43), site('high-branch','branch','upper-cathedral',-45,4),
-      site('nurse-log','wood-fungus','upper-windfall',-25,43), site('cones','seed','upper-windfall',-39,29), site('windfall-timber','long-timber','upper-windfall',-45,24),
-      site('ravine-fungi','soil-fungus','upper-ravine',39,-21), site('ravine-resin','resin','upper-ravine',42,5), site('wet-log','wood-fungus','upper-ravine',47,-13),
+      site('nurse-log','wood-fungus','upper-windfall',-25,43,'nurse-log'), site('windfall-berries','berry','upper-windfall',-25,35), site('cones','seed','upper-windfall',-39,29), site('windfall-timber','long-timber','upper-windfall',-45,24),
+      site('ravine-fungi','soil-fungus','upper-ravine',39,-21), site('ravine-resin','resin','upper-ravine',42,5), site('wet-log','wood-fungus','upper-ravine',47,-13,'fallen-log'),
       site('ridge-cones','seed','upper-ridge',-58,-51), site('dry-branch','branch','upper-ridge',-63,-58), site('ridge-timber','long-timber','upper-ridge',-37,-48),
     ],
   },
@@ -79,7 +80,7 @@ export const EXPEDITIONS: readonly ExpeditionDefinition[] = [
       habitat('mixed-shoulder','松栎肩坡','较干的高处形成松栎疏林。',-36,-34,35,36,.36,.52,[['pine',4],['oak',4],['birch',2]]),
       habitat('mixed-cove','老枫凹谷','避风凹坡里，阔冠老枫与铁杉共享湿润空气。',22,-28,35,36,.79,.30,[['maple',5],['hemlock',3],['beech',2]]),
       habitat('mixed-regrowth','桦杨新林','曾经打开的林隙里，浅色细干成群更新。',-22,37,38,28,.56,.58,[['birch',5],['aspen',4],['maple',1]]),
-      habitat('mixed-edge','向阳果丛','树冠退开后，果灌木沿林缘而不是深荫结果。',48,20,25,35,.48,.76,[['oak',3],['maple',2],['hazel',2],['berry',3]]),
+      habitat('mixed-edge','向阳果丛','树冠退开后，果灌木沿林缘而不是深荫结果。',48,20,25,35,.48,.76,[['oak',3],['maple',2],['hazel',2],['berry',3],['serviceberry',2]]),
     ],
     terrain: { base: 8.5, slopeZ: -.025, slopeX: .006, relief: 2.7, rim: 5 },
     stream: { x: -67, wave: 5, phase: 1.3, y: 3.4, slope: -.025, halfWidth: 2.8, bankWidth: 7.5, deepHalfWidth: 1.5 },
@@ -90,9 +91,9 @@ export const EXPEDITIONS: readonly ExpeditionDefinition[] = [
     ],
     resourceAnchors: [
       site('ridge-resin','resin','mixed-shoulder',-43,-40), site('crooked-branch','curved-branch','mixed-shoulder',-48,-56), site('shoulder-timber','long-timber','mixed-shoulder',-37,-19),
-      site('cove-fungi','soil-fungus','mixed-cove',28,-43), site('old-log','wood-fungus','mixed-cove',42,-23), site('maple-seeds','seed','mixed-cove',6,-49),
+      site('cove-fungi','soil-fungus','mixed-cove',28,-43), site('old-log','wood-fungus','mixed-cove',42,-23,'fallen-log'), site('maple-shelves','shelf-fungus','mixed-cove',26,-31,'standing-trunk'), site('maple-seeds','seed','mixed-cove',6,-49),
       site('birch-branch','branch','mixed-regrowth',-34,38), site('young-fungi','soil-fungus','mixed-regrowth',-43,17), site('regrowth-seeds','seed','mixed-regrowth',-17,52),
-      site('berries','berry','mixed-edge',63,0), site('hazels','nut','mixed-edge',65,14), site('edge-branch','curved-branch','mixed-edge',40,22),
+      site('berries','berry','mixed-edge',63,0), site('edge-serviceberry','tree-fruit','mixed-edge',59,9), site('hazels','nut','mixed-edge',65,14,undefined,'hazel'), site('edge-branch','curved-branch','mixed-edge',40,22),
     ],
   },
   {
@@ -106,7 +107,7 @@ export const EXPEDITIONS: readonly ExpeditionDefinition[] = [
     ],
     habitats: [
       habitat('lower-aspen','桦杨亮林','成群的浅色树干与错开的树冠。',-40,3,37,43,.46,.65,[['birch',5],['aspen',5]]),
-      habitat('lower-hardwood','枫榆阔冠','较厚的土层承托开展树冠与秋季坚果。',-7,-37,37,30,.61,.38,[['maple',4],['elm',3],['beech',2],['oak',1]]),
+      habitat('lower-hardwood','枫榆阔冠','较厚的土层承托开展树冠与秋季坚果。',-7,-37,37,30,.61,.38,[['maple',4],['elm',3],['beech',2],['oak',1],['serviceberry',2]]),
       habitat('lower-bank','白蜡河岸','湿润而非永久积水的高河岸生长白蜡与榆。',37,-10,24,43,.84,.48,[['ash',5],['elm',3],['birch',2]]),
       habitat('lower-edge','榛果林缘','低矮多干榛丛和果灌木占据明亮空地边缘。',8,42,36,28,.49,.76,[['hazel',5],['berry',3],['aspen',2]]),
     ],
@@ -118,10 +119,10 @@ export const EXPEDITIONS: readonly ExpeditionDefinition[] = [
       { id: 'lower-white-birch', name: '三生白桦', kind: 'birch', x: -57, z: -8, height: 19, habitatId: 'lower-aspen' },
     ],
     resourceAnchors: [
-      site('aspen-fungi','soil-fungus','lower-aspen',-46,4), site('birch-sap','sap','lower-aspen',-66,-4), site('birch-seeds','seed','lower-aspen',-48,21),
-      site('hardwood-fungi','wood-fungus','lower-hardwood',-18,-45), site('beech-nuts','nut','lower-hardwood',6,-47), site('bent-wood','curved-branch','lower-hardwood',-36,-30),
-      site('bank-log','wood-fungus','lower-bank',47,-28), site('ash-branch','branch','lower-bank',39,-10), site('bank-timber','long-timber','lower-bank',37,15),
-      site('hazelnuts','nut','lower-edge',24,45), site('berries','berry','lower-edge',9,56), site('hazel-seed','seed','lower-edge',-15,54),
+      site('aspen-fungi','soil-fungus','lower-aspen',-46,4), site('birch-sap','sap','lower-aspen',-66,-4,undefined,'birch'), site('birch-seeds','seed','lower-aspen',-48,21),
+      site('hardwood-fungi','wood-fungus','lower-hardwood',-18,-45,'stump'), site('cove-serviceberry','tree-fruit','lower-hardwood',-7,-46), site('beech-nuts','nut','lower-hardwood',6,-47,undefined,'beech'), site('bent-wood','curved-branch','lower-hardwood',-36,-30),
+      site('bank-log','wood-fungus','lower-bank',47,-28,'fallen-log'), site('bank-wood-ear','wood-ear','lower-bank',45,-20,'fallen-log'), site('ash-branch','branch','lower-bank',39,-10), site('bank-timber','long-timber','lower-bank',37,15),
+      site('hazelnuts','nut','lower-edge',24,45,undefined,'hazel'), site('berries','berry','lower-edge',9,56), site('hazel-seed','seed','lower-edge',-15,54),
     ],
   },
 ];

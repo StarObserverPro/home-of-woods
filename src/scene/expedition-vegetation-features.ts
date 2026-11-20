@@ -4,7 +4,7 @@ import type {VegetationQuality} from './expedition-vegetation-geometry.ts';
 
 export type ExpeditionVegetationFeature = {
   id: string;
-  kind: 'fallen-log' | 'nurse-log' | 'root-plate' | 'moss-curtain' | 'fern' | 'moss-rock' | 'shrub';
+  kind: 'fallen-log' | 'nurse-log' | 'root-plate' | 'moss-curtain' | 'fern' | 'moss-rock' | 'shrub' | 'stump';
   x: number; y: number; z: number; rotation?: number;
   /** Logs run along local +X, Y is up, all dimensions are world units. */
   length?: number; radius?: number; height?: number; variant?: number;
@@ -99,6 +99,21 @@ export function compileExpeditionFeature(spec:ExpeditionVegetationFeature,qualit
   const seed=1071+(spec.variant??0)*193;
   switch(spec.kind){
     case 'fallen-log':case 'nurse-log':fallenLog(wood,green,moss,spec,seed);break;
+    case 'stump': {
+      const radius=spec.radius??.65,height=spec.height??.85;
+      wood.branch([V(0,-.1,0),V(0,height*.36,0),V(.04,height,0)],[radius*1.23,radius,radius*.83],'#826647');
+      const cut=new THREE.CircleGeometry(radius*.80,8);cut.rotateX(-Math.PI/2);cut.translate(.04,height+.006,0);wood.add(cut,'#c5a17a');
+      for(const ratio of [.31,.60]){
+        const ring=new THREE.RingGeometry(radius*ratio,radius*(ratio+.026),8);
+        ring.rotateX(-Math.PI/2);ring.translate(.04,height+.012,0);wood.add(ring,'#947650');
+      }
+      for(let i=0;i<4;i++){
+        const angle=(i+.2)*Math.PI/2,side=V(Math.cos(angle),0,Math.sin(angle));
+        wood.branch([side.clone().multiplyScalar(radius*.55).setY(height*.42),
+          side.clone().multiplyScalar(radius*1.55).setY(-.06)],[radius*.23,radius*.07],'#786043');
+      }
+      break;
+    }
     case 'root-plate':rootPlate(wood,moss,seed,spec.radius??1.7,spec.height??3.4);break;
     case 'moss-curtain':{
       const length=spec.length??5,height=spec.height??4,radius=spec.radius??.18;
@@ -126,7 +141,7 @@ export function compileExpeditionFeature(spec:ExpeditionVegetationFeature,qualit
       for(let i=0;i<5;i++){
         const angle=i*2.37,tip=V(Math.cos(angle)*radius*.63,height*(.62+noise(seed+i)*.15),Math.sin(angle)*radius*.63);
         wood.branch([V(0,-.02,0),tip.clone().multiplyScalar(.6).add(V(0,height*.15,0)),tip],[.085,.045,.01],'#887656');
-        green.cluster(tip,V(radius*.6,height*.32,radius*.56),'#879e5d',seed+i);
+        green.cluster(tip,V(radius*.6,height*.32,radius*.56),i%2?'#7d9651':'#89a360',seed+i,0);
       }
       break;
     }

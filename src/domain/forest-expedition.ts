@@ -40,7 +40,7 @@ export type ExpeditionAction = ExpeditionActionBase & (
   { kind: 'process'; recipeId: string; deltas: InventoryDelta[] }
 );
 export type ForestExpeditionState = {
-  schemaVersion: 1; revision: number; time: number; activeMapId: ExpeditionMapId;
+  schemaVersion: typeof EXPEDITION_RULES.schemaVersion; revision: number; time: number; activeMapId: ExpeditionMapId;
   player: Point; positions: Record<ExpeditionMapId, Point>;
   /** This is the sole inventory for the three sample plots, not a mirror of camp stock. */
   inventory: InventoryState; sources: Record<string, ExpeditionSourceState>;
@@ -83,7 +83,7 @@ export function createForestExpedition(context: ExpeditionContext, options: Expe
   inventory.stacks = validateInventory(inventory);
   const positions = Object.fromEntries(EXPEDITION_RULES.mapIds.map(id => [id, point(context.maps[id].spawn)])) as Record<ExpeditionMapId, Point>;
   return {
-    schemaVersion: 1, revision: 0, time, activeMapId, player: point(positions[activeMapId]), positions,
+    schemaVersion: EXPEDITION_RULES.schemaVersion, revision: 0, time, activeMapId, player: point(positions[activeMapId]), positions,
     inventory, sources, action: null, nextAction: 1, lastSettledAction: 0,
     timber: { limit: EXPEDITION_RULES.timberAllowance, used: 0 }, sapCanIssued: false,
   };
@@ -417,14 +417,19 @@ export function serializeForestExpedition(state: ForestExpeditionState): string 
 export function restoreForestExpedition(raw: string | unknown, context: ExpeditionContext): ForestExpeditionState {
   const value: unknown = typeof raw === 'string' ? JSON.parse(raw) : structuredClone(raw);
   assertItemJson(value);
-  if (!isRecord(value) || value.schemaVersion !== 1 || !validInteger(value.revision) || !validTime(value.time) || !isMapId(value.activeMapId) || !validPoint(value.player) ||
+  const legacySources = isRecord(value) && value.schemaVersion === 1;
+  if (!isRecord(value) || (!legacySources && value.schemaVersion !== EXPEDITION_RULES.schemaVersion) || !validInteger(value.revision) || !validTime(value.time) || !isMapId(value.activeMapId) || !validPoint(value.player) ||
     !isRecord(value.positions) || !isRecord(value.sources) || !isRecord(value.inventory) || typeof value.sapCanIssued !== 'boolean' ||
     !validInteger(value.nextAction) || value.nextAction < 1 || !validInteger(value.lastSettledAction) || value.lastSettledAction >= value.nextAction ||
     !isRecord(value.timber) || value.timber.limit !== EXPEDITION_RULES.timberAllowance || !validInteger(value.timber.used) || value.timber.used > value.timber.limit) throw new Error('Invalid expedition snapshot');
   for (const mapId of EXPEDITION_RULES.mapIds) {
     if (!validPoint(value.positions[mapId])) throw new Error('Invalid expedition return position');
     for (const site of context.maps[mapId].resourceSites) {
-      const life = value.sources[site.id], definition = EXPEDITION_RESOURCES[site.role];
+      const definition = EXPEDITION_RESOURCES[site.role];
+      if (legacySources && value.sources[site.id] === undefined) {
+        value.sources[site.id] = {remaining: definition.capacity, version: 0, nextReadyAt: null};
+      }
+      const life = value.sources[site.id];
       if (!isRecord(life) || !validInteger(life.remaining) || life.remaining > definition.capacity || !validInteger(life.version) ||
         !(life.nextReadyAt === null || validTime(life.nextReadyAt)) || (definition.recoverSeconds === null && life.nextReadyAt !== null)) throw new Error('Invalid expedition source state');
     }
@@ -442,6 +447,14 @@ export function restoreForestExpedition(raw: string | unknown, context: Expediti
       !validPoint(action.startPosition) || !validInteger(action.inventoryRevision)) throw new Error('Invalid expedition action');
     if (action.kind === 'gather' && (typeof action.sourceId !== 'string' || !findSource(context, action.sourceId) || !validInteger(action.sourceVersion))) throw new Error('Invalid expedition gather action');
     if (action.kind === 'process' && (!EXPEDITION_RECIPES.some(recipe => recipe.id === action.recipeId) || !Array.isArray(action.deltas))) throw new Error('Invalid expedition process action');
+  }
+  if (legacySources) {
+    for (const mapId of EXPEDITION_RULES.mapIds) {
+      const position = value.positions[mapId];
+      if (validPoint(position) && context.canStand?.(mapId,position) === false) value.positions[mapId] = point(context.maps[mapId].spawn);
+    }
+    if (context.canStand?.(value.activeMapId,value.player) === false) value.player = point(context.maps[value.activeMapId].spawn);
+    value.schemaVersion = EXPEDITION_RULES.schemaVersion;
   }
   return value as ForestExpeditionState;
 }
