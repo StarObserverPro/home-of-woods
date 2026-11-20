@@ -10,6 +10,8 @@ export const SHADOW_PROFILES = {
     normalBiasTexels: .55,
     depthBiasTexels: -.35,
     solidSoftness: .095,
+    // Stylised standing-tree coverage by root-relative world height, not receiver distance.
+    treeHeightFade: {start:3,end:18,minimumCoverage:.3},
     canopy: {
       // Broad crown transmittance only. The single near map retains fine solid shadows.
       size: [192, 48, 192] as const,

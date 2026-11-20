@@ -90,6 +90,7 @@ test('solid depth uses dedicated geometry identity, shares material, and release
   assert.equal(a.customDepthMaterial,b.customDepthMaterial);assert.equal(shadows.stats().depthMaterials,1);
   const shader={uniforms:{},vertexShader:THREE.ShaderLib.depth.vertexShader,fragmentShader:THREE.ShaderLib.depth.fragmentShader} as Parameters<THREE.Material['onBeforeCompile']>[0];
   a.customDepthMaterial!.onBeforeCompile(shader,renderer);
+  assert.equal(a.customDepthMaterial!.alphaHash,true);
   assert.match(shader.vertexShader,/attribute float shadowSolidWeight/);
   assert.match(shader.fragmentShader,/if\(vHowSolidWeight<.5\)discard/);
   assert.doesNotMatch(shader.vertexShader,/barkWeight/);
@@ -97,6 +98,54 @@ test('solid depth uses dedicated geometry identity, shares material, and release
   assert.equal(shadows.stats().treeDepthBindings,1);assert.equal(a.customDepthMaterial,undefined);
   shadows.dispose();shadows.dispose();assert.equal(b.customDepthMaterial,undefined);assert.equal(owner.stats().extras,0);
   material.dispose();geometry.dispose();owner.dispose();
+});
+
+test('standing-tree depth fades world height, preserves solid bases, and ignores visible camera opacity',()=>{
+  const {owner,renderer,shadows}=fixture(),material=new THREE.MeshStandardMaterial({transparent:true,opacity:.2});
+  const geometry=new THREE.BoxGeometry(1,10,1).translate(0,5,0),tree=new THREE.InstancedMesh(geometry,material,2);
+  const model=new THREE.Matrix4().makeTranslation(12,80,-3);
+  const first=new THREE.Matrix4().compose(new THREE.Vector3(0,4,0),new THREE.Quaternion(),new THREE.Vector3(1,1,1));
+  const second=new THREE.Matrix4().compose(new THREE.Vector3(7,31,-3),new THREE.Quaternion(),new THREE.Vector3(2,2,2));
+  tree.setMatrixAt(0,first);tree.setMatrixAt(1,second);tree.matrix.copy(model);tree.matrixAutoUpdate=false;tree.updateMatrixWorld(true);
+  shadows.configureTreeDepth(tree,'tree-solid');assert.equal(tree.customDepthMaterial!.alphaHash,true);assert.equal(material.alphaHash,false);
+  const shader={uniforms:{},vertexShader:THREE.ShaderLib.depth.vertexShader,fragmentShader:THREE.ShaderLib.depth.fragmentShader} as Parameters<THREE.Material['onBeforeCompile']>[0];
+  tree.customDepthMaterial!.onBeforeCompile(shader,renderer);
+  assert.doesNotMatch(shader.vertexShader,/shadowSolidWeight/);
+  assert.match(shader.vertexShader,/howTreeRoot=instanceMatrix\*howTreeRoot/);
+  assert.match(shader.vertexShader,/howTreeRoot=modelMatrix\*howTreeRoot/);
+  assert.match(shader.vertexShader,/vHowTreeHeight=max\(0\.,howTreeVertex.y-howTreeRoot.y\)/);
+  assert.match(shader.fragmentShader,/#include <alphahash_fragment>/);
+  // Evaluate the exact constants emitted by the real hook; the remote GPU A/B also
+  // checks the resulting coverage. Assignment after alpha maps isolates camera fade.
+  const expression=shader.fragmentShader.match(/diffuseColor\.a = mix\(1\.,([\d.]+),smoothstep\(([\d.]+),([\d.]+),max\(0\.,vHowTreeHeight\)\)\);/)!;
+  assert.ok(expression);const [,minimum,start,end]=expression.map(Number);
+  const coverage=(height:number)=>1+(minimum-1)*THREE.MathUtils.smoothstep(Math.max(0,height),start,end);
+  near(coverage(0),1);near(coverage(3),1);near(coverage(10.5),.65);near(coverage(18),.3);near(coverage(60),.3);
+  assert.ok(shader.fragmentShader.indexOf(expression[0])>shader.fragmentShader.indexOf('#include <alphamap_fragment>'));
+  assert.ok(shader.fragmentShader.indexOf(expression[0])<shader.fragmentShader.indexOf('#include <alphahash_fragment>'));
+  assert.doesNotMatch(expression[0],/opacity|\*=/);
+  for(const opacity of [1,.2,0]){material.opacity=opacity;tree.customDepthMaterial!.opacity=opacity;near(coverage(0),1);near(coverage(20),.3);}
+  const top=new THREE.Vector3(0,10,0),origin=new THREE.Vector3();
+  const heightFor=(instance:THREE.Matrix4)=>top.clone().applyMatrix4(instance).applyMatrix4(model).y-origin.clone().applyMatrix4(instance).applyMatrix4(model).y;
+  near(heightFor(first),10);near(heightFor(second),20);assert.ok(coverage(heightFor(first))>coverage(heightFor(second)));
+  const prop=new THREE.Mesh(geometry,material);shadows.configureTreeDepth(prop,'solid');assert.equal(prop.customDepthMaterial,undefined);
+  shadows.dispose();assert.equal(tree.customDepthMaterial,undefined);assert.equal(owner.stats().extras,0);material.dispose();geometry.dispose();owner.dispose();
+});
+
+test('tree and weighted depth variants preserve prior depth hooks and restore ordinary solid behaviour',()=>{
+  const {owner,renderer,shadows}=fixture(),material=new THREE.MeshStandardMaterial(),geometry=new THREE.BoxGeometry();
+  geometry.setAttribute('shadowSolidWeight',new THREE.Float32BufferAttribute(new Float32Array(geometry.attributes.position.count).fill(1),1));
+  const previous=new THREE.MeshDepthMaterial();let priorCompiles=0;previous.onBeforeCompile=()=>{priorCompiles++;};
+  const tree=new THREE.Mesh(geometry,material);tree.customDepthMaterial=previous;
+  shadows.configureTreeDepth(tree,'tree-solid');const plain=tree.customDepthMaterial!;
+  const shader=()=>({uniforms:{},vertexShader:THREE.ShaderLib.depth.vertexShader,fragmentShader:THREE.ShaderLib.depth.fragmentShader} as Parameters<THREE.Material['onBeforeCompile']>[0]);
+  plain.onBeforeCompile(shader(),renderer);assert.equal(priorCompiles,1);assert.equal(previous.alphaHash,false);
+  shadows.configureTreeDepth(tree,'solid-weight');const weighted=tree.customDepthMaterial!;assert.notEqual(plain,weighted);
+  const compiled=shader();weighted.onBeforeCompile(compiled,renderer);assert.equal(priorCompiles,2);assert.match(compiled.fragmentShader,/if\(vHowSolidWeight<.5\)discard/);
+  shadows.configureTreeDepth(tree,'solid');assert.equal(tree.customDepthMaterial,previous);assert.equal(previous.alphaHash,false);
+  shadows.configureTreeDepth(tree,'tree-solid');assert.equal(tree.customDepthMaterial,plain);assert.equal(shadows.stats().depthMaterials,2);
+  shadows.dispose();assert.equal(tree.customDepthMaterial,previous);assert.equal(owner.stats().extras,0);
+  previous.dispose();material.dispose();geometry.dispose();owner.dispose();
 });
 
 test('cached field and solid map commit the same sun direction and geometry invalidates immediately',()=>{

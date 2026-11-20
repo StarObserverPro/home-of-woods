@@ -96,6 +96,59 @@ async function repeat(name,a,b){
   assert.equal(diff.maxDifference,0,`${name}: fixed inputs changed image`);
   assert.equal(a.stats.shadow.bakes,b.stats.shadow.bakes,`${name}: unchanged input rebaked canopy`);
 }
+async function workerRoundtrip(){
+  phase='real browser worker roundtrip';
+  const probe=await page.evaluate(()=>window.__SHADOW_RULES_REVIEW__.workerRoundtrip());
+  const {frames,...details}=probe;
+  for(const [name,frame] of Object.entries(frames)){
+    assertShadowStable(frame.stats.shadow);assert.equal(frame.stats.shadow.worker,true);
+    assert.deepEqual(frame.stats.shaderErrors,[],`Worker ${name}: GPU shader error`);
+    assert.deepEqual(frame.stats.cameraPosition,frames.before.stats.cameraPosition);
+    assert.deepEqual(frame.stats.cameraProjection,frames.before.stats.cameraProjection);
+    assert.equal(frame.stats.drawCalls,frames.before.stats.drawCalls);
+  }
+  assert.equal(details.submittedDelta,3,'The probe must complete exactly three actual background request/return sequences');
+  assert.equal(frames.shifted.stats.shadow.sourceCount,3);assert.equal(frames.removed.stats.shadow.sourceCount,2);assert.equal(frames.restored.stats.shadow.sourceCount,3);
+  const directionChange=await difference(frames.before,frames.shifted);
+  const canopyRemoval=await difference(frames.shifted,frames.removed);
+  const restoration=await difference(frames.before,frames.restored);
+  const imageHashes=Object.fromEntries(Object.entries(frames).map(([name,frame])=>[name,createHash('sha256').update(Buffer.from(frame.image.split(',')[1],'base64')).digest('hex')]));
+  report.checks.push({name:'real browser worker request, staged result, atomic field/sun commit and GPU texture upload',...details,
+    sourceCounts:{before:frames.before.stats.shadow.sourceCount,removed:frames.removed.stats.shadow.sourceCount,restored:frames.restored.stats.shadow.sourceCount},
+    differences:{directionChange,canopyRemoval,restoration},imageHashes});
+  await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));
+  assert.ok(directionChange.changedPixels>=100,`The committed solar direction did not change the rendered scene (${directionChange.changedPixels} pixels)`);
+  assert.ok(canopyRemoval.changedPixels>=20&&canopyRemoval.brighterPixels>=20,`The transferred crown removal did not change rendered transmittance (${canopyRemoval.changedPixels} changed, ${canopyRemoval.brighterPixels} brighter pixels)`);
+  assert.equal(restoration.maxDifference,0,'Restoring original sun/crowns did not restore the fixed image');
+}
+async function treeHeightFadeProbe(){
+  phase='tree solid height coverage';
+  const {frames,...details}=await page.evaluate(()=>window.__SHADOW_RULES_REVIEW__.treeHeightFadeProbe());
+  const reference=frames.faded.stats;
+  for(const [name,frame] of Object.entries(frames)){
+    const stats=frame.stats;
+    assertShadowStable(stats.shadow);assert.deepEqual(stats.shaderErrors,[],`Tree depth ${name}: GPU shader error`);
+    assert.deepEqual(stats.cameraPosition,reference.cameraPosition);assert.deepEqual(stats.cameraProjection,reference.cameraProjection);
+    assert.deepEqual(stats.appliedSunDirection,reference.appliedSunDirection);
+    assert.equal(stats.drawCalls,reference.drawCalls);assert.equal(stats.triangles,reference.triangles);
+    assert.equal(stats.shadow.bakes,reference.shadow.bakes,'Changing only tree depth must not rebake the crown field');
+    assert.equal(stats.shadow.submitted,reference.shadow.submitted);assert.equal(stats.shadow.sourceCount,3);
+    assert.deepEqual(stats.solePoints,reference.solePoints,'Tree depth changed actual animated foot anchors');
+    assert.deepEqual(stats.contact.feet,reference.contact.feet,'Tree depth changed protagonist contact strength or support');
+    assert.equal(stats.contact.activeFeet,2);
+  }
+  assert.equal(details.trunks.length,3);
+  for(const trunk of details.trunks)assert.ok(Math.abs(trunk.localMinY)<1e-5,`${trunk.name}: model origin is not at the root`);
+  assert.ok(details.trunks.some(trunk=>trunk.localMaxY>details.profile.start+8),'The fixed scene does not reach the tree-height fade range');
+  const heightFade=await difference(frames.solid,frames.faded),restoration=await difference(frames.faded,frames.restored);
+  const imageHashes=Object.fromEntries(Object.entries(frames).map(([name,frame])=>[name,createHash('sha256').update(Buffer.from(frame.image.split(',')[1],'base64')).digest('hex')]));
+  report.checks.push({name:'shared upper-tree depth coverage changes GPU shadow; ordinary actor and contacts remain fixed',...details,
+    differences:{heightFade,restoration},imageHashes,drawCalls:reference.drawCalls,triangles:reference.triangles,
+    fieldBakes:reference.shadow.bakes,contactFeet:reference.contact.feet});
+  await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));
+  assert.ok(heightFade.changedPixels>=20&&heightFade.brighterPixels>=20,`Tree-height coverage did not lighten its actual shadow (${heightFade.changedPixels} changed, ${heightFade.brighterPixels} brighter pixels)`);
+  assert.equal(restoration.maxDifference,0,'Restoring shared tree depth did not restore the fixed image');
+}
 async function release(){
   const state=await page.evaluate(()=>window.__SHADOW_RULES_REVIEW__.dispose());
   assert.equal(state.resources.disposed,true);assert.equal(state.resources.extras,0);
@@ -170,6 +223,8 @@ try{
   await ready();browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});
   report.browser=await browser.version();
   await load({width:1100,height:800});
+  await workerRoundtrip();
+  await treeHeightFadeProbe();
   const sunOff=await capture('wide-sun-off',{sunlight:false});
   const canopyOff=await capture('wide-canopy-off',{canopy:false});
   const allOn=await capture('wide-all-on');

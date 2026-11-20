@@ -54,7 +54,7 @@ export function createCampShadows({resources,renderer,sun,scene,models,forest,gr
     root.traverse(object=>{
       if(!(object instanceof THREE.Mesh))return;
       shadows.configureTreeDepth(object,object.geometry.hasAttribute('shadowSolidWeight')?'solid-weight':
-        /crown|tier|leaf/i.test(object.name)?'crown':'solid');
+        /crown|tier|leaf/i.test(object.name)?'crown':'tree-solid');
     });
     shadows.bind(root);
   }
