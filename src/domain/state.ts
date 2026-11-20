@@ -1,3 +1,4 @@
+import type { CampExpedition } from './camp-expedition.ts';
 import { starterWardrobeItems } from '../content/wardrobe.ts';
 import type {WildlifeState} from './wildlife.ts';
 import {createWoodcraft} from './woodcraft.ts';
@@ -33,6 +34,7 @@ export type GameState = {
   weather?: WeatherState;
   woodcraft:WoodcraftState;
   workshop:WorkshopState;
+  expedition?: CampExpedition;
   merchant:MerchantState;
   clock:LocalClock;
   dayCycle:DayCycleState;

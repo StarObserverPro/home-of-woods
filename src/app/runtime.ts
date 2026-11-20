@@ -1,3 +1,7 @@
+import { CAMP_FOREST_TRAIL } from '../content/forest-expedition.ts';
+import { campWithExpedition, nearCampForestTrail, nearExpeditionExit, openCampExpedition, campExpeditionContext } from '../domain/camp-expedition.ts';
+import type { ForestExpeditionState } from '../domain/forest-expedition.ts';
+import { isCarried } from '../domain/transport-location.ts';
 import {travelAccess,regionAt,blessingAt} from '../world/regions.ts';
 import {travelHeightAt} from '../world/traversal.ts';
 import {CREEK_BRIDGE} from '../content/regions.ts';
@@ -130,7 +134,8 @@ export async function createRuntime(
   synchronizeGatheringHosts(state, registry);
   validateWildlifeRegistry(RUNTIME_MODELS.map(a => a.assetId));
   let message = "沿着小路，认识你的新家。",
-    manualPause = !initialState && savedState !== null || !persistence.status().canSave,
+    manualPause = !state.expedition?.active && (!initialState && savedState !== null || !persistence.status().canSave),
+    forestTransition = false,
     interfaceOpen = false,
     menuOpen = false,
     inspectionOpen = false,
@@ -147,6 +152,7 @@ export async function createRuntime(
     stick = { x: 0, z: 0 };
   let runToggle=false;
   const running=()=>runToggle||keys.has('ShiftLeft')||keys.has('ShiftRight');
+  const inForest=()=>forestTransition||state.expedition?.active===true;
   const resetMovementInput=()=>{keys.clear();stick.x=stick.z=0;runToggle=false;};
   const woodcraft=createWoodcraftSession(state,m=>{message=m;});
   if(state.selected===WOODCRAFT.id||state.woodcraft.pieces.some(p=>p.id===state.selected))woodcraft.activate();
@@ -168,7 +174,7 @@ export async function createRuntime(
   };
   const view = await createScene(host, trees, (event) => {
     const propSelection=inspectionOpen&&event.kind==='select'&&(Object.values(CAMP_PROPS).some(p=>p.id===event.id)||event.id===ALTAR_LAYOUT.oracle.id);
-    if ((manualPause || inspectionOpen)&&!propSelection || interfaceOpen || contextLost || destroyed) return;
+    if ((manualPause || inspectionOpen)&&!propSelection || interfaceOpen || contextLost || destroyed || inForest()) return;
     if(event.kind==='wood-drop'){woodcraft.drop(event);view.setWoodcraftDrop(woodcraft.isDropping());publishSnapshot();return;}
     if(placement){if(event.kind==='move'){const point={x:event.x,z:event.z};placement={...placement,point,reason:placementReason(state,placement.instanceId,point,activeColliders())};view.setPlacement(placement);publishSnapshot();}return;}
     if (event.kind === "select") {
@@ -336,7 +342,7 @@ export async function createRuntime(
     };
   };
   function publishSnapshot() {
-    persistence.observe(state);
+    if(!inForest())persistence.observe(state);
     publish({
       weather:weatherSnapshot(state),
       carrying:carryingSnapshot(state),
@@ -373,7 +379,7 @@ export async function createRuntime(
       appearance:view.getAppearance(),
     });
   }
-  const loopPauseRequired=()=>captureHoldToken!==null||manualPause||inspectionOpen||contextLost||document.hidden||destroyed;
+  const loopPauseRequired=()=>captureHoldToken!==null||manualPause||inspectionOpen||contextLost||document.hidden||destroyed||inForest();
   const syncPause = () => {
     loop.setPaused(loopPauseRequired());
     resetMovementInput();
@@ -384,7 +390,7 @@ export async function createRuntime(
     target instanceof HTMLElement &&
     !!target.closest("input,select,textarea,[contenteditable]");
   const keyDown = (e: KeyboardEvent) => {
-    if (e.defaultPrevented || interfaceOpen || editable(e.target) || (menuOpen && e.code!=="Escape")) return;
+    if (inForest() || e.defaultPrevented || interfaceOpen || editable(e.target) || (menuOpen && e.code!=="Escape")) return;
     if(inspectionOpen){
       if(e.code==='Escape'){e.preventDefault();inspectionOpen=false;view.inspectCharacter(null);view.inspectScene(null);syncPause();view.render(state,0);}
       return;
@@ -438,8 +444,8 @@ export async function createRuntime(
     contextLost = false;
     syncPause();
   };
-  const saveOnHide = () => { syncPause(); if (document.hidden) void persistence.saveNow(state); };
-  const saveOnExit = () => { void persistence.saveNow(state); };
+  const saveOnHide = () => { syncPause(); if (document.hidden&&!inForest()) void persistence.saveNow(state); };
+  const saveOnExit = () => { if(!inForest())void persistence.saveNow(state); };
   const unsubscribeSave = persistence.subscribe(() => {
     if (destroyed) return;
     if (persistence.status().state === 'protected' || persistence.status().state === 'conflict') {
@@ -455,7 +461,7 @@ export async function createRuntime(
   view.canvas.addEventListener("webglcontextlost", lost);
   view.canvas.addEventListener("webglcontextrestored", restored);
   view.render(state, 0);
-  const blocked=()=>destroyed||manualPause||interfaceOpen||inspectionOpen||contextLost||document.hidden;
+  const blocked=()=>destroyed||inForest()||manualPause||interfaceOpen||inspectionOpen||contextLost||document.hidden;
   const prepareDiningSeat=()=>{
     const access=safeDiningReadingSpot(state,activeColliders());
     if(access.code==='ready')return true;
@@ -724,6 +730,52 @@ export async function createRuntime(
       if(source){cancelPlayerAction(state);state.selected=source.sourceId;state.route=[];publishSnapshot();}
     },
     getState:()=>state,
+    async enterForest() {
+      if(blocked())return false;
+      if(!nearCampForestTrail(state.player)) {
+        state.selected=null;
+        navigate(CAMP_FOREST_TRAIL.point);
+        publishSnapshot();
+        return false;
+      }
+      if(placement||woodcraft.isDropping()||workshopBusy(state)||state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state)||state.food.cooking) {
+        message='先完成手头的活，再进林地。';publishSnapshot();return false;
+      }
+      if(state.inventory.stacks.some(stack=>isCarried(stack)&&stack.harvest)) {
+        message='先把手里的原木送到营地原木架。';publishSnapshot();return false;
+      }
+      forestTransition=true;
+      state.player.moving=false;state.route=[];state.selected=null;accumulator=0;
+      syncPause();
+      try {
+        const candidate=campWithExpedition(state,openCampExpedition(state),true);
+        if(!await persistence.saveNow(candidate)) {
+          message='林地行程没能保存，先留在营地。';return false;
+        }
+        Object.assign(state,candidate);
+        return true;
+      } catch {message='林地暂时打不开，先留在营地。';return false;} finally {forestTransition=false;syncPause();}
+    },
+    readForestTrip() {return openCampExpedition(state);},
+    forestContext() {return campExpeditionContext(state.inventory);},
+    async checkpointForest(forest: ForestExpeditionState) {
+      if(destroyed||forestTransition||!state.expedition?.active)return false;
+      Object.assign(state,campWithExpedition(state,forest,true));
+      return persistence.saveNow(state);
+    },
+    async leaveForest(forest: ForestExpeditionState) {
+      if(destroyed||forestTransition||!state.expedition?.active||forest.action||!nearExpeditionExit(forest,campExpeditionContext(state.inventory)))return false;
+      forestTransition=true;
+      try {
+        const candidate=campWithExpedition(state,forest,false);
+        if(!await persistence.saveNow(candidate))return false;
+        Object.assign(state,candidate);
+        advanceWeather(state);
+        message='已回到营地。带回的林产还在手上，可以到原木架存放。';
+        manualPause=false;menuOpen=false;accumulator=0;
+        return true;
+      } finally {forestTransition=false;syncPause();}
+    },
     stepReviewSimulation(seconds:number){
       if(!import.meta.env.DEV||!new URLSearchParams(window.location.search).has('inspect')||captureHoldToken!==null||blocked()||placement||!Number.isFinite(seconds)||seconds<=0||seconds>20)return;
       // Reuse the sole fixed-step simulation, including walking, calendar stops
@@ -736,15 +788,15 @@ export async function createRuntime(
       const loaded = await persistence.reload();
       if (!loaded || destroyed) return false;
       reading=false;view.setReading(false);view.resetPresentationHistory();
-      woodcraft.reset();view.setWoodcraftDrop(false);clearPlacement();delete state.wildlife;Object.assign(state, loaded);advanceWeather(state);synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
-      manualPause = true; keys.clear(); stick.x = stick.z = 0; syncPause(); view.render(state, 0); return true;
+      woodcraft.reset();view.setWoodcraftDrop(false);clearPlacement();delete state.wildlife;delete state.expedition;Object.assign(state, loaded);advanceWeather(state);synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
+      manualPause = !loaded.expedition?.active; keys.clear(); stick.x = stick.z = 0; syncPause(); view.render(state, 0); return true;
     },
     async restoreWorldCopy() {
       const loaded = await persistence.restoreValidCopy();
       if (!loaded || destroyed) return false;
       reading=false;view.setReading(false);view.resetPresentationHistory();
-      woodcraft.reset();view.setWoodcraftDrop(false);clearPlacement();delete state.wildlife;Object.assign(state, loaded);advanceWeather(state);synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
-      manualPause = true; keys.clear(); stick.x = stick.z = 0; syncPause(); view.render(state,0); return true;
+      woodcraft.reset();view.setWoodcraftDrop(false);clearPlacement();delete state.wildlife;delete state.expedition;Object.assign(state, loaded);advanceWeather(state);synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
+      manualPause = !loaded.expedition?.active; keys.clear(); stick.x = stick.z = 0; syncPause(); view.render(state,0); return true;
     },
     inspectCharacter(kind:'horizontal'|'vertical'|'wardrobe'|null){
       if(destroyed||contextLost||interfaceOpen)return;
@@ -768,7 +820,7 @@ export async function createRuntime(
       if(value){resetMovementInput();publishSnapshot();}
     },
     setInterfaceOpen(value: boolean) {
-      if(destroyed)return;
+      if(destroyed||inForest())return;
       if(value&&inspectionOpen){inspectionOpen=false;view.inspectCharacter(null);view.inspectScene(null);}
       if(value){woodcraft.cancelRequest();view.setWoodcraftDrop(false);clearPlacement();}
       interfaceOpen=value;syncPause();
@@ -824,7 +876,7 @@ export async function createRuntime(
       if(import.meta.env.DEV&&inspectionWindow.__HOW_CAPTURE_HOLD__===captureInspection)delete inspectionWindow.__HOW_CAPTURE_HOLD__;
       captureHoldToken=null;
       unsubscribeSave();
-      void persistence.saveNow(state);
+      if(!inForest())void persistence.saveNow(state);
       loop.destroy();
       window.removeEventListener("keydown", keyDown);
       window.removeEventListener("keyup", keyUp);
