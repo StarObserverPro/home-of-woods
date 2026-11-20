@@ -1,5 +1,18 @@
 # 工程验证与历史记录
 
+## OpenAI API 接入草稿（2026-11-19）
+
+基于 main `81a01f8`。新增本机服务端 Responses 接入与原行商窗口的短故事入口；配置、限制与发布边界见 [OpenAI 接入](docs/OPENAI_API.md)。没有密钥入库、存档格式变化、合并或部署。
+
+- `npm run test:ai`：10/10 通过；模拟上游覆盖成功、拒绝/未完成/格式错误、请求来源与大小限制、错误脱敏、缓存/限额/并发/超时、客户端回退与取消。
+- `tests/merchant.test.ts` 与 `tests/merchant-order-preview.test.ts`：12/12 通过，交易结算与货单保持原规则。
+- `npm run build`、`npm run verify:assets`、`npm run verify:ui` 与 `git diff --check` 通过。构建保留既有大 chunk 提示。构建时注入非真实测试标记，并逐文件扫描 dist，确认该标记没有进入产物。
+- 同进程启动真实 Vite 开发和 preview 服务，分别通过 HTTP 检查无密钥503与错误 Origin 的403；没有把静态 HTML 回退当成 API 成功。
+- 当前环境没有可用真实密钥，未进行真实 OpenAI 调用、费用或模型文风实测。用户选择复用既有 key；代码从服务端环境读取，未创建新 key。
+- Playwright 默认浏览器未安装；系统 Chromium 随后因 UNIX socket `Operation not permitted` 无法启动。因此新增行商入口的桌面/手机布局、点击与关闭取消尚无浏览器实测，构建和协议测试不替代该项验收。
+
+当前仍为草稿实现。远端 CI 以 PR 实际结果为准。GPT Sites / Vercel 静态 dist 不包含运行中的服务端；联网发布适配与人物长期记忆/遗忘仍未实现。
+
 > 2026-11-14 归档说明：历史原始录屏、构建包、日志和快照已从 main 清理；[只读旧版证据索引](evidence/README.md)可按旧提交追溯。PR #35 的独立证据未动。历史结论不等于当前主线验收。
 
 ## 2026-11-06：景观、交互与天气合批候选
