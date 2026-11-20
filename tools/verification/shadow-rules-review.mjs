@@ -285,17 +285,6 @@ async function openCampTrail(){
   await page.getByRole('button',{name:'进入林地',exact:true}).click();
   await page.waitForFunction(()=>window.__forestExpedition?.snapshot().activeMapId==='upper');
 }
-async function captureCampTrip(name){
-  const hold=await page.evaluate(()=>window.__HOW_CAPTURE_HOLD__.begin());
-  const session=await context.newCDPSession(page);
-  try{
-    const capture=await session.send('Page.captureScreenshot',{format:'png',fromSurface:true,captureBeyondViewport:false});
-    await fs.writeFile(path.join(out,name),Buffer.from(capture.data,'base64'));
-  }finally{
-    await session.detach();
-    await page.evaluate(token=>window.__HOW_CAPTURE_HOLD__.end(token),hold.token);
-  }
-}
 async function campForestRoundtrip(){
   if(!existsSync(path.join(cwd,'src/ui/CampForestTrip.tsx')))return;
   phase='camp-forest-roundtrip';
@@ -356,7 +345,6 @@ async function campForestRoundtrip(){
   await warehouse.getByRole('button',{name:'营地',exact:true}).click();
   await warehouse.getByRole('button',{name:/^高林红果，1份/}).waitFor();
   report.checks.push({name:phase,status:'passed',carriedAcrossReload:1,delivered:1});
-  await captureCampTrip('camp-forest-return.png');
   await context.close();context=null;page=null;
 
   phase='camp-forest-narrow';
@@ -365,21 +353,18 @@ async function campForestRoundtrip(){
   const exit=page.getByRole('button',{name:'回营地',exact:true});
   const box=await exit.boundingBox();
   assert.ok(box&&box.width>=44&&box.height>=44&&box.x>=0&&box.x+box.width<=390,JSON.stringify(box));
-  const cdp=await context.newCDPSession(page);
-  try{
-    const capture=await cdp.send('Page.captureScreenshot',{format:'png',fromSurface:true,captureBeyondViewport:false});
-    await fs.writeFile(path.join(out,'camp-forest-narrow.png'),Buffer.from(capture.data,'base64'));
-  }finally{await cdp.detach();}
   await exit.tap();
   await page.locator('.camp-forest-trip').waitFor({state:'detached'});
   assert.equal((await saved()).expedition.active,false);
   report.checks.push({name:phase,status:'passed',viewport:[390,844],exit:box});
+  await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));
   await context.close();context=null;page=null;
 }
 
 try{
   await ready();browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});
   report.browser=await browser.version();
+  await campForestRoundtrip();
   await load({width:1100,height:800});
   await workerRoundtrip();
   await treeHeightFadeProbe();
@@ -417,7 +402,6 @@ try{
   await release();
   await mainSmoke();
   await forestSmoke();
-  await campForestRoundtrip();
   await forestProduceSmoke();
   assert.deepEqual(report.errors,[]);report.status='passed-automated';console.log('SHADOW_RULES_GPU_REVIEW_PASS');
 }catch(error){
