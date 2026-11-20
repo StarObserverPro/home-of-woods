@@ -267,7 +267,7 @@ export async function createForestExpeditionScene(canvas: HTMLCanvasElement) {
         probe.set(...crown.center); segment.copy(probe).sub(camera.position);
         const t = THREE.MathUtils.clamp(segment.dot(direction) / lengthSq, 0, 1);
         segment.copy(camera.position).addScaledVector(direction, t);
-        const blocks = t > .04 && t < 1 && segment.distanceTo(probe) < crown.radius + 1.4;
+        const blocks = crown.halfSize[1] > 1.15 && t > .04 && t < 1 && segment.distanceTo(probe) < crown.radius + 1.4;
         vegetation!.setCrownOpacity(chunk.group, crown.id, diagnostics === 'wood' ? .02 : blocks ? .17 : 1);
       }
     }
@@ -294,7 +294,7 @@ export async function createForestExpeditionScene(canvas: HTMLCanvasElement) {
     project(point: ExpeditionPoint & {y?: number}) {const p = new THREE.Vector3(point.x, point.y ?? expeditionHeightAt(layout.id, point.x, point.z) + .5, point.z).project(camera); return {x: (p.x + 1) * width / 2, y: (1 - p.y) * height / 2, visible: p.z < 1 && Math.abs(p.x) < 1 && Math.abs(p.y) < 1};},
     pick(clientX: number, clientY: number): ExpeditionPick | null {
       const rect = canvas.getBoundingClientRect(); cursor.set((clientX - rect.left) / rect.width * 2 - 1, 1 - (clientY - rect.top) / rect.height * 2); ray.setFromCamera(cursor, camera);
-      const hit = ray.intersectObjects(pickRoots, true)[0]; if (hit?.object.userData.expeditionPick) return hit.object.userData.expeditionPick as ExpeditionPick;
+      const hit = ray.intersectObjects(pickRoots, true).find(({object}) => object.userData.expeditionPick); if (hit) return hit.object.userData.expeditionPick as ExpeditionPick;
       const ground = ray.intersectObject(terrain)[0]; return ground ? {kind: 'ground', point: {x: ground.point.x, z: ground.point.z}} : null;
     },
     stats: () => ({...stats, shaderErrors, drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures,

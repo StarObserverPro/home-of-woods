@@ -36,7 +36,7 @@
 
 木生菌的根部由宿主的实际网格求交定位，地面菌圈仍沿用原有造型。榛果跟随榛枝，山毛榉坚果落在树旁；树脂和收液罐贴到对应针叶树和白桦树干。菌、果、坚果继续走现有库存和补给架流程，接近点仍落在可走的地面。草莓暂缓，现有镜头下需要单独做贴地叶丛才能认出来，这一批优先做在现有林下轮廓中更醒目的灌木和小乔木。人上树、攀爬站位与伸手动画另行处理。
 
-形态参考 [NC State Extension · Serviceberry](https://plants.ces.ncsu.edu/plants/amelanchier-canadensis/)，以及 Missouri Department of Conservation 的 [平菇](https://mdc.mo.gov/discover-nature/field-guide/oyster-mushroom)、[硫磺菌](https://mdc.mo.gov/discover-nature/field-guide/chicken-mushroom) 和 [木耳](https://mdc.mo.gov/discover-nature/field-guide/wood-ear-tree-ear)。模型从程序几何生成。
+形态参考 [NC State Extension · Serviceberry](https://plants.ces.ncsu.edu/plants/amelanchier-canadensis/)，以及 Missouri Department of Conservation 的 [平菇](https://mdc.mo.gov/discover-nature/field-guide/oyster-mushroom)、[硫磺菌](https://mdc.mo.gov/discover-nature/field-guide/sulfur-colored-chicken-woods) 和 [木耳](https://mdc.mo.gov/discover-nature/field-guide/wood-ear-tree-ear)。模型从程序几何生成。
 
 ## 可以连续完成的玩法
 

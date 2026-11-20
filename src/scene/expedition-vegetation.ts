@@ -164,8 +164,8 @@ function authoredBroadleaf(kind: ExpeditionTreeKind, profile: Profile, seed: num
       wood.branch([twigRoot,twigTip],[r*.25,r*.065],profile.bark,1,5);
       fruitTwigs.push(twigRoot.clone().lerp(twigTip,.9));
     }
-    const blobWidth=crownRadius*(berry?.40:shrub?.47:beech?.50:ash?.40:.48);
-    crown.cluster(tip.clone().add(V(0,berry?.38:.25,0)),V(blobWidth,berry?1.17:shrub?1.6:beech?1.35:1.1,blobWidth*.88),
+    const blobWidth=crownRadius*(berry?.54:shrub?.47:beech?.50:ash?.40:.48);
+    crown.cluster(tip.clone().add(V(0,berry?.38:.25,0)),V(blobWidth,berry?1.30:shrub?1.6:beech?1.35:1.1,blobWidth*.88),
       hue(profile.leaf,seed+i,berry?.13:.06),seed+i*19,berry?0:undefined);
     if(hasMoss&&kind==='maple'&&i<3&&moss.quality!=='far'){
       const midpoint=mid.clone().lerp(tip,.28);
@@ -176,7 +176,7 @@ function authoredBroadleaf(kind: ExpeditionTreeKind, profile: Profile, seed: num
       }
     }
   }
-  crown.cluster(V(lean,8.4,0),V(crownRadius*(berry?.34:.53),berry?1.1:1.6,crownRadius*(berry?.34:.5)),hue(profile.leaf,seed+54),seed+199);
+  crown.cluster(V(lean,8.4,0),V(crownRadius*(berry?.47:.53),berry?1.24:1.6,crownRadius*(berry?.42:.5)),hue(profile.leaf,seed+54),seed+199);
   if(landmark&&kind==='maple'){
     // Low, elbowed limb: this readable silhouette is intentionally absent from ordinary maples.
     const elbow=V(crownRadius*.63,3.6,-crownRadius*.12),tip=V(crownRadius*.94,4.1,-crownRadius*.17);

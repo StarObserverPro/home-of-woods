@@ -109,9 +109,9 @@ function onWood(builder: VegetationBuilder, site: ExpeditionResourceSite, base: 
   if (substrate === 'standing-trunk' && host) {
     const outward = V(site.x-host.x,0,site.z-host.z).normalize(), side = V(outward.z,0,-outward.x);
     for (let i = 0; i < 5; i++) {
-      const approach = V(site.x, site.y, site.z).addScaledVector(side, (i%2-.5)*1.2);
-      const position = vegetation.trunkSurface(host, approach, .76+i*.35);
-      if (position) fungusBody(builder,kind,base.worldToLocal(position),outward,.74+i%3*.16,i-2);
+      const approach = V(site.x, site.y, site.z).addScaledVector(side, [-.4,.4,-.65,.5,-.3][i]);
+      const position = vegetation.trunkSurface(host, approach, [.76,1.06,1.32,1.67,1.93][i]);
+      if (position) fungusBody(builder,kind,base.worldToLocal(position),outward,[.74,.98,.67,.88,.56][i],i-2);
     }
     return;
   }
@@ -123,12 +123,15 @@ function onWood(builder: VegetationBuilder, site: ExpeditionResourceSite, base: 
   });
   base.add(feature); base.updateMatrixWorld(true);
   const wood = feature.getObjectByName(substrate+'-wood')!;
-  const towardApproach = V(site.x-base.position.x,0,site.z-base.position.z);
-  const normal = V(Math.sin(rotation),0,Math.cos(rotation));
-  if (normal.dot(towardApproach) < 0) normal.negate();
+  const towardApproach = V(site.x-base.position.x,0,site.z-base.position.z).normalize();
+  const bankSide = V(Math.sin(rotation),0,Math.cos(rotation));
+  if (bankSide.dot(towardApproach) < 0) bankSide.negate();
   for (let i = 0; i < 5; i++) {
-    const along = stump ? (i-2)*.27 : (i-2)*.48;
-    const height = stump ? .37+i%3*.23 : .43+i%3*.10;
+    const normal = stump
+      ? towardApproach.clone().applyAxisAngle(V(0,1,0),[0,-.61,.56,-1.95,2.14][i])
+      : bankSide.clone().multiplyScalar(i < 3 ? 1 : -1);
+    const along = stump ? 0 : (i-2)*.48;
+    const height = stump ? [.43,.67,.85,.77,.54][i] : [.48,.62,.5,.68,.58][i];
     const axis = V(along*Math.cos(rotation),height,-along*Math.sin(rotation)).add(base.position);
     const position = at(axis.clone().addScaledVector(normal, 1.8),normal.clone().negate(),wood);
     if (position) fungusBody(builder,kind,base.worldToLocal(position),normal,(kind==='ear'?.66:.83)+i%3*.13,i-2);

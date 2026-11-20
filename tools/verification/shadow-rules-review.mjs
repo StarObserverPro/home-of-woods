@@ -256,21 +256,20 @@ async function forestProduceSmoke(){
       const capture=await session.send('Page.captureScreenshot',{format:'png',fromSurface:true,captureBeyondViewport:false});
       await fs.writeFile(path.join(out,`${phase}.png`),Buffer.from(capture.data,'base64'));
     }finally{await session.detach();}
-    if(!mobile){
-      await page.mouse.click(near.x,near.y);
-      const selected=await page.evaluate(()=>window.__forestExpedition.snapshot().selected);
-      assert.deepEqual(selected,{kind:'source',id:siteId},phase);
-      if(key==='edge-serviceberry'){
-        const before=await page.evaluate(siteId=>window.__forestExpedition.snapshot().sources.find(s=>s.id===siteId).remaining,siteId);
-        await page.getByRole('button',{name:'采集',exact:true}).click();
-        await page.evaluate(()=>window.__forestExpedition.advance(2));
-        const after=await page.evaluate(siteId=>{
-          const state=window.__forestExpedition.snapshot();
-          return {remaining:state.sources.find(s=>s.id===siteId).remaining,items:state.carried};
-        },siteId);
-        assert.equal(after.remaining,before-1);
-        assert.ok(after.items.some(item=>item.itemId==='serviceberry'&&item.quantity===1));
-      }
+    if(mobile) await page.touchscreen.tap(near.x,near.y);
+    else await page.mouse.click(near.x,near.y);
+    const selected=await page.evaluate(()=>window.__forestExpedition.snapshot().selected);
+    assert.deepEqual(selected,{kind:'source',id:siteId},phase);
+    if(key==='edge-serviceberry'){
+      const before=await page.evaluate(siteId=>window.__forestExpedition.snapshot().sources.find(s=>s.id===siteId).remaining,siteId);
+      await page.getByRole('button',{name:'采集',exact:true}).click();
+      await page.evaluate(()=>window.__forestExpedition.advance(2));
+      const after=await page.evaluate(siteId=>{
+        const state=window.__forestExpedition.snapshot();
+        return {remaining:state.sources.find(s=>s.id===siteId).remaining,items:state.carried};
+      },siteId);
+      assert.equal(after.remaining,before-1);
+      assert.ok(after.items.some(item=>item.itemId==='serviceberry'&&item.quantity===1));
     }
     report.checks.push({name:phase,status:'passed',viewport:near.scene.viewport,point:near.point,projected:near.projected,drawCalls:near.scene.drawCalls,triangles:near.scene.triangles});
     await context.close();context=null;page=null;
