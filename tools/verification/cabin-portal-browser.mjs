@@ -75,6 +75,9 @@ export async function verifyCabinPortal(browser, origin, out, report) {
     try {
       await page.goto(`${origin}/?inspect=1&hour=${touch ? 1 : 14}`, { timeout: 120000 });
       await page.locator('.scene-host canvas').waitFor();
+      // Keep diagnostic data readable without putting its development controls
+      // over the game UI at a phone viewport.
+      await page.locator('details.diagnostics').evaluate(details => { details.style.display = 'none'; });
       await waitForSpace(page, 'outdoor');
       await approachCabin(page, touch);
       const before = await stats(page);
@@ -149,6 +152,7 @@ export async function verifyCabinPortal(browser, origin, out, report) {
         report.portal.flows.push({ platform, reentry: true, safeReloadExit: true });
       }
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+      console.log(`CABIN_PORTAL_PASS ${platform}`);
     } catch (error) {
       report.portal.failure = { platform, state: await stats(page).catch(() => null) };
       await page.screenshot({ path: join(out, `portal-${platform}-failure.png`), timeout: 12000 }).catch(() => {});
