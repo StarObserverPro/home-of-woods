@@ -1,8 +1,8 @@
 # 三类林地代表样区
 
-日期：2026-11-19。状态：本轮分支已实现三个独立可玩样区；构建与定向测试通过，真实 3D 画面尚未验收。具体交付与最终检查归 [本轮范围](scopes/forest-biome-expeditions.md)。
+日期：2026-11-19。状态：三片林地是未来正式游戏模块，当前通过独立入口运行；共用照度与阴影已接入，构建与定向测试通过，真实 3D 画面尚未验收。原始交付见 [扩图范围](scopes/forest-biome-expeditions.md)，本轮变化见 [共用照明接入](scopes/forest-lighting-integration.md)。
 
-入口为 `/sandbox/forest-expedition/`，开发时运行 `npm run dev:forest`。这是正式扩图前可反复游玩的代表地块：从营地向上、沿山腰和向下的三个方向，先分别验证林相、路线、资源和返程。当前使用地点按钮切换，尚未接入主营地的跨图转场、开放条件或主存档。
+入口为 `/sandbox/forest-expedition/`，开发时运行 `npm run dev:forest`。路径暂沿用原名，本模块持续面向正式扩图维护，不按历史沙盒冻结。从营地向上、沿山腰和向下的三个方向，分别承接林相、路线、资源和返程。当前使用地点按钮切换，尚未接入主营地的跨图转场、开放条件或主存档。
 
 ## 三张地图现在提供什么
 
@@ -48,6 +48,7 @@
 | 空间 | `world/forest-expedition.ts` 输出 `ExpeditionLayout`；`grid.positions/indices` 是可直接绘制的三角网格，`expeditionHeightAt` 按相同三角面插值；角色、来源、植被落地与导航共用它 |
 | 业务 | `domain/forest-expedition.ts` 管理来源余量、库存、来源区欠料、动作与快照；复用 `inventoryTransaction`、物品身份、目录及既有负重公式 |
 | 表现 | `scene/forest-expedition-scene.ts` 绘制地形、水面、角色、来源、地标与选择；`expedition-vegetation*` 管理树形、地物、实例批次与遮挡；不自建业务时钟或发放奖励 |
+| 照明 | `scene/lighting/forest-expedition-lighting.ts` 将真实冠层、地表与动画脚底适配到共用户外阴影、间接照度及接触规则；保留本模块的 renderer/资源所有者 |
 | 宿主 | `app/forest-expedition-runtime.ts` 持有唯一应用状态、主循环、输入、寻路提交与样区存档写入者；`snapshot/subscribe` 向界面提供状态 |
 | 界面 | `ui/ForestExpedition.tsx` 展示状态并发出选择、走近、采集、搬运和加工意图；窗口焦点复用 `useWindowFocus`，控件复用 Timber 原语 |
 | 入口 | `sandbox/forest-expedition/main.tsx` 创建画布宿主、运行时和 React 根，唯一挂载/卸载 `mountTimberTheme`，退出时释放资源 |
@@ -63,10 +64,11 @@
 | 检查项 | 本次记录 |
 | --- | --- |
 | `npm run build` | 已通过，包括 TypeScript 与生产构建 |
-| `npm run test:forest` | 17 项通过：5 项布局/高程/路径测试、12 项资源/搬运/加工/存档测试 |
+| `npm run test:forest` | 20 项通过：原5项布局、12项资源/搬运/存档，新增3项真实冠层与照明切图检查 |
+| `tests/foot-contact-anchors.test.ts` | 3 项通过：实际角色GLB、骨骼动画/父变换/独立骨架、缺失皮肤不造接触 |
 | 既有 `tests/carrying.test.ts` | 19 项通过，默认搬运规格和主线行为未改变 |
 | `npm run verify:ui` | 通过，5 个活跃入口共用 Timber 契约 |
-| 实际 UI 与业务操作 | 正在独立的无 WebGL 检查路径中进行；最终结果归本轮 scope |
+| 实际 UI 与业务操作 | 原无 WebGL 检查未完成最终验收；保持待验收，详见扩图 scope |
 | 真实 3D 画面、着色器与遮挡 | 尚未取得结论。云浏览器报告 `GL_VENDOR`、`GL_RENDERER` 均为 `Disabled`；本地 Chromium 启动所需 `AF_UNIX` 被执行环境拒绝 |
 | 实体手机 GPU 与帧率 | 尚未验证 |
 

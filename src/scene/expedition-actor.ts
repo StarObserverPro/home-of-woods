@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {CHARACTER} from '../content/characters.ts';
 import type {Resources} from './resources.ts';
+import {createFootContactAnchors} from './lighting/foot-contact-anchors.ts';
 
 /** Borrows the accepted KayKit body and clips; the host remains the only clock. */
 export async function createExpeditionActor(owner: Resources) {
@@ -23,6 +24,7 @@ export async function createExpeditionActor(owner: Resources) {
   if (owner.disposed) throw new Error('林地已关闭');
   const root = new THREE.Group(); root.name = 'expedition-player';
   const body = loaded[0].scene; body.scale.multiplyScalar(CHARACTER.worldScale); root.add(body);
+  const footAnchors = createFootContactAnchors(body,{idPrefix:'expedition-player'});
   const mixer = new THREE.AnimationMixer(body);
   const clips = new Map(loaded[1].animations.map(clip => [clip.name, clip]));
   const actions = new Map<string, THREE.AnimationAction>();
@@ -32,9 +34,6 @@ export async function createExpeditionActor(owner: Resources) {
     actions.set(name, mixer.clipAction(clip));
   }
   let mode = '', facing = 0;
-  const shadow = new THREE.Mesh(owner.geometry('expedition-player-shadow', () => new THREE.CircleGeometry(.62, 24)),
-    owner.own(new THREE.MeshBasicMaterial({color: '#263a2a', transparent: true, opacity: .22, depthWrite: false})));
-  shadow.rotation.x = -Math.PI / 2; shadow.position.y = .035; root.add(shadow);
   // Carrying is visible even when a panel is closed. It reads the same inventory load as speed.
   const bundle = new THREE.Group(); bundle.name = 'carried-wood-bundle';
   for (let i = 0; i < 3; i++) {
@@ -43,7 +42,8 @@ export async function createExpeditionActor(owner: Resources) {
   }
   bundle.visible = false; root.add(bundle);
   return {
-    root, templates: {mushrooms: loaded[2].scene, branches: loaded[3].scene},
+    root, feet:footAnchors.update, footStats:footAnchors.stats,
+    templates: {mushrooms: loaded[2].scene, branches: loaded[3].scene},
     update(view: {x: number; y: number; z: number; facing: number; speed: number; gathering: boolean; carryingWood: boolean}, dt: number) {
       root.position.set(view.x, view.y, view.z);
       const delta = Math.atan2(Math.sin(view.facing - facing), Math.cos(view.facing - facing));

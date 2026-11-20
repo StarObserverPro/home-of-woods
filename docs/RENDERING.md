@@ -1,5 +1,7 @@
 # 运行时、数据与资源管理
 
+光照/阴影共享规则见 [SHADOW_RULES](SHADOW_RULES.md)：生成和调度共用，室外环境、人物、室内按类别配置；场景与资源所有权独立。新林地按未来正式模块接入，旧沙盒本轮不回填，木作入场快照和室内专题边界以该文档为准。
+
 天气与湿度已获准回接。domain/weather 消费唯一游戏时间，runtime 在正常推进、睡觉和恢复后结算。scene/weather-presentation 复用原相机、Resources 和渲染循环，降水位置与密度阈值采用独立稳定随机数，强度在完整空间范围内增减粒子。四处水坑、地表洇湿、覆雪、屋顶遮蔽与局部镜头雨滴由原场景更新；储木架新增遮雨棚，立柱几何与导航碰撞共用配置。天气与湿度继续由原世界存档写入者保存。实际结果见 [天气回接记录](scopes/running-selection-weather.md)。
 
 2026-11-06 跑动由 app/runtime 的会话输入决定，domain/movement 封顶点地寻路最后一步，characters 按实际位移选 Walking_A / Running_A 并取样步频。跑动输入在菜单、暂停、失焦及隐藏时复位。道具拖动由原 Pointer Events 钩子发送原实例身份，scene 普通拾取与拖动物品拾取共用遮挡命中，app/item-transfers 松手复核后调用原摆放／收回事务。天气与湿度有独立沙盒入口和存储，当前主体入口见 [本轮记录](scopes/running-selection-weather.md)。

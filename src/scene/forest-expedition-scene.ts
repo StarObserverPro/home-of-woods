@@ -6,6 +6,8 @@ import type {ExpeditionLayout} from '../world/forest-expedition.ts';
 import {Resources} from './resources.ts';
 import {createExpeditionActor} from './expedition-actor.ts';
 import {createExpeditionVegetation} from './expedition-vegetation.ts';
+import type {ExpeditionCrownVolume} from './expedition-vegetation.ts';
+import {createForestExpeditionLighting} from './lighting/forest-expedition-lighting.ts';
 
 export type ExpeditionPick = {kind: 'source' | 'landmark'; id: string} | {kind: 'drop'; key: string} | {kind: 'supply'} | {kind: 'ground'; point: ExpeditionPoint};
 export type ExpeditionSceneView = {
@@ -21,15 +23,14 @@ function setPick(root: THREE.Object3D, pick: ExpeditionPick) {root.traverse(obje
 /** A mountable renderer. No RAF, input listeners, inventory mutation or save writer. */
 export async function createForestExpeditionScene(canvas: HTMLCanvasElement) {
   const owner = new Resources(), renderer = new THREE.WebGLRenderer({canvas, antialias: true, alpha: false});
+  let shaderErrors = 0;
+  renderer.debug.onShaderError = (gl, program) => {shaderErrors++; console.error('Forest expedition shader compilation', gl.getProgramInfoLog(program));};
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.12;
-  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(43, 1, .15, 520);
   const hemi = new THREE.HemisphereLight('#e1eadd', '#56654a', 2.15); scene.add(hemi);
   const sun = new THREE.DirectionalLight('#fff0d0', 3.0); sun.castShadow = true; scene.add(sun, sun.target);
-  sun.shadow.mapSize.set(2048, 2048); sun.shadow.camera.left = -48; sun.shadow.camera.right = 48;
-  sun.shadow.camera.top = 48; sun.shadow.camera.bottom = -48; sun.shadow.camera.near = 1; sun.shadow.camera.far = 190;
-  sun.shadow.normalBias = .09; sun.shadow.bias = -.00012;
+  const sunDirection = new THREE.Vector3(-32,68,28).normalize().toArray();
   let actor: Awaited<ReturnType<typeof createExpeditionActor>>;
   try {actor = await createExpeditionActor(owner);}
   catch (error) {owner.dispose(); renderer.dispose(); renderer.forceContextLoss(); throw error;}
@@ -38,13 +39,14 @@ export async function createForestExpeditionScene(canvas: HTMLCanvasElement) {
   const direction = new THREE.Vector3(), segment = new THREE.Vector3(), probe = new THREE.Vector3();
   let layout: ExpeditionLayout, mapOwner: Resources | null = null, mapRoot = new THREE.Group();
   let vegetation: ReturnType<typeof createExpeditionVegetation> | null = null;
+  let lighting: ReturnType<typeof createForestExpeditionLighting> | null = null;
   let terrain: THREE.Mesh, sources = new Map<string, THREE.Group>(), dropRoot = new THREE.Group(), dropKey = '';
-  let pickRoots: THREE.Object3D[] = [], treeChunks: {group: THREE.Group; volumes: {id: string; center: [number, number, number]; radius: number}[]}[] = [];
+  let pickRoots: THREE.Object3D[] = [], treeChunks: {group: THREE.Group; volumes: ExpeditionCrownVolume[]}[] = [];
   let selection: THREE.Object3D, destination: THREE.Object3D, supplyGlow: THREE.Object3D;
   let dropHitMaterial: THREE.MeshBasicMaterial | null = null;
   let yaw = .18, pitch = .58, distance = 38, targetDistance = 38, snapCamera = true, disposed = false;
   let diagnostics: 'final' | 'terrain' | 'wood' = 'final';
-  let width = 1, height = 1, lastShadowX = Infinity, lastShadowZ = Infinity;
+  let width = 1, height = 1;
   const stats = {mapBuilds: 0, vegetation: {} as unknown, visibleTrees: 0};
 
   function primitive(geo: THREE.BufferGeometry, material: THREE.Material, root: THREE.Object3D, x: number, y: number, z: number) {
@@ -184,13 +186,13 @@ export async function createForestExpeditionScene(canvas: HTMLCanvasElement) {
   }
 
   function setMap(current: ExpeditionLayout) {
+    lighting?.dispose(); lighting=null;
     mapRoot.removeFromParent(); vegetation?.dispose(); mapOwner?.dispose(); mapOwner = new Resources();
     dropHitMaterial = mapOwner.own(new THREE.MeshBasicMaterial({visible: false}));
     layout = current; sources = new Map(); pickRoots = []; treeChunks = []; dropKey = '';
     mapRoot = new THREE.Group(); mapRoot.name = `forest-${current.id}`; scene.add(mapRoot);
     const palette = current.definition.palette;
     scene.background = new THREE.Color(palette.sky); scene.fog = new THREE.Fog(palette.fog, current.id === 'upper' ? 48 : 75, current.id === 'upper' ? 175 : 240);
-    hemi.intensity = current.id === 'upper' ? 1.8 : 2.15; sun.intensity = current.id === 'upper' ? 2.5 : 3.0;
     terrain = terrainMesh(current, mapOwner); mapRoot.add(terrain); waterMesh(current, mapOwner);
     vegetation = createExpeditionVegetation(mapOwner, {heightAt: (x, z) => expeditionHeightAt(current.id, x, z)});
     // A representative 180-unit plot fits one batch set. Group by authored variant,
@@ -206,8 +208,11 @@ export async function createForestExpeditionScene(canvas: HTMLCanvasElement) {
     selection = disc(1.7, '#ffe2a2', .85); selection.visible = false; mapRoot.add(selection);
     destination = disc(.5, '#e1e9ce', .65); destination.visible = false; mapRoot.add(destination);
     dropRoot = new THREE.Group(); mapRoot.add(dropRoot);
+    lighting=createForestExpeditionLighting(mapOwner,{renderer,sun,scene,layout:current,
+      canopies:treeChunks.flatMap(chunk=>chunk.volumes),sunDirection,
+      ambientEnabled:new URLSearchParams(window.location.search).get('ao')!=='off'});
     stats.mapBuilds++; stats.vegetation = vegetation.stats(); stats.visibleTrees = current.trees.length;
-    snapCamera = true; lastShadowX = Infinity; lastShadowZ = Infinity;
+    snapCamera = true;
   }
   function updateDrops(drops: ExpeditionSceneView['drops']) {
     const key = JSON.stringify(drops.map(({key,x,z,itemId,quantity}) => ({key,x,z,itemId,quantity}))); if (key === dropKey) return; dropKey = key;
@@ -217,10 +222,12 @@ export async function createForestExpeditionScene(canvas: HTMLCanvasElement) {
       const root = new THREE.Group(); root.position.set(drop.x, expeditionHeightAt(layout.id, drop.x, drop.z) + .1, drop.z);
       const wood = /wood|branch|timber/.test(drop.itemId);
       const mesh = new THREE.Mesh(mapOwner!.geometry(wood ? 'ground-wood' : 'ground-sack', () => wood ? new THREE.CylinderGeometry(.18, .21, 2.5, 8) : new THREE.IcosahedronGeometry(.4, 1)), mapOwner!.material(wood ? '#9c794f' : '#b6a17a', .85));
-      mesh.rotation.z = wood ? Math.PI / 2 : 0; mesh.position.y = wood ? .2 : .3; root.add(mesh);
+      mesh.rotation.z = wood ? Math.PI / 2 : 0; mesh.position.y = wood ? .2 : .3;
+      mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);
       const hit = new THREE.Mesh(mapOwner!.geometry('drop-hit', () => new THREE.SphereGeometry(1.1, 8, 6)), dropHitMaterial!); root.add(hit);
       setPick(root, {kind: 'drop', key: drop.key}); pickRoots.push(root); dropRoot.add(root);
     }
+    lighting?.bind(dropRoot);
   }
   function resize() {
     const rect = canvas.getBoundingClientRect(), w = Math.max(1, Math.round(rect.width)), h = Math.max(1, Math.round(rect.height));
@@ -238,10 +245,6 @@ export async function createForestExpeditionScene(canvas: HTMLCanvasElement) {
     camera.position.set(cameraTarget.x + Math.sin(yaw) * horizontal, cameraTarget.y + Math.sin(pitch) * distance, cameraTarget.z + Math.cos(yaw) * horizontal);
     const ground = expeditionHeightAt(layout.id, THREE.MathUtils.clamp(camera.position.x, -89, 89), THREE.MathUtils.clamp(camera.position.z, -89, 89));
     camera.position.y = Math.max(camera.position.y, ground + 2.2); camera.lookAt(cameraTarget);
-    if (Math.hypot(view.player.x - lastShadowX, view.player.z - lastShadowZ) > 5) {
-      lastShadowX = view.player.x; lastShadowZ = view.player.z;
-      sun.position.set(view.player.x - 32, y + 68, view.player.z + 28); sun.target.position.set(view.player.x, y, view.player.z); sun.target.updateMatrixWorld();
-    }
     direction.copy(cameraTarget).sub(camera.position); const lengthSq = direction.lengthSq();
     for (const chunk of treeChunks) {
       chunk.group.visible = diagnostics !== 'terrain';
@@ -262,6 +265,7 @@ export async function createForestExpeditionScene(canvas: HTMLCanvasElement) {
       : selected?.kind === 'landmark' ? layout.landmarks.find(s => s.id === selected.id)
       : selected?.kind === 'supply' ? layout.supply : selected?.kind === 'drop' ? view.drops.find(d => d.key === selected.key) : null;
     if (position) {selection.visible = true; selection.position.set(position.x, expeditionHeightAt(layout.id, position.x, position.z) + .08, position.z);}
+    lighting?.update({focus:[view.player.x,y,view.player.z],dt,camera,viewportHeight:height,feet:actor.feet()});
     renderer.render(scene, camera);
   }
   return {
@@ -279,8 +283,9 @@ export async function createForestExpeditionScene(canvas: HTMLCanvasElement) {
       const hit = ray.intersectObjects(pickRoots, true)[0]; if (hit?.object.userData.expeditionPick) return hit.object.userData.expeditionPick as ExpeditionPick;
       const ground = ray.intersectObject(terrain)[0]; return ground ? {kind: 'ground', point: {x: ground.point.x, z: ground.point.z}} : null;
     },
-    stats: () => ({...stats, drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures,
-      viewport: {width, height, dpr: renderer.getPixelRatio()}, camera: {position: camera.position.toArray(), target: cameraTarget.toArray(), distance, yaw, pitch}, renderer: renderer.capabilities.isWebGL2 ? 'WebGL2' : 'WebGL', postProcessing: false}),
-    dispose() {if (disposed) return; disposed = true; actor.dispose(); vegetation?.dispose(); mapOwner?.dispose(); owner.dispose(); renderer.dispose(); renderer.forceContextLoss(); scene.clear();},
+    stats: () => ({...stats, shaderErrors, drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures,
+      viewport: {width, height, dpr: renderer.getPixelRatio()}, camera: {position: camera.position.toArray(), target: cameraTarget.toArray(), distance, yaw, pitch}, renderer: renderer.capabilities.isWebGL2 ? 'WebGL2' : 'WebGL', postProcessing: false,
+      lighting:lighting?.stats(),footAnchors:actor.footStats()}),
+    dispose() {if (disposed) return; disposed = true; lighting?.dispose(); actor.dispose(); vegetation?.dispose(); mapOwner?.dispose(); owner.dispose(); sun.shadow.dispose(); renderer.dispose(); renderer.forceContextLoss(); scene.clear();},
   };
 }

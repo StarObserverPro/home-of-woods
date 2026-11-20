@@ -10,6 +10,8 @@ import type {ExpeditionVegetationFeature} from './expedition-vegetation-features
 
 export type {VegetationQuality, ExpeditionVegetationFeature};
 export type ExpeditionVegetationOptions = {heightAt?: (x:number,z:number)=>number};
+/** Physical world bounds, independent of the camera-only crown opacity. */
+export type ExpeditionCrownVolume = {id:string;center:[number,number,number];halfSize:[number,number,number];radius:number};
 
 type Profile = {source?: number; bark: string; leaf: string; crownStart: number; roots: number};
 const PROFILES: Record<ExpeditionTreeKind, Profile> = {
@@ -240,7 +242,7 @@ function compileTree(spec: ExpeditionTree, quality: VegetationQuality, key: stri
     triangles:TRIANGLES(mergedWood)+TRIANGLES(crown)+TRIANGLES(mossGeometry)};
 }
 
-function configureCanopyFade(material:THREE.MeshStandardMaterial|THREE.MeshDepthMaterial) {
+function configureCanopyFade(material:THREE.MeshStandardMaterial) {
   material.alphaHash=true;
   material.onBeforeCompile=shader=>{
     shader.vertexShader='attribute float canopyFade; varying float vCanopyFade;\n'+shader.vertexShader;
@@ -282,7 +284,6 @@ export function createExpeditionVegetation(owner?: Resources,options:ExpeditionV
   const distantWoodMaterial=own(new THREE.MeshStandardMaterial({vertexColors:true,roughness:.94,metalness:0,flatShading:true}));
   const crownMaterial=own(new THREE.MeshStandardMaterial({vertexColors:true,roughness:.92,metalness:0,flatShading:true}));
   configureCanopyFade(crownMaterial);
-  const crownDepth=own(new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,alphaHash:true}));configureCanopyFade(crownDepth);
   const mossMaterial=own(new THREE.MeshStandardMaterial({vertexColors:true,roughness:1,metalness:0,flatShading:true}));
   const featureMaterial=own(new THREE.MeshStandardMaterial({vertexColors:true,roughness:.94,metalness:0,flatShading:true}));
   const assertAlive=()=>{if(disposed||resources.disposed)throw new Error('Expedition vegetation factory disposed');};
@@ -319,7 +320,9 @@ export function createExpeditionVegetation(owner?: Resources,options:ExpeditionV
     const mesh=own(new THREE.InstancedMesh(geometry,crownMaterial,members.length));
     members.forEach((member,index)=>mesh.setMatrixAt(index,local?new THREE.Matrix4():matrixFor(member)));
     mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingBox();mesh.computeBoundingSphere();
-    mesh.name='crown';mesh.castShadow=true;mesh.receiveShadow=true;mesh.customDepthMaterial=crownDepth;
+    // A camera reveal is never a physical hole in the canopy. The outdoor-lighting
+    // owner selects soft field shading; the fallback depth path stays opaque.
+    mesh.name='crown';mesh.castShadow=true;mesh.receiveShadow=true;
     mesh.userData.entityIds=members.map(member=>member.id);mesh.userData.vegetationPart='crown';
     mesh.userData.ownsCanopyGeometry=true;
     return {mesh,ids:members.map(member=>member.id),opacity};
@@ -332,12 +335,13 @@ export function createExpeditionVegetation(owner?: Resources,options:ExpeditionV
     group.userData.bounds={min:bounds.min.toArray(),max:bounds.max.toArray()};
     group.userData.triangleEstimate=triangles;
     group.userData.crownBatches=crowns;
-    const crownVolumes:{id:string;center:number[];radius:number}[]=[];
+    const crownVolumes:ExpeditionCrownVolume[]=[];
     for(const batch of crowns)for(let i=0;i<batch.ids.length;i++){
       const instance=new THREE.Matrix4();batch.mesh.getMatrixAt(i,instance);
       const world=batch.mesh.matrixWorld.clone().multiply(instance);
-      const sphere=batch.mesh.geometry.boundingSphere!.clone().applyMatrix4(world);
-      crownVolumes.push({id:batch.ids[i],center:sphere.center.toArray(),radius:sphere.radius});
+      const box=batch.mesh.geometry.boundingBox!.clone().applyMatrix4(world);
+      const center=box.getCenter(new THREE.Vector3()),halfSize=box.getSize(new THREE.Vector3()).multiplyScalar(.5);
+      crownVolumes.push({id:batch.ids[i],center:center.toArray(),halfSize:halfSize.toArray(),radius:halfSize.length()});
     }
     group.userData.crownVolumes=crownVolumes;
     group.userData.vegetationVersion='expedition-vegetation-1';
