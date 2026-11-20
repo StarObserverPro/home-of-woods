@@ -1,3 +1,5 @@
+import { START } from './world.ts';
+
 /** Authored representative woodlands. Coordinates are game units; player height is about 2. */
 export type ExpeditionId = 'upper' | 'mixed' | 'lower';
 export type ExpeditionMapId = ExpeditionId;
@@ -128,3 +130,5 @@ export const EXPEDITIONS: readonly ExpeditionDefinition[] = [
 ];
 
 export const EXPEDITION_BY_ID = Object.fromEntries(EXPEDITIONS.map(definition => [definition.id, definition])) as Record<ExpeditionId, ExpeditionDefinition>;
+
+export const CAMP_FOREST_TRAIL = { id: 'camp-forest-trail', name: '林地小径', point: START, reach: 2.4 } as const;

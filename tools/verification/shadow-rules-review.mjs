@@ -276,6 +276,76 @@ async function forestProduceSmoke(){
   }
 }
 
+async function campForestRoundtrip(){
+  if(!existsSync(path.join(cwd,'src/ui/CampForestTrip.tsx')))return;
+  phase='camp-forest-roundtrip';
+  await newPage({width:960,height:640});
+  await page.goto(`${origin}/?inspect=1`);
+  await page.waitForFunction(()=>window.__HOW_ADVANCE_SIMULATION__);
+  await page.getByRole('button',{name:'路线',exact:true}).click();
+  await page.getByRole('button',{name:'风景',exact:true}).click();
+  await page.getByRole('button',{name:'林地小径',exact:true}).click();
+  await page.getByRole('button',{name:'进入林地',exact:true}).click();
+  await page.waitForFunction(()=>window.__forestExpedition?.snapshot().activeMapId==='upper');
+  assert.equal(await page.evaluate(()=>document.querySelector('.game-shell').inert),true);
+  await page.getByRole('button',{name:'物产',exact:true}).click();
+  const sourceId='expedition.upper.windfall-berries';
+  const row=page.locator(`[data-source-id="${sourceId}"]`);
+  await row.getByRole('button',{name:'走近',exact:true}).click();
+  for(let i=0;i<12;i++){
+    const near=await page.evaluate(id=>window.__forestExpedition.snapshot().sources.find(source=>source.id===id).near,sourceId);
+    if(near)break;
+    await page.evaluate(()=>window.__forestExpedition.advance(5));
+  }
+  await page.getByRole('button',{name:'采集',exact:true}).click();
+  await page.evaluate(()=>window.__forestExpedition.advance(2));
+  const berry='red-forest-berry';
+  const saved=async()=>page.evaluate(async()=>{
+    const {createBrowserWorldSaveStore}=await import('/src/app/world-save-store.ts');
+    return JSON.parse((await createBrowserWorldSaveStore().read()).primary).world;
+  });
+  // Await a committed game save, then exercise the normal refresh entry point mid-trip.
+  await page.waitForFunction(async itemId=>{
+    const {createBrowserWorldSaveStore}=await import('/src/app/world-save-store.ts');
+    const raw=(await createBrowserWorldSaveStore().read()).primary;
+    const world=raw&&JSON.parse(raw).world;
+    return world?.expedition?.active&&world.inventory.stacks.some(s=>s.itemId===itemId&&s.transport?.kind==='carried'&&s.quantity===1);
+  },berry,{polling:250});
+  await page.reload();
+  await page.waitForFunction(itemId=>window.__forestExpedition?.snapshot().carried.some(s=>s.itemId===itemId&&s.quantity===1),berry);
+  await page.getByRole('button',{name:'去出口',exact:true}).click();
+  for(let i=0;i<12&&!await page.getByRole('button',{name:'回营地',exact:true}).isVisible();i++){
+    await page.evaluate(()=>window.__forestExpedition.advance(5));
+  }
+  await page.getByRole('button',{name:'回营地',exact:true}).click();
+  await page.locator('.camp-forest-trip').waitFor({state:'detached'});
+  let world=await saved();
+  assert.equal(world.expedition.active,false);
+  assert.equal(world.inventory.stacks.find(s=>s.itemId===berry).transport.kind,'carried');
+  assert.equal(world.expedition.localStacks.some(s=>s.itemId===berry),false);
+  await page.getByRole('button',{name:'打开仓库',exact:true}).click();
+  const warehouse=page.getByRole('dialog',{name:'物品与仓库'});
+  await warehouse.getByRole('button',{name:/^高林红果，1份/}).waitFor();
+  await warehouse.getByRole('button',{name:'走近仓库',exact:true}).first().click();
+  for(let i=0;i<12&&!await page.getByRole('button',{name:'放入原木架与营地仓库',exact:true}).isVisible();i++){
+    await page.evaluate(()=>window.__HOW_ADVANCE_SIMULATION__(2));
+  }
+  await page.getByRole('button',{name:'放入原木架与营地仓库',exact:true}).click();
+  await page.waitForFunction(async itemId=>{
+    const {createBrowserWorldSaveStore}=await import('/src/app/world-save-store.ts');
+    const world=JSON.parse((await createBrowserWorldSaveStore().read()).primary).world;
+    return world.inventory.stacks.some(s=>s.itemId===itemId&&!s.transport&&s.quantity===1);
+  },berry,{polling:250});
+  world=await saved();
+  assert.equal(world.inventory.stacks.filter(s=>s.itemId===berry).reduce((n,s)=>n+s.quantity,0),1);
+  await page.locator('.target-card').getByRole('button',{name:'打开仓库',exact:true}).click();
+  await warehouse.getByRole('button',{name:'营地',exact:true}).click();
+  await warehouse.getByRole('button',{name:/^高林红果，1份/}).waitFor();
+  await page.screenshot({path:path.join(out,'camp-forest-return.png')});
+  report.checks.push({name:phase,status:'passed',carriedAcrossReload:1,delivered:1});
+  await context.close();context=null;page=null;
+}
+
 try{
   await ready();browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});
   report.browser=await browser.version();
@@ -316,6 +386,7 @@ try{
   await release();
   await mainSmoke();
   await forestSmoke();
+  await campForestRoundtrip();
   await forestProduceSmoke();
   assert.deepEqual(report.errors,[]);report.status='passed-automated';console.log('SHADOW_RULES_GPU_REVIEW_PASS');
 }catch(error){

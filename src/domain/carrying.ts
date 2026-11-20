@@ -48,7 +48,11 @@ export function carryAdditionReason(inventory:InventoryState,item:StackIdentity,
 export function atLocation(item:StackIdentity,location?:TransportLocation):StackIdentity{
   const result=stackIdentity(item);delete result.transport;
   if(location)result.transport=structuredClone(location);
-  else delete result.harvest; // Arrival at camp completes this harvest; later withdrawals are ordinary stock.
+  else {
+    // Delivery completes either kind of timber obligation.
+    delete result.harvest;
+    delete result.expeditionHarvest;
+  }
   if(item.woodCondition)result.woodCondition=structuredClone(item.woodCondition);
   return result;
 }

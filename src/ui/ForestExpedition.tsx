@@ -63,7 +63,7 @@ function DirectionButton({label, children, x, y, runtime, className}: {
 }
 
 /** The runtime owns every game fact; this component owns only open windows and their focus. */
-export function ForestExpeditionApp({runtime}: {runtime: ForestExpeditionRuntime}) {
+export function ForestExpeditionApp({runtime,onReturn}: {runtime: ForestExpeditionRuntime;onReturn?:()=>void}) {
   const view = useSyncExternalStore(runtime.subscribe, runtime.snapshot, runtime.snapshot);
   const {domain, layout} = view;
   const [panel, setPanel] = useState<WindowName | null>(null);
@@ -206,7 +206,7 @@ export function ForestExpeditionApp({runtime}: {runtime: ForestExpeditionRuntime
         <div><dt>镜头</dt><dd>拖动场景旋转；滚轮或双指缩放；Q / E 转向。</dd></div>
         <div><dt>整理</dt><dd>B 打开行囊；Esc 关闭窗口或暂停。</dd></div>
       </dl>
-      <p className="expedition-note">三块林地共用行囊、寄存材料和长材额度，换地图后可以接着上次的位置继续走。</p>
+      <p className="expedition-note">{onReturn?'沿路回到出口，才能换林地或回营地。':'三块林地共用行囊、寄存材料和长材额度，换地图后可以接着上次的位置继续走。'}</p>
       <p className="expedition-note">{view.saveStatus === 'saved' ? '进度已保存。' : view.saveStatus === 'pending' ? '正在保存进度。' : '当前进度无法保存，请保持此页打开。'}</p>
     </>;
   }
@@ -257,10 +257,13 @@ export function ForestExpeditionApp({runtime}: {runtime: ForestExpeditionRuntime
       {view.selected.kind === 'supply' && <><p className="expedition-target-meta">{domain.storage.near ? '可以寄存、取回和加工' : distanceLabel(Math.hypot(domain.player.x - layout.supply.x, domain.player.z - layout.supply.z))}</p><TimberButton disabled={view.paused} onClick={supply}>{domain.storage.near ? '打开补给架' : '走回补给架'}</TimberButton></>}
     </section>}
 
-    <nav className="expedition-bottom" aria-label="林地操作" data-ui-grid="hud" aria-hidden={panel ? true : undefined}>
+    <nav className={`expedition-bottom${onReturn ? ' expedition-bottom-camp' : ''}`} aria-label="林地操作" data-ui-grid="hud" aria-hidden={panel ? true : undefined}>
       <TimberButton aria-pressed={panel === 'bag'} onClick={() => changePanel(panel === 'bag' ? null : 'bag')}>行囊</TimberButton>
       <TimberButton aria-pressed={panel === 'sources'} onClick={() => changePanel(panel === 'sources' ? null : 'sources')}>物产</TimberButton>
       <TimberButton aria-pressed={panel === 'supply'} disabled={view.paused && panel !== 'pause'} onClick={supply}>补给</TimberButton>
+      {view.campExit && onReturn && <TimberButton disabled={busy||view.paused||view.campExit.returning} onClick={async()=>{if(await runtime.returnToCamp())onReturn();}}>
+        {view.campExit.near?'回营地':'去出口'}
+      </TimberButton>}
       <TimberButton emphasis="quiet" aria-pressed={view.paused} onClick={togglePause}>{view.paused ? '继续' : '暂停'}</TimberButton>
     </nav>
 

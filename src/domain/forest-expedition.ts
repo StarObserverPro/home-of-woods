@@ -1,15 +1,14 @@
 import { CARRY_PROFILES, CARRY_RULES } from '../content/carrying.ts';
-import { ITEMS } from '../content/items.ts';
 import type { Point } from '../content/world.ts';
 import type { ExpeditionMapId, ExpeditionResourceSite } from '../content/forest-expedition.ts';
 import {
-  EXPEDITION_CARRY_ITEMS, EXPEDITION_ITEMS, EXPEDITION_RECIPES, EXPEDITION_RESOURCES,
-  EXPEDITION_RULES, EXPEDITION_TAXONOMY, expeditionResourceItem,
+  EXPEDITION_CARRY_ITEMS, EXPEDITION_RECIPES, EXPEDITION_RESOURCES,
+  EXPEDITION_RULES, expeditionResourceItem,
 } from '../content/expedition-resources.ts';
 import type { ExpeditionRecipe } from '../content/expedition-resources.ts';
 import { atLocation, carriedStacks, carryingLoad } from './carrying.ts';
 import type { CarryIntent } from './carrying.ts';
-import { createItemCatalog, isStableId } from './item-catalog.ts';
+import { ITEM_CATALOG, isStableId } from './item-catalog.ts';
 import {
   createInventory, inventoryTransaction, isRecord, recognizedStack, stackIdentity, stackKey, validateInventory, woodBatch,
 } from './inventory.ts';
@@ -18,7 +17,7 @@ import { assertItemJson } from './item-data.ts';
 import { carryMethod, isCarried, isStored, transportLocation } from './transport-location.ts';
 import type { TransportLocation } from './transport-location.ts';
 
-export const EXPEDITION_ITEM_CATALOG = createItemCatalog([...ITEMS, ...EXPEDITION_ITEMS], undefined, EXPEDITION_TAXONOMY);
+export const EXPEDITION_ITEM_CATALOG = ITEM_CATALOG;
 const carryRegistry = { sizes: EXPEDITION_CARRY_ITEMS, catalog: EXPEDITION_ITEM_CATALOG };
 
 export type ExpeditionMapContext = {
@@ -29,6 +28,7 @@ export type ExpeditionContext = {
   maps: Readonly<Record<ExpeditionMapId, ExpeditionMapContext>>;
   canInteract?: (mapId: ExpeditionMapId, from: Point, to: Point) => boolean;
   canStand?: (mapId: ExpeditionMapId, point: Point) => boolean;
+  campPendingTimber?: (mapId: ExpeditionMapId) => number;
 };
 export type ExpeditionSourceState = { remaining: number; version: number; nextReadyAt: number | null };
 type ExpeditionActionBase = {
@@ -97,8 +97,11 @@ function pendingOrigin(stack: InventoryStack): ExpeditionMapId | null {
   const origin = stack.expeditionHarvest;
   return isRecord(origin) && isMapId(origin.mapId) ? origin.mapId : null;
 }
-export function pendingExpeditionTimber(state: ForestExpeditionState, mapId: ExpeditionMapId): number {
-  return state.inventory.stacks.reduce((total, stack) => total + (pendingOrigin(stack) === mapId ? stack.quantity : 0), 0);
+export function pendingTimberIn(stacks: readonly InventoryStack[], mapId: ExpeditionMapId) {
+  return stacks.reduce((total, stack) => total + (pendingOrigin(stack) === mapId ? stack.quantity : 0), 0);
+}
+export function pendingExpeditionTimber(state: ForestExpeditionState, mapId: ExpeditionMapId, context?: ExpeditionContext): number {
+  return pendingTimberIn(state.inventory.stacks, mapId) + (context?.campPendingTimber?.(mapId) ?? 0);
 }
 function supplyNear(state: ForestExpeditionState, context: ExpeditionContext) {
   const supply = context.maps[state.activeMapId].supply;
@@ -159,7 +162,7 @@ function gatherReason(state: ForestExpeditionState, sourceId: string, context: E
   if (!ignoreBusy && state.action) return busyReason(state);
   if (life.remaining <= 0) return source.definition.recoverSeconds === null ? '这处定额长材已经收取。' : '这里暂时采空了，等成熟后再来。';
   if (source.definition.timberCost) {
-    if (pendingExpeditionTimber(state, source.mapId) > 0) return '先把本林区尚未收运的长材交到补给架，再收下一根。';
+    if (pendingExpeditionTimber(state, source.mapId, context) > 0) return '本林区尚未收运的长材交到补给架或营地后，才能收下一根。';
     if (state.timber.used + source.definition.timberCost > state.timber.limit) return '三个林地共用的长材额度已用完。';
   }
   return gatherLoadReason(state, sourceId, context);
@@ -398,7 +401,7 @@ export function expeditionSnapshot(state: ForestExpeditionState, context: Expedi
     const plan = recipePlan(state, recipe), reason = !near ? '先走近补给架' : busy ? busyReason(state) : plan.missing.join('，');
     return { ...recipe, ready: !reason, enabled: !reason, reason, missing: plan.missing };
   });
-  const timber = { ...state.timber, remaining: state.timber.limit - state.timber.used, pendingByMap: Object.fromEntries(EXPEDITION_RULES.mapIds.map(mapId => [mapId, pendingExpeditionTimber(state, mapId)])) as Record<ExpeditionMapId, number> };
+  const timber = { ...state.timber, remaining: state.timber.limit - state.timber.used, pendingByMap: Object.fromEntries(EXPEDITION_RULES.mapIds.map(mapId => [mapId, pendingExpeditionTimber(state, mapId, context)])) as Record<ExpeditionMapId, number> };
   return {
     time: state.time, activeMapId: state.activeMapId, player: point(state.player), carryLoad: expeditionLoad(state), carryMethod: carryMethod(state.inventory.carryMode),
     carried: carriedStacks(state.inventory).map(describe), stored: state.inventory.stacks.filter(isStored).map(describe), ground,

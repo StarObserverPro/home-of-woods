@@ -1,10 +1,11 @@
 import {EXPEDITIONS, EXPEDITION_BY_ID} from '../content/forest-expedition.ts';
 import type {ExpeditionId, ExpeditionPoint} from '../content/forest-expedition.ts';
-import {createExpeditionLayout, expeditionCanStand, expeditionHabitatAt, expeditionSegmentWalkable, findExpeditionPath} from '../world/forest-expedition.ts';
+import {cachedExpeditionLayout, expeditionCanStand, expeditionHabitatAt, expeditionSegmentWalkable, findExpeditionPath} from '../world/forest-expedition.ts';
 import type {ExpeditionLayout} from '../world/forest-expedition.ts';
+import {nearExpeditionExit} from '../domain/camp-expedition.ts';
 import {advanceExpedition, beginExpeditionGather, beginExpeditionProcess, cancelExpeditionAction, changeExpeditionCarrying, claimExpeditionContainer,
   createForestExpedition, expeditionLoad, expeditionSnapshot, moveExpeditionPlayer, restoreForestExpedition, serializeForestExpedition, switchExpeditionMap} from '../domain/forest-expedition.ts';
-import type {ExpeditionContext, ExpeditionResult, ForestExpeditionSnapshot} from '../domain/forest-expedition.ts';
+import type {ExpeditionContext, ExpeditionResult, ForestExpeditionSnapshot, ForestExpeditionState} from '../domain/forest-expedition.ts';
 import type {CarryIntent} from '../domain/carrying.ts';
 import {createForestExpeditionScene} from '../scene/forest-expedition-scene.ts';
 import type {ExpeditionPick, ExpeditionSceneView} from '../scene/forest-expedition-scene.ts';
@@ -14,45 +15,69 @@ export type ExpeditionAppView = {
   domain: ForestExpeditionSnapshot; layout: ExpeditionLayout; selected: ExpeditionPick | null; habitat: string;
   message: string; paused: boolean; moving: boolean; running: boolean; error: string | null;
   saveStatus: 'saved' | 'pending' | 'unavailable';
+  campExit: {near: boolean; returning: boolean} | null;
+};
+export type CampExpeditionSession = {
+  initial: ForestExpeditionState;
+  context: ExpeditionContext;
+  checkpoint(state: ForestExpeditionState): Promise<boolean>;
+  finish(state: ForestExpeditionState): Promise<boolean>;
 };
 const SAVE_KEY = 'home-of-woods.forest-expedition.v1';
 
 /** The one application owner for time, commands, movement, frame scheduling and sample persistence. */
 export async function createForestExpeditionRuntime(canvas: HTMLCanvasElement, options: {
   /** Development harnesses may exercise the actual UI/domain without a GPU. */
-  createScene?: typeof createForestExpeditionScene; storageKey?: string;
+  createScene?: typeof createForestExpeditionScene; storageKey?: string; camp?: CampExpeditionSession;
 } = {}) {
-  const storageKey = options.storageKey ?? SAVE_KEY;
+  const storageKey = options.storageKey ?? SAVE_KEY, camp = options.camp;
   // Let the loading view paint before each bounded navigation-grid build.
   const layouts = {} as Record<ExpeditionId, ExpeditionLayout>;
   for (const definition of EXPEDITIONS) {
     await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
-    layouts[definition.id] = createExpeditionLayout(definition.id);
+    layouts[definition.id] = cachedExpeditionLayout(definition.id);
   }
-  const context: ExpeditionContext = {maps: layouts,
+  const context: ExpeditionContext = camp?.context ?? {maps: layouts,
     canStand: (id, point) => expeditionCanStand(layouts[id], point.x, point.z),
     canInteract: (id, from, to) => expeditionSegmentWalkable(layouts[id], from, to, .24),
   };
-  let state = createForestExpedition(context), saveAvailable = true, saveStatus: ExpeditionAppView['saveStatus'] = 'saved';
+  let state = camp?.initial ?? createForestExpedition(context), saveAvailable = true, saveStatus: ExpeditionAppView['saveStatus'] = 'saved';
   let message = '点地面走动，点林间物产查看；走近后再采集。', error: string | null = null;
-  try {const saved = localStorage.getItem(storageKey); if (saved) state = restoreForestExpedition(saved, context);}
+  try {if (!camp) {const saved = localStorage.getItem(storageKey); if (saved) state = restoreForestExpedition(saved, context);}}
   catch {saveAvailable = false; saveStatus = 'unavailable'; message = '已有样区记录暂时无法读取，先保留原记录；本次可临时游玩。';}
   const scene = await (options.createScene ?? createForestExpeditionScene)(canvas);
   try {scene.setMap(layouts[state.activeMapId]);} catch (error) {scene.dispose(); throw error;}
-  let selected: ExpeditionPick | null = null, paused = false, panelOpen = false, running = false, destroyed = false, contextLost = false;
+  let selected: ExpeditionPick | null = null, paused = false, panelOpen = false, running = false, destroyed = false, contextLost = false, returning = false, finished = false;
   let vector = {x: 0, y: 0}, route: ExpeditionPoint[] = [], facing = Math.PI, speed = 0;
+  let checkpoint: Promise<void> | undefined;
+  let checkpointRequested = false;
   let lastPublish = -1, lastSave = state.time, lastSavedRevision = state.revision, lastSavedTime = state.time;
   let published: ExpeditionAppView, snapshot = expeditionSnapshot(state, context);
   const listeners = new Set<() => void>(), keys = new Set<string>(), removers: (() => void)[] = [];
   function publish() {
     snapshot = expeditionSnapshot(state, context);
     published = {domain: snapshot, layout: layouts[state.activeMapId], selected, habitat: expeditionHabitatAt(state.activeMapId, state.player.x, state.player.z).name,
-      message, paused, moving: route.length > 0 || speed > .01, running, error, saveStatus};
+      message, paused, moving: route.length > 0 || speed > .01, running, error, saveStatus,
+      campExit: camp ? {near: nearExpeditionExit(state,context), returning} : null};
     for (const listener of listeners) listener();
     lastPublish = state.time;
   }
   function save() {
-    if (!saveAvailable || (lastSavedRevision === state.revision && lastSavedTime === state.time)) return;
+    if (returning || finished || !saveAvailable || (lastSavedRevision === state.revision && lastSavedTime === state.time)) return;
+    if (camp) {
+      if (checkpoint) {checkpointRequested = true; return;}
+      const captured = state;
+      lastSavedRevision = state.revision; lastSavedTime = state.time; lastSave = state.time;
+      checkpoint = camp.checkpoint(captured).then(ok => {
+        if (!ok) {saveStatus = 'unavailable';lastSavedRevision=-1;}
+        else if (state.revision === captured.revision) saveStatus='saved';
+      }).catch(() => {saveStatus='unavailable';lastSavedRevision=-1;}).finally(() => {
+        checkpoint=undefined;
+        if (checkpointRequested) {checkpointRequested=false;save();}
+        if (!destroyed && !finished) publish();
+      });
+      return;
+    }
     try {localStorage.setItem(storageKey, serializeForestExpedition(state)); saveStatus = 'saved'; lastSavedRevision = state.revision; lastSavedTime = state.time; lastSave = state.time;}
     catch {saveAvailable = false; saveStatus = 'unavailable'; message = '当前浏览器未能保存进度，请先保持此页打开。';}
   }
@@ -92,8 +117,14 @@ export async function createForestExpeditionRuntime(canvas: HTMLCanvasElement, o
     } else if (selected.kind === 'supply') walkTo(layouts[state.activeMapId].supply);
   }
   function switchMap(id: ExpeditionId) {
-    if (id === state.activeMapId) return;
-    const result = switchExpeditionMap(state, id, context); if (!result.ok) {commit(result); return;}
+    if (id === state.activeMapId || returning) return;
+    if (camp && !nearExpeditionExit(state,context)) {
+      walkTo(layouts[state.activeMapId].spawn);
+      if (route.length) {message='先走到小径出口，再换一片林地。';publish();}
+      return;
+    }
+    const from = camp ? {...state,positions:{...state.positions,[id]:layouts[id].spawn}} : state;
+    const result = switchExpeditionMap(from, id, context); if (!result.ok) {commit(result); return;}
     clearMovement(); stopRoute(); selected = null; state = result.state; message = `${EXPEDITION_BY_ID[id].name} · ${result.message}`;
     scene.setMap(layouts[id]); scene.resetCamera(); save(); publish(); render(0);
   }
@@ -132,7 +163,7 @@ export async function createForestExpeditionRuntime(canvas: HTMLCanvasElement, o
   }
   function tick(dt: number, draw = true) {
     if (destroyed) return;
-    const active = !paused && !panelOpen && !contextLost;
+    const active = !returning && !paused && !panelOpen && !contextLost;
     if (active) {
       move(dt);
       const result = advanceExpedition(state, state.time + dt, context), changed = result.state.revision !== state.revision; state = result.state;
@@ -150,7 +181,7 @@ export async function createForestExpeditionRuntime(canvas: HTMLCanvasElement, o
     target.addEventListener(type, callback, options); removers.push(() => target.removeEventListener(type, callback, options));
   }
   listen(window, 'keydown', ((event: KeyboardEvent) => {
-    if (panelOpen || event.target instanceof HTMLElement && event.target.closest('input,textarea,select,[contenteditable="true"]')) return;
+    if (returning || panelOpen || event.target instanceof HTMLElement && event.target.closest('input,textarea,select,[contenteditable="true"]')) return;
     const key = event.key.toLowerCase();
     if (['w','a','s','d','arrowup','arrowleft','arrowdown','arrowright','shift'].includes(key)) {if (!paused) {event.preventDefault(); keys.add(key);}}
     if (event.repeat) return;
@@ -158,19 +189,19 @@ export async function createForestExpeditionRuntime(canvas: HTMLCanvasElement, o
   }) as EventListener);
   listen(window, 'keyup', ((event: KeyboardEvent) => {keys.delete(event.key.toLowerCase());}) as EventListener);
   listen(window, 'blur', (() => {clearMovement(); save();}) as EventListener);
-  listen(document, 'visibilitychange', (() => {clearMovement(); save(); loop.setPaused(document.hidden || contextLost);}) as EventListener);
+  listen(document, 'visibilitychange', (() => {clearMovement(); save(); loop.setPaused(document.hidden || contextLost || returning);}) as EventListener);
   listen(canvas, 'webglcontextlost', (event => {
     event.preventDefault(); contextLost = true; clearMovement(); stopRoute(); save(); loop.setPaused(true);
     message = '画面暂时中断，进度与时间已经停下。'; publish();
   }) as EventListener);
   listen(canvas, 'webglcontextrestored', (() => {
-    if (destroyed) return; contextLost = false; message = '画面已恢复，可以继续漫步。'; publish(); loop.setPaused(document.hidden);
+    if (destroyed) return; contextLost = false; message = '画面已恢复，可以继续漫步。'; publish(); loop.setPaused(document.hidden || returning);
   }) as EventListener);
   listen(window, 'pagehide', (() => save()) as EventListener);
   const pointers = new Map<number, {x: number; y: number}>(); let start = {x: 0, y: 0}, dragged = false, pinch = 0;
   listen(canvas, 'contextmenu', (event => event.preventDefault()) as EventListener);
   listen(canvas, 'pointerdown', ((event: PointerEvent) => {
-    if (panelOpen || paused) return;
+    if (returning || panelOpen || paused) return;
     canvas.setPointerCapture(event.pointerId); pointers.set(event.pointerId, {x: event.clientX, y: event.clientY});
     if (pointers.size === 1) {start = {x: event.clientX, y: event.clientY}; dragged = false;}
     if (pointers.size === 2) {const [a, b] = [...pointers.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); dragged = true;}
@@ -195,6 +226,26 @@ export async function createForestExpeditionRuntime(canvas: HTMLCanvasElement, o
     snapshot: () => published,
     subscribe(listener: () => void) {listeners.add(listener); return () => {listeners.delete(listener);};},
     switchMap, select, primary, walkTo,
+    async returnToCamp() {
+      if (!camp || returning || paused || state.action) return false;
+      if (!nearExpeditionExit(state,context)) {
+        selected=null;
+        walkTo(layouts[state.activeMapId].spawn);
+        if (route.length) {message='沿小径回到出口。';publish();}
+        return false;
+      }
+      returning=true;clearMovement();stopRoute();loop.setPaused(true);publish();
+      try {
+        await checkpoint;
+        finished=await camp.finish(state);
+        if (!finished) {message='这次没能保存返程，请重试。';saveStatus='unavailable';}
+        return finished;
+      } catch {
+        message='这次没能保存返程，请重试。';saveStatus='unavailable';return false;
+      } finally {
+        if (!finished) {returning=false;loop.setPaused(document.hidden || contextLost);publish();}
+      }
+    },
     returnToSupply() {selected = {kind: 'supply'}; walkTo(layouts[state.activeMapId].supply);},
     carry(intent: CarryIntent) {const result = commit(changeExpeditionCarrying(state, intent, context)); if (result.approach) walkTo(result.approach);},
     process(recipeId: string) {commit(beginExpeditionProcess(state, recipeId, context));},

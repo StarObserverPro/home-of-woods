@@ -173,3 +173,7 @@
     .expedition-window-body {overflow:visible; flex-shrink:0;}
   }
 }
+
+@layer how-layout {
+  .expedition-bottom.expedition-bottom-camp {grid-template-columns:repeat(5,minmax(44px,1fr));}
+}

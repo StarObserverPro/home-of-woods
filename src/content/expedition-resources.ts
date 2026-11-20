@@ -1,5 +1,4 @@
 import { CARRY_ITEMS } from './carrying.ts';
-import type { CarrySize } from './carrying.ts';
 import { ITEM_TAXONOMY } from './item-types.ts';
 import type { ItemTaxonomy } from './item-types.ts';
 import type { ItemDefinition } from './items.ts';
@@ -47,17 +46,7 @@ export const EXPEDITION_TAXONOMY: ItemTaxonomy = {
 };
 
 /** Same game weight/space units and same carrying formula as the main game. */
-export const EXPEDITION_CARRY_ITEMS: Readonly<Record<string, CarrySize>> = {
-  ...CARRY_ITEMS,
-  'conifer-mushroom': CARRY_ITEMS.mushroom, 'hardwood-mushroom': CARRY_ITEMS.mushroom, 'wood-mushroom': CARRY_ITEMS.mushroom,
-  'shelf-mushroom': CARRY_ITEMS.mushroom, 'wood-ear': CARRY_ITEMS.mushroom,
-  serviceberry: { weight: .3, bulk: 1, bundleFactor: 1 },
-  'forest-berry': { weight: .3, bulk: 1, bundleFactor: 1 }, 'blue-forest-berry': { weight: .3, bulk: 1, bundleFactor: 1 }, 'red-forest-berry': { weight: .3, bulk: 1, bundleFactor: 1 },
-  'forest-nut': { weight: .6, bulk: .8, bundleFactor: 1 }, 'tree-resin': { weight: .25, bulk: .4, bundleFactor: 1 },
-  'forest-seed': { weight: .15, bulk: .4, bundleFactor: 1 }, 'dried-forest-fruit': { weight: .15, bulk: .35, bundleFactor: 1 },
-  'nut-rations': { weight: .4, bulk: .4, bundleFactor: 1 }, 'sap-can': { weight: .8, bulk: 2.2, bundleFactor: 1 },
-  'sap-filled-can': { weight: 4.8, bulk: 2.2, bundleFactor: 1 }, 'forest-syrup': { weight: .6, bulk: .5, bundleFactor: 1 },
-};
+export const EXPEDITION_CARRY_ITEMS = CARRY_ITEMS;
 
 export type ExpeditionResourceDefinition = {
   role: ExpeditionResourceRole; name: string; hint: string; capacity: number; durationSeconds: number;

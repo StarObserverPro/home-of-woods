@@ -257,3 +257,15 @@ export function createExpeditionLayout(id: ExpeditionId): ExpeditionLayout {
   layout.resourceSites = placeResources(layout);
   return layout;
 }
+
+
+// Layouts are immutable after construction. Saving a trip and mounting its scene use the same anchors.
+const cachedExpeditions = new Map<ExpeditionId, ExpeditionLayout>();
+export function cachedExpeditionLayout(id: ExpeditionId) {
+  let layout = cachedExpeditions.get(id);
+  if (!layout) {
+    layout = createExpeditionLayout(id);
+    cachedExpeditions.set(id, layout);
+  }
+  return layout;
+}
