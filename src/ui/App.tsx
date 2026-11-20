@@ -1,5 +1,6 @@
 import {mountGameTimber} from './timber/game-adapter.ts';
 import {useWindowFocus} from './timber/use-window-focus.ts';
+import {TimberButton} from './timber/components.tsx';
 import './timber/theme.css';
 import './timber/game-layout.css';
 import {ItemBrowser,ItemHeading,MenuAction,IconTabs,TextPages} from './ItemBrowser.tsx';
@@ -97,6 +98,7 @@ const mapX=(x:number)=>(x+90)*.9;
 const mapZ=(z:number)=>(z+85)*.9;
 const mapLine=(p:{x:number;z:number}[])=>p.map(v=>`${mapX(v.x)},${mapZ(v.z)}`).join(' ');
 const empty: Snapshot = {
+  cabin:{inside:false,atDoor:false,crossing:false,lampOn:false},
   weather:null,
   carrying:{weight:0,bulk:0,effort:0,speed:1,reason:'',weightLimit:30,bulkLimit:10,method:'hands',items:[],ground:[],storageNear:false,visual:null},
   interaction:null,
@@ -289,11 +291,11 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if(e.code!=='KeyB'||e.repeat||e.target instanceof HTMLElement && e.target.closest('input,textarea,select,[contenteditable]'))return;
-      if(!ready||snapshot.paused||readerOpen)return;
+      if(!ready||snapshot.paused||readerOpen||snapshot.cabin.inside||snapshot.cabin.crossing)return;
       e.preventDefault();e.stopPropagation();setWarehouseOpen(v=>!v);
     };
     document.addEventListener('keydown',key,true);return()=>document.removeEventListener('keydown',key,true);
-  },[ready,snapshot.paused,readerOpen]);
+  },[ready,snapshot.paused,readerOpen,snapshot.cabin.inside,snapshot.cabin.crossing]);
   useEffect(()=>{setCameraOpen(false);},[snapshot.selected]);
   useEffect(()=>{
     if(warehouseOpen){setMapOpen(false);setHelp(false);setCameraOpen(false);}
@@ -411,14 +413,15 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
     return()=>{window.removeEventListener('blur',stickEnd);document.removeEventListener('visibilitychange',hidden);};
   },[]);
   useEffect(()=>{
-    if(warehouseOpen||readerOpen||mapOpen||help||snapshot.selected||snapshot.paused)stickEnd();
-  },[warehouseOpen,readerOpen,mapOpen,help,snapshot.selected,snapshot.paused]);
+    if(warehouseOpen||readerOpen||mapOpen||help||snapshot.selected||snapshot.paused||snapshot.cabin.crossing)stickEnd();
+  },[warehouseOpen,readerOpen,mapOpen,help,snapshot.selected,snapshot.paused,snapshot.cabin.crossing]);
+  const {inside:inCabin,crossing:cabinCrossing,atDoor,lampOn}=snapshot.cabin;
   return (
     <main data-how-ui="timber" data-ui-grid-root="viewport" className={`game-shell${warehouseOpen?' warehouse-is-open':''}${(warehouseOpen||readerOpen||mapOpen||help||selected)&&!snapshot.placement&&!snapshot.woodcraft.dropping?' menu-is-open':''}`} onPointerDownCapture={event=>{
       swallowedPointer.current=false;
       const target=event.target;
       if(!(target instanceof Element)||snapshot.placement||snapshot.woodcraft.dropping||itemDrag.drag)return;
-      if(target instanceof HTMLCanvasElement&&!readerOpen&&!snapshot.paused){
+      if(target instanceof HTMLCanvasElement&&!readerOpen&&!snapshot.paused&&!inCabin&&!cabinCrossing){
         const item=runtime.current?.worldTransferItem(event.clientX,event.clientY);
         if(item&&item.kind!=='material'){
           itemDrag.start(event,item,()=>runtime.current?.select(item.id));
@@ -454,12 +457,12 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
         <Hourglass view={snapshot.workshop} disabled={!ready||snapshot.paused||readerOpen||warehouseOpen}
           disabledReason={!ready?'山谷准备中':readerOpen?'读书时暂停，合上书后恢复':warehouseOpen?'整理物品时暂停，关闭后恢复':snapshot.paused?'游戏已暂停，回到山谷后恢复':undefined}
           onSpeed={s=>runtime.current?.setClockSpeed(s)}/>
-        <WeatherControls view={snapshot.weather} disabled={!ready}
+        {!inCabin&&<WeatherControls view={snapshot.weather} disabled={!ready||cabinCrossing}
           onWeather={kind=>runtime.current?.setWeather(kind)}
           onIntensity={value=>runtime.current?.setWeatherIntensity(value)}
-          onAutomatic={value=>runtime.current?.setWeatherAutomatic(value)}/>
-        <EveningControls view={snapshot.dayCycle} disabled={!ready||snapshot.paused||readerOpen||warehouseOpen} working={readerOpen||warehouseOpen||!!snapshot.workshop.job}
-          onContinue={()=>runtime.current?.setClockSpeed(1)} onSleep={()=>runtime.current?.sleepToDawn()} onReturnToCamp={()=>runtime.current?.returnToTent()}/>
+          onAutomatic={value=>runtime.current?.setWeatherAutomatic(value)}/>}
+        {!inCabin&&<EveningControls view={snapshot.dayCycle} disabled={!ready||snapshot.paused||readerOpen||warehouseOpen} working={readerOpen||warehouseOpen||!!snapshot.workshop.job}
+          onContinue={()=>runtime.current?.setClockSpeed(1)} onSleep={()=>runtime.current?.sleepToDawn()} onReturnToCamp={()=>runtime.current?.returnToTent()}/>}
         <button
           className="round-button pause"
           aria-label="暂停"
@@ -468,7 +471,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
           <Icon name="pause" />
         </button>
       </header>
-      <aside className="minimap-card" aria-label="山谷地图" hidden={mapOpen || help || warehouseOpen || readerOpen || !!selected}>
+      <aside className="minimap-card" aria-label="山谷地图" hidden={inCabin || mapOpen || help || warehouseOpen || readerOpen || !!selected}>
         <div className="map-heading">
           <span>山谷手记</span>
           <span className="north">N ↑</span>
@@ -557,8 +560,13 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
           <Icon name="reset" />
         </button>
       </div>}
-      <nav className="bottom-toolbar" aria-label="探索工具">
-        <button
+      <nav className="bottom-toolbar" aria-label={inCabin?'屋内操作':'探索工具'} data-ui-grid="hud">
+        {inCabin?<><TimberButton aria-label="出门" disabled={cabinCrossing} onClick={()=>runtime.current?.requestCabinExit()}>
+          <Icon name="home"/><span>出门</span>
+        </TimberButton><TimberButton aria-label={lampOn?'熄灭壁灯':'点亮壁灯'} aria-pressed={lampOn} disabled={cabinCrossing} onClick={()=>runtime.current?.toggleCabinLamp()}>
+          <GameIcon name="campfire"/><span>{lampOn?'熄灯':'点灯'}</span>
+        </TimberButton></>:<><button
+          disabled={cabinCrossing}
           className={mapOpen ? "active" : ""}
           aria-pressed={mapOpen}
           onClick={() => {
@@ -571,9 +579,10 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
           <Icon name="map" />
           <span>路线</span>
         </button>
-        <button aria-label={warehouseOpen?'收起物品面板':'打开仓库'} aria-pressed={warehouseOpen} onClick={()=>warehouseOpen?closeWarehouse():setWarehouseOpen(true)}><Icon name="warehouse"/><span>物品</span></button>
-        <button ref={cameraToggle} aria-label="镜头" aria-expanded={cameraOpen} className={cameraOpen?'active':''} onClick={()=>{closeWarehouse();setMapOpen(false);setHelp(false);setCameraOpen(v=>!v);}}><Icon name="camera"/><span>镜头</span></button>
-        <button
+        <button disabled={cabinCrossing} aria-label={warehouseOpen?'收起物品面板':'打开仓库'} aria-pressed={warehouseOpen} onClick={()=>warehouseOpen?closeWarehouse():setWarehouseOpen(true)}><Icon name="warehouse"/><span>物品</span></button></>}
+        <button ref={cameraToggle} disabled={cabinCrossing} aria-label="镜头" aria-expanded={cameraOpen} className={cameraOpen?'active':''} onClick={()=>{closeWarehouse();setMapOpen(false);setHelp(false);setCameraOpen(v=>!v);}}><Icon name="camera"/><span>镜头</span></button>
+        {!inCabin&&<button
+          disabled={cabinCrossing}
           className={help ? "active" : ""}
           aria-pressed={help}
           onClick={() => {
@@ -585,7 +594,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
         >
           <Icon name="help" />
           <span>操作</span>
-        </button>
+        </button>}
       </nav>
       </div>
       <Warehouse carrySummary={<CarryingSummary view={snapshot.carrying}/>} carrying={<CarryingControls woodcraft={snapshot.woodcraft} onDragStart={itemDrag.start} onWood={()=>leaveWarehouse(()=>runtime.current?.openWoodcraft())} onThrow={key=>leaveWarehouse(()=>runtime.current?.beginWoodDrop(key))} view={snapshot.carrying} warehouse={snapshot.warehouse} message={snapshot.message} onChange={intent=>runtime.current?.carry(intent)} onHome={()=>leaveWarehouse(()=>runtime.current?.approachTarget(CAMP_PROPS.logs.id))} onApproach={id=>leaveWarehouse(()=>runtime.current?.approachMaterial(id))}/>} open={warehouseOpen} view={snapshot.warehouse} woodcraft={snapshot.woodcraft} onClose={closeWarehouse}
@@ -629,8 +638,13 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
           {snapshot.selected!==CAMP_VISITOR.id&&<IconTabs label="目标操作" tabs={[{id:'use',name:'使用',icon:'craft'},...((!bridgeDetails&&(snapshot.workshop.upgradeOptions.length||snapshot.workshop.upgrade))?[{id:'upgrade',name:'改造',icon:'repair' as const}]:[]),{id:'info',name:'说明',icon:'read'}]} value={targetPage} onChange={setTargetPage}/>}
           {targetPage==='info'&&<TextPages text={`${selected.tag}。${selected.detail}`} size={85}/>}
           {targetPage==='use'&&<>
-          {farFacility?<div className="facility-approach">
-            <button className="context-button primary-action" disabled={!ready||snapshot.paused||!!snapshot.workshop.job} onClick={approachFacility}>{snapshot.moving?'正在走近…':'走近'}</button>
+          {snapshot.selected==='cabin'&&<div className="facility-approach" data-ui-grid="row">
+            <TimberButton className="context-button primary-action" disabled={!ready||snapshot.paused||cabinCrossing} onClick={()=>runtime.current?.requestCabinEntry()}>
+              {atDoor?'进屋':snapshot.moving?'正在走近…':'走到木屋门前'}
+            </TimberButton>
+          </div>}
+          {farFacility?(snapshot.selected!=='cabin'||atDoor)&&<div className="facility-approach">
+            <button className="context-button primary-action" disabled={!ready||snapshot.paused||!!snapshot.workshop.job} onClick={approachFacility}>{snapshot.moving?'正在走近…':snapshot.selected==='cabin'?'走近挂件':'走近'}</button>
           </div>:<>
           {['grove-altar','grove-altar:oracle'].includes(snapshot.selected??'') && snapshot.interaction?.near&&<div className="tree-actions"><button className="context-button" onClick={()=>runtime.current?.ritual('prayer')}>合掌祈祷</button></div>}
           {selectedTree && branchHosts.has(selectedTree.id) && <button className="context-button" onClick={()=>runtime.current?.selectTreeBranches()}>查看枝杈</button>}
@@ -752,7 +766,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
         className="run-toggle"
         aria-label={snapshot.running?'切换为走路':'切换为跑动'}
         aria-pressed={snapshot.running}
-        disabled={!ready||snapshot.paused||!!snapshot.placement||snapshot.woodcraft.dropping}
+        disabled={!ready||snapshot.paused||cabinCrossing||!!snapshot.placement||snapshot.woodcraft.dropping}
         onClick={()=>runtime.current?.setRunning(!snapshot.running)}
       >
         <Icon name="walk" />
@@ -768,14 +782,14 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
       >
         <IconTabs label="暂停选项" value={pausePage} onChange={setPausePage} tabs={[{id:"main",name:"休息",icon:"rest"},{id:"display",name:"显示",icon:"camera"},{id:"save",name:"存档",icon:"blueprint"}]}/>
         {pausePage==='main'&&<>
-        <h2>山谷会等你</h2>
+        <h2>{inCabin?'歇一会儿':'山谷会等你'}</h2>
 
         <button
           className="primary-button"
           autoFocus
           onClick={() => runtime.current?.pause(false)}
         >
-          回到山谷
+          {inCabin?'继续':'回到山谷'}
         </button>
         <button
           className="text-button"

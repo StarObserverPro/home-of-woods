@@ -1,9 +1,5 @@
 /** Cabin audit catalogue. Units and dimensions are shared by geometry, navigation and interaction. */
-export const CABIN = {
-  width: 8.4, depth: 7, height: 3.35, wallThickness: .18,
-  doorWidth: 2.0, doorHeight: 2.95, doorThickness: .08,
-  porchDepth: 2.4, porchWidth: 5.6, actorRadius: .92, floorY: 0,
-} as const;
+export { CABIN_AUDIT_ROOM as CABIN } from '../../../src/content/cabin.ts';
 
 export type CabinDefinitionId = 'bed'|'table'|'stool'|'chest'|'shelf'|'stove'|'lantern'|'bowl'|'rug'|'plant';
 export type CabinPreset = 'starter'|'full'|'empty';

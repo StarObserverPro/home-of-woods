@@ -95,7 +95,9 @@ export function createAmbientOcclusion(resources:Resources){
     const onDispose=()=>releaseMaterial(material);
     material.needsUpdate=true;materials.set(material,{compile,key,installed,onDispose});material.addEventListener('dispose',onDispose);
   }
-  function bind(root:THREE.Object3D){root.traverse(object=>{if(object instanceof THREE.Mesh)for(const m of Array.isArray(object.material)?object.material:[object.material])bindMaterial(m);});}
+  function visitMaterials(root:THREE.Object3D,visit:(material:THREE.Material)=>void){
+    root.traverse(object=>{if(object instanceof THREE.Mesh)for(const m of Array.isArray(object.material)?object.material:[object.material])visit(m);});
+  }
   function setVolumes(next:readonly OcclusionVolume[]){
     if(next.length>count)throw new Error(`Ambient occlusion volume budget exceeded: ${next.length}/${count}`);
     for(const v of next)if(![...v.center,...v.halfSize,v.yaw,v.softness,v.strength].every(Number.isFinite)||v.halfSize.some(n=>n<0)||v.softness<=0||v.strength<0||v.strength>1)throw new Error(`Invalid ambient occlusion volume: ${v.id}`);
@@ -115,7 +117,8 @@ export function createAmbientOcclusion(resources:Resources){
     (kind==='core'?uniforms.howAOCoreBounds:uniforms.howAOOuterBounds).value.set(b.minX,b.minZ,b.maxX-b.minX,b.maxZ-b.minZ);
     if(kind==='core')coreField=field;else outerField=field;uniforms.howAOFieldEnabled.value=coreField&&outerField?1:0;
   }
-  return {bind,bindMaterial,setVolumes,setCanopy,
+  return {bind:(root:THREE.Object3D)=>visitMaterials(root,bindMaterial),
+    unbind:(root:THREE.Object3D)=>visitMaterials(root,releaseMaterial),bindMaterial,setVolumes,setCanopy,
     setEnabled(value:boolean){uniforms.howAOEnabled.value=value?1:0;},
     setNight(value:number){uniforms.howAONight.value=THREE.MathUtils.clamp(value,0,1);},
     stats(){return {version:C.version,enabled:!!uniforms.howAOEnabled.value,volumes:volumes.map(v=>v.id),regions:volumes.map(v=>({id:v.id,center:[...v.center],halfSize:[...v.halfSize],yaw:v.yaw,detail:v.detail})),volumeBudget:count,broadVolumes:uniforms.howAOBroadCount.value,spatialBounds:[uniforms.howAOMin.value.toArray(),uniforms.howAOMax.value.toArray()],updates,materials:materials.size,canopyFields:[coreField?.size??1,outerField?.size??1],localFieldSize:[...localField.size],localTextureBytes:localField.data.byteLength,lastLocalBakeMs:Math.round(localBakeMs*100)/100,textureBytes:localField.data.byteLength+(coreField?.data.byteLength??4)+(outerField?.data.byteLength??4),extraDrawCalls:0,extraRenderPasses:0,near:[C.nearFull,C.nearEnd],minimumAmbient:C.minimumAmbient};},

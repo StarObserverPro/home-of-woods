@@ -34,7 +34,7 @@ npm run verify:cabin-assets
 | --- | --- |
 | `src/content.ts` | 房间尺度、物件定义、稳定实例 ID、初始位置、接近点、支撑槽及运动包络 |
 | `src/domain.ts` | 无 Three.js 的纯函数：精确寻路终点、使用资格、放置校验、同实例取放、严格快照解析 |
-| `src/scene/shell.ts` | 从围护方案生成厚墙实洞、门窗、连续平台、剖切分组及共享屋面剖面 |
+| [共享围护](../../src/scene/cabin/shell.ts) | 从围护方案生成厚墙实洞、门窗、连续平台、剖切分组及共享屋面剖面 |
 | `src/scene/furniture.ts` | CC0 模型载入、材质统一、原创家具几何及受限局部动画；不创建业务物品 |
 | `src/scene/character.ts` | 项目原角色及动作，原倍率；姿态接触与足底校正；由宿主 dt 推进 |
 | `src/scene/view.ts` | 相机、灯光、拾取、材质/空间检查、资源生命周期；消费状态 |
@@ -46,13 +46,13 @@ npm run verify:cabin-assets
 
 `mountCabinAudit(container, {initialState, persist, onChange})` 返回 `pause/resume/dispose/getSnapshot`。正式接入时设置 `persist:false`，将合法拥有实例与宿主事务接到 domain/app，保存和时间回归原运行时。当前 `onChange(snapshot,event)` 是提交后的审计通知，不是生产命令审批接口；生产接线应将 `commit` 交给现有规则服务，而非另开并行库存或保存器。
 
-`mountCabinAudit` 自带 RAF，作为整页模式时应先暂停宿主，退出销毁后恢复。若木屋与山谷共用原场景，应复用 content/domain 与 shell/furniture 工厂，由原 `Resources`、时钟和角色推进，不同时运行展台 mount。房间使用局部坐标，宿主提供 world transform 与入口锚点；相机在入口明确交接，不回到默认远景。
+主游戏现已通过[旧木屋入口](../../docs/RENDERING.md#旧木屋子空间)复用围护和遮蔽规则。展台继续独立运行整套陈设审查，陈设和操作记录保存在本展台。
 
 炉火仅示意点亮，不消耗燃料；休息不推进游戏日期；箱内有真实几何空腔但不提供第二份库存。固定炉位的烟管接口由房屋层连接屋顶，泛水件高度从同一屋面剖面取得。
 
 ## 资产与验证
 
-5 件 KayKit Furniture Bits 1.0 资产使用 CC0，具体版本、源文件及 SHA-256 见 `public/assets/cabin-interior/manifest.json`；`node tools/prepare-cabin-assets.mjs` 从仓库采用的原件可复建。其余家具和围护为本项目几何。几何工具的 MIT 许可与来源保存在 `src/vendor/geometry-quality-kit/`。完整登记见 [ASSET_REGISTER](../../docs/ASSET_REGISTER.md)。
+5 件 KayKit Furniture Bits 1.0 资产使用 CC0，具体版本、源文件及 SHA-256 见 `public/assets/cabin-interior/manifest.json`；`node tools/prepare-cabin-assets.mjs` 从仓库采用的原件可复建。其余家具和围护为本项目几何。几何工具的[来源与 MIT 许可](../../src/scene/cabin/geometry-quality-kit/README.md)随共享代码保存。完整登记见 [ASSET_REGISTER](../../docs/ASSET_REGISTER.md)。
 
 本次针对性检查为 `tests/cabin-interior.test.ts`。生产构建包括独立 HTML 入口；不替换正式游戏入口。`Cabin Interior Browser` 工作流通过构建后的页面进行真实按钮/触摸操作，输出昼夜、坐卧、开箱、屋顶、空间和手机截图，以及录制与 JSON 状态报告。也可在有 Chromium 支持的环境运行：
 

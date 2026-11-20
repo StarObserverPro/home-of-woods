@@ -29,6 +29,8 @@ import {createUnderstory} from './understory.js';
 import {treeVisual} from '../world/tree-appearance.ts';
 import * as THREE from "three";
 import { CABIN, CAMERA, GIANT, HOME, TENT, WORLD } from "../content/world.ts";
+import { CABIN_EXTERIOR, CABIN_PORTAL, CABIN_ROOM } from '../content/cabin.ts';
+import type { CabinPlayer } from '../domain/cabin.ts';
 import type { GameState } from "../domain/state.ts";
 import type { Tree } from "../world/layout.ts";
 import { heightAt, clamp } from "../world/surface.ts";
@@ -43,6 +45,8 @@ import {createCreek} from './creek.ts';
 import {createCampProps} from './camp-props.ts';
 import {createSelectionMarker} from './selection-marker.ts';
 import {createCabinRepair} from './cabin-repair.ts';
+import {createCabinRoom} from './cabin/room.ts';
+import {createSkySample,sampleSkyLight} from './lighting/sky-light.ts';
 import {createCampExteriors} from './camp-exteriors.ts';
 import {VIEWS,CAMP_PROPS,DINING_SEAT} from '../content/scene-props.ts';
 import type {SceneAppearance,SceneViewPreset} from '../content/scene-props.ts';
@@ -57,6 +61,8 @@ import type {WardrobeLook} from '../content/wardrobe-preview.ts';
 
 export type SceneIntent =
   | { kind: "wood-drop"; x:number; y:number; z:number }
+  | { kind: 'cabin-door' }
+  | { kind: 'cabin-lamp' }
   | { kind: "select"; id: string }
   | { kind: "move"; x: number; z: number };
 export async function createScene(
@@ -97,6 +103,10 @@ export async function createScene(
   canvas.setAttribute("aria-label", "森林之家可玩山谷");
   canvas.setAttribute("role", "application");
   host.appendChild(canvas);
+  const fade = document.createElement('div');
+  fade.className = 'scene-fade';
+  fade.setAttribute('aria-hidden', 'true');
+  host.appendChild(fade);
   const scene = new THREE.Scene();
   const environment=createEnvironment(r,{renderer});
   const light=environment.lighting;
@@ -143,6 +153,11 @@ export async function createScene(
   scene.add(river.group,camp.group,bridge.group);
   const auditParams=new URLSearchParams(window.location.search),auditHour=auditParams.has('inspect')&&auditParams.has('hour')?Number(auditParams.get('hour')):NaN;
   let appearance=sceneAppearanceAt(0),scenePreset:SceneViewPreset|null=null,sceneOverrides:Partial<SceneAppearance>={};
+  let cabinRoom:ReturnType<typeof createCabinRoom>|null=null;
+  let cabinPlayer:CabinPlayer|null=null;
+  let cabinTime=0, lastCabinLightAt=0, outsideFrames=0;
+  let fadeAmount=0, returnDoorView=false, snapOutdoorTarget=false;
+  const cabinSky=createSkySample();
   let sceneCamera:{yaw:number;elevation:number;zoom:number;target:THREE.Vector3}|null=null;
   scene.add(ground, water);
   const scenery = createScenery(r);
@@ -157,7 +172,8 @@ export async function createScene(
     ["tent", TENT],
   ] as const) {
     const model = name==='tent'?models.clone(name):models.staticClone(name);
-    model.scale.setScalar(1.6);
+    model.scale.setScalar(name==='cabin'?CABIN_EXTERIOR.scale:1.6);
+    if(name==='cabin')model.rotation.y=CABIN_EXTERIOR.yaw;
     model.position.set(p.x, heightAt(p.x, p.z), p.z);
     scene.add(model);
     props.set(name, model);
@@ -282,19 +298,26 @@ export async function createScene(
     mesh.updateWorldMatrix(true,false);
   });
   const screenRay = (clientX: number, clientY: number) => {
-    scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);
+    const activeRoom=cabinPlayer?cabinRoom:null;
+    const activeCamera=activeRoom?.camera??camera;
+    (activeRoom?.scene??scene).updateMatrixWorld(true);activeCamera.updateMatrixWorld(true);
     const rect = canvas.getBoundingClientRect();
     pointer.set(
       ((clientX - rect.left) / rect.width) * 2 - 1,
       1 - ((clientY - rect.top) / rect.height) * 2,
     );
-    ray.setFromCamera(pointer, camera);
+    ray.setFromCamera(pointer, activeCamera);
   };
   const interactionHit=()=>ray.intersectObjects([...bridge.hits.objects(),...broom.hits.objects(),...housing.hits.objects(),...hauling.hits.objects(),...woodcraft.hits.objects(),...workshop.hits.objects(),...forestry.getPickTargets(),...props.values(),...gathering.hits.objects(),...camp.hits.filter(o=>o.userData.propActive!==false)], true).find(hit=>{let o:THREE.Object3D|null=hit.object;while(o){if(!o.visible)return false;o=o.parent;}return true;});
   const walkableObjects=()=>bridge.built.visible?[ground,bridge.built]:[ground];
   const terrainHit=()=>ray.intersectObjects(walkableObjects(),true)[0];
   const pick = (clientX: number, clientY: number) => {
     screenRay(clientX,clientY);
+    if(cabinPlayer&&cabinRoom){
+      const hit=cabinRoom.pick(ray);
+      if(hit)intent(hit);
+      return;
+    }
     const hit = interactionHit(),
       surfaceHit = terrainHit();
     if(woodDropMode){const drop=ray.intersectObjects([...woodcraft.hits.objects(),...walkableObjects()],true)[0];if(drop)intent({kind:'wood-drop',x:drop.point.x,y:drop.point.y,z:drop.point.z});return;}
@@ -335,7 +358,7 @@ export async function createScene(
   let multi = false,
     lastPinch = 0;
   const pointerDown = (e: PointerEvent) => {
-    if (destroyed) return;
+    if (destroyed || fadeAmount>0) return;
     canvas.focus({ preventScroll: true });
     canvas.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, {
@@ -362,19 +385,22 @@ export async function createScene(
     if (pointers.size === 2) {
       const ps = [...pointers.values()],
         dist = Math.hypot(ps[0].x - ps[1].x, ps[0].y - ps[1].y);
-      if (lastPinch > 0)
-        zoom = clamp((zoom * dist) / lastPinch, CAMERA.minZoom, CAMERA.maxZoom);
+      if (lastPinch > 0) view.zoomBy(dist / lastPinch);
       lastPinch = dist;
-      manualCamera();yaw -= dx * 0.003;
+      if(cabinPlayer&&cabinRoom)cabinRoom.orbit(dx*.003,0);
+      else {manualCamera();yaw -= dx * 0.003;}
     } else if (p.drag) {
-      manualCamera();yaw -= dx * 0.006;
-      elevation = clamp(elevation + dy * 0.003, CAMERA.minElevation, 1.15);
+      if(cabinPlayer&&cabinRoom)cabinRoom.orbit(dx*.006,dy*.003);
+      else {
+        manualCamera();yaw -= dx * 0.006;
+        elevation = clamp(elevation + dy * 0.003, CAMERA.minElevation, 1.15);
+      }
     }
   };
   const pointerUp = (e: PointerEvent) => {
     const p = pointers.get(e.pointerId);
     if (!p) return;
-    if (e.type !== "pointercancel" && !p.drag && !multi)
+    if (e.type !== "pointercancel" && !p.drag && !multi && fadeAmount===0)
       pick(e.clientX, e.clientY);
     pointers.delete(e.pointerId);
     if (!pointers.size) {
@@ -385,12 +411,8 @@ export async function createScene(
       canvas.releasePointerCapture(e.pointerId);
   };
   const wheel = (e: WheelEvent) => {
-    e.preventDefault();manualCamera();
-    zoom = clamp(
-      zoom * Math.exp(-e.deltaY * 0.001),
-      CAMERA.minZoom,
-      CAMERA.maxZoom,
-    );
+    e.preventDefault();
+    if(!fadeAmount)view.zoomBy(Math.exp(-e.deltaY*.001));
   };
   const contextMenu = (e: Event) => e.preventDefault();
   canvas.addEventListener("pointerdown", pointerDown);
@@ -408,6 +430,11 @@ export async function createScene(
     mobile = aspect < 0.8;
     camera.aspect=aspect;
     camera.updateProjectionMatrix();
+    if(cabinRoom){
+      cabinRoom.camera.aspect=aspect;
+      cabinRoom.camera.updateProjectionMatrix();
+      if(cabinPlayer&&lastState)view.render(lastState,0);
+    }
   };
   const observer = new ResizeObserver(resize);
   observer.observe(host);
@@ -418,7 +445,7 @@ export async function createScene(
   localOcclusion.bindMaterial(fadeMat);
   propFades.forEach(({materials})=>materials.forEach(({fade})=>localOcclusion.bindMaterial(fade)));
   const view = {
-    setAmbientOcclusion:(enabled:boolean)=>localOcclusion.setEnabled(enabled),
+    setAmbientOcclusion:(enabled:boolean)=>(cabinPlayer&&cabinRoom?cabinRoom.occlusion:localOcclusion).setEnabled(enabled),
     getAppearance:()=>({...appearance}),
     wildlifeAvailable:()=>wildlife.available(),
     wildlifeObserved:()=>wildlife.observedIds(),
@@ -432,7 +459,41 @@ export async function createScene(
     canvas,
     camera,
     renderer,
-    getYaw: () => yaw,
+    getYaw: () => cabinPlayer&&cabinRoom?cabinRoom.view.yaw:yaw,
+    cabinLampOn:()=>cabinRoom?.lampOn??false,
+    setCabinLamp:(value:boolean)=>cabinRoom?.setLamp(value),
+    cabinFade(value:number){fadeAmount=value;fade.style.opacity=String(value);},
+    prepareCabin(){
+      if(cabinRoom)return;
+      cabinRoom=createCabinRoom(models.templates.get('cabin')!);
+      cabinRoom.camera.aspect=camera.aspect;
+      cabinRoom.camera.updateProjectionMatrix();
+      cabinRoom.occlusion.setEnabled(auditParams.get('ao')!=='off');
+    },
+    enterCabin(pose:CabinPlayer,state:GameState){
+      if(!cabinRoom)return;
+      localOcclusion.unbind(player);
+      cabinRoom.scene.add(player);
+      characters.resetLocomotion();
+      cabinPlayer=pose;
+      cabinTime=0;
+      lastCabinLightAt=state.time;
+      cabinRoom.resetCamera();
+      cabinRoom.setLighting(light,appearance.hour);
+      canvas.setAttribute('aria-label','木屋室内');
+    },
+    leaveCabin(focusDoor=false){
+      if(!cabinPlayer||!cabinRoom)return;
+      cabinRoom.occlusion.unbind(player);
+      scene.add(player);
+      localOcclusion.bind(player);
+      characters.resetLocomotion();
+      cabinPlayer=null;
+      returnDoorView=focusDoor;
+      snapOutdoorTarget=focusDoor;
+      canvas.setAttribute('aria-label','森林之家可玩山谷');
+      river.invalidate();
+    },
     transferPoint(clientX:number,clientY:number,wood:boolean){
       const rect=canvas.getBoundingClientRect();
       if(clientX<rect.left||clientX>rect.right||clientY<rect.top||clientY>rect.bottom)return null;
@@ -452,14 +513,19 @@ export async function createScene(
     setWoodcraftDrop(value:boolean){woodDropMode=value;},
     setPlacement(value:PlacementDraft|null){placementMode=!!value;workshop.setPreview(value&&lastState?.inventory.instances?.find(i=>i.instanceId===value.instanceId)?.definitionId===SEAT_DEFINITION?value:null);housing.setPreview(value);broom.setPreview(value);},
     resetCamera() {
+      if(cabinPlayer&&cabinRoom){cabinRoom.resetCamera();return;}
       yaw = CAMERA.yaw;
       elevation = CAMERA.elevation;
       zoom = CAMERA.zoom;
     },
-    rotate(amount: number) {manualCamera();
+    rotate(amount: number) {
+      if(cabinPlayer&&cabinRoom){cabinRoom.orbit(-amount,0);return;}
+      manualCamera();
       yaw += amount;
     },
-    zoomBy(amount: number) {manualCamera();
+    zoomBy(amount: number) {
+      if(cabinPlayer&&cabinRoom){cabinRoom.zoomBy(amount);return;}
+      manualCamera();
       zoom = clamp(zoom * amount, CAMERA.minZoom, CAMERA.maxZoom);
     },
     setReading(value:boolean,seat?:SeatContact){if(value)broom.cancel();readingMode=value;readingFocus=value&&seat?seat:null;life.cancelMeal();mealFraming=false;characters.setReading(value,seat);life.setReading(value);view.inspectScene(value?'meal':null);if(value)yaw=(seat?.facing??DINING_SEAT.facing)-.55;},
@@ -484,6 +550,23 @@ export async function createScene(
     render(state: GameState, dt: number) {
       if (destroyed) return;
       lastState=state;
+      if(cabinPlayer&&cabinRoom){
+        cabinTime+=Math.max(0,Math.min(dt,.1));
+        if(Math.abs(state.time-lastCabinLightAt)>=6){
+          const conditions=weatherSnapshot(state);
+          const hour=Number.isFinite(auditHour)&&auditHour>=0&&auditHour<=24?auditHour:sceneAppearanceAt(state.time).hour;
+          cabinRoom.setLighting(sampleSkyLight(cabinSky,hour,conditions?.cloud??.12,conditions?.rain??0),hour);
+          lastCabinLightAt=state.time;
+        }
+        characters.updateInCabin(state,cabinPlayer,CABIN_ROOM.floorY,reducedMotion,cabinTime);
+        cabinRoom.occlusion.bind(player);
+        cabinRoom.update(state.workshop.upgrades.cabin?.level??0);
+        renderer.toneMappingExposure=cabinRoom.exposure;
+        renderer.info.reset();renderer.info.autoReset=false;
+        renderer.render(cabinRoom.scene,cabinRoom.camera);
+        return;
+      }
+      renderer.toneMappingExposure=light.recommendedExposure;
       elapsed = state.time;
       ambientTime += Math.max(0,Math.min(dt,.1));
       appearance={...sceneAppearanceAt(state.time),...(Number.isFinite(auditHour)&&auditHour>=0&&auditHour<=24?{hour:auditHour}:{}),...sceneOverrides};
@@ -533,7 +616,10 @@ export async function createScene(
       const viewYaw=yaw+Math.atan2(Math.sin(actionYaw-yaw),Math.cos(actionYaw-yaw))*blend;
       const viewElevation=THREE.MathUtils.lerp(elevation,guidedCraft?.44:sweeping?.40:climbing?THREE.MathUtils.lerp(.10,.28,ramp(actionTime,2,3.2)):.28,blend);
       const housingItem=state.inventory.instances?.find(i=>i.instanceId===state.selected);
-      const housingPoint=state.selected==='cabin'||housingItem?.definitionId===HOUSING.doorbell.definitionId&&housingItem.location.kind==='mounted'?HOUSING.doorbell.point:
+      const distanceToDoor=Math.hypot(x-CABIN_PORTAL.landing.x,z-CABIN_PORTAL.landing.z);
+      if(distanceToDoor>3||state.selected&&state.selected!=='cabin')returnDoorView=false;
+      const focusDoor=(state.selected==='cabin'||returnDoorView)&&distanceToDoor<4;
+      const housingPoint=focusDoor?CABIN_PORTAL.threshold:housingItem?.definitionId===HOUSING.doorbell.definitionId&&housingItem.location.kind==='mounted'?HOUSING.doorbell.point:
         state.selected===WORKBENCH.id?WORKBENCH:housingItem&&isHousingFurniture(housingItem.definitionId)&&housingItem.location.kind==='world'?housingItem.location:null;
       const focusHousing=!scenePreset&&!framed&&housingPoint&&Math.hypot(state.player.x-housingPoint.x,state.player.z-housingPoint.z)<6?housingPoint:null;
       const focusPlacement=placementMode&&!scenePreset&&!framed;
@@ -542,11 +628,13 @@ export async function createScene(
       const inspecting=characters.getInspection()!==null;
       desired.set(x,y+(inspecting?1.25:1.5),z).lerp(overview,inspecting?0:(mobile ? .12 : .75)*framing*clamp(1-(Math.hypot(x-HOME.x,z-HOME.z)-20)/50,0,1));
       if(focusHousing){
-        const focusHeight=focusHousing===HOUSING.doorbell.point?props.get('cabin')!.localToWorld(new THREE.Vector3(HOUSING.doorbell.anchor.x,HOUSING.doorbell.anchor.y,HOUSING.doorbell.anchor.z)).y:heightAt(focusHousing.x,focusHousing.z)+1.2;
+        const focusHeight=focusDoor?heightAt(CABIN.x,CABIN.z)+CABIN_EXTERIOR.threshold.y*CABIN_EXTERIOR.scale+1.6:
+          focusHousing===HOUSING.doorbell.point?props.get('cabin')!.localToWorld(new THREE.Vector3(HOUSING.doorbell.anchor.x,HOUSING.doorbell.anchor.y,HOUSING.doorbell.anchor.z)).y:heightAt(focusHousing.x,focusHousing.z)+1.2;
         desired.set(focusHousing.x,focusHeight,focusHousing.z);
       }
       if(focusPlacement)desired.set(x,y+.7,z);
-      if(inspecting)target.copy(desired);else if(scenePreset){target.fromArray(VIEWS[scenePreset].target);if(scenePreset==='altar')target.y=camp.foundation.levelY+1.9;if(scenePreset==='ritual')target.y=camp.foundation.levelY+2.5;}else target.lerp(desired,reducedMotion?1:1-Math.exp(-dt*5));
+      if(inspecting||snapOutdoorTarget)target.copy(desired);else if(scenePreset){target.fromArray(VIEWS[scenePreset].target);if(scenePreset==='altar')target.y=camp.foundation.levelY+1.9;if(scenePreset==='ritual')target.y=camp.foundation.levelY+2.5;}else target.lerp(desired,reducedMotion?1:1-Math.exp(-dt*5));
+      snapOutdoorTarget=false;
       if(scenePreset==='meal'&&readingFocus){target.set(readingFocus.x,heightAt(readingFocus.x,readingFocus.z)+1.1,readingFocus.z);}
       desired.copy(player.position).add(new THREE.Vector3(0,climbing?THREE.MathUtils.lerp(.85,2.3,ramp(actionTime,2,3.2)):1,0));target.lerp(desired,blend);if(mobile)target.y-=1.1*blend;
       if(guidedCraft&&framed)target.set(WORKBENCH.x,heightAt(WORKBENCH.x,WORKBENCH.z)+1.55,WORKBENCH.z);
@@ -635,12 +723,15 @@ export async function createScene(
       renderer.info.reset();renderer.info.autoReset=false;
       renderer.render(scene, camera);
       weather.renderLens(renderer);
+      outsideFrames++;
     },
     stats() {
       return {
         life:life.stats(),broom:broom.stats(),housing:housing.stats(),woodcraft:woodcraft.stats(),workshop:workshop.stats(),understory:understory.stats(),treeShapes:trees.reduce((counts,t)=>{const name=treeVisual(t).name;counts[name]=(counts[name]??0)+1;return counts;},{} as Record<string,number>),appearance:{...appearance},scenePreset,camp:camp.stats(),terrain:ground.geometry.userData,shaderErrors,
         resources: r.stats(),
-        occlusion:localOcclusion.stats(),
+        occlusion:cabinPlayer&&cabinRoom?cabinRoom.occlusion.stats():localOcclusion.stats(),
+        sceneSpace:{active:cabinPlayer?'cabin':'outdoor',outsideFrames,fade:fadeAmount,cabin:cabinRoom?.stats()??null,
+          outdoorCamera:{yaw,elevation,zoom,target:target.toArray()}},
         wildlife:wildlife.stats(),
         drawCalls: renderer.info.render.calls,
         triangles: renderer.info.render.triangles,
@@ -677,6 +768,7 @@ export async function createScene(
       canvas.removeEventListener("wheel", wheel);
       canvas.removeEventListener("contextmenu", contextMenu);
       pointers.clear();
+      cabinRoom?.dispose();
       localOcclusion.dispose();
       weather.dispose();
       woodcraft.dispose();
@@ -710,6 +802,7 @@ export async function createScene(
       renderer.dispose();
       renderer.forceContextLoss();
       canvas.remove();
+      fade.remove();
     },
   };
   return view;

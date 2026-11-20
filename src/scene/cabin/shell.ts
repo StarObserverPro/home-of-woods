@@ -1,35 +1,51 @@
-import {WOOD_TONES} from '../../../../src/content/wood-tones.ts';
+import {CABIN_AUDIT_ROOM, CABIN_ROOM, CABIN_WINDOW} from '../../content/cabin.ts';
+import type {CabinDimensions} from '../../content/cabin.ts';
+import {WOOD_TONES} from '../../content/wood-tones.ts';
 import * as THREE from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {Resources} from '../../../../src/scene/resources.ts';
-import {woodCoordinates,woodMaterial} from '../../../../src/scene/wood-grain.ts';
-import {CABIN} from '../content.ts';
-import {panelWithHoles,cleanMesh,toGeometry} from '../vendor/geometry-quality-kit/procedural-mesh.js';
-import {auditMeshData} from '../vendor/geometry-quality-kit/mesh-topology-audit.js';
+import type {Resources} from '../resources.ts';
+import {woodCoordinates,woodMaterial} from '../wood-grain.ts';
+import {panelWithHoles,cleanMesh,toGeometry} from './geometry-quality-kit/procedural-mesh.js';
+import {auditMeshData} from './geometry-quality-kit/mesh-topology-audit.js';
 
 export type CutMode='auto'|'stage'|'closed';
 export type WallSide='north'|'south'|'west'|'east';
 type Aperture={id:string;left:number;bottom:number;width:number;height:number;kind:'window'|'door'};
-type WallPlan={id:WallSide;length:number;origin:readonly[number,number,number];yaw:number;normal:readonly[number,number];openings:Aperture[]};
-const {width:W,depth:D,height:H,wallThickness:T}=CABIN;
+export type WallPlan={id:WallSide;length:number;origin:readonly[number,number,number];yaw:number;normal:readonly[number,number];openings:Aperture[]};
 export const SECTION_HEIGHT=.72;
-export const ROOF_PROFILE={rise:1.38,halfSpan:W/2+.38,thickness:.16,eaveOffset:.10} as const;
+export const ROOF_PROFILE={rise:1.38,halfSpan:CABIN_AUDIT_ROOM.width/2+.38,thickness:.16,eaveOffset:.10} as const;
 /** Outer roof plane, including thickness, shared with the stove flashing. */
 export function roofSurfaceAt(x:number){
   const {rise,halfSpan,thickness,eaveOffset}=ROOF_PROFILE;
   const angle=Math.atan2(rise,halfSpan);
-  return {height:H+rise+eaveOffset-Math.abs(x)*rise/halfSpan+thickness/(2*Math.cos(angle)),rotationZ:-Math.sign(x)*angle};
+  return {height:CABIN_AUDIT_ROOM.height+rise+eaveOffset-Math.abs(x)*rise/halfSpan+thickness/(2*Math.cos(angle)),rotationZ:-Math.sign(x)*angle};
 }
 /** Geometry, caps and window framing are compiled from these inspectable placements. */
-export const SHELL_PLAN:readonly WallPlan[]=[
-  {id:'north',length:W,origin:[-W/2,0,-D/2-T],yaw:0,normal:[0,-1],openings:[{id:'sleep-window',left:.65,bottom:1.36,width:1.8,height:1.30,kind:'window'}]},
-  {id:'south',length:W,origin:[-W/2,0,D/2],yaw:0,normal:[0,1],openings:[{id:'entrance',left:(W-CABIN.doorWidth)/2,bottom:0,width:CABIN.doorWidth,height:CABIN.doorHeight,kind:'door'}]},
-  {id:'west',length:D,origin:[-W/2,0,-D/2],yaw:-Math.PI/2,normal:[-1,0],openings:[{id:'table-window',left:3.65,bottom:1.48,width:1.8,height:1.18,kind:'window'}]},
-  {id:'east',length:D,origin:[W/2,0,D/2],yaw:Math.PI/2,normal:[1,0],openings:[]},
-];
+function wallPlan(room:CabinDimensions,windows:Partial<Record<WallSide,Aperture[]>>):WallPlan[]{
+  const {width:W,depth:D,wallThickness:T,doorWidth,doorHeight,doorX}=room;
+  const door:Aperture={id:'entrance',left:W/2+doorX-doorWidth/2,bottom:0,width:doorWidth,height:doorHeight,kind:'door'};
+  return [
+    {id:'north',length:W,origin:[-W/2,0,-D/2-T],yaw:0,normal:[0,-1],openings:windows.north??[]},
+    {id:'south',length:W,origin:[-W/2,0,D/2],yaw:0,normal:[0,1],openings:[door,...(windows.south??[])]},
+    {id:'west',length:D,origin:[-W/2,0,-D/2],yaw:-Math.PI/2,normal:[-1,0],openings:windows.west??[]},
+    {id:'east',length:D,origin:[W/2,0,D/2],yaw:Math.PI/2,normal:[1,0],openings:windows.east??[]},
+  ];
+}
+export const SHELL_PLAN=wallPlan(CABIN_AUDIT_ROOM,{
+  north:[{id:'sleep-window',left:.65,bottom:1.36,width:1.8,height:1.30,kind:'window'}],
+  west:[{id:'table-window',left:3.65,bottom:1.48,width:1.8,height:1.18,kind:'window'}],
+});
+export const CABIN_ROOM_PLAN=wallPlan(CABIN_ROOM,{
+  south:[{id:'front-window',left:CABIN_ROOM.width/2+CABIN_WINDOW.x-CABIN_WINDOW.width/2,
+    bottom:CABIN_WINDOW.bottom,width:CABIN_WINDOW.width,height:CABIN_WINDOW.height,kind:'window'}],
+});
 
-export function createCabinShell(r:Resources){
+export function createCabinShell(r:Resources,options:{room:CabinDimensions;plan:readonly WallPlan[];cutDoor:boolean;buildRoof:boolean}={
+  room:CABIN_AUDIT_ROOM,plan:SHELL_PLAN,cutDoor:false,buildRoof:true,
+}){
+  const {room:CABIN,plan:plans}=options;
+  const {width:W,depth:D,height:H,wallThickness:T,doorX}=CABIN;
   const root=new THREE.Group();root.name='cabin-shell';
   const wood=woodMaterial(r,WOOD_TONES.warm.face,.87),trim=woodMaterial(r,WOOD_TONES.dark.face,.84),pale=woodMaterial(r,WOOD_TONES.light.face,.84);
   const floorMaterial=woodMaterial(r,WOOD_TONES.neutral.face,.84);
@@ -46,9 +62,9 @@ export function createCabinShell(r:Resources){
   }
   const platform=new THREE.Group();platform.name='continuous-floor-and-porch';root.add(platform);
   box(platform,'room-foundation',[W+.50,.30,D+.50],[0,-.23,0],trim,.045);
-  box(platform,'porch-foundation',[CABIN.porchWidth,.30,CABIN.porchDepth],[0,-.23,D/2+CABIN.porchDepth/2],trim,.035);
+  box(platform,'porch-foundation',[CABIN.porchWidth,.30,CABIN.porchDepth],[doorX,-.23,D/2+CABIN.porchDepth/2],trim,.035);
   // Plank surfaces are exactly Y=0. A foundation below closes every seam.
-  function deck(name:string,width:number,depth:number,z:number){
+  function deck(name:string,width:number,depth:number,x:number,z:number){
     const boards:THREE.BufferGeometry[]=[];
     const rows=Math.ceil(depth/.32),pitch=depth/rows;
     for(let row=0;row<rows;row++){
@@ -56,15 +72,15 @@ export function createCabinShell(r:Resources){
       for(let part=0;part<ends.length-1;part++){
         const a=ends[part],b=ends[part+1];
         const g=woodCoordinates(new RoundedBoxGeometry(b-a-.008,.08,pitch-.006,1,.007),'board','x',`${name}:${row}:${part}`);
-        g.translate((a+b)/2,-.04,z-depth/2+(row+.5)*pitch);boards.push(g);
+        g.translate(x+(a+b)/2,-.04,z-depth/2+(row+.5)*pitch);boards.push(g);
       }
     }
     const merged=r.own(mergeGeometries(boards)!);boards.forEach(g=>g.dispose());mesh(platform,`${name}:boards`,merged,floorMaterial);
   }
-  deck('room',W,D,0);deck('porch',CABIN.porchWidth,CABIN.porchDepth,D/2+CABIN.porchDepth/2);
-  box(platform,'door-threshold',[CABIN.doorWidth,.05,.25],[0,-.025,D/2],pale,.008);
+  deck('room',W,D,0,0);deck('porch',CABIN.porchWidth,CABIN.porchDepth,doorX,D/2+CABIN.porchDepth/2);
+  const threshold=box(platform,'door-threshold',[CABIN.doorWidth,.05,.25],[doorX,-.025,D/2],pale,.008);
   for(const x of [-W/2+.25,W/2-.25])for(const z of [-D/2+.35,D/2-.35])box(root,`stone-support:${x}:${z}`,[.66,.23,.65],[x,-.47,z],stone,.09);
-  for(const x of [-CABIN.porchWidth/2+.55,CABIN.porchWidth/2-.55])box(root,`porch-support:${x}`,[.6,.23,.6],[x,-.47,D/2+CABIN.porchDepth-.4],stone,.07);
+  for(const x of [-CABIN.porchWidth/2+.55,CABIN.porchWidth/2-.55])box(root,`porch-support:${x}`,[.6,.23,.6],[doorX+x,-.47,D/2+CABIN.porchDepth-.4],stone,.07);
 
   const walls=new Map<WallSide,{upper:THREE.Group;cap:THREE.Group;cut:boolean}>();
   const apertureGeometry=(plan:WallPlan,y0:number,y1:number)=>{
@@ -76,12 +92,13 @@ export function createCabinShell(r:Resources){
     if(!report.ok)throw new Error(`Invalid cabin wall topology: ${plan.id}: ${JSON.stringify(report.issues)}`);
     const g=woodCoordinates(toGeometry(design),'board','x',`wall:${plan.id}`);g.translate(0,y0,0);return r.own(g);
   };
-  for(const plan of SHELL_PLAN){
+  const wallSolids:THREE.Mesh[]=[];
+  for(const plan of plans){
     const wall=new THREE.Group();wall.name=`wall:${plan.id}`;wall.position.set(...plan.origin);wall.rotation.y=plan.yaw;root.add(wall);
     const upper=new THREE.Group();upper.name=`wall:${plan.id}:upper`;wall.add(upper);
     const cap=new THREE.Group();cap.name=`wall:${plan.id}:section-cap`;wall.add(cap);
-    mesh(wall,`${plan.id}:solid-base`,apertureGeometry(plan,0,SECTION_HEIGHT),wood);
-    mesh(upper,`${plan.id}:solid-upper`,apertureGeometry(plan,SECTION_HEIGHT,H),wood);
+    wallSolids.push(mesh(wall,`${plan.id}:solid-base`,apertureGeometry(plan,0,SECTION_HEIGHT),wood),
+      mesh(upper,`${plan.id}:solid-upper`,apertureGeometry(plan,SECTION_HEIGHT,H),wood));
     // Cladding seams are narrow proud wood beads; they never fill an aperture.
     for(let y=.24;y<H;y+=.31){
       let intervals:[[number,number]]|[number,number][]=[[.02,plan.length-.02]];
@@ -95,7 +112,8 @@ export function createCabinShell(r:Resources){
         box(parent,`${plan.id}:seam:${y}:${lo}:outside`,[hi-lo,.013,.012],[(lo+hi)/2,y,-.005],trim,.003);
       }
     }
-    const intervals=plan.openings.some(a=>a.kind==='door')?[[0,(W-CABIN.doorWidth)/2],[(W+CABIN.doorWidth)/2,W]]:[[0,plan.length]];
+    const opening=plan.openings.find(a=>a.kind==='door');
+    const intervals=opening?[[0,opening.left],[opening.left+opening.width,plan.length]]:[[0,plan.length]];
     for(const [lo,hi] of intervals)box(cap,`${plan.id}:cut-surface:${lo}`,[hi-lo,.035,T+.04],[(lo+hi)/2,SECTION_HEIGHT+.008,T/2],pale,.007);
     for(const x of [.085,plan.length-.085]){
       box(wall,`${plan.id}:post-base:${x}`,[.18,SECTION_HEIGHT,.24],[x,SECTION_HEIGHT/2,T/2],trim,.012);
@@ -118,7 +136,7 @@ export function createCabinShell(r:Resources){
     walls.set(plan.id,{upper,cap,cut:false});
   }
 
-  const doorPivot=new THREE.Group();doorPivot.name='door-hinge';doorPivot.position.set(-CABIN.doorWidth/2,0,D/2+.04);root.add(doorPivot);
+  const doorPivot=new THREE.Group();doorPivot.name='door-hinge';doorPivot.position.set(doorX-CABIN.doorWidth/2,0,D/2+.04);root.add(doorPivot);
   doorPivot.userData.pickId='door';
   const leaf=box(doorPivot,'door-leaf',[CABIN.doorWidth-.035,CABIN.doorHeight-.025,CABIN.doorThickness],[(CABIN.doorWidth-.035)/2,(CABIN.doorHeight-.025)/2,0],trim,.02);
   leaf.userData.pickId='door';
@@ -128,22 +146,24 @@ export function createCabinShell(r:Resources){
   for(const y of [.45,2.45])box(doorPivot,`door-hinge-band:${y}`,[.08,.19,.11],[.025,y,0],iron,.015);
 
   const roof=new THREE.Group();roof.name='roof-removable';root.add(roof);
-  const {rise,halfSpan}=ROOF_PROFILE,slope=Math.atan2(rise,halfSpan),slopeLength=Math.hypot(rise,halfSpan);
-  for(const side of [-1,1]){
-    const piece=box(roof,`roof-panel:${side}`,[slopeLength,.16,D+.85],[side*halfSpan/2,H+rise/2+.10,0],roofMaterial,.025);
-    piece.rotation.z=-side*slope;
-    const fascia=box(roof,`eaves:${side}`,[.18,.24,D+.93],[side*halfSpan,H+.08,0],trim,.018);
-    fascia.castShadow=true;
-    for(const z of [-D/2-.36,D/2+.36]){
-      const edge=box(roof,`roof-rake:${side}:${z}`,[slopeLength+.06,.20,.16],[side*halfSpan/2,H+rise/2+.10,z],trim,.016);edge.rotation.z=-side*slope;
+  if(options.buildRoof){
+    const {rise,halfSpan}=ROOF_PROFILE,slope=Math.atan2(rise,halfSpan),slopeLength=Math.hypot(rise,halfSpan);
+    for(const side of [-1,1]){
+      const piece=box(roof,`roof-panel:${side}`,[slopeLength,.16,D+.85],[side*halfSpan/2,H+rise/2+.10,0],roofMaterial,.025);
+      piece.rotation.z=-side*slope;
+      const fascia=box(roof,`eaves:${side}`,[.18,.24,D+.93],[side*halfSpan,H+.08,0],trim,.018);
+      fascia.castShadow=true;
+      for(const z of [-D/2-.36,D/2+.36]){
+        const edge=box(roof,`roof-rake:${side}:${z}`,[slopeLength+.06,.20,.16],[side*halfSpan/2,H+rise/2+.10,z],trim,.016);edge.rotation.z=-side*slope;
+      }
     }
-  }
-  box(roof,'ridge-cap',[.18,.18,D+.96],[0,H+rise+.17,0],trim,.026);
-  for(const z of [-D/2+.18,0,D/2-.18])box(roof,`tie-beam:${z}`,[W,.20,.19],[0,H-.16,z],trim,.016);
-  for(const z of [-D/2-T/2,D/2+T/2]){
-    const outline=new THREE.Shape();outline.moveTo(-W/2,0);outline.lineTo(W/2,0);outline.lineTo(0,rise-.03);outline.closePath();
-    const g=r.own(woodCoordinates(new THREE.ExtrudeGeometry(outline,{depth:T,bevelEnabled:false,steps:1,curveSegments:1})));
-    const gable=mesh(roof,`closed-gable:${z}`,g,wood);gable.position.set(0,H,z-T/2);
+    box(roof,'ridge-cap',[.18,.18,D+.96],[0,H+rise+.17,0],trim,.026);
+    for(const z of [-D/2+.18,0,D/2-.18])box(roof,`tie-beam:${z}`,[W,.20,.19],[0,H-.16,z],trim,.016);
+    for(const z of [-D/2-T/2,D/2+T/2]){
+      const outline=new THREE.Shape();outline.moveTo(-W/2,0);outline.lineTo(W/2,0);outline.lineTo(0,rise-.03);outline.closePath();
+      const g=r.own(woodCoordinates(new THREE.ExtrudeGeometry(outline,{depth:T,bevelEnabled:false,steps:1,curveSegments:1})));
+      const gable=mesh(roof,`closed-gable:${z}`,g,wood);gable.position.set(0,H,z-T/2);
+    }
   }
   // Merge siblings only: walls, cut caps, window frames and the hinged door
   // retain their own visibility/motion roots. Wood coordinates stay authored
@@ -152,7 +172,7 @@ export function createCabinShell(r:Resources){
     for(const child of [...parent.children])if(!(child instanceof THREE.Mesh))batchStatic(child);
     const batches=new Map<string,THREE.Mesh<THREE.BufferGeometry,THREE.Material>[]>();
     for(const child of parent.children){
-      if(!(child instanceof THREE.Mesh)||Array.isArray(child.material)||child.material.transparent)continue;
+      if(!(child instanceof THREE.Mesh)||child===threshold||wallSolids.includes(child)||child===leaf||Array.isArray(child.material)||child.material.transparent)continue;
       const g:THREE.BufferGeometry=child.geometry;
       const attributes=Object.entries(g.attributes).map(([name,a])=>`${name}:${a.itemSize}:${a.normalized}:${a.array.constructor.name}`).sort().join('|');
       const key=[child.material.uuid,!!g.index,attributes,child.castShadow,child.receiveShadow,child.renderOrder,child.layers.mask,child.visible,child.userData.pickId??''].join(';');
@@ -181,12 +201,13 @@ export function createCabinShell(r:Resources){
   function setDoor(open:boolean,dt:number){const target=open?-Math.PI/2:0;angle=THREE.MathUtils.damp(angle,target,9,dt);if(Math.abs(angle-target)<.001)angle=target;doorPivot.rotation.y=angle;}
   function setCut(mode:CutMode,camera:THREE.Vector3){
     roof.visible=mode==='closed';
-    for(const plan of SHELL_PLAN){
+    for(const plan of plans){
       const state=walls.get(plan.id)!;
       const dot=camera.x*plan.normal[0]+camera.z*plan.normal[1];
       const cut=mode==='closed'?false:mode==='stage'?(plan.id==='south'||plan.id==='east'):(state.cut?dot>-.7:dot>.7);
       state.cut=cut;state.upper.visible=!cut;state.cap.visible=cut;
     }
+    if(options.cutDoor)doorPivot.visible=!walls.get('south')!.cut;
   }
-  return {root,roof,setDoor,setCut,geometryReports,stats:()=>({walls:4,apertures:SHELL_PLAN.reduce((n,w)=>n+w.openings.length,0),topology:geometryReports,doorAngle:angle,cutWalls:[...walls.entries()].filter(([,w])=>w.cut).map(([id])=>id)})};
+  return {root,roof,threshold,doorPivot,shadowSolids:[...wallSolids,leaf],setDoor,setCut,isCut:(side:WallSide)=>walls.get(side)!.cut,geometryReports,stats:()=>({walls:4,apertures:plans.reduce((n,w)=>n+w.openings.length,0),topology:geometryReports,doorAngle:angle,cutWalls:[...walls.entries()].filter(([,w])=>w.cut).map(([id])=>id)})};
 }

@@ -53,6 +53,13 @@ button:not(:disabled):hover { color: #fff3bd; }
   touch-action: none;
   display: block;
 }
+.scene-fade {
+  position: absolute;
+  inset: 0;
+  background: #24231e;
+  opacity: 0;
+  pointer-events: none;
+}
 .vignette {
   position: absolute;
   inset: 0;
