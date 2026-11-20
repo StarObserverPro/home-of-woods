@@ -1,0 +1,13 @@
+@layer how-timber {
+  .game-shell[data-how-ui] .neighbour-controls {display:grid;gap:var(--how-space-3);}
+  .game-shell[data-how-ui] .neighbour-controls>p {margin:0;}
+  .game-shell[data-how-ui] .neighbour-conversation {display:grid;gap:var(--how-space-3);max-height:220px;overflow:auto;overflow-wrap:anywhere;padding:var(--how-space-3);background:var(--how-recess);}
+  .game-shell[data-how-ui] .neighbour-conversation p {display:grid;grid-template-columns:36px minmax(0,1fr);gap:var(--how-space-2);margin:0;}
+  .game-shell[data-how-ui] .neighbour-player-line {color:var(--how-muted);}
+  .game-shell[data-how-ui] .neighbour-input {display:grid;gap:var(--how-space-2);}
+  .game-shell[data-how-ui] .neighbour-input>div {display:flex;gap:var(--how-space-2);}
+  .game-shell[data-how-ui] .neighbour-input input {flex:1;min-width:0;min-height:var(--how-target);padding:var(--how-space-2) var(--how-space-3);font:inherit;}
+  .game-shell[data-how-ui] .neighbour-controls .tree-actions {gap:var(--how-space-2);margin:0;}
+  .game-shell[data-how-ui] .neighbour-farewell {padding-top:var(--how-space-2);}
+  .game-shell[data-how-ui] .neighbour-notice {pointer-events:auto;min-height:var(--how-target);text-align:left;padding:var(--how-space-2) var(--how-space-3);}
+}

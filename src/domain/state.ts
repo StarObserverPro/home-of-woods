@@ -1,4 +1,6 @@
 import { starterWardrobeItems } from '../content/wardrobe.ts';
+import {createNpcs} from './npcs.ts';
+import type {NpcsState} from './npcs.ts';
 import type {WildlifeState} from './wildlife.ts';
 import {createWoodcraft} from './woodcraft.ts';
 import type {WoodcraftState} from './woodcraft.ts';
@@ -28,6 +30,7 @@ import type {FoodState} from './food.ts';
 import {createWeather} from './weather.ts';
 import type {WeatherState} from './weather.ts';
 export type GameState = {
+  npcs?:NpcsState;
   /** Decorative encounter state is session-local, not an inventory or save slice. */
   wildlife?: WildlifeState;
   weather?: WeatherState;
@@ -50,6 +53,7 @@ export type GameState = {
 };
 export function createState(trees:Tree[]=makeTrees()): GameState {
   return {
+    npcs:createNpcs(),
     weather:createWeather(),
     woodcraft:createWoodcraft(),
     ritual: null,
