@@ -67,7 +67,7 @@ test('switching map lighting restores persistent actor material hooks and keeps 
     crown.userData.vegetationPart='crown';crown.castShadow=true;scene.add(crown);
     const physical:ExpeditionCrownVolume={id:'local-crown',center:[0,12,0],halfSize:[3,5,4],radius:Math.hypot(3,5,4)};
     const lighting=createForestExpeditionLighting(owner,{renderer,sun,scene,layout,canopies:[physical],sunDirection:[0,1,0]});
-    assert.equal(crown.castShadow,false);assert.equal(actor.castShadow,true);
+    assert.equal(crown.castShadow,false);assert.equal(actor.castShadow,true);assert.equal(actor.customDepthMaterial,undefined,'characters retain ordinary opaque solid depth');
     lighting.update({focus:[0,0,0],dt:0,camera,viewportHeight:800,feet:[]});
     const before=lighting.stats();assert.equal(before.shadows.sourceCount,1);assert.equal(before.shadows.bakes,1);
     const standard=THREE.ShaderLib.standard;
@@ -81,4 +81,57 @@ test('switching map lighting restores persistent actor material hooks and keeps 
     scene.remove(crown);owner.dispose();assert.equal(owner.stats().extras,0);
   }
   actorGeometry.dispose();actorMaterial.dispose();sun.shadow.dispose();
+});
+
+test('high wooden branches use their actual per-tree base for shared fading while grounded roots and props stay solid',()=>{
+  const layout=createExpeditionLayout('upper'),owner=new Resources(),scene=new THREE.Scene(),sun=new THREE.DirectionalLight();
+  const vegetation=createExpeditionVegetation(owner,{heightAt:(x,z)=>expeditionHeightAt(layout.id,x,z)});
+  const members=[layout.trees.find(tree=>tree.landmark)!,layout.trees.find(tree=>!tree.landmark)!];
+  const byId=new Map(members.map(tree=>[tree.id,tree]));
+  const trees=vegetation.batchTrees(members,'mid');scene.add(trees,sun,sun.target);scene.updateMatrixWorld(true);
+  const trunks:THREE.InstancedMesh[]=[],roots:THREE.Mesh[]=[],crowns:THREE.Mesh[]=[];
+  trees.traverse(object=>{
+    if(!(object instanceof THREE.Mesh))return;
+    if(object.userData.vegetationPart==='trunk')trunks.push(object as THREE.InstancedMesh);
+    if(object.userData.vegetationPart==='roots')roots.push(object);
+    if(object.userData.vegetationPart==='crown')crowns.push(object);
+  });
+  assert.ok(trunks.length>0&&roots.length>0&&crowns.length>0);
+  const vertex=new THREE.Vector3(),base=new THREE.Vector3(),instance=new THREE.Matrix4();
+  for(const mesh of trunks){
+    assert.ok(mesh instanceof THREE.InstancedMesh);
+    for(let i=0;i<mesh.count;i++){
+      const tree=byId.get(mesh.userData.entityIds[i])!;mesh.getMatrixAt(i,instance);
+      const world=mesh.matrixWorld.clone().multiply(instance);
+      base.set(0,0,0).applyMatrix4(world);
+      assert.ok(base.distanceTo(new THREE.Vector3(tree.x,tree.y,tree.z))<1e-4,'the shared shader origin is the real tree base, not a branch attachment');
+      const positions=mesh.geometry.getAttribute('position');let tallest=0;
+      for(let j=0;j<positions.count;j++){
+        vertex.fromBufferAttribute(positions,j).applyMatrix4(world);
+        const relative=vertex.y-base.y;
+        assert.ok(Math.abs(relative-positions.getY(j)*tree.height/10)<1e-4,'height remains correct under instance world scale');
+        tallest=Math.max(tallest,relative);
+      }
+      assert.ok(tallest>tree.height*.3,'the mesh actually includes the high branch structure being faded');
+    }
+  }
+  // A prop sharing the visible bark material must keep its normal opaque depth.
+  const prop=new THREE.Mesh(owner.own(new THREE.BoxGeometry()),trunks[0].material);prop.castShadow=true;scene.add(prop);
+  const renderer={shadowMap:{enabled:false,type:THREE.BasicShadowMap}} as unknown as THREE.WebGLRenderer;
+  const lighting=createForestExpeditionLighting(owner,{renderer,sun,scene,layout,canopies:trees.userData.crownVolumes,sunDirection:[0,1,0]});
+  for(const mesh of trunks){
+    assert.ok(mesh.customDepthMaterial instanceof THREE.MeshDepthMaterial);
+    assert.equal(mesh.customDepthMaterial.alphaHash,true,'high branch depth consumes the shared height fade');
+    const shader={uniforms:{},vertexShader:THREE.ShaderLib.depth.vertexShader,fragmentShader:THREE.ShaderLib.depth.fragmentShader};
+    mesh.customDepthMaterial.onBeforeCompile(shader,renderer);
+    assert.match(shader.vertexShader,/vHowTreeHeight/);
+    assert.match(shader.fragmentShader,/vHowTreeHeight/);
+    assert.match(shader.fragmentShader,/#include <alphahash_fragment>/,'coverage uses the built-in depth alpha hash');
+  }
+  assert.equal(new Set(trunks.map(mesh=>mesh.customDepthMaterial)).size,1,'all tree instances share one faded solid depth material');
+  assert.ok(crowns.every(mesh=>!mesh.castShadow));
+  assert.ok(roots.every(mesh=>mesh.castShadow&&mesh.customDepthMaterial===undefined),'world-baked grounded roots never use the merged mesh origin for fading');
+  assert.equal(prop.castShadow,true);assert.equal(prop.customDepthMaterial,undefined);
+  lighting.dispose();assert.ok(trunks.every(mesh=>mesh.customDepthMaterial===undefined&&mesh.castShadow));
+  vegetation.dispose();owner.dispose();sun.shadow.dispose();
 });

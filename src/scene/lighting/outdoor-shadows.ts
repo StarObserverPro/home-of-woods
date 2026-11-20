@@ -7,7 +7,7 @@ import type {ShadowBakeRequest,ShadowBakeResponse,ShadowBakeWorker} from '../../
 
 export type OutdoorShadowOptions={renderer:THREE.WebGLRenderer;sun:THREE.DirectionalLight;bounds:ShadowBounds;workerFactory?:()=>ShadowBakeWorker};
 export type OutdoorShadowUpdate={focus:ShadowPoint;sunDirection:ShadowPoint;dt:number;night?:number};
-export type TreeShadowKind='solid-weight'|'crown'|'solid';
+export type TreeShadowKind='solid-weight'|'tree-solid'|'crown'|'solid';
 const P=SHADOW_PROFILES.outdoor,C=P.canopy,KEY=':how-outdoor-shadow-v1';
 
 /**
@@ -73,7 +73,7 @@ export function createOutdoorShadows(resources:Resources,options:OutdoorShadowOp
   const materials=new Map<THREE.Material,Binding>();
   type TreeBinding={kind:TreeShadowKind;castShadow:boolean;previous:THREE.Material|undefined;installed:THREE.Material|undefined;onGeometryDispose:()=>void};
   const trees=new Map<THREE.Mesh,TreeBinding>();
-  const depthVariants=new Map<THREE.Material|undefined,THREE.Material>();
+  const depthVariants=new Map<string,THREE.Material>();
   const fragment=`
     varying vec3 vHowCrownPosition;
     uniform highp sampler3D howCrownField;
@@ -132,20 +132,44 @@ export function createOutdoorShadows(resources:Resources,options:OutdoorShadowOp
     if(mesh.customDepthMaterial===old.installed)mesh.customDepthMaterial=old.previous;
     mesh.castShadow=old.castShadow;trees.delete(mesh);
   }
-  function solidDepth(previous:THREE.Material|undefined){
-    let depth=depthVariants.get(previous);if(depth)return depth;
-    if(previous&&!(previous instanceof THREE.MeshDepthMaterial))throw new Error('Solid-weight shadows require a standard depth material');
+  function treeDepth(previous:THREE.Material|undefined,weighted:boolean){
+    const variantKey=`${previous?.uuid??'default'}:${weighted?'weighted':'tree'}`;
+    let depth=depthVariants.get(variantKey);if(depth)return depth;
+    if(previous&&!(previous instanceof THREE.MeshDepthMaterial))throw new Error('Standing tree shadows require a standard depth material');
     depth=previous?.clone()??new THREE.MeshDepthMaterial();
+    // Coverage hashing is confined to the shadow depth pass. The visible trunk stays opaque.
+    depth.alphaHash=true;
     const compile=previous?.onBeforeCompile??depth.onBeforeCompile,key=previous?.customProgramCacheKey()??depth.customProgramCacheKey();
     depth.onBeforeCompile=function(shader,glRenderer){
       compile.call(this,shader,glRenderer);
-      if(!shader.vertexShader.includes('#include <begin_vertex>')||!shader.fragmentShader.includes('#include <clipping_planes_fragment>'))throw new Error('Solid tree depth shader anchors missing');
-      shader.vertexShader='attribute float shadowSolidWeight;varying float vHowSolidWeight;\n'+shader.vertexShader;
-      shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvHowSolidWeight=shadowSolidWeight;');
-      shader.fragmentShader='varying float vHowSolidWeight;\n'+shader.fragmentShader;
-      shader.fragmentShader=shader.fragmentShader.replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\nif(vHowSolidWeight<.5)discard;');
+      if(!shader.vertexShader.includes('#include <begin_vertex>')||!shader.vertexShader.includes('#include <project_vertex>')||!shader.fragmentShader.includes('#include <clipping_planes_fragment>')||!shader.fragmentShader.includes('#include <alphahash_fragment>'))throw new Error('Standing tree depth shader anchors missing');
+      shader.vertexShader='varying float vHowTreeHeight;\n'+(weighted?'attribute float shadowSolidWeight;varying float vHowSolidWeight;\n':'')+shader.vertexShader;
+      if(weighted)shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvHowSolidWeight=shadowSolidWeight;');
+      shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>',`#include <project_vertex>
+        vec4 howTreeVertex=vec4(transformed,1.);
+        vec4 howTreeRoot=vec4(0.,0.,0.,1.);
+        #ifdef USE_BATCHING
+          howTreeVertex=batchingMatrix*howTreeVertex;
+          howTreeRoot=batchingMatrix*howTreeRoot;
+        #endif
+        #ifdef USE_INSTANCING
+          howTreeVertex=instanceMatrix*howTreeVertex;
+          howTreeRoot=instanceMatrix*howTreeRoot;
+        #endif
+        howTreeVertex=modelMatrix*howTreeVertex;
+        howTreeRoot=modelMatrix*howTreeRoot;
+        vHowTreeHeight=max(0.,howTreeVertex.y-howTreeRoot.y);
+        #ifdef USE_ALPHAHASH
+          vPosition=howTreeVertex.xyz;
+        #endif`);
+      shader.fragmentShader='varying float vHowTreeHeight;\n'+(weighted?'varying float vHowSolidWeight;\n':'')+shader.fragmentShader;
+      if(weighted)shader.fragmentShader=shader.fragmentShader.replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\nif(vHowSolidWeight<.5)discard;');
+      shader.fragmentShader=shader.fragmentShader.replace('#include <alphahash_fragment>',`
+        // Visible camera-fade opacity must never thin physical tree shadows.
+        diffuseColor.a = mix(1.,${P.treeHeightFade.minimumCoverage.toFixed(3)},smoothstep(${P.treeHeightFade.start.toFixed(3)},${P.treeHeightFade.end.toFixed(3)},max(0.,vHowTreeHeight)));
+        #include <alphahash_fragment>`);
     };
-    depth.customProgramCacheKey=()=>key+':how-solid-tree-depth-v1';depth.needsUpdate=true;resources.own(depth);depthVariants.set(previous,depth);return depth;
+    depth.customProgramCacheKey=()=>key+`:how-tree-height-depth-v2:${weighted?'weighted':'tree'}`;depth.needsUpdate=true;resources.own(depth);depthVariants.set(variantKey,depth);return depth;
   }
   function configureTreeDepth(mesh:THREE.Mesh,kind:TreeShadowKind){
     if(disposed)return;
@@ -153,7 +177,7 @@ export function createOutdoorShadows(resources:Resources,options:OutdoorShadowOp
     releaseTree(mesh);
     if(kind==='solid-weight'&&!mesh.geometry.hasAttribute('shadowSolidWeight'))throw new Error(`Tree has no shadowSolidWeight: ${mesh.name}`);
     const previous=mesh.customDepthMaterial,castShadow=mesh.castShadow;
-    const installed=kind==='solid-weight'?solidDepth(previous):previous;
+    const installed=kind==='solid-weight'||kind==='tree-solid'?treeDepth(previous,kind==='solid-weight'):previous;
     mesh.customDepthMaterial=installed;mesh.castShadow=kind!=='crown';
     const onGeometryDispose=()=>releaseTree(mesh);trees.set(mesh,{kind,previous,installed,castShadow,onGeometryDispose});mesh.geometry.addEventListener('dispose',onGeometryDispose);
   }
@@ -197,7 +221,7 @@ export function createOutdoorShadows(resources:Resources,options:OutdoorShadowOp
   }
   return {bind,bindMaterial,configureTreeDepth,setCanopies,update,
     setEnabled(value:boolean){enabled=value;uniforms.howCrownEnabled.value=value?1:0;},
-    stats(){return {version:SHADOW_PROFILES.version,enabled,disposed,mapCount:1,mapSize:P.mapSize,span:P.span,worldUnitsPerTexel:texel,normalBias:sun.shadow.normalBias,solidSoftness:P.solidSoftness,fieldSize:[...C.size],fieldBytes:texture.image.data?.byteLength??0,fieldBounds:bounds,sourceCount:field?.sourceCount??0,touchedCells:field?.touchedCells??0,bakes,lastBakeMs:Math.round(lastBakeMs*100)/100,meanBakeMs:completedBuilds?Math.round(totalBakeMs/completedBuilds*100)/100:0,totalBakeMs:Math.round(totalBakeMs*100)/100,cpuMsPerSimulationSecond:elapsedSeconds?Math.round(totalBakeMs/elapsedSeconds*100)/100:0,worker:!!worker,inflight:inflight?1:0,pending:pending?1:0,ready:!!ready,revision,committedRevision,submitted,discarded,workerErrors,fallbackRefreshSeconds:C.fallbackRefreshSeconds,materials:materials.size,treeDepthBindings:trees.size,depthMaterials:depthVariants.size,extraRenderPasses:0,extraDrawCalls:0,fieldLookupsPerPrimaryLight:1};},
+    stats(){return {version:SHADOW_PROFILES.version,enabled,disposed,mapCount:1,mapSize:P.mapSize,span:P.span,worldUnitsPerTexel:texel,normalBias:sun.shadow.normalBias,solidSoftness:P.solidSoftness,treeHeightFade:{...P.treeHeightFade},fieldSize:[...C.size],fieldBytes:texture.image.data?.byteLength??0,fieldBounds:bounds,sourceCount:field?.sourceCount??0,touchedCells:field?.touchedCells??0,bakes,lastBakeMs:Math.round(lastBakeMs*100)/100,meanBakeMs:completedBuilds?Math.round(totalBakeMs/completedBuilds*100)/100:0,totalBakeMs:Math.round(totalBakeMs*100)/100,cpuMsPerSimulationSecond:elapsedSeconds?Math.round(totalBakeMs/elapsedSeconds*100)/100:0,worker:!!worker,inflight:inflight?1:0,pending:pending?1:0,ready:!!ready,revision,committedRevision,submitted,discarded,workerErrors,fallbackRefreshSeconds:C.fallbackRefreshSeconds,materials:materials.size,treeDepthBindings:trees.size,depthMaterials:depthVariants.size,extraRenderPasses:0,extraDrawCalls:0,fieldLookupsPerPrimaryLight:1};},
     dispose(){
       if(disposed)return;disposed=true;
       stopWorker();

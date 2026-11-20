@@ -51,11 +51,21 @@ export function createForestExpeditionLighting(resources:Resources,options:Optio
   const input=forestCanopyInputs(canopies,surfaceAt),bounds=forestLightingBounds(layout,canopies);
   // Keep wrapper installation/removal in the same order in every scene.
   const shadows=createOutdoorShadows(resources,{renderer,sun,bounds});
+  function bindTreeDepth(root:THREE.Object3D){
+    root.traverse(object=>{
+      if(!(object instanceof THREE.Mesh))return;
+      const part=object.userData.vegetationPart;
+      if(part==='crown')shadows.configureTreeDepth(object,'crown');
+      // These templates contain the complete wooden tree in root-local coordinates;
+      // each instance matrix supplies the actual tree base and world scale.
+      else if(part==='trunk'||part==='trunk-roots')shadows.configureTreeDepth(object,'tree-solid');
+      // Batched terrain-conforming roots have already been merged in world space.
+      // Their shared mesh origin is not a tree base, so they retain ordinary depth.
+    });
+  }
   shadows.setCanopies(input.direct);
   shadows.bind(scene);
-  scene.traverse(object=>{
-    if(object instanceof THREE.Mesh&&object.userData.vegetationPart==='crown')shadows.configureTreeDepth(object,'crown');
-  });
+  bindTreeDepth(scene);
   const ambient=createAmbientOcclusion(resources);
   const coreBounds={minX:bounds.min[0],maxX:bounds.max[0],minZ:bounds.min[2],maxZ:bounds.max[2]};
   const outerBounds={minX:coreBounds.minX-12,maxX:coreBounds.maxX+12,minZ:coreBounds.minZ-12,maxZ:coreBounds.maxZ+12};
@@ -66,7 +76,7 @@ export function createForestExpeditionLighting(resources:Resources,options:Optio
   const contact=createCharacterContactShadows(resources,{surfaceAt});
   let disposed=false;
   return {
-    bind(root:THREE.Object3D){if(!disposed){shadows.bind(root);ambient.bind(root);}},
+    bind(root:THREE.Object3D){if(!disposed){bindTreeDepth(root);shadows.bind(root);ambient.bind(root);}},
     update(frame:{focus:ShadowPoint;dt:number;camera:THREE.Camera;viewportHeight:number;feet:readonly CharacterFootContact[]}){
       if(disposed)return;
       shadows.update({focus:frame.focus,sunDirection,dt:frame.dt,night:0});

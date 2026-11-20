@@ -30,11 +30,13 @@
 
 ## 本轮验证与边界
 
-- `node --experimental-strip-types --test tests/foot-contact-anchors.test.ts tests/forest-expedition*.test.ts`：24/24通过，包括原17项林地回归及7项新增检查。
-- 接入 PR41 的完整共享基础后，林地与核心阴影、局部遮蔽、流式树、真实脚底及Worker规则组合验证61/61通过。
+- `node --experimental-strip-types --test tests/foot-contact-anchors.test.ts tests/forest-expedition*.test.ts`：25/25通过，包括原17项林地回归及8项新增检查。
+- 接入 PR41 的完整共享基础后，林地与核心阴影、局部遮蔽、流式树、真实脚底及Worker规则组合验证64/64通过。
 - 实际三图冠层采样点落在光场输入包围体内；相机淡化不改变物理输入；高而窄的树冠不会因三维包围球过高变成巨大地面遮蔽。
 - 实际角色 GLB 脚底能随行走动画、父变换、整体缩放移动；两套角色骨架独立，没有皮肤数据时不造接触。
 - 两次地图照明创建/退出恢复长期角色材质的原始包装；镜头/玩家位移不重复烘焙静态冠场，冠层与实心物体投影分工保持明确。
 - `npm run build` 通过；保留既有大分块提示。未为阴影修改资源/库存规则，未运行与本轮无关的全量历史测试。
 
 本轮完成了代码、实际几何与 shader 插入点检查。`Shared Shadow Rules Review` 会在本分支追加实际林地入口、shader错误计数及近景截图；GPU结果以工作流产物为准，不能由CPU检查替代。三图完整运动巡查和实体手机帧率仍需后续试玩。本次只更新审阅分支，不合并或部署。
+
+首轮远端[工作流44671124038](https://github.com/StarObserverPro/home-of-woods/actions/runs/44671124038)通过，林地页面和shader错误为0，实际近景已目视检查。发现高处枝架仍偏深后，追加共享 `tree-solid` 高度减淡：仅作用于以每棵树根为原点的 `trunk/trunk-roots`；已烘入世界坐标的贴地根系、人物和普通物品维持实影。后续工作流同时检查高度渐淡的实际像素差异与真实浏览器Worker往返。
