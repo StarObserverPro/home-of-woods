@@ -7,7 +7,7 @@ The cabin uses `panelWithHoles`, `cleanMesh`, `toGeometry` and `auditMeshData` t
 Run the independent upstream geometry checks from the repository root:
 
 ```sh
-node sandbox/cabin-interior/src/vendor/geometry-quality-kit/selftest.js
+node src/scene/cabin/geometry-quality-kit/selftest.js
 ```
 
 Adoption check: 171/171 assertions passed. These checks establish mesh invariants, not visual acceptance of the cabin.

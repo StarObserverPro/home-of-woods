@@ -208,7 +208,7 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 
 [独立资产检查](../tools/verify-cabin-assets.mjs)校验五件原始 glTF/二进制、运行时 GLB、未修改的 PNG 以及来源/分发两份完整 CC0 通知的 SHA-256，并检查 GLB 结构、共享本地图集、原始网格二进制与 accessor 不变；许可 SHA 同存 manifest。该命令已在本轮资产上执行通过。构建、实机画面与连续交互的真实结果见本轮 scope；资产完整性检查本身不构成视觉通过声明。
 
-围护采用 Scott Sun 的 [Threejs-Awesome-Graphics-Agent-Skills](https://github.com/scottstts/Threejs-Awesome-Graphics-Agent-Skills) 中 `threejs-procedural-geometry` 附带的完整 `geometry-quality-kit`（6 个 JS 模块，MIT，Copyright 2026 Scott Sun），来自 2026-11-12 的已安装 skill 快照。工具文件与许可保存在 [vendor 目录](../sandbox/cabin-interior/src/vendor/geometry-quality-kit/README.md)。本项目用 `panelWithHoles` / `cleanMesh` / `toGeometry` 生成有实际门窗洞的厚墙，并运行 `auditMeshData` 检查闭合拓扑；墙体计划、分段、材质、窗框、门和屋顶为本项目组合逻辑。工具自检 171/171 通过；不将 MIT 工具标为本项目原创或 CC0。
+围护采用 Scott Sun 的 [Threejs-Awesome-Graphics-Agent-Skills](https://github.com/scottstts/Threejs-Awesome-Graphics-Agent-Skills) 中 `threejs-procedural-geometry` 附带的完整 `geometry-quality-kit`（6 个 JS 模块，MIT，Copyright 2026 Scott Sun），来自 2026-11-12 的已安装 skill 快照。工具文件与许可保存在[共享几何目录](../src/scene/cabin/geometry-quality-kit/README.md)。本项目用 `panelWithHoles` / `cleanMesh` / `toGeometry` 生成有实际门窗洞的厚墙，并运行 `auditMeshData` 检查闭合拓扑。营地内景和展台共用围护生成器，各自提供墙面与开口数据。营地壁灯为原创程序几何，屋顶遮光沿用原屋 GLB 和修缮板。
 
 ## 程序树皮与可采树杈（PR23/28/33 整合）
 

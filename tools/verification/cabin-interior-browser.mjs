@@ -5,6 +5,7 @@ import path from 'node:path';
 import { spawn, execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { chromium } from 'playwright';
+import { verifyCabinPortal } from './cabin-portal-browser.mjs';
 
 const cwd = process.cwd();
 const out = path.resolve(process.env.CABIN_EVIDENCE_DIR ?? '/tmp/how-cabin-evidence');
@@ -186,6 +187,8 @@ try {
   await waitForPreview();
   phase = 'launch Chromium';
   browser = await chromium.launch({ headless: true, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'] });
+  phase = 'main game cabin portal';
+  await verifyCabinPortal(browser, origin, out, report);
   report.browser = await browser.version();
   const desktop = await setupContext({ viewport: { width: 1440, height: 960 } }, 'desktop');
   const page = desktop.page;
