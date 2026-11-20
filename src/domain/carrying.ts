@@ -7,6 +7,8 @@ import type {CarryMethod,CarryProfile} from '../content/carrying.ts';
 import {CAMP_PROPS} from '../content/scene-props.ts';
 import type {Point} from '../content/world.ts';
 import {ITEM_CATALOG} from './item-catalog.ts';
+import type {ItemCatalog} from './item-catalog.ts';
+import type {CarrySize} from '../content/carrying.ts';
 import {inventoryTransaction,stackIdentity,stackKey,recognizedStack} from './inventory.ts';
 import type {InventoryState,InventoryStack,StackIdentity} from './inventory.ts';
 import {carryMethod,isCarried,isStored,transportLocation} from './transport-location.ts';
@@ -16,13 +18,14 @@ import {canStand,findPath} from './navigation.ts';
 import type {Collider} from '../world/layout.ts';
 
 const ramp=(n:number,soft:number,hard:number)=>Math.max(0,Math.min(1,(n-soft)/(hard-soft)));
-export function carryingLoad(stacks:readonly InventoryStack[], profile:CarryProfile=CARRY_PROFILES.hands, terrainEffort=1) {
+/** Optional registries let a mounted module use the same load/speed rules for its items. */
+export function carryingLoad(stacks:readonly InventoryStack[], profile:CarryProfile=CARRY_PROFILES.hands, terrainEffort=1, registry?:{sizes:Readonly<Record<string,CarrySize>>;catalog:ItemCatalog}) {
   if(!Number.isFinite(terrainEffort)||terrainEffort<=0)throw new Error('Invalid transport effort');
   let weight=profile.tare,bulk=0,unknown=false,unsupported=false,bundled=false;
   for(const s of stacks){
     if(!Number.isSafeInteger(s.quantity)||s.quantity<0)throw new Error('Invalid carrying quantity');
-    const size=CARRY_ITEMS[s.itemId];
-    if(!size||!recognizedStack(s)){unknown=true;continue;}
+    const size=(registry?.sizes??CARRY_ITEMS)[s.itemId];
+    if(!size||!recognizedStack(s,registry?.catalog??ITEM_CATALOG)){unknown=true;continue;}
     unsupported ||= profile.excludes.includes(s.itemId);
     weight+=s.quantity*size.weight;
     const factor=profile.bundle?size.bundleFactor:1;

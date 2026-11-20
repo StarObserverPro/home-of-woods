@@ -228,3 +228,19 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 ## Timber UI 1（2026-11-13）
 
 `src/ui/timber/surface.ts` 为本项目独立编写的程序化SVG表面：纵剖、横截、树皮、刨花和凹槽。输入为语义、尺寸和seed，无摄影贴图、外部图片、字体或第三方生成代码。生成器和运行时缓存负责派生资源，不产生需要逐张登记的图片文件；正式交付为源码。保留原R1图标授权与来源不变。旧R2木纹资源保留历史引用，当前活跃UI不再拉伸它们。外部设计研究仅借方法，来源与Saltline镜像许可边界见 [研究记录](UI_DESIGN_REFERENCES.md)。
+
+## 三类林地代表样区（2026-11-19）
+
+本轮新增内容为项目原创程序几何与林地布局，复用部分继续保留上文既有来源及许可；没有新增外部模型包、摄影纹理或许可证声明。入口与实现边界见 [林地说明](FOREST_EXPEDITIONS.md)。
+
+| 内容 | 来源、修整与用途 | 运行入口与所有者 |
+| --- | --- | --- |
+| 十五种树/灌木形态 | 红杉式巨木、铁杉、云杉、冷杉、松、侧柏式针叶树、栎、枫、山毛榉、桦、杨、榆、白蜡、榛丛与果丛；本项目程序几何。松、云杉、冷杉、栎、桦、杨、榆借用既有 `forest-shapes.js` 的冠形与枝级，其余形态补充同一块面、枝干和色板语言；没有逐片树叶或外部叶卡。 | `scene/expedition-vegetation.ts`、`expedition-vegetation-geometry.ts`；固定变体、干根与冠层分离、实例批次和冠层遮挡权重由植被所有者管理；原点在树干落地点，+Y 向上，世界高度来自布局。 |
+| 七种林下地物 | 倒木、育苗倒木、翻起根盘、横枝苔帘、蕨、苔石、灌丛；本项目程序生成。倒木端面、幼苗根与承托枝为可见几何，奖励仍由独立资源来源管理。 | `scene/expedition-vegetation-features.ts`；尺寸与稳定变体由调用者传入，共享几何/材质通过植被及场景 `Resources` 释放。 |
+| 玩家与动作复用 | 沿用已登记 `public/assets/characters/player.glb`、`motions.glb`，源为上文 KayKit Adventurers 2.0 / Character Animations 1.1，保留原 CC0 通知与修整记录；本轮不引入新的角色文件或改写其许可。 | `scene/expedition-actor.ts`；沿用 `CHARACTER.worldScale`，待机、行走、跑步与拾取由宿主时钟驱动，骨架与资源归场景 owner。 |
+| 菌簇与枝料复用 | 沿用已登记 `public/assets/gathering/mushrooms.glb`、`branches.glb`，源为 Kenney Nature Kit 2.1 的既有修整产物；只在样区按用途缩放/摆放，不把第三方网格改标为原创。 | `expedition-actor.ts` 加载模板，`forest-expedition-scene.ts` 克隆并与稳定来源 ID 关联；原资源与许可文件不变。 |
+| 树皮与界面复用 | 沿用项目原创 `bark-surface.ts` 的共享颜色/法线纹理及 `ui/timber/` 的程序木质表面。树干与树冠材质分开，不增加按树生成的外部贴图组。 | 植被所有者释放树皮资源；`sandbox/forest-expedition/main.tsx` 唯一挂载、卸载 Timber 主题，React 窗口只消费共用原语。 |
+
+来源参考只涉及生态知识：[NPS Olympic · Temperate Rain Forests](https://www.nps.gov/olym/learn/nature/temperate-rain-forests.htm) 与 [NPS Acadia · Forests](https://www.nps.gov/acad/learn/nature/forests.htm)。三张图是混合虚构生态，不是具名国家公园的完整复刻；未采纳或分发这些网页的照片、地图和其他资产。新增源码不统称为 CC0，既有第三方资产的许可边界不变。
+
+巨木根盘、横枝老枫及育苗倒木的替换尺寸、分件、材质和碰撞要求见 [Blender 精修备忘](FOREST_BLENDER_NOTES.md)。本批构建与几何/行为定向测试通过；当前环境未提供可用 WebGL，尚无真实 3D 画面、着色器或实体手机性能验收结论，最终记录归本轮 scope。
