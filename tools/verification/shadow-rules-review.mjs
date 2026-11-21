@@ -279,6 +279,8 @@ async function forestProduceSmoke(){
 async function openCampTrail(){
   await page.goto(`${origin}/?inspect=1`);
   await page.waitForFunction(()=>window.__HOW_ADVANCE_SIMULATION__);
+  // Keep the fixed-step diagnostics available without covering the route controls.
+  await page.locator('details.diagnostics').evaluate(details=>{details.style.display='none';});
   await page.getByRole('button',{name:'路线',exact:true}).click();
   await page.getByRole('button',{name:'风景',exact:true}).click();
   await page.getByRole('button',{name:'林地小径',exact:true}).click();
