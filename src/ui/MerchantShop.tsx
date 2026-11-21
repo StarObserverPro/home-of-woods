@@ -5,6 +5,7 @@ import {itemIcon,ownedIcon} from './art-icons.ts';
 import {merchantOrderSummary} from './merchant-order.ts';
 import {IconTabs,ItemBrowser,ItemHeading,ItemNotes,MenuAction,QuantityControl} from './ItemBrowser.tsx';
 import type {MenuItem} from './ItemBrowser.tsx';
+import {VisitorStory} from './VisitorStory.tsx';
 
 type ShopItem=MenuItem&{listing?:MerchantSnapshot['listings'][number];sale?:MerchantSnapshot['saleables'][number]};
 const categories=[{id:'all',name:'全部',icon:'inventory'},{id:'food',name:'食物',icon:'trail-rations'},{id:'material',name:'材料',icon:'canvas-roll'},{id:'blueprint',name:'图纸',icon:'blueprint'},{id:'consumable',name:'日用',icon:'merchant-soap'}] as const;
@@ -28,5 +29,6 @@ export function MerchantShop({view,disabled,onCheckout}:{view:MerchantSnapshot;d
     }}/>
     <footer className="wood-checkout"><div><span>买 {bill.spend} · 卖 {bill.earn}</span><strong>结算后 {bill.coinsAfter} 铜币</strong>{bill.repayment>0&&<small>还粮款 {bill.repayment}</small>}{bill.credit>0&&<small>赊账 {bill.credit} · 总欠 {bill.debtAfter}</small>}</div><MenuAction icon="trade" disabled={disabled||!bill.count||!!bill.reason} onClick={()=>checkout({buy:bill.buyLines.map(item=>({id:item.id,quantity:buy[item.id]})),sellIds:sell})}>结算 {bill.count||''}</MenuAction></footer>
     {bill.reason&&<p className="wood-reason" role="status">{bill.reason}</p>}
+    <VisitorStory key={`${view.day}:${view.index}`} day={view.day} visitIndex={view.index} disabled={disabled}/>
   </section>;
 }
