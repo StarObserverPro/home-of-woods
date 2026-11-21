@@ -18,7 +18,7 @@ export const woodLabel = (s: InventoryStack) => ITEM_CATALOG.items.get(s.itemId)
 export const woodcraftItem = (itemId:string) => ['wood','branch','scrap-fuel'].includes(itemId);
 /** Manual placement accepts actual carried stock as well as camp stock; ground drops stay excluded. */
 export function placeableWood(inventory:InventoryState){
-  return inventory.stacks.filter(s=>(isStored(s)||isCarried(s))&&woodcraftItem(s.itemId)&&!s.wood?.reserved&&recognizedStack(s)&&s.quantity>0);
+  return inventory.stacks.filter(s=>(isStored(s)||isCarried(s))&&!s.expeditionHarvest&&woodcraftItem(s.itemId)&&!s.wood?.reserved&&recognizedStack(s)&&s.quantity>0);
 }
 export function availableWood(inventory: InventoryState) {
   return placeableWood(inventory).filter(isStored)

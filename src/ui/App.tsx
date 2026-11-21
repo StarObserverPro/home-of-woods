@@ -1,3 +1,6 @@
+import { CAMP_FOREST_TRAIL } from '../content/forest-expedition.ts';
+import { nearCampForestTrail } from '../domain/camp-expedition.ts';
+import type { CampExpeditionSession } from '../app/forest-expedition-runtime.ts';
 import {mountGameTimber} from './timber/game-adapter.ts';
 import {useWindowFocus} from './timber/use-window-focus.ts';
 import {TimberButton} from './timber/components.tsx';
@@ -30,7 +33,7 @@ import {RIDGE_NEIGHBOUR} from '../content/npcs/ridge-neighbour/profile.ts';
 import {WORKBENCH,findBlueprint} from '../content/workshop.ts';
 import {CAMP_VISITOR} from '../content/characters.ts';
 import {treeVisual} from '../world/tree-appearance.ts';
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, lazy, Suspense } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { createRuntime } from "../app/runtime.ts";
 import type { Runtime, Snapshot } from "../app/runtime.ts";
@@ -142,6 +145,7 @@ const empty: Snapshot = {
   save: INITIAL_SAVE_STATUS,
   appearance:sceneAppearanceAt(0),
 };
+const CampForestTrip = lazy(() => import('./CampForestTrip.tsx'));
 export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}) {
   const host = useRef<HTMLDivElement>(null),
     runtime = useRef<Runtime | null>(null),
@@ -149,6 +153,11 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
     saveOwner = useRef<SaveController | null>(null),
     pauseDialog = useRef<HTMLDialogElement>(null),
     cameraToggle = useRef<HTMLButtonElement>(null);
+  const [forestTrip,setForestTrip]=useState<CampExpeditionSession|null>(null);
+  const showForest = (owner:Runtime) => setForestTrip({
+    initial:owner.readForestTrip(),context:owner.forestContext(),
+    checkpoint:owner.checkpointForest,finish:owner.leaveForest,
+  });
   const [snapshot, setSnapshot] = useState(empty),
     [ready, setReady] = useState(false),
     [error, setError] = useState(""),
@@ -254,6 +263,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
         }
         runtime.current = value;
         sessionState.current = value.getState();
+        if(sessionState.current.expedition?.active)showForest(value);
         setReady(true);
       })
       .catch((e) => {
@@ -269,10 +279,10 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
     };
   }, [mountVersion]);
   useEffect(() => {
-    if (snapshot.paused && !pauseDialog.current?.open)
+    if (snapshot.paused && !forestTrip && !pauseDialog.current?.open)
       pauseDialog.current?.showModal();
-    else if (!snapshot.paused) pauseDialog.current?.close();
-  }, [snapshot.paused]);
+    else if (!snapshot.paused || forestTrip) pauseDialog.current?.close();
+  }, [snapshot.paused,forestTrip]);
   useEffect(() => {
     runtime.current?.setReducedMotion(reduced);
   }, [reduced, ready]);
@@ -422,7 +432,8 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
   },[warehouseOpen,readerOpen,mapOpen,help,snapshot.selected,snapshot.paused,snapshot.cabin.crossing]);
   const {inside:inCabin,crossing:cabinCrossing,atDoor,lampOn}=snapshot.cabin;
   return (
-    <main data-how-ui="timber" data-ui-grid-root="viewport" className={`game-shell${warehouseOpen?' warehouse-is-open':''}${(warehouseOpen||readerOpen||mapOpen||help||selected)&&!snapshot.placement&&!snapshot.woodcraft.dropping?' menu-is-open':''}`} onPointerDownCapture={event=>{
+    <>
+    <main inert={!!forestTrip} style={forestTrip?{visibility:'hidden'}:undefined} data-how-ui="timber" data-ui-grid-root="viewport" className={`game-shell${warehouseOpen?' warehouse-is-open':''}${(warehouseOpen||readerOpen||mapOpen||help||selected)&&!snapshot.placement&&!snapshot.woodcraft.dropping?' menu-is-open':''}`} onPointerDownCapture={event=>{
       swallowedPointer.current=false;
       const target=event.target;
       if(!(target instanceof Element)||snapshot.placement||snapshot.woodcraft.dropping||itemDrag.drag)return;
@@ -734,7 +745,14 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
           </div>
           <ItemBrowser label="路线" categories={[{id:'all',name:'全部',icon:'route'},{id:'camp',name:'营地',icon:'workbench'},{id:'view',name:'风景',icon:'camera'}]} items={[
             ...[{id:WOODCRAFT.id,name:'木料堆',icon:'log-rack' as const},{id:WORKBENCH.id,name:'工作台',icon:'workbench' as const},{id:CAMP_VISITOR.id,name:'行商',icon:'trade' as const},{id:'grove-altar',name:'祭坛',icon:'altar' as const},{id:'cabin',name:'旧木屋',icon:'repair' as const},{id:CAMP_PROPS.fire.id,name:'火塘',icon:'forest-soup' as const}].map(w=>({...w,category:'camp'})),
-            ...WAYPOINTS.map(w=>({...w,icon:'route' as const,category:'view'}))]} renderDetail={item=><><ItemHeading name={item.name} icon={item.icon}/>{item.id==='east-bank'&&!bridgeBuilt&&<p className="wood-note">先修桥，再去东岸林地。</p>}<MenuAction onClick={()=>{if(item.category==='camp')runtime.current?.select(item.id);else runtime.current?.navigate(item.id);setMapOpen(false);}}>{item.category==='camp'?'查看':'前往'}</MenuAction></>}/>
+            {...CAMP_FOREST_TRAIL,icon:'route' as const,category:'view'},
+            ...WAYPOINTS.map(w=>({...w,icon:'route' as const,category:'view'}))]} renderDetail={item=><><ItemHeading name={item.name} icon={item.icon}/>{item.id==='east-bank'&&!bridgeBuilt&&<p className="wood-note">先修桥，再去东岸林地。</p>}<MenuAction onClick={async()=>{
+              const owner=runtime.current;
+              setMapOpen(false);
+              if(!owner)return;
+              if(item.id===CAMP_FOREST_TRAIL.id){if(await owner.enterForest())showForest(owner);return;}
+              if(item.category==='camp')owner.select(item.id);else owner.navigate(item.id);
+            }}>{item.id===CAMP_FOREST_TRAIL.id?(nearCampForestTrail(snapshot)?'进入林地':'走到小径'):item.category==='camp'?'查看':'前往'}</MenuAction></>}/>
 
         </aside>
       )}
@@ -815,8 +833,8 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
         </>}
         {pausePage==='save'&&<SaveControls status={snapshot.save}
           onSave={() => runtime.current?.saveWorld() ?? Promise.resolve(false)}
-          onReload={() => runtime.current?.reloadWorld() ?? Promise.resolve(false)}
-          onRestore={() => runtime.current?.restoreWorldCopy() ?? Promise.resolve(false)}
+          onReload={async()=>{const owner=runtime.current;if(!owner)return false;const ok=await owner.reloadWorld();if(ok&&owner.getState().expedition?.active)showForest(owner);return ok;}}
+          onRestore={async()=>{const owner=runtime.current;if(!owner)return false;const ok=await owner.restoreWorldCopy();if(ok&&owner.getState().expedition?.active)showForest(owner);return ok;}}
           onExport={which => runtime.current?.exportWorldRecord(which) ?? Promise.resolve(null)}/>}
       </dialog>
       {!ready && !error && (
@@ -917,5 +935,9 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
       {dawnFlash>0 && <div className="sunrise-transition" key={dawnFlash} aria-live="polite"><span>晨光照进森林，新的一天开始了</span></div>}
       {diagnostic && <div className="build-mark">M0 · 山谷初见</div>}
     </main>
+    {forestTrip && <Suspense fallback={<div className="camp-forest-trip"><p className="camp-forest-loading" role="status">正在走进林地…</p></div>}>
+      <CampForestTrip session={forestTrip} onReturn={()=>setForestTrip(null)}/>
+    </Suspense>}
+    </>
   );
 }

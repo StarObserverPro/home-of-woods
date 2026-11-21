@@ -1,3 +1,4 @@
+import {EXPEDITION_ITEMS} from '../content/expedition-resources.ts';
 import {ITEMS} from '../content/items.ts';
 /** UI presentation aliases only; item identity and availability stay in content/domain. */
 export const ART_ICONS = {
@@ -23,8 +24,9 @@ const ITEM_ICONS:Record<string,ArtIconName>={
   'apparel.shoes':'trail-boots','apparel.work-boots':'trail-boots','apparel.cloth-cap':'soft-cap','apparel.beanie':'beanie',
   'furniture.stump-seat':'stump-seat','furniture.guest-bench':'guest-bench','furniture.prep-side-table':'prep-table','accessory.pinecone-doorbell':'pinecone-doorbell','accessory.note-box':'note-box','tool.branch-broom':'branch-broom','vessel.wooden-bowl':'wooden-bowl','vessel.copper-kettle':'copper-kettle',
 };
-const KNOWN_STACK_IDS=new Set(ITEMS.map(item=>item.itemId));
-export function itemIcon(id:string):ArtIconName|null{return ITEM_ICONS[id]??(KNOWN_STACK_IDS.has(id)?'inventory':null);}
+const KNOWN_STACK_IDS=new Set([...ITEMS,...EXPEDITION_ITEMS].map(item=>item.itemId));
+const woodlandIcons = new Map(EXPEDITION_ITEMS.filter(item=>item.symbol==='mushroom').map(item=>[item.itemId,'mushroom' as const]));
+export function itemIcon(id:string):ArtIconName|null{return ITEM_ICONS[id]??woodlandIcons.get(id)??(KNOWN_STACK_IDS.has(id)?'inventory':null);}
 const RARITY_IDS=new Set(['common','uncommon','rare','epic','legendary']);
 export function rarityIcon(family:'stump'|'blueprint',rarity:string):ArtIconName {
   return `${family}-${RARITY_IDS.has(rarity)?rarity:'common'}` as ArtIconName;

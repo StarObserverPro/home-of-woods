@@ -1,7 +1,20 @@
 /** Gameplay units, not kilograms/litres inferred from the exaggerated toy-scale timber. */
 export type CarrySize = { weight: number; bulk: number; bundleFactor: number };
+const freshFungus: CarrySize = {weight: .2, bulk: 1, bundleFactor: 1};
+const freshFruit: CarrySize = {weight: .3, bulk: 1, bundleFactor: 1};
 export const CARRY_ITEMS: Readonly<Record<string, CarrySize>> = {
-  mushroom: {weight: .2, bulk: 1, bundleFactor: 1},
+  mushroom: freshFungus,
+  'conifer-mushroom': freshFungus, 'hardwood-mushroom': freshFungus, 'wood-mushroom': freshFungus,
+  'shelf-mushroom': freshFungus, 'wood-ear': freshFungus,
+  serviceberry: freshFruit, 'forest-berry': freshFruit, 'blue-forest-berry': freshFruit, 'red-forest-berry': freshFruit,
+  'forest-nut': {weight: .6, bulk: .8, bundleFactor: 1},
+  'tree-resin': {weight: .25, bulk: .4, bundleFactor: 1},
+  'forest-seed': {weight: .15, bulk: .4, bundleFactor: 1},
+  'dried-forest-fruit': {weight: .15, bulk: .35, bundleFactor: 1},
+  'nut-rations': {weight: .4, bulk: .4, bundleFactor: 1},
+  'sap-can': {weight: .8, bulk: 2.2, bundleFactor: 1},
+  'sap-filled-can': {weight: 4.8, bulk: 2.2, bundleFactor: 1},
+  'forest-syrup': {weight: .6, bulk: .5, bundleFactor: 1},
   branch: {weight: 4, bulk: 3, bundleFactor: .55},
   wood: {weight: 30, bulk: 10, bundleFactor: 1},
   'scrap-fuel': {weight: 1, bulk: 1.5, bundleFactor: .7},

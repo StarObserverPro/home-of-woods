@@ -1,0 +1,7 @@
+@layer how-layout {
+  html, body {margin:0;width:100%;height:100%;overflow:hidden;background:#25382d;}
+  #forest-expedition {position:relative;width:100%;height:100dvh;overflow:hidden;}
+  #forest-canvas {position:absolute;inset:0;display:block;width:100%;height:100%;touch-action:none;outline:none;}
+  #forest-ui {position:absolute;inset:0;pointer-events:none;}
+  #forest-loading {position:absolute;inset:0;display:grid;place-content:center;padding:24px;background:#25382d;color:#f6ebcf;font:16px/1.7 system-ui,sans-serif;text-align:center;}
+}
