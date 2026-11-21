@@ -15,6 +15,7 @@ import type {SeatContact} from './seated-pose.ts';
 import {calendarAt} from '../domain/local-clock.ts';
 import { FORESTRY } from '../content/forestry.ts';
 import type { GameState } from '../domain/state.ts';
+import type { CabinPlayer } from '../domain/cabin.ts';
 import type { Tree } from '../world/layout.ts';
 import { heightAt } from '../world/surface.ts';
 import type { Models } from './models.ts';
@@ -24,6 +25,7 @@ import { createCharacterWardrobe } from './character-wardrobe.ts';
 import { DEFAULT_WARDROBE, resolveWardrobe, wardrobeForMountedItems } from '../content/wardrobe-preview.ts';
 import type { WardrobeLook } from '../content/wardrobe-preview.ts';
 import { createWardrobeVisual } from './wardrobe-visual.ts';
+import { createFootContactAnchors } from './lighting/foot-contact-anchors.ts';
 import { axeHeadSamples, geometryContactTarget, contactClearance, findAxeStop, stoppedStrokeFraction } from './axe-contact.ts';
 import type { AxeTarget, AxeStop } from './axe-contact.ts';
 
@@ -39,6 +41,8 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   visitor.position.set(CAMP_VISITOR.x,heightAt(CAMP_VISITOR.x,CAMP_VISITOR.z),CAMP_VISITOR.z);visitor.rotation.y=.5;
   const body=models.clone('ranger'),npc=models.clone('visitor'),tool=models.clone('axe');
   tool.name='forestry-hand-axe';tool.visible=false;player.add(body,tool);visitor.add(npc);
+  const walkingFeet=createFootContactAnchors(body,{idPrefix:'player'});
+  const visitorFeet=createFootContactAnchors(npc,{idPrefix:CAMP_VISITOR.id});
   const clips=new Map((models.animations.get('motions')??[]).map(c=>[c.name,c]));
   const need=(name:string)=>{const clip=clips.get(name);if(!clip)throw new Error(`Missing character animation: ${name}`);return clip;};
   const mixer=new THREE.AnimationMixer(body),npcMixer=new THREE.AnimationMixer(npc);
@@ -56,14 +60,15 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   const wave=npcMixer.clipAction(partial);wave.play();
   const npcWalk=npcMixer.clipAction(sourceClips.walk);npcWalk.play();
   const procedural=createActor(models.templates.get('ranger')!,models.animations.get('motions')!);procedural.root.scale.setScalar(1);player.add(procedural.root);procedural.root.visible=false;
+  const actionFeet=createFootContactAnchors(procedural.body,{idPrefix:'player:action'});
   const standardClothes=createCharacterWardrobe(r,body),actionClothes=createCharacterWardrobe(r,procedural.body);
   let previewLook:WardrobeLook={...DEFAULT_WARDROBE},lastLookKey='';
-  function updateWardrobe(state:GameState,reducedMotion:boolean){
+  function updateWardrobe(state:GameState,reducedMotion:boolean,moving:boolean){
     const next=wardrobeForMountedItems(previewLook,state.inventory.instances??[]);
     const key=JSON.stringify(next);
     if(key!==lastLookKey){standardClothes.apply(next);actionClothes.apply(next);lastLookKey=key;}
-    standardClothes.update(state.time,state.player.moving,reducedMotion);
-    actionClothes.update(state.time,state.player.moving,reducedMotion);
+    standardClothes.update(state.time,moving,reducedMotion);
+    actionClothes.update(state.time,moving,reducedMotion);
   }
   const seatBones=new Map<string,THREE.Bone>();body.traverse(o=>{if(o instanceof THREE.Bone)seatBones.set(o.name.replaceAll('.',''),o);});
   const readingPoseBase=new Map<THREE.Bone,{p:THREE.Vector3;q:THREE.Quaternion}>();
@@ -114,27 +119,35 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     }
     lastContact=actual.clearance;
   }
-  function update(state:GameState,reducedMotion=false,ambientTime=state.time){
-    if(disposed)return;
-    const distance=lastMoveSample?Math.hypot(state.player.x-lastMoveSample.x,state.player.z-lastMoveSample.z):0;
+  function sampleLocomotion(pose:CabinPlayer,ambientTime:number){
+    const distance=lastMoveSample?Math.hypot(pose.x-lastMoveSample.x,pose.z-lastMoveSample.z):0;
     const sampleSeconds=lastMoveSample?Math.max(0,ambientTime-lastMoveSample.time):0;
-    const moveSpeed=sampleSeconds>0&&state.player.moving?Math.min(MOVEMENT.speed*MOVEMENT.runMultiplier,distance/sampleSeconds):0;
-    lastMoveSample={x:state.player.x,z:state.player.z,time:ambientTime};
-    locomotionSpeed=state.player.moving?THREE.MathUtils.lerp(locomotionSpeed,moveSpeed,Math.min(1,sampleSeconds*14)):0;
+    const moveSpeed=sampleSeconds>0&&pose.moving?Math.min(MOVEMENT.speed*MOVEMENT.runMultiplier,distance/sampleSeconds):0;
+    lastMoveSample={x:pose.x,z:pose.z,time:ambientTime};
+    locomotionSpeed=pose.moving?THREE.MathUtils.lerp(locomotionSpeed,moveSpeed,Math.min(1,sampleSeconds*14)):0;
     const running=locomotionSpeed>MOVEMENT.speed*1.12;
     movementTime+=distance*(running?1.15/(MOVEMENT.speed*MOVEMENT.runMultiplier):1.6/MOVEMENT.speed);
+    return running;
+  }
+  function updatePlayerBase(state:GameState,pose:CabinPlayer,height:number,reducedMotion:boolean){
     for(const [bone,base] of readingPoseBase){bone.position.copy(base.p);bone.quaternion.copy(base.q);}readingPoseBase.clear();
     clothing.update(state.inventory);actionClothing.update(state.inventory);
-    player.position.set(state.player.x,travelHeightAt(state.player.x,state.player.z,travelAccess(state)),state.player.z);player.rotation.y=state.player.facing;
+    player.position.set(pose.x,height,pose.z);player.rotation.y=pose.facing;
+    body.position.y=bodyY;
+    updateWardrobe(state,reducedMotion,pose.moving);
+    impact=null;body.visible=true;pickedScrap.visible=false;cutHeight=null;chest.position.y=chestY;procedural.root.visible=false;
+  }
+  function update(state:GameState,reducedMotion=false,ambientTime=state.time){
+    if(disposed)return;
+    const running=sampleLocomotion(state.player,ambientTime);
+    updatePlayerBase(state,state.player,travelHeightAt(state.player.x,state.player.z,travelAccess(state)),reducedMotion);
     const visit=merchantVisitAt(state.time);
     visitor.visible=visit.active;
     if(visit.active){const eased=visit.travel*visit.travel*(3-2*visit.travel);
       const vx=CAMP_VISITOR.x+MERCHANT_SCENE.entryOffset.x*(1-eased),vz=CAMP_VISITOR.z+MERCHANT_SCENE.entryOffset.z*(1-eased);
       visitor.position.set(vx,heightAt(vx,vz),vz);
     }
-    body.position.y=bodyY;
-    updateWardrobe(state,reducedMotion);
-    inspectionProps.visible=inspection!==null&&inspection!=='wardrobe';impact=null;body.visible=true;pickedScrap.visible=false;cutHeight=null;chest.position.y=chestY;procedural.root.visible=false;
+    inspectionProps.visible=inspection!==null&&inspection!=='wardrobe';
     if(inspection==='wardrobe'){
       cutKey='';stop=null;grip=null;lastContact=Infinity;tool.visible=false;
       setMode('idle');actions.idle.time=0;mixer.update(0);
@@ -227,12 +240,27 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   }
   return {
     player,visitor,update,
+    resetLocomotion(){lastMoveSample=null;movementTime=0;locomotionSpeed=0;},
+    updateInCabin(state:GameState,pose:CabinPlayer,height:number,reducedMotion:boolean,ambientTime:number){
+      const running=sampleLocomotion(pose,ambientTime);
+      updatePlayerBase(state,pose,height,reducedMotion);
+      inspectionProps.visible=false;tool.visible=false;
+      setMode(pose.moving&&!reducedMotion?(running?'run':'walk'):'idle');
+      const time=mode==='idle'?ambientTime:movementTime;
+      actions[mode].time=reducedMotion?.01:time%sourceClips[mode].duration;
+      mixer.update(0);
+    },
     setReading(value:boolean,seat?:SeatContact){reading=value;readingSeat=value&&seat?seat:null;},
     setInspection(value:CharacterInspection){inspection=value;cutKey='';stop=null;},
     setWardrobe(value:Partial<WardrobeLook>){previewLook=resolveWardrobe(value,previewLook);lastLookKey='';},
     getInspection:()=>inspection,
     getImpact:()=>impact,
-    stats:()=>({model:'KayKit R3',mode,inspection,wardrobe:{standard:standardClothes.stats(),action:actionClothes.stats()},stopFound:stop?.found??null,stopFraction:stop?.fraction??null,contactClearance:Number.isFinite(lastContact)?lastContact:null,grip,planMs,disposed}),
+    // Read after life/broom/housing finish posing; alternate rigs never cast duplicate contacts.
+    footContacts:()=>[
+      ...(player.visible?(procedural.root.visible?actionFeet.update():body.visible?walkingFeet.update():[]):[]),
+      ...(visitor.visible?visitorFeet.update():[]),
+    ],
+    stats:()=>({model:'KayKit R3',mode,inspection,footAnchors:{walking:walkingFeet.stats(),action:actionFeet.stats(),visitor:visitorFeet.stats()},wardrobe:{standard:standardClothes.stats(),action:actionClothes.stats()},stopFound:stop?.found??null,stopFraction:stop?.fraction??null,contactClearance:Number.isFinite(lastContact)?lastContact:null,grip,planMs,disposed}),
     dispose(){
       if(disposed)return;disposed=true;
       for(const m of [mixer,npcMixer]){m.stopAllAction();m.uncacheRoot(m.getRoot());}

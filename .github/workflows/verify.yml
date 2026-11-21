@@ -32,6 +32,7 @@ jobs:
           node --experimental-strip-types --test
           tests/wardrobe.test.ts tests/character-wardrobe.test.ts
           tests/merchant.test.ts tests/food-foundation.test.ts
+          tests/visitor-ai.test.ts
           tests/material-storage-drying.test.ts
           tests/day-cycle.test.ts tests/affix-vfx-library.test.ts
           tests/release-integration.test.ts

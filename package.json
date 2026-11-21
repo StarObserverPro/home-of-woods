@@ -7,15 +7,18 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -b && tsc -p sandbox/cabin-interior/tsconfig.json && vite build",
     "dev:cabin": "vite --open /sandbox/cabin-interior/",
-    "test:cabin": "node --experimental-strip-types --test tests/cabin-interior.test.ts",
+    "test:cabin": "node --experimental-strip-types --test tests/cabin-interior.test.ts tests/cabin-portal.test.ts",
     "verify:cabin-assets": "node tools/verify-cabin-assets.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test:ai": "node --experimental-strip-types --test tests/visitor-ai.test.ts",
     "verify:assets": "node tools/verify-assets.mjs",
     "check": "npm run verify:assets && npm test && npm run build",
     "verify:evidence": "node tools/run-archived-evidence-audits.mjs",
     "freeze:runtime": "node tools/freeze-runtime.mjs",
-    "verify:ui": "node tools/verify-ui-contract.mjs"
+    "verify:ui": "node tools/verify-ui-contract.mjs",
+    "dev:forest": "vite --open /sandbox/forest-expedition/",
+    "test:forest": "node --experimental-strip-types --test tests/forest-expedition*.test.ts"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "0.21.0",

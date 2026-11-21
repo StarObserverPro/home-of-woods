@@ -1,8 +1,9 @@
-import * as THREE from 'three';
+import type * as THREE from 'three';
 import {CABIN,definitionFor} from '../content.ts';
 import type {CabinState} from '../content.ts';
 import {itemPose} from '../domain.ts';
-import {SHELL_PLAN} from './shell.ts';
+import {SHELL_PLAN} from '../../../../src/scene/cabin/shell.ts';
+import {cabinEnvelopeVolumes} from '../../../../src/scene/cabin/occlusion.ts';
 import {createAmbientOcclusion} from '../../../../src/scene/lighting/ambient-occlusion.ts';
 import {floorOccluder} from '../../../../src/world/occlusion.ts';
 import type {OcclusionVolume} from '../../../../src/world/occlusion.ts';
@@ -10,18 +11,7 @@ import type {Resources} from '../../../../src/scene/resources.ts';
 
 /** Same authored openings and item poses as the shell/domain; camera cuts are irrelevant. */
 export function cabinOcclusionVolumes(state:CabinState):OcclusionVolume[]{
-  const volumes:OcclusionVolume[]=[{id:'cabin:enclosure',center:[0,1.2,-.1],halfSize:[CABIN.width/2-.32,1.2,CABIN.depth/2-.32],yaw:0,softness:.45,strength:.18,detail:false}];
-  for(const wall of SHELL_PLAN){
-    const gaps=wall.openings.filter(o=>o.kind==='door').sort((a,b)=>a.left-b.left);
-    let start=0;
-    for(const gap of [...gaps,{left:wall.length,width:0}]){
-      const length=gap.left-start;
-      if(length>.01){const along=start+length/2,c=Math.cos(wall.yaw),s=Math.sin(wall.yaw);
-        volumes.push({id:`cabin:wall-root:${wall.id}:${start}`,center:[wall.origin[0]+along*c,.12,wall.origin[2]-along*s],halfSize:[length/2,.10,.05],yaw:wall.yaw,softness:.55,strength:.40,detail:true});
-      }
-      start=gap.left+gap.width;
-    }
-  }
+  const volumes=cabinEnvelopeVolumes(CABIN,SHELL_PLAN);
   for(const item of state.items){
     const pose=itemPose(state,item);if(!pose||item.definitionId==='rug')continue;
     const d=definitionFor(item.definitionId),[w,h,depth]=d.dimensions;

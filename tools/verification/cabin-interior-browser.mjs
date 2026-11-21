@@ -5,20 +5,26 @@ import path from 'node:path';
 import { spawn, execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { chromium } from 'playwright';
+import { verifyCabinPortal } from './cabin-portal-browser.mjs';
 
 const cwd = process.cwd();
+const suite = process.argv[2] ?? 'audit';
+if (!['audit', 'portal'].includes(suite)) throw new Error('Choose the audit or portal browser suite');
 const out = path.resolve(process.env.CABIN_EVIDENCE_DIR ?? '/tmp/how-cabin-evidence');
 const origin = 'http://127.0.0.1:4180';
-const target = `${origin}/sandbox/cabin-interior/`;
+const entry = suite === 'audit' ? '/sandbox/cabin-interior/' : '/';
+const target = origin + entry;
 const storageKey = 'home-of-woods:cabin-audit:v1';
 await fs.mkdir(out, { recursive: true });
-const built = await fs.readFile(path.join(cwd, 'dist/sandbox/cabin-interior/index.html'));
+const built = await fs.readFile(path.join(cwd, 'dist', entry, 'index.html'));
 const report = {
   startedAt: new Date().toISOString(),
   sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd, encoding: 'utf8' }).trim(),
   builtEntrySha256: createHash('sha256').update(built).digest('hex'),
-  target, node: process.version, browser: null, status: 'running',
-  captureInputs: { layout: 'authored-cabin-v1; no random placement', camera: 'fixed inspection bookmarks', animationTiming: 'Paused at capture; idle/walk phase depends on elapsed runtime and is not deterministic.', dpr: 1 },
+  target, suite, node: process.version, browser: null, status: 'running',
+  captureInputs: suite === 'audit'
+    ? { layout: 'authored-cabin-v1; no random placement', camera: 'fixed inspection bookmarks', animationTiming: 'Paused at capture; idle/walk phase depends on elapsed runtime and is not deterministic.', dpr: 1 }
+    : { seed: 104729, camera: 'normal game controls', hours: [14, 1], dpr: 1 },
   frames: [], flows: [], errors: [], networkFailures: [], consoleWarnings: [],
   limits: [
     'Chromium ANGLE/SwiftShader is rendering and interaction evidence, not physical phone GPU performance.',
@@ -182,11 +188,7 @@ function assertCameraUnchanged(actual, expected, label) {
     assert.ok(actual[key].every((value, i) => Math.abs(value - expected[key][i]) < 1e-4), `${label}: ${key} changed from ${expected[key]} to ${actual[key]}`);
 }
 
-try {
-  await waitForPreview();
-  phase = 'launch Chromium';
-  browser = await chromium.launch({ headless: true, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'] });
-  report.browser = await browser.version();
+async function verifyAudit() {
   const desktop = await setupContext({ viewport: { width: 1440, height: 960 } }, 'desktop');
   const page = desktop.page;
   phase = 'starter preset';
@@ -389,6 +391,17 @@ try {
     report.flows.push({ name: `${label}-touch-select-seat-stand-move-exit`, passed: true, touchEmulation: true, physicalDevice: false });
     await mobile.close(); activePage = undefined;
   }
+}
+
+try {
+  await waitForPreview();
+  phase = 'launch Chromium';
+  browser = await chromium.launch({ headless: true, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'] });
+  report.browser = await browser.version();
+  if (suite === 'portal') {
+    phase = 'main game cabin portal';
+    await verifyCabinPortal(browser, origin, out, report);
+  } else await verifyAudit();
   assert.deepEqual(report.errors, [], 'Browser or shader errors occurred');
   assert.deepEqual(report.networkFailures, [], 'Local runtime assets or requests failed');
   report.status = 'passed-automated';

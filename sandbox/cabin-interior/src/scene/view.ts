@@ -5,8 +5,8 @@ import {Resources} from '../../../../src/scene/resources.ts';
 import {CABIN,ITEM_DEFINITIONS,definitionFor} from '../content.ts';
 import type {CabinState,FloorLocation} from '../content.ts';
 import {itemPose,approachPoint} from '../domain.ts';
-import {createCabinShell,roofSurfaceAt} from './shell.ts';
-import type {CutMode} from './shell.ts';
+import {createCabinShell,roofSurfaceAt} from '../../../../src/scene/cabin/shell.ts';
+import type {CutMode} from '../../../../src/scene/cabin/shell.ts';
 import {loadFurnitureAssets} from './furniture.ts';
 import {createCabinCharacter} from './character.ts';
 

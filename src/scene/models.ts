@@ -127,9 +127,13 @@ export class Models {
         if (shown && o instanceof THREE.Mesh) {
           const g = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()).applyMatrix4(o.matrixWorld);
           const isBark=!!(o.material as THREE.MeshStandardMaterial).map;
+          // Wood cut faces need solid shadows even when they have no bark texture.
+          const isCrown=/crown|tier|leaf/i.test(o.name);
+          g.setAttribute('shadowSolidWeight',new THREE.BufferAttribute(new Float32Array(g.attributes.position.count).fill(isCrown?0:1),1));
           if(distant)g.deleteAttribute("uv");
           else {barkUV(g,isBark);
-          g.setAttribute('barkWeight',new THREE.BufferAttribute(new Float32Array(g.attributes.position.count).fill(isBark?1:0),1));}
+            g.setAttribute('barkWeight',new THREE.BufferAttribute(new Float32Array(g.attributes.position.count).fill(isBark?1:0),1));
+          }
           const color = new THREE.Color(
             (o.material as THREE.MeshStandardMaterial).color,
           );
@@ -175,7 +179,8 @@ export class Models {
       for(const key of keys){const members=far.filter(t=>treeVisual(t).key===key);
         const instances=this.r.own(new THREE.InstancedMesh(this.treeGeometry(kind,true,members[0],true),sceneryMaterial,members.length));
         const dummy=new THREE.Object3D();members.forEach((t,i)=>{dummy.position.set(t.x,heightAt(t.x,t.z),t.z);dummy.rotation.y=t.variant*Math.PI*2;dummy.scale.setScalar(t.scale);dummy.updateMatrix();instances.setMatrixAt(i,dummy.matrix);});
-        instances.name=`scenic-shape-${key}`;instances.computeBoundingSphere();group.add(instances);sceneryBatches.push({mesh:instances,members});
+        instances.name=`scenic-shape-${key}`;instances.castShadow=instances.receiveShadow=true;
+        instances.computeBoundingSphere();group.add(instances);sceneryBatches.push({mesh:instances,members});
       }
       const near = trees.filter((t) => t.kind === kind && t.role !== "scenery");
       near.forEach((t) => {

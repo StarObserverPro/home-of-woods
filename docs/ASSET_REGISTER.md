@@ -2,6 +2,10 @@
 
 天气回接采用本项目独立沙盒中已审阅的原创程序雨丝、雪花、局部镜头雨滴、水坑涟漪与材质覆雪。新储木架棚顶和立柱为原木纹、共享几何与材质组成的原创模型，既有 GLB 字节与第三方许可沿用原登记。生产入口为 scene/weather-presentation.ts、weather-particle-seeds.js、environment.ts 与 camp-props.ts，资源归原 Resources owner。强度随机样本与空间坐标独立。当前范围和实机检查见 [天气回接记录](scopes/running-selection-weather.md)。
 
+## 营地邻居资源复用（2026-11-19）
+
+阿榆 `ridge-neighbour` 在 `src/scene/neighbour.ts` 复用当前已准入的 KayKit `visitor.glb`、`motions.glb` 与项目既有 `character-wardrobe.ts` 程序衣帽/背包，不新增第三方模型、动画、贴图或下载素材，原 GLB 字节和 CC0 许可保持原登记；每个角色克隆独立骨架，附件仅替换本实例的材质引用，资源继续由 Models/Resources 管理。实际离线检查及尚未完成的实机画面验收见 [邻居来访 scope](scopes/neighbour-visitors.md)。
+
 ## 跑步动作追加（2026-11-06）
 
 现有 HOW-CHARACTERS-1 的免费 KayKit Character Animations 1.1 已准入源件 MovementBasic.glb 增选 Running_A，沿用 public/assets/licenses/KayKit-Animations-1.1-CC0.txt。采用脚本 prepare-character-assets.mjs 重新打包，仅保留实际消费的七段动作。运行时 public/assets/characters/motions.glb 为 203,564 字节，SHA-256 为 2dd813b43abf0203f4fdad58c8721d19f59fc2e2db950293b2f4b737a5168e36。源件 SHA-256 为 11422afd50abf7e8c92ea107e2e0bc94abd38023d6d15f55ad580347efbfa29e。manifest 与角色子清单同步，Models/Resources 沿用原加载和骨架资源所有权。实际步频消费移动位移，采伐止点继续使用原动作。当前运行及验证见 [本轮记录](scopes/running-selection-weather.md)。
@@ -208,7 +212,7 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 
 [独立资产检查](../tools/verify-cabin-assets.mjs)校验五件原始 glTF/二进制、运行时 GLB、未修改的 PNG 以及来源/分发两份完整 CC0 通知的 SHA-256，并检查 GLB 结构、共享本地图集、原始网格二进制与 accessor 不变；许可 SHA 同存 manifest。该命令已在本轮资产上执行通过。构建、实机画面与连续交互的真实结果见本轮 scope；资产完整性检查本身不构成视觉通过声明。
 
-围护采用 Scott Sun 的 [Threejs-Awesome-Graphics-Agent-Skills](https://github.com/scottstts/Threejs-Awesome-Graphics-Agent-Skills) 中 `threejs-procedural-geometry` 附带的完整 `geometry-quality-kit`（6 个 JS 模块，MIT，Copyright 2026 Scott Sun），来自 2026-11-12 的已安装 skill 快照。工具文件与许可保存在 [vendor 目录](../sandbox/cabin-interior/src/vendor/geometry-quality-kit/README.md)。本项目用 `panelWithHoles` / `cleanMesh` / `toGeometry` 生成有实际门窗洞的厚墙，并运行 `auditMeshData` 检查闭合拓扑；墙体计划、分段、材质、窗框、门和屋顶为本项目组合逻辑。工具自检 171/171 通过；不将 MIT 工具标为本项目原创或 CC0。
+围护采用 Scott Sun 的 [Threejs-Awesome-Graphics-Agent-Skills](https://github.com/scottstts/Threejs-Awesome-Graphics-Agent-Skills) 中 `threejs-procedural-geometry` 附带的完整 `geometry-quality-kit`（6 个 JS 模块，MIT，Copyright 2026 Scott Sun），来自 2026-11-12 的已安装 skill 快照。工具文件与许可保存在[共享几何目录](../src/scene/cabin/geometry-quality-kit/README.md)。本项目用 `panelWithHoles` / `cleanMesh` / `toGeometry` 生成有实际门窗洞的厚墙，并运行 `auditMeshData` 检查闭合拓扑。营地内景和展台共用围护生成器，各自提供墙面与开口数据。营地壁灯为原创程序几何，屋顶遮光沿用原屋 GLB 和修缮板。
 
 ## 程序树皮与可采树杈（PR23/28/33 整合）
 
@@ -228,6 +232,23 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 ## Timber UI 1（2026-11-13）
 
 `src/ui/timber/surface.ts` 为本项目独立编写的程序化SVG表面：纵剖、横截、树皮、刨花和凹槽。输入为语义、尺寸和seed，无摄影贴图、外部图片、字体或第三方生成代码。生成器和运行时缓存负责派生资源，不产生需要逐张登记的图片文件；正式交付为源码。保留原R1图标授权与来源不变。旧R2木纹资源保留历史引用，当前活跃UI不再拉伸它们。外部设计研究仅借方法，来源与Saltline镜像许可边界见 [研究记录](UI_DESIGN_REFERENCES.md)。
+
+## 三类林地代表样区（2026-11-19）
+
+本轮新增内容为项目原创程序几何与林地布局，复用部分继续保留上文既有来源及许可；没有新增外部模型包、摄影纹理或许可证声明。入口与实现边界见 [林地说明](FOREST_EXPEDITIONS.md)。
+
+| 内容 | 来源、修整与用途 | 运行入口与所有者 |
+| --- | --- | --- |
+| 十六种树/灌木形态 | 红杉式巨木、铁杉、云杉、冷杉、松、侧柏式针叶树、栎、枫、山毛榉、桦、杨、榆、白蜡、榛丛、果丛与唐棣；本项目程序几何。松、云杉、冷杉、栎、桦、杨、榆借用既有 `forest-shapes.js` 的冠形与枝级，其余形态补充同一块面、枝干和色板语言；没有逐片树叶或外部叶卡。 | `scene/expedition-vegetation.ts`、`expedition-vegetation-geometry.ts`；固定变体、干根与冠层分离、实例批次和冠层遮挡权重由植被所有者管理；原点在树干落地点，+Y 向上，世界高度来自布局。 |
+| 八种林下地物 | 倒木、育苗倒木、翻起根盘、横枝苔帘、蕨、苔石、灌丛、旧树桩；本项目程序生成。倒木端面、幼苗根与承托枝为可见几何，奖励仍由独立资源来源管理。 | `scene/expedition-vegetation-features.ts`；尺寸与稳定变体由调用者传入，共享几何/材质通过植被及场景 `Resources` 释放。 |
+| 林果与木生菌 | 唐棣果、红莓、蓝果、带苞坚果、平菇、硫磺菌与木耳使用本仓库程序网格，参考出处见林地说明。 | `scene/expedition-produce.ts`，单点果菌合为一份网格，统一材质与场景生命周期。 |
+| 玩家与动作复用 | 沿用已登记 `public/assets/characters/player.glb`、`motions.glb`，源为上文 KayKit Adventurers 2.0 / Character Animations 1.1，保留原 CC0 通知与修整记录；本轮不引入新的角色文件或改写其许可。 | `scene/expedition-actor.ts`；沿用 `CHARACTER.worldScale`，待机、行走、跑步与拾取由宿主时钟驱动，骨架与资源归场景 owner。 |
+| 菌簇与枝料复用 | 沿用已登记 `public/assets/gathering/mushrooms.glb`、`branches.glb`，源为 Kenney Nature Kit 2.1 的既有修整产物；只在样区按用途缩放/摆放，不把第三方网格改标为原创。 | `expedition-actor.ts` 加载模板，`forest-expedition-scene.ts` 克隆并与稳定来源 ID 关联；原资源与许可文件不变。 |
+| 树皮与界面复用 | 沿用项目原创 `bark-surface.ts` 的共享颜色/法线纹理及 `ui/timber/` 的程序木质表面。树干与树冠材质分开，不增加按树生成的外部贴图组。 | 植被所有者释放树皮资源；`sandbox/forest-expedition/main.tsx` 唯一挂载、卸载 Timber 主题，React 窗口只消费共用原语。 |
+
+来源参考只涉及生态知识：[NPS Olympic · Temperate Rain Forests](https://www.nps.gov/olym/learn/nature/temperate-rain-forests.htm) 与 [NPS Acadia · Forests](https://www.nps.gov/acad/learn/nature/forests.htm)。三张图是混合虚构生态，不是具名国家公园的完整复刻；未采纳或分发这些网页的照片、地图和其他资产。新增源码不统称为 CC0，既有第三方资产的许可边界不变。
+
+巨木根盘、横枝老枫及育苗倒木的替换尺寸、分件、材质和碰撞要求见 [Blender 精修备忘](FOREST_BLENDER_NOTES.md)。本批构建与几何/行为定向测试通过；当前环境未提供可用 WebGL，尚无真实 3D 画面、着色器或实体手机性能验收结论，最终记录归本轮 scope。
 
 ## 木作台近景（独立施工分支）
 

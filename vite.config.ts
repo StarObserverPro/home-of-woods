@@ -3,8 +3,9 @@ import react from "@vitejs/plugin-react";
 import {mkdir,writeFile,rename} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {sceneEvidencePlugin} from './tools/scene-evidence-plugin.ts';
+import {visitorAiPlugin} from './server/vite-visitor-ai.mjs';
 export default defineConfig({
-  plugins: [react(),sceneEvidencePlugin(),{
+  plugins: [react(),sceneEvidencePlugin(),visitorAiPlugin(),{
     name:'local-development-evidence',
     configureServer(server){
       server.middlewares.use('/__evidence/',async(req,res)=>{
@@ -28,5 +29,5 @@ export default defineConfig({
     }
   }],
   server: { host: "127.0.0.1", port: 5286, strictPort: true },
-  build: { target: "es2022", rolldownOptions: { input: { game: resolve(import.meta.dirname,'index.html'), cabin: resolve(import.meta.dirname,'sandbox/cabin-interior/index.html'), timber: resolve(import.meta.dirname,'sandbox/timber-ui/index.html') } } },
+  build: { target: "es2022", rolldownOptions: { input: { game: resolve(import.meta.dirname,'index.html'), cabin: resolve(import.meta.dirname,'sandbox/cabin-interior/index.html'), timber: resolve(import.meta.dirname,'sandbox/timber-ui/index.html'), forest: resolve(import.meta.dirname,'sandbox/forest-expedition/index.html') } } },
 });

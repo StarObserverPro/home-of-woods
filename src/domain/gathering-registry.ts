@@ -1,4 +1,3 @@
-import { ITEMS } from '../content/items.ts';
 import type { ItemDefinition } from '../content/items.ts';
 import { GATHERABLES } from '../content/gatherables.ts';
 import type { GatherableDefinition } from '../content/gatherables.ts';
@@ -25,7 +24,7 @@ export function createGatheringRegistry(options: {
     }
     return map;
   };
-  const catalog = createItemCatalog(options.items ?? ITEMS, options.qualities, options.taxonomy);
+  const catalog = createItemCatalog(options.items, options.qualities, options.taxonomy);
   const items = catalog.items;
   const definitions = unique(options.definitions ?? GATHERABLES, v => v.definitionId);
   const sources = unique(options.sources ?? makeGatheringSources(), v => v.sourceId);

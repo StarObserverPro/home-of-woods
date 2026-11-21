@@ -1,4 +1,6 @@
+import { validateCampExpedition } from './camp-expedition.ts';
 import {groundItem} from './carrying.ts';
+import {validateNpcs} from './npcs.ts';
 import {expandPreviousValley} from './expand-valley.ts';
 import {validateWoodcraft} from './woodcraft.ts';
 import {validateWorkshop,workshopTargetId} from './workshop.ts';
@@ -30,9 +32,10 @@ export type WorldLoadResult =
 
 export function validateWorldState(raw: unknown, context: SaveContext, mode: 'runtime' | 'persisted') {
   const world = object(raw, 'world');
-  fields(world, ['woodcraft','clock','workshop','ritual', 'seed', 'time', 'forestry', 'inventory', 'gathering', 'player', 'selected', 'route', 'visited'], 'world', mode === 'runtime' ? ['wildlife','merchant','food','dayCycle','weather'] : ['merchant','food','dayCycle','weather']);
+  fields(world, ['woodcraft','clock','workshop','ritual', 'seed', 'time', 'forestry', 'inventory', 'gathering', 'player', 'selected', 'route', 'visited'], 'world', mode === 'runtime' ? ['wildlife','merchant','food','dayCycle','weather','expedition','npcs'] : ['merchant','food','dayCycle','weather','expedition','npcs']);
   requireValue(world.seed === WORLD_SEED, 'world.seed', '当前布局不支持此世界');
   const time = finite(world.time, 'world.time');
+  const npcs = validateNpcs(world.npcs,time);
   const weather = validateWeather(world.weather, time);
   const player = object(world.player, 'world.player'); fields(player, ['x', 'z', 'facing', 'moving'], 'world.player');
   point({ x: player.x, z: player.z }, 'world.player'); finite(player.facing, 'world.player.facing', -Number.MAX_VALUE);
@@ -81,7 +84,8 @@ export function validateWorldState(raw: unknown, context: SaveContext, mode: 'ru
     if(a.phase==='approaching'||a.phase==='performing')requireValue(forestry.active===null && !['approaching','performing'].includes(gathering.action?.phase??'') && ['grove-altar','grove-altar:oracle'].includes(world.selected as string),'ritual','进行中祈祷与世界冲突');
   }
   if(workshop.job)requireValue(world.selected===workshopTargetId(workshop.job.kind,workshop.job.targetId)&&!forestry.active&&!['approaching','performing'].includes(gathering.action?.phase??'')&&!(world.ritual&&['approaching','performing'].includes((world.ritual as {phase:string}).phase)),'workshop.job','操作状态冲突');
-  const state = { ...structuredClone(world), weather, woodcraft, workshop, merchant, food, dayCycle, inventory, forestry, gathering } as unknown as GameState;
+  const expedition = world.expedition === undefined ? {} : {expedition: validateCampExpedition(world.expedition, inventory)};
+  const state = { ...structuredClone(world), ...expedition, npcs, weather, woodcraft, workshop, merchant, food, dayCycle, inventory, forestry, gathering } as unknown as GameState;
   return { state, diagnostics };
 }
 
@@ -89,6 +93,12 @@ export async function serializeWorldSave(state: GameState, context: SaveContext,
   // Capture and validate synchronously before hashing yields to another frame.
   const snapshot = validateWorldState(state, context, 'runtime').state;
   const {wildlife, ...persistent} = snapshot; void wildlife;
+  if (persistent.expedition?.action) {
+    const action = persistent.expedition.action;
+    // Persisted inventory deliberately reloads at revision zero.
+    persistent.expedition.action = action.inventoryRevision === snapshot.inventory.revision
+      ? {...action, inventoryRevision: 0} : null;
+  }
   integer(meta.sequence, 'save.sequence', 1); finite(meta.savedAt, 'save.savedAt');
   const core = { schemaVersion: 1, layoutVersion: WORLD_LAYOUT_VERSION, rulesetVersion: WORLD_RULESET_VERSION,
     sequence: meta.sequence, savedAt: meta.savedAt,
