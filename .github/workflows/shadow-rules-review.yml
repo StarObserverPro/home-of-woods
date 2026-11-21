@@ -1,0 +1,61 @@
+name: Shared Shadow Rules Review
+on:
+  pull_request:
+    paths:
+      - 'src/content/shadows.ts'
+      - 'src/content/occlusion.ts'
+      - 'src/world/shadow-field*.ts'
+      - 'src/world/occlusion.ts'
+      - 'src/scene/lighting/**'
+      - 'src/scene/create-scene.ts'
+      - 'src/scene/characters.ts'
+      - 'src/scene/models.ts'
+      - 'src/scene/forest-expedition-scene.ts'
+      - 'src/scene/expedition-actor.ts'
+      - 'src/scene/expedition-vegetation*.ts'
+      - 'sandbox/forest-expedition/**'
+      - 'public/assets/characters/**'
+      - 'tests/*shadow*.test.ts'
+      - 'tests/foot-contact-anchors.test.ts'
+      - 'tests/forest-expedition-lighting.test.ts'
+      - 'tests/local-occlusion*.test.ts'
+      - 'tools/fixtures/shared-shadow-rules.html'
+      - 'tools/verification/shadow-rules-review.mjs'
+      - '.github/workflows/shadow-rules-review.yml'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: shared-shadow-rules-review-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  shared-shadows:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: node node_modules/typescript/bin/tsc -p tsconfig.json
+      - run: node --experimental-strip-types --test tests/*shadow*.test.ts tests/local-occlusion*.test.ts tests/foot-contact-anchors.test.ts
+      - name: Forest lighting contracts when the production module is present
+        run: |
+          if [ -f tests/forest-expedition-lighting.test.ts ]; then
+            node --experimental-strip-types --test tests/forest-expedition-lighting.test.ts
+          fi
+      - run: npx playwright install --with-deps chromium
+      - run: node tools/verification/shadow-rules-review.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shared-shadow-rules-evidence
+          path: /tmp/how-shadow-rules-evidence/
+          if-no-files-found: warn
+          retention-days: 14

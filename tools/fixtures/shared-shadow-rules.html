@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Shared shadow rules · fixed review</title>
+  <style>
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#d4d8cc}
+    canvas{display:block;width:100%;height:100%}
+    output{position:fixed;top:8px;left:8px;padding:6px 10px;max-width:85vw;color:#fff;background:#263a32cc;font:12px/1.4 monospace;pointer-events:none}
+  </style>
+</head>
+<body>
+<output id="status">Loading fixed shadow review…</output>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {Resources} from '/src/scene/resources.ts';
+import {createOutdoorShadows} from '/src/scene/lighting/outdoor-shadows.ts';
+import {createAmbientOcclusion,occlusionFootprintPixels} from '/src/scene/lighting/ambient-occlusion.ts';
+import {createCharacterContactShadows} from '/src/scene/lighting/character-contact-shadows.ts';
+import {createFootContactAnchors} from '/src/scene/lighting/foot-contact-anchors.ts';
+import {bakeCanopyField} from '/src/world/occlusion.ts';
+import {projectedCanopySlice} from '/src/world/shadow-field.ts';
+import {OCCLUSION} from '/src/content/occlusion.ts';
+import {SHADOW_PROFILES} from '/src/content/shadows.ts';
+
+try{
+  const resources=new Resources(),scene=new THREE.Scene();
+  scene.background=new THREE.Color('#d4d8cc');
+  const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+  renderer.setPixelRatio(1);renderer.outputColorSpace=THREE.SRGBColorSpace;
+  renderer.info.autoReset=false;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1;
+  renderer.domElement.setAttribute('aria-label','Fixed outdoor shadow and animated foot-contact review');
+  document.body.prepend(renderer.domElement);
+  const shaderErrors=[];
+  renderer.debug.onShaderError=(gl,program,vertex,fragment)=>shaderErrors.push({
+    program:gl.getProgramInfoLog(program),vertex:gl.getShaderInfoLog(vertex),fragment:gl.getShaderInfoLog(fragment),
+  });
+  const camera=new THREE.PerspectiveCamera(40,1,.1,800);
+  const sunlight=new THREE.DirectionalLight('#fff1dc',2.5);scene.add(sunlight,sunlight.target);
+  scene.add(new THREE.HemisphereLight('#d8e8f0','#7b8067',1.6));
+  const surfaceAt=(x,z)=>.025*x+.012*z;
+  const groundGeometry=resources.own(new THREE.PlaneGeometry(70,64,1,1));
+  groundGeometry.rotateX(-Math.PI/2);
+  const positions=groundGeometry.getAttribute('position');
+  for(let i=0;i<positions.count;i++)positions.setY(i,surfaceAt(positions.getX(i),positions.getZ(i)));
+  groundGeometry.computeVertexNormals();
+  const ground=new THREE.Mesh(groundGeometry,resources.material('#b6b49a',.95));ground.receiveShadow=true;scene.add(ground);
+
+  const sunDirection=new THREE.Vector3(-.65,1,-.30).normalize().toArray();
+  const canopies=[
+    {id:'low-crown',center:[-6,3.6,-2],radii:[2.4,1.25,2.4],density:1},
+    {id:'high-crown',center:[2,15,-2],radii:[2.4,1.25,2.4],density:1},
+    {id:'actor-crown',center:[-4.4,10,5],radii:[5,2.5,5],density:1},
+  ];
+  const outdoor=createOutdoorShadows(resources,{renderer,sun:sunlight,bounds:{min:[-32,-3,-28],max:[32,22,28]}});
+  outdoor.setCanopies(canopies);
+  const treeTrunks=[];
+  for(const crown of canopies){
+    const [x,y,z]=crown.center,base=surfaceAt(x,z),height=y-base;
+    // Standing-tree height is measured from the model origin at its real root.
+    const trunkGeometry=resources.own(new THREE.CylinderGeometry(.25,.36,height,9).translate(0,height/2,0));
+    const trunk=new THREE.Mesh(trunkGeometry,resources.material('#75563e',.86));
+    trunk.position.set(x,base,z);trunk.name=crown.id+':trunk';trunk.receiveShadow=true;
+    outdoor.configureTreeDepth(trunk,'tree-solid');scene.add(trunk);treeTrunks.push(trunk);
+    const leaves=new THREE.Mesh(resources.own(new THREE.SphereGeometry(1,12,8)),resources.material(crown.id==='low-crown'?'#657b43':'#476e4c',.96));
+    leaves.position.fromArray(crown.center);leaves.scale.fromArray(crown.radii);leaves.name=crown.id;
+    leaves.receiveShadow=true;outdoor.configureTreeDepth(leaves,'crown');scene.add(leaves);
+  }
+  // A close, square-ended ground caster makes the solid-map edge easy to inspect.
+  const block=new THREE.Mesh(resources.own(new THREE.BoxGeometry(.8,.8,.8)),resources.material('#a17b50',.9));
+  block.position.set(-2,surfaceAt(-2,-1)+.4,-1);block.castShadow=block.receiveShadow=true;scene.add(block);
+
+  const loader=new GLTFLoader();
+  const [model,motions]=await Promise.all([
+    loader.loadAsync('/assets/characters/player.glb'),loader.loadAsync('/assets/characters/motions.glb'),
+  ]);
+  function ownModel(root){root.traverse(object=>{
+    if(object instanceof THREE.SkinnedMesh)resources.own(object.skeleton);
+    if(!(object instanceof THREE.Mesh))return;
+    resources.own(object.geometry);object.castShadow=object.receiveShadow=true;
+    for(const material of Array.isArray(object.material)?object.material:[object.material]){
+      resources.own(material);for(const value of Object.values(material))if(value instanceof THREE.Texture)resources.own(value);
+    }
+  });}
+  ownModel(model.scene);ownModel(motions.scene);
+  const actor=new THREE.Group();actor.scale.setScalar(1.5);actor.position.set(-1.4,surfaceAt(-1.4,5),5);
+  actor.add(model.scene);scene.add(actor);
+  // Measure the admitted skin before the mixer changes the bind pose.
+  const anchors=createFootContactAnchors(model.scene,{idPrefix:'review-player'});
+  const mixer=new THREE.AnimationMixer(model.scene);
+  const findClip=name=>{const clip=motions.animations.find(value=>value.name===name);if(!clip)throw Error(`Missing review animation ${name}`);return clip;};
+  const idle=mixer.clipAction(findClip('Idle_A')),running=mixer.clipAction(findClip('Running_A'));
+  function poseAt(action,time){mixer.stopAllAction();action.reset().play();mixer.setTime(time);scene.updateMatrixWorld(true);return anchors.update();}
+  // Select one reproducible phase from the real gait; no synthetic displacement of feet.
+  let liftedPhase={time:0,heightDifference:-Infinity};
+  for(let i=0;i<24;i++){
+    const time=running.getClip().duration*i/24,feet=poseAt(running,time);
+    const heights=feet.map(foot=>foot.position.y-surfaceAt(foot.position.x,foot.position.z));
+    const heightDifference=Math.max(...heights)-Math.min(...heights);
+    if(heightDifference>liftedPhase.heightDifference)liftedPhase={time,heightDifference};
+  }
+  const contacts=createCharacterContactShadows(resources,{surfaceAt});
+  const ao=createAmbientOcclusion(resources);
+  const ambientSeeds=canopies.map(c=>({x:c.center[0],z:c.center[2],radius:c.radii[0],height:c.center[1]+c.radii[1]-surfaceAt(c.center[0],c.center[2])}));
+  ao.setCanopy('core',bakeCanopyField(OCCLUSION.coreSize,{minX:-32,maxX:32,minZ:-28,maxZ:28},ambientSeeds,surfaceAt));
+  ao.setCanopy('outer',bakeCanopyField(OCCLUSION.outerSize,{minX:-64,maxX:64,minZ:-56,maxZ:56},ambientSeeds,surfaceAt));
+  outdoor.bind(scene);ao.bind(scene);
+  const defaults={view:'wide',sunlight:true,solid:true,canopy:true,ambient:true,contact:true,pose:'stand'};
+  let current={...defaults},disposed=false,drawMilliseconds=0,draws=0;
+  const slices=canopies.map(canopy=>({id:canopy.id,...projectedCanopySlice(canopy,0,sunDirection)}));
+  function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
+  const appliedSunDirection=()=>sunlight.position.clone().sub(sunlight.target.position).normalize().toArray();
+  async function settleShadows(direction=sunDirection){
+    for(let attempt=0;attempt<300;attempt++){
+      // Worker messages stage a result; update commits its matching field and sun together.
+      outdoor.update({focus:[1,0,0],sunDirection:direction,dt:0});
+      const state=outdoor.stats();
+      if(!state.inflight&&!state.pending&&!state.ready&&state.revision===state.committedRevision)return;
+      await new Promise(resolve=>setTimeout(resolve,10));
+    }
+    throw Error('Shared outdoor field did not settle before capture');
+  }
+  async function frame(patch={},direction=sunDirection){
+    if(disposed)throw Error('Review disposed');
+    current={...defaults,...patch};resize();
+    if(current.view==='near'){
+      camera.position.set(actor.position.x+2.3,3.7,actor.position.z+5.3);camera.lookAt(actor.position.x,1.2,actor.position.z);camera.zoom=1;
+    }else{
+      const target=new THREE.Vector3(1,4.6,0),direction=new THREE.Vector3(.40,.34,.85).normalize();
+      camera.position.copy(target).addScaledVector(direction,110);camera.lookAt(target);camera.zoom=1.9;
+    }
+    camera.updateProjectionMatrix();camera.updateMatrixWorld(true);
+    if(sunlight.castShadow!==current.solid){
+      sunlight.castShadow=current.solid;
+      scene.traverse(object=>{if(object instanceof THREE.Mesh)for(const material of Array.isArray(object.material)?object.material:[object.material])material.needsUpdate=true;});
+    }
+    sunlight.intensity=current.sunlight?2.5:0;outdoor.setEnabled(current.canopy);
+    outdoor.update({focus:[1,0,0],sunDirection:direction,dt:0});
+    await settleShadows(direction);
+    const feet=poseAt(current.pose==='lifted'?running:idle,current.pose==='lifted'?liftedPhase.time:.01);
+    contacts.setEnabled(current.contact);contacts.update(feet);ao.setCharacterContacts(contacts.contacts());
+    ao.setEnabled(current.ambient);ao.updateCamera(camera,innerHeight);ao.setNight(0);
+    scene.updateMatrixWorld(true);
+    const started=performance.now();
+    // An explicit second draw settles newly compiled/material shadow variants; no RAF clock exists.
+    renderer.render(scene,camera);renderer.info.reset();renderer.render(scene,camera);
+    drawMilliseconds=performance.now()-started;draws+=2;
+    document.querySelector('#status').textContent=`${current.view} · ${current.pose} · sun ${Number(current.sunlight)} / solids ${Number(current.solid)} / crowns ${Number(current.canopy)} / ambient ${Number(current.ambient)} / feet ${Number(current.contact)}`;
+    return {image:renderer.domElement.toDataURL('image/png'),stats:stats()};
+  }
+  function stats(){
+    const gl=renderer.getContext(),extension=gl.getExtension('WEBGL_debug_renderer_info');
+    return {profile:SHADOW_PROFILES.version,controls:{...current},seed:'fixed-authored-shadow-review-1',
+      viewport:[renderer.domElement.width,renderer.domElement.height],dpr:renderer.getPixelRatio(),cameraPosition:camera.position.toArray(),cameraQuaternion:camera.quaternion.toArray(),cameraProjection:camera.projectionMatrix.toArray(),
+      actorPosition:actor.position.toArray(),sunDirection,appliedSunDirection:appliedSunDirection(),slices,liftedPhase,anchor:anchors.stats(),
+      solePoints:anchors.update().map(foot=>({id:foot.id,position:foot.position.toArray(),scale:foot.scale})),
+      shadow:outdoor.stats(),ambient:ao.stats(),contact:contacts.stats(),resources:resources.stats(),
+      drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries,
+      drawMillisecondsCPU:drawMilliseconds,draws,shaderErrors:[...shaderErrors],
+      renderer:extension?gl.getParameter(extension.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER),
+      projectedDetailAt110:occlusionFootprintPixels(camera,innerHeight,110),postProcessing:false};
+  }
+  async function workerRoundtrip(){
+    if(disposed)throw Error('Review disposed');
+    const before=await frame(),shiftedDirection=new THREE.Vector3(-.10,1,-.70).normalize().toArray();
+    const stages=[];
+    const distance=(a,b)=>Math.hypot(...a.map((value,index)=>value-b[index]));
+    const read=label=>({label,shadow:outdoor.stats(),sunDirection:appliedSunDirection()});
+    const require=(condition,message)=>{if(!condition)throw Error(`Real worker probe: ${message}`);};
+    require(typeof Worker==='function'&&before.stats.shadow.worker,'browser module Worker is unavailable');
+    require(before.stats.shadow.workerErrors===0,'worker already failed before the probe');
+    async function rebuild(label,direction,sources){
+      const previous=read(`${label}:before`),oldDirection=previous.sunDirection;
+      if(sources)outdoor.setCanopies(sources);
+      outdoor.update({focus:[1,0,0],sunDirection:direction,dt:0});
+      const requested=read(`${label}:requested`);
+      require(requested.shadow.worker&&requested.shadow.submitted===previous.shadow.submitted+1,`${label} did not post a real worker request`);
+      require(requested.shadow.inflight===1&&!requested.shadow.ready,`${label} was not observed in flight`);
+      require(requested.shadow.bakes===previous.shadow.bakes,`${label} baked synchronously`);
+      require(distance(requested.sunDirection,oldDirection)<1e-9,`${label} moved the sun before the result arrived`);
+      stages.push(requested);
+      let staged=null,maxPrecommitDirectionDrift=0;
+      const started=performance.now();
+      // Deliberately do not call update here: a real message must stage its transferable
+      // result without advancing either the visible sun or the committed field.
+      while(performance.now()-started<8000){
+        const observation=read(`${label}:ready`);
+        maxPrecommitDirectionDrift=Math.max(maxPrecommitDirectionDrift,distance(observation.sunDirection,oldDirection));
+        require(observation.shadow.worker&&observation.shadow.workerErrors===0,`${label} worker failed or used its fallback`);
+        require(maxPrecommitDirectionDrift<1e-9,`${label} changed direction before the commit update`);
+        require(observation.shadow.bakes===previous.shadow.bakes,`${label} committed outside update`);
+        if(observation.shadow.ready){staged=observation;break;}
+        await new Promise(resolve=>setTimeout(resolve,10));
+      }
+      require(staged,`${label} never received its worker result`);
+      require(staged.shadow.inflight===0&&staged.shadow.pending===0,`${label} has an unexpected remaining queue`);
+      require(staged.shadow.committedRevision===previous.shadow.committedRevision,`${label} advanced its revision before commit`);
+      stages.push({...staged,maxPrecommitDirectionDrift,waitMilliseconds:performance.now()-started});
+      outdoor.update({focus:[1,0,0],sunDirection:direction,dt:0});
+      const committed=read(`${label}:committed`);
+      require(!committed.shadow.inflight&&!committed.shadow.pending&&!committed.shadow.ready,`${label} did not settle on commit`);
+      require(committed.shadow.revision===committed.shadow.committedRevision,`${label} committed the wrong source revision`);
+      require(committed.shadow.bakes===previous.shadow.bakes+1,`${label} did not commit exactly one received field`);
+      require(distance(committed.sunDirection,direction)<1e-9,`${label} committed mismatched field/sun directions`);
+      require(committed.shadow.fieldBytes===previous.shadow.fieldBytes&&committed.shadow.fieldBytes>0,`${label} lost the received texture buffer`);
+      stages.push(committed);
+      return frame({},direction);
+    }
+    const shifted=await rebuild('solar-direction',shiftedDirection);
+    const removed=await rebuild('remove-high-crown',shiftedDirection,canopies.filter(canopy=>canopy.id!=='high-crown'));
+    require(removed.stats.shadow.sourceCount===2,'removed crown remained in the uploaded field');
+    const restored=await rebuild('restore-original',sunDirection,canopies);
+    require(restored.stats.shadow.sourceCount===3,'original crown set was not restored');
+    return {transport:'native browser module Worker; transferable field result',originalDirection:sunDirection,shiftedDirection,stages,
+      submittedDelta:restored.stats.shadow.submitted-before.stats.shadow.submitted,
+      frames:{before,shifted,removed,restored}};
+  }
+  async function treeHeightFadeProbe(){
+    const faded=await frame();
+    const trunks=treeTrunks.map(trunk=>{
+      trunk.geometry.computeBoundingBox();
+      return {name:trunk.name,root:trunk.getWorldPosition(new THREE.Vector3()).toArray(),
+        localMinY:trunk.geometry.boundingBox.min.y,localMaxY:trunk.geometry.boundingBox.max.y};
+    });
+    let solid;
+    try{
+      // Change only the shared depth policy, keeping every visible surface and input fixed.
+      for(const trunk of treeTrunks)outdoor.configureTreeDepth(trunk,'solid');
+      solid=await frame();
+    }finally{
+      for(const trunk of treeTrunks)outdoor.configureTreeDepth(trunk,'tree-solid');
+    }
+    const restored=await frame();
+    return {profile:SHADOW_PROFILES.outdoor.treeHeightFade,trunks,frames:{faded,solid,restored}};
+  }
+  window.__SHADOW_RULES_REVIEW__={render:frame,stats,workerRoundtrip,treeHeightFadeProbe,dispose(){
+    if(disposed)return;disposed=true;mixer.stopAllAction();mixer.uncacheRoot(model.scene);
+    ao.dispose();outdoor.dispose();contacts.dispose();resources.dispose();sunlight.shadow.dispose();scene.clear();renderer.dispose();
+    return {resources:resources.stats(),ambient:ao.stats(),shadow:outdoor.stats(),contact:contacts.stats()};
+  }};
+  await frame();window.__SHADOW_REVIEW_READY__=true;
+}catch(error){
+  window.__SHADOW_REVIEW_ERROR__=String(error.stack??error);document.querySelector('#status').textContent=String(error);console.error(error);
+}
+</script>
+</body>
+</html>
