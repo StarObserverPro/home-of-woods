@@ -54,6 +54,8 @@ import { createGatheringPresentation } from './gathering-presentation.ts';
 import type { GatheringRegistry } from '../domain/gathering-registry.ts';
 import {ramp} from './actions/motion.js';
 import {createCharacters} from './characters.ts';
+import {createNeighbourPresentation} from './neighbour.ts';
+import {RIDGE_NEIGHBOUR} from '../content/npcs/ridge-neighbour/profile.ts';
 import type {CharacterInspection} from './characters.ts';
 import type {WardrobeLook} from '../content/wardrobe-preview.ts';
 
@@ -188,6 +190,7 @@ export async function createScene(
     propFades.set(root, { center, radius, materials });
   });
   const characters=createCharacters(r,models,trees,forest.selections),player=characters.player;
+  const neighbour=createNeighbourPresentation(r,models);scene.add(neighbour.group);
   const visibleObject=(object:THREE.Object3D|undefined|null)=>{if(!object)return null;for(let current:THREE.Object3D|null=object;current;current=current.parent)if(!current.visible)return null;return object;};
   const life=createLifePresentation(r,player,{curtainTargets(event,state){
     const cue=event.curtain;if(!cue)return {pot:null,spoon:null};
@@ -205,6 +208,7 @@ export async function createScene(
   const merchantWagon=createMerchantWagon(r);scene.add(merchantWagon.group);
   const wildlife=createWildlifePresentation(r,models);scene.add(wildlife.group);
   const workshop=createWorkshopPresentation(r,models);scene.add(workshop.group);workshop.hits.register(characters.visitor,CAMP_VISITOR.id);workshop.hits.register(merchantWagon.group,CAMP_VISITOR.id);
+  workshop.hits.register(neighbour.group,RIDGE_NEIGHBOUR.id);
   const woodcraft=createWoodcraftPresentation(r);scene.add(woodcraft.group);
   let woodDropMode=false;
   let placementMode=false;
@@ -500,6 +504,7 @@ export async function createScene(
       life.restorePose();
       broom.restorePose();
       characters.update(state,reducedMotion,ambientTime);
+      neighbour.update(state,reducedMotion,ambientTime);
       life.update(state,dt,reducedMotion);
       broom.update(state,dt,reducedMotion,sky.night);
       if(mealFraming&&!life.isMealPlaying())view.cancelMeal();
@@ -568,7 +573,7 @@ export async function createScene(
       scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);
       river.update(ambientTime,sky.day,reducedMotion,appearance.reflections,host.clientWidth<600||host.clientHeight<500);
       const selected = state.selected
-        ? ((state.selected===CREEK_BRIDGE.id?CREEK_BRIDGE.stand:null) ?? broom.point(state.selected) ?? housing.point(state.selected) ?? hauling.point(state.selected) ?? woodcraft.point(state.selected) ?? workshop.point(state.selected) ?? (state.selected===CAMP_VISITOR.id?CAMP_VISITOR:null) ?? gatheringRegistry.sources.get(state.selected) ?? treeById.get(state.selected) ??
+        ? ((state.selected===RIDGE_NEIGHBOUR.id?neighbour.point():null) ?? (state.selected===CREEK_BRIDGE.id?CREEK_BRIDGE.stand:null) ?? broom.point(state.selected) ?? housing.point(state.selected) ?? hauling.point(state.selected) ?? woodcraft.point(state.selected) ?? workshop.point(state.selected) ?? (state.selected===CAMP_VISITOR.id?CAMP_VISITOR:null) ?? gatheringRegistry.sources.get(state.selected) ?? treeById.get(state.selected) ??
           (state.selected === "cabin"
             ? CABIN
             : state.selected === "tent"
@@ -652,6 +657,7 @@ export async function createScene(
         streaming:streaming.stats(),
         gatheringHits: gathering.hits.size,
         characters:characters.stats(),
+        neighbour:neighbour.stats(),
         gatheringPresentation: gathering.stats(),
         environment:environment.stats(),
         weatherPresentation:weather.stats(),
@@ -683,6 +689,7 @@ export async function createScene(
       forestry.dispose();
       streaming.dispose();bridge.dispose();
       characters.dispose();
+      neighbour.dispose();
       merchantWagon.dispose();
       wildlife.dispose();
       gathering.dispose();

@@ -3,8 +3,9 @@ import react from "@vitejs/plugin-react";
 import {mkdir,writeFile,rename} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {sceneEvidencePlugin} from './tools/scene-evidence-plugin.ts';
+import {visitorAiPlugin} from './server/vite-visitor-ai.mjs';
 export default defineConfig({
-  plugins: [react(),sceneEvidencePlugin(),{
+  plugins: [react(),sceneEvidencePlugin(),visitorAiPlugin(),{
     name:'local-development-evidence',
     configureServer(server){
       server.middlewares.use('/__evidence/',async(req,res)=>{

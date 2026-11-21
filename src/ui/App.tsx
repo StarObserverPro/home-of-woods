@@ -26,6 +26,9 @@ import {calendarAt} from '../domain/local-clock.ts';
 import {formatClockTime} from './clock-time.ts';
 import {merchantVisitAt} from '../content/merchant.ts';
 import {MerchantShop} from './MerchantShop.tsx';
+import {NeighbourControls,neighbourDetails} from './Neighbour.tsx';
+import {emptyNeighbourView} from '../app/npc-session.ts';
+import {RIDGE_NEIGHBOUR} from '../content/npcs/ridge-neighbour/profile.ts';
 import {WORKBENCH,findBlueprint} from '../content/workshop.ts';
 import {CAMP_VISITOR} from '../content/characters.ts';
 import {treeVisual} from '../world/tree-appearance.ts';
@@ -100,6 +103,7 @@ const mapX=(x:number)=>(x+90)*.9;
 const mapZ=(z:number)=>(z+85)*.9;
 const mapLine=(p:{x:number;z:number}[])=>p.map(v=>`${mapX(v.x)},${mapZ(v.z)}`).join(' ');
 const empty: Snapshot = {
+  neighbour:emptyNeighbourView(),
   weather:null,
   carrying:{weight:0,bulk:0,effort:0,speed:1,reason:'',weightLimit:30,bulkLimit:10,method:'hands',items:[],ground:[],storageNear:false,visual:null},
   interaction:null,
@@ -331,6 +335,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
   const [targetPage,setTargetPage]=useState('use'),[helpPage,setHelpPage]=useState('move'),[pausePage,setPausePage]=useState('main');
   useEffect(()=>setTargetPage('use'),[snapshot.selected]);
   useEffect(()=>{runtime.current?.setMenuOpen(warehouseOpen||readerOpen||mapOpen||help||!!snapshot.selected&&!snapshot.placement&&!snapshot.woodcraft.dropping);},[warehouseOpen,readerOpen,mapOpen,help,snapshot.selected,snapshot.placement,snapshot.woodcraft.dropping,ready]);
+  useEffect(()=>{runtime.current?.setNpcHostFocused(snapshot.selected===WORKBENCH.id);},[snapshot.selected,ready]);
   const selectedTree = snapshot.selected ? treeById.get(snapshot.selected) : undefined;
   const forest = snapshot.forestry;
   const treeAction = forest.selectedTree;
@@ -340,7 +345,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
   const selectedOwnedItem=snapshot.workshop.items.find(item=>item.instanceId===snapshot.selected);
   const bridgeBuilt=(snapshot.workshop.upgrades[CREEK_BRIDGE.id]?.level??0)>0;
   const bridgeDetails=snapshot.selected===CREEK_BRIDGE.id?{title:CREEK_BRIDGE.name,tag:bridgeBuilt?'两岸已接通':'待修建',detail:bridgeBuilt?'沿木桥可到东岸采集和伐木，原木仍需搬回营地入库。':'图纸已经收在仓库里。备好原木和枝杈，到桥头开工。'}:null;
-  const selected = bridgeDetails ?? broomDetails(snapshot.selected,snapshot.broom) ?? housingDetails(snapshot.selected,snapshot.housing) ?? carryingDetails(snapshot.selected,snapshot.carrying) ?? woodcraftDetails(snapshot.selected,snapshot.woodcraft) ?? workshopDetails(snapshot.selected,snapshot.workshop) ?? gatherTarget ?? scenePropDetails(snapshot.selected,snapshot.appearance,forest.wood) ?? (
+  const selected = neighbourDetails(snapshot.selected,snapshot.neighbour) ?? bridgeDetails ?? broomDetails(snapshot.selected,snapshot.broom) ?? housingDetails(snapshot.selected,snapshot.housing) ?? carryingDetails(snapshot.selected,snapshot.carrying) ?? woodcraftDetails(snapshot.selected,snapshot.woodcraft) ?? workshopDetails(snapshot.selected,snapshot.workshop) ?? gatherTarget ?? scenePropDetails(snapshot.selected,snapshot.appearance,forest.wood) ?? (
     snapshot.selected === "cabin"
       ? {
           title: "旧木屋",
@@ -378,7 +383,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
             }
           : null);
   const upgradeAccess=snapshot.workshop.upgradeOptions[0]??snapshot.workshop.upgrade;
-  const farFacility=snapshot.selected!==CAMP_VISITOR.id && (snapshot.interaction
+  const farFacility=snapshot.selected!==RIDGE_NEIGHBOUR.id&&snapshot.selected!==CAMP_VISITOR.id && (snapshot.interaction
     ? !snapshot.interaction.near
     : !!upgradeAccess?.stand&&!upgradeAccess.near);
   const approachFacility=()=>{
@@ -463,6 +468,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
           </div>
         </section>
         <Hourglass view={snapshot.workshop} disabled={!ready||snapshot.paused||readerOpen||warehouseOpen}
+          speedReasons={{4:snapshot.neighbour.clockReason,12:snapshot.neighbour.clockReason}}
           disabledReason={!ready?'山谷准备中':readerOpen?'读书时暂停，合上书后恢复':warehouseOpen?'整理物品时暂停，关闭后恢复':snapshot.paused?'游戏已暂停，回到山谷后恢复':undefined}
           onSpeed={s=>runtime.current?.setClockSpeed(s)}/>
         <WeatherControls view={snapshot.weather} disabled={!ready}
@@ -614,6 +620,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
       <PlacementControls draft={snapshot.placement} onRotate={()=>runtime.current?.rotatePlacement()} onConfirm={()=>runtime.current?.confirmPlacement()} onCancel={()=>runtime.current?.cancelPlacement()}/>
 
       <div className="hud-notices" data-ui-grid="hud">
+        {snapshot.neighbour.visible&&!snapshot.neighbour.focused&&!snapshot.selected&&!readerOpen&&!warehouseOpen&&<button className="neighbour-notice context-button" disabled={!ready||snapshot.paused} onClick={()=>runtime.current?.select(RIDGE_NEIGHBOUR.id)}>阿榆 · {snapshot.neighbour.status}</button>}
       {['protected','conflict','failed'].includes(snapshot.save.state) && <aside className="save-warning" role="alert">{snapshot.save.message}</aside>}
       {!selected && !mapOpen && !help && !activeAction && !warehouseOpen && !readerOpen && messageVisible && <div className="message" role="status" aria-live="polite">
         {snapshot.message}
@@ -637,7 +644,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
             </button>
           </div>
 
-          {snapshot.selected!==CAMP_VISITOR.id&&<IconTabs label="目标操作" tabs={[{id:'use',name:'使用',icon:'craft'},...((!bridgeDetails&&(snapshot.workshop.upgradeOptions.length||snapshot.workshop.upgrade))?[{id:'upgrade',name:'改造',icon:'repair' as const}]:[]),{id:'info',name:'说明',icon:'read'}]} value={targetPage} onChange={setTargetPage}/>}
+          {snapshot.selected!==RIDGE_NEIGHBOUR.id&&snapshot.selected!==CAMP_VISITOR.id&&<IconTabs label="目标操作" tabs={[{id:'use',name:'使用',icon:'craft'},...((!bridgeDetails&&(snapshot.workshop.upgradeOptions.length||snapshot.workshop.upgrade))?[{id:'upgrade',name:'改造',icon:'repair' as const}]:[]),{id:'info',name:'说明',icon:'read'}]} value={targetPage} onChange={setTargetPage}/>}
           {targetPage==='info'&&<TextPages text={`${selected.tag}。${selected.detail}`} size={85}/>}
           {targetPage==='use'&&<>
           {farFacility?<div className="facility-approach">
@@ -648,7 +655,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
           <GroundCarryControls id={snapshot.selected} view={snapshot.carrying} onChange={intent=>runtime.current?.carry(intent)} onApproach={id=>runtime.current?.approachMaterial(id)}/>
           <WoodcraftControls selected={snapshot.selected} view={snapshot.woodcraft} message={snapshot.message} disabled={!ready||snapshot.paused||!!snapshot.placement}
             onOpen={()=>runtime.current?.openWoodcraft()} onWarehouse={()=>setWarehouseOpen(true)} onPrepare={()=>runtime.current?.transferAllWood()} onCollectAll={()=>runtime.current?.transferAllWood(true)} onThrow={()=>runtime.current?.beginWoodDrop()} onCollect={id=>runtime.current?.collectWood(id)} onClose={()=>runtime.current?.closeWoodcraft()}/>
-          {snapshot.selected!==WORKBENCH.id&&snapshot.selected!==CAMP_VISITOR.id&&!isHousingItem(selectedOwnedItem?.definitionId??'')&&selectedOwnedItem?.definitionId!=='tool.branch-broom'&&<WorkshopControls selected={snapshot.selected} view={snapshot.workshop} access={snapshot.interaction} message={snapshot.message} disabled={!ready||snapshot.paused||!!snapshot.placement}
+          {snapshot.selected!==RIDGE_NEIGHBOUR.id&&snapshot.selected!==WORKBENCH.id&&snapshot.selected!==CAMP_VISITOR.id&&!isHousingItem(selectedOwnedItem?.definitionId??'')&&selectedOwnedItem?.definitionId!=='tool.branch-broom'&&<WorkshopControls selected={snapshot.selected} view={snapshot.workshop} access={snapshot.interaction} message={snapshot.message} disabled={!ready||snapshot.paused||!!snapshot.placement}
             onOffer={()=>runtime.current?.offer()} onCraft={id=>runtime.current?.craft(id)} onTrade={id=>runtime.current?.trade(id)} onSupply={id=>runtime.current?.tradeSupply(id)} onApproach={()=>runtime.current?.approachTarget(snapshot.selected!)} onCancel={()=>runtime.current?.cancelAction()} onPlace={id=>runtime.current?.beginPlacement(id)} onPack={id=>runtime.current?.packFurniture(id)}/>}
           <HousingControls selected={snapshot.selected===WORKBENCH.id?null:snapshot.selected} view={snapshot.housing} workshop={snapshot.workshop} disabled={!ready||snapshot.paused||!!snapshot.placement}
             onLearn={id=>runtime.current?.learnHousing(id)} onCraft={id=>runtime.current?.craft(id)} onMount={id=>runtime.current?.mountHousing(id)} onDetach={id=>runtime.current?.detachHousing(id)} onRing={id=>runtime.current?.ringHousing(id)} onPlace={id=>runtime.current?.beginPlacement(id)} onPack={id=>runtime.current?.packFurniture(id)} onApproach={id=>runtime.current?.approachTarget(id)} onRead={id=>openReader(id)}/>
@@ -656,6 +663,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
           <BroomControls selected={snapshot.selected===WORKBENCH.id?null:snapshot.selected} view={snapshot.broom} disabled={!ready||snapshot.paused||!!snapshot.placement} busy={!!snapshot.workshop.job} playing={snapshot.life.broomPlaying}
             onLearn={()=>runtime.current?.learnBroom()} onCraft={mark=>runtime.current?.craftBroom(mark)} onApproach={id=>runtime.current?.approachBroomPatch(id)} onSweep={(id,patchId)=>runtime.current?.sweepBroom(id,patchId)} onPlace={id=>runtime.current?.beginPlacement(id)} onPack={id=>runtime.current?.packFurniture(id)}/>
           <ItemOracleControls selected={snapshot.selected} view={snapshot.itemOracle} disabled={!ready||snapshot.paused||!!snapshot.placement} onApproach={()=>runtime.current?.approachTarget(CAMP_PROPS.altar.id)} onOffer={(id,riteId)=>runtime.current?.offerItemOracle(id,riteId)}/>
+          {snapshot.selected===RIDGE_NEIGHBOUR.id&&<NeighbourControls view={snapshot.neighbour} disabled={!ready||snapshot.paused||!!snapshot.placement} onApproach={()=>runtime.current?.approachNeighbour()} onAction={(action,id)=>runtime.current?.neighbourAction(action,id)} onTalk={input=>runtime.current?.talkToNeighbour(input)} onPromise={()=>runtime.current?.promiseNeighbourWoodwork()}/>}
           {snapshot.selected===CAMP_VISITOR.id&&(
             snapshot.merchant.parked?(snapshot.interaction?.near?
               <MerchantShop view={snapshot.merchant} disabled={!ready||snapshot.paused||!!snapshot.placement} onCheckout={order=>runtime.current?.merchantCheckout(order)??false}/>:

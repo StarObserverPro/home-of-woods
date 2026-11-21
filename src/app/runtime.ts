@@ -3,6 +3,10 @@ import { campWithExpedition, nearCampForestTrail, nearExpeditionExit, openCampEx
 import type { ForestExpeditionState } from '../domain/forest-expedition.ts';
 import { isCarried } from '../domain/transport-location.ts';
 import {travelAccess,regionAt,blessingAt} from '../world/regions.ts';
+import {createNpcSession} from './npc-session.ts';
+import type {NeighbourView} from './npc-session.ts';
+import type {NpcVisitInteraction} from '../domain/npc-visit.ts';
+import {RIDGE_NEIGHBOUR} from '../content/npcs/ridge-neighbour/profile.ts';
 import {travelHeightAt} from '../world/traversal.ts';
 import {CREEK_BRIDGE} from '../content/regions.ts';
 import {unpackFoodSack} from '../domain/food.ts';
@@ -77,6 +81,7 @@ import {CAMP_PROPS} from '../content/scene-props.ts';
 import {ALTAR_LAYOUT} from '../content/altar.ts';
 import {advanceWeather,weatherSnapshot,setWeather as chooseWeather,setWeatherIntensity as changeWeatherIntensity,setWeatherAutomatic as changeWeatherAutomatic} from '../domain/weather.ts';
 export type Snapshot = {
+  neighbour:NeighbourView;
   weather:ReturnType<typeof weatherSnapshot>|null;
   carrying:CarryingSnapshot;
   interaction:InteractionAccess|null;
@@ -157,6 +162,7 @@ export async function createRuntime(
   const woodcraft=createWoodcraftSession(state,m=>{message=m;});
   if(state.selected===WOODCRAFT.id||state.woodcraft.pieces.some(p=>p.id===state.selected))woodcraft.activate();
   const activeColliders=()=>[...((state.workshop.upgrades[CAMP_PROPS.dryer.id]?.level??0)>0?[{id:CAMP_PROPS.dryer.id,x:CAMP_PROPS.dryer.x,z:CAMP_PROPS.dryer.z,radius:.95}]:[]),{id:WOODCRAFT.id,x:WOODCRAFT.x,z:WOODCRAFT.z,halfX:WOODCRAFT.halfX+.2,halfZ:WOODCRAFT.halfZ+.2},...forestryColliders(colliders,treeById,state.forestry,state.time),...workstationColliders(),...furnitureColliders(state),...seatingColliders()];
+  const neighbour=createNpcSession(state,activeColliders,value=>{message=value;});
   // Recover this prototype's previous waking point if it left the player inside
   // the tent collision. Preserve the earned world, clock and all inventories.
   if(state.dayCycle.wokeAt!==null&&Math.hypot(state.player.x-TENT.x,state.player.z-TENT.z)<8&&!canStand(state.player,activeColliders())){
@@ -178,12 +184,14 @@ export async function createRuntime(
     if(event.kind==='wood-drop'){woodcraft.drop(event);view.setWoodcraftDrop(woodcraft.isDropping());publishSnapshot();return;}
     if(placement){if(event.kind==='move'){const point={x:event.x,z:event.z};placement={...placement,point,reason:placementReason(state,placement.instanceId,point,activeColliders())};view.setPlacement(placement);publishSnapshot();}return;}
     if (event.kind === "select") {
+      if(event.id!==RIDGE_NEIGHBOUR.id)neighbour.closeConversation();
       const cancelled=cancelPlayerAction(state);if(cancelled)message=cancelled;
       state.selected = event.id;
       if(event.id===WOODCRAFT.id||state.woodcraft.pieces.some(p=>p.id===event.id))woodcraft.activate();
       state.route = [];
       message = "已选中目标，可以查看详情。";
     } else {
+      neighbour.closeConversation();
       state.selected = null;
       navigate(event);
     }
@@ -202,6 +210,7 @@ export async function createRuntime(
     while (accumulator >= MOVEMENT.fixedStep) {
       // An open inventory freezes walking and the world clock, while nearby wood can settle.
       if(interfaceOpen){woodcraft.step(MOVEMENT.fixedStep);accumulator-=MOVEMENT.fixedStep;continue;}
+      neighbour.guardClock();
       const stoppedAtDinner=advanceToEveningStop(state,MOVEMENT.fixedStep);
       advanceWeather(state);
       if(stoppedAtDinner)message='18:00，傍晚到了。沙漏已停下：可以回营地做饭、看故事，或继续夜间探索。';
@@ -252,6 +261,7 @@ export async function createRuntime(
         facing: travelled > 0.001 ? Math.atan2(dx, dz) : old.facing,
         moving: travelled > 0.001,
       };
+      neighbour.tick(MOVEMENT.fixedStep);
       const workshopMessage=advanceWorkshop(state);if(workshopMessage)message=workshopMessage;
       const foodMessage=advanceFood(state);if(foodMessage)message=foodMessage;
       const ritualMessage=advanceRitual(state);if(ritualMessage)message=ritualMessage;
@@ -297,12 +307,16 @@ export async function createRuntime(
       lastSampleAt=null;
     },
   );
+  const dayCycleView=()=>{
+    const snapshot=dayCycleSnapshot(state),reason=neighbour.sleepReason();
+    return snapshot.canSleep&&reason?{...snapshot,canSleep:false,sleepReason:reason}:snapshot;
+  };
   const stats = () => {
     const sorted = [...frameTimes].sort((a, b) => a - b);
     const sceneStats=view.stats();
     return {
       ...sceneStats,
-      presentations:{broom:sceneStats.broom,life:sceneStats.life},
+      presentations:{broom:sceneStats.broom,life:sceneStats.life,neighbour:sceneStats.neighbour},
       rarityVfx:sceneStats.workshop.surfaces,
       physics:woodcraft.stats(),
       loop: loop.stats(),
@@ -315,6 +329,7 @@ export async function createRuntime(
       region:{id:regionAt(state.player.x,state.player.z),openLinks:travelAccess(state).openLinks,blessed:blessingAt(state,state.player)},
       player: { ...state.player, y: travelHeightAt(state.player.x,state.player.z,travelAccess(state)) },
       gameTime:state.time,
+      neighbour:neighbour.snapshot(),
       weather:weatherSnapshot(state),
       carrying:carryingSnapshot(state),
       wildlifeState: state.wildlife,
@@ -327,7 +342,7 @@ export async function createRuntime(
       workshop:workshopSnapshot(state),
       merchant:merchantSnapshot(state),
       food:foodSnapshot(state),
-      dayCycle:dayCycleSnapshot(state),
+      dayCycle:dayCycleView(),
       housing:housingSnapshot(state),
       guidedWorkshop:guidedWorkshopSnapshot(state),
       potFoundation:potFoundationSnapshot(state),
@@ -344,6 +359,7 @@ export async function createRuntime(
   function publishSnapshot() {
     if(!inForest())persistence.observe(state);
     publish({
+      neighbour:neighbour.snapshot(),
       weather:weatherSnapshot(state),
       carrying:carryingSnapshot(state),
       interaction:interactionAccess(state,state.selected),
@@ -366,7 +382,7 @@ export async function createRuntime(
       workshop:workshopSnapshot(state),
       merchant:merchantSnapshot(state),
       food:foodSnapshot(state),
-      dayCycle:dayCycleSnapshot(state),
+      dayCycle:dayCycleView(),
       housing:housingSnapshot(state),
       guidedWorkshop:guidedWorkshopSnapshot(state),
       potFoundation:potFoundationSnapshot(state),
@@ -525,6 +541,19 @@ export async function createRuntime(
     inspectionWindow.__HOW_ADVANCE_SIMULATION__=advanceInspection;
   }
   return {
+    neighbourAction(action:NpcVisitInteraction,activityId?:string){if(blocked()||placement)return;cancelPlayerAction(state);neighbour.command(action,activityId);state.route=[];publishSnapshot();},
+    talkToNeighbour(input:string){if(blocked()||placement)return;cancelPlayerAction(state);neighbour.talk(input);state.route=[];publishSnapshot();},
+    promiseNeighbourWoodwork(){if(blocked()||placement)return;cancelPlayerAction(state);neighbour.promiseWoodwork();state.route=[];publishSnapshot();},
+    approachNeighbour(){if(blocked()||placement||workshopBusy(state))return;cancelPlayerAction(state);neighbour.approach();publishSnapshot();},
+    /** Full-screen woodworking can mark attention without pausing the world like inventory does. */
+    setNpcHostFocused(value:boolean){if(destroyed)return;neighbour.setHostFocused(value);publishSnapshot();},
+    requestNeighbourDialogue(input:string){if(blocked()||placement)return null;const request=neighbour.dialogueRequest(input);publishSnapshot();return request;},
+    acceptNeighbourDialogue(value:unknown){if(blocked())return false;const accepted=neighbour.acceptDialogue(value);publishSnapshot();return accepted;},
+    failNeighbourDialogue(){if(blocked())return false;const handled=neighbour.failDialogue();publishSnapshot();return handled;},
+    requestNeighbourPlan:neighbour.planRequest,
+    acceptNeighbourPlan:neighbour.acceptPlan,
+    requestNeighbourMemory:neighbour.memoryRequest,
+    acceptNeighbourMemory:neighbour.acceptMemory,
     carry(intent:CarryIntent){if(transferBlocked())return;try{message=changeCarrying(state,intent,activeColliders());}catch(error){message=error instanceof Error?error.message:'本次搬运未完成。';}view.render(state,0);publishSnapshot();},
     approachMaterial(id:string){if(blocked()||placement||workshopBusy(state))return;cancelPlayerAction(state);message=approachGround(state,id,activeColliders());publishSnapshot();},
     openWoodcraft(){if(blocked()||placement||workshopBusy(state)||state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))return;
@@ -557,7 +586,7 @@ export async function createRuntime(
     transferItem(item:ItemTransferIntent,x:number,y:number,toWarehouse:boolean){
       const result=itemTransfers.commit(item,x,y,toWarehouse);message=result.reason;view.render(state,0);publishSnapshot();return result;
     },
-    setClockSpeed(speed:ClockSpeed){if(blocked()||!CLOCK_SPEEDS.includes(speed))return;state.clock={speed};publishSnapshot();},
+    setClockSpeed(speed:ClockSpeed){if(blocked()||!CLOCK_SPEEDS.includes(speed))return;const reason=neighbour.clockReason(speed);if(reason){message=reason;publishSnapshot();return;}state.clock={speed};publishSnapshot();},
     setWeather(kind:Parameters<typeof chooseWeather>[1]){
       if(destroyed||contextLost||document.hidden)return;
       chooseWeather(state,kind);
@@ -584,10 +613,12 @@ export async function createRuntime(
     },
     sleepToDawn(){
       if(blocked()||placement||woodcraft.isDropping())return;
+      const guestReason=neighbour.sleepReason();if(guestReason){message=guestReason;publishSnapshot();return;}
       if(view.isMealPlaying()){message='先慢慢吃完这一口，再结束一天。';publishSnapshot();return;}
       const count=state.dayCycle.nightsSlept;
       message=sleepUntilSunrise(state,activeColliders());
       if(state.dayCycle.nightsSlept!==count){
+        neighbour.afterSleep();
         advanceWeather(state);
         view.cancelBroom();
         resetMovementInput();
@@ -674,6 +705,7 @@ export async function createRuntime(
     },
     select(id: string | null) {
       if(destroyed)return;
+      if(id!==RIDGE_NEIGHBOUR.id)neighbour.closeConversation();
       clearPlacement();
       const cancelled=cancelPlayerAction(state);if(cancelled)message=cancelled;
       woodcraft.cancelRequest();view.setWoodcraftDrop(false);if(id===null)view.inspectScene(null);
@@ -788,14 +820,14 @@ export async function createRuntime(
       const loaded = await persistence.reload();
       if (!loaded || destroyed) return false;
       reading=false;view.setReading(false);view.resetPresentationHistory();
-      woodcraft.reset();view.setWoodcraftDrop(false);clearPlacement();delete state.wildlife;delete state.expedition;Object.assign(state, loaded);advanceWeather(state);synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
+      woodcraft.reset();view.setWoodcraftDrop(false);clearPlacement();delete state.wildlife;delete state.expedition;Object.assign(state, loaded);neighbour.reset();advanceWeather(state);synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
       manualPause = !loaded.expedition?.active; keys.clear(); stick.x = stick.z = 0; syncPause(); view.render(state, 0); return true;
     },
     async restoreWorldCopy() {
       const loaded = await persistence.restoreValidCopy();
       if (!loaded || destroyed) return false;
       reading=false;view.setReading(false);view.resetPresentationHistory();
-      woodcraft.reset();view.setWoodcraftDrop(false);clearPlacement();delete state.wildlife;delete state.expedition;Object.assign(state, loaded);advanceWeather(state);synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
+      woodcraft.reset();view.setWoodcraftDrop(false);clearPlacement();delete state.wildlife;delete state.expedition;Object.assign(state, loaded);neighbour.reset();advanceWeather(state);synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
       manualPause = !loaded.expedition?.active; keys.clear(); stick.x = stick.z = 0; syncPause(); view.render(state,0); return true;
     },
     inspectCharacter(kind:'horizontal'|'vertical'|'wardrobe'|null){
