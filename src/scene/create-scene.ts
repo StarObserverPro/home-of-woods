@@ -1,5 +1,7 @@
 import {configureForestBark} from './bark-surface.ts';
 import {createCampOcclusion} from './lighting/camp-occlusion.ts';
+import {createCampShadows} from './lighting/camp-shadows.ts';
+import {createCharacterContactShadows} from './lighting/character-contact-shadows.ts';
 import {createStreamedForest} from './streamed-forest.ts';
 import {createCreekBridge} from './creek-bridge.ts';
 import {CREEK_BRIDGE} from '../content/regions.ts';
@@ -92,8 +94,6 @@ export async function createScene(
   renderer.setPixelRatio(1);
   let shaderErrors=0;
   renderer.debug.onShaderError=(gl,program)=>{shaderErrors++;console.error('Scene shader compilation',gl.getProgramInfoLog(program));};
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   const canvas = renderer.domElement;
@@ -131,19 +131,6 @@ export async function createScene(
   const hemi = new THREE.HemisphereLight(light.skyColor, light.groundColor, light.ambientIntensity);
   scene.add(hemi);
   const sun = new THREE.DirectionalLight(light.sunColor, light.sunIntensity);
-  sun.target.position.set(-20, 8, 0);
-  sun.position.copy(sun.target.position).addScaledVector(light.sunDirection,135);
-  sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
-  sun.shadow.camera.left = -85;
-  sun.shadow.camera.right = 85;
-  sun.shadow.camera.top = 85;
-  sun.shadow.camera.bottom = -85;
-  sun.shadow.camera.near = 1;
-  sun.shadow.camera.far = 200;
-  sun.shadow.bias = -0.0003;
-  sun.shadow.normalBias = 0.22;
-  sun.shadow.radius = 3;
   scene.add(sun, sun.target);
   const { ground, water } = createTerrain(r);
   const horizon=createHorizon(r,ground.geometry,trees);
@@ -239,7 +226,7 @@ export async function createScene(
   let placementMode=false;
   let inspectionCamera:{yaw:number;elevation:number;zoom:number;target:THREE.Vector3}|null=null;
   const forestry=createForestryPresentation({models,resources:r,forestGroup:forest.group,trees,selections:forest.selections,
-    bindTreeSurface(root){weather.bind(root,'tree');localOcclusion.bind(root);},
+    bindTreeSurface(root){weather.bind(root,'tree');outdoorShadows.bindTree(root);localOcclusion.bind(root);},
   });
   const gathering = createGatheringPresentation(r, models, gatheringRegistry);
   scene.add(gathering.group);
@@ -439,6 +426,10 @@ export async function createScene(
   const observer = new ResizeObserver(resize);
   observer.observe(host);
   resize();
+  const outdoorShadows=createCampShadows({resources:r,renderer,sun,scene,models,forest,ground:ground.geometry});
+  outdoorShadows.bind(scene);outdoorShadows.bindMaterial(fadeMat);
+  propFades.forEach(({materials})=>materials.forEach(({fade})=>outdoorShadows.bindMaterial(fade)));
+  const characterContacts=createCharacterContactShadows(r,{surfaceAt:(x,z)=>lastState?travelHeightAt(x,z,travelAccess(lastState)):heightAt(x,z)});
   const localOcclusion=createCampOcclusion({resources:r,scene,trees:forest.canopyTrees,props,buildingSources:models.templates,campRoots:camp.roots,interactionRoots:()=>[...housing.hits.objects(),...workshop.hits.objects()],outerSeeds:horizon.canopySeeds,surfaceAt:horizon.surfaceAt});
   localOcclusion.bind(scene);
   // Prebind variants that are not on a mesh until occlusion first fades a crown or building.
@@ -446,6 +437,8 @@ export async function createScene(
   propFades.forEach(({materials})=>materials.forEach(({fade})=>localOcclusion.bindMaterial(fade)));
   const view = {
     setAmbientOcclusion:(enabled:boolean)=>(cabinPlayer&&cabinRoom?cabinRoom.occlusion:localOcclusion).setEnabled(enabled),
+    setCanopyShadows:(enabled:boolean)=>outdoorShadows.setEnabled(enabled),
+    setCharacterContacts:(enabled:boolean)=>characterContacts.setEnabled(enabled),
     getAppearance:()=>({...appearance}),
     wildlifeAvailable:()=>wildlife.available(),
     wildlifeObserved:()=>wildlife.observedIds(),
@@ -473,6 +466,7 @@ export async function createScene(
     enterCabin(pose:CabinPlayer,state:GameState){
       if(!cabinRoom)return;
       localOcclusion.unbind(player);
+      outdoorShadows.unbind(player);
       cabinRoom.scene.add(player);
       characters.resetLocomotion();
       cabinPlayer=pose;
@@ -486,6 +480,7 @@ export async function createScene(
       if(!cabinPlayer||!cabinRoom)return;
       cabinRoom.occlusion.unbind(player);
       scene.add(player);
+      outdoorShadows.bind(player);
       localOcclusion.bind(player);
       characters.resetLocomotion();
       cabinPlayer=null;
@@ -577,9 +572,8 @@ export async function createScene(
       weather.setWeather(weatherSnapshot(state),dt);
       environment.setWeather(weather.profile);
       const sky=environment.setHour(appearance.hour);
-      sun.target.position.set(state.player.x,travelHeightAt(state.player.x,state.player.z,travelAccess(state)),state.player.z);
       hemi.color.copy(light.skyColor);hemi.groundColor.copy(light.groundColor);hemi.intensity=light.ambientIntensity;
-      sun.color.copy(light.sunColor);sun.intensity=light.sunIntensity;sun.position.copy(sun.target.position).addScaledVector(light.sunDirection,135);
+      sun.color.copy(light.sunColor);sun.intensity=light.sunIntensity;
       scene.environmentIntensity=light.environmentIntensity;(scene.fog as THREE.Fog).color.copy(light.haze);
       if(state.workshop.job?.kind==='offering'&&state.workshop.job.phase==='working')appearance.altar='answering';
       camp.update(ambientTime,appearance,state.inventory,sky.night,reducedMotion,!!state.food.drying,(state.workshop.upgrades[CAMP_PROPS.dryer.id]?.level??0)>0);
@@ -684,9 +678,7 @@ export async function createScene(
       headWorld.set(x,y+1.7,z);headDirection.copy(headWorld).sub(camera.position);
       occlusionRay.set(camera.position,headDirection.clone().normalize());occlusionRay.far=headDirection.length()-.15;
       forest.selections.forEach((o, id) => {
-        const t = treeById.get(id)!;
         if(!o.visible||o.userData.forestrySelectable===false){(o as THREE.Mesh).material=forest.material;return;}
-        (o as THREE.Mesh).castShadow=Math.hypot(t.x-x,t.z-z)<48;
         const bounds=crownBounds.get(id)!;
         let left=Infinity,right=-Infinity,bottom=Infinity,top=-Infinity;
         for(const xx of [bounds.min.x,bounds.max.x])
@@ -719,7 +711,11 @@ export async function createScene(
       if(scenePreset==='goatVista')wildlifeSeen.push(landmarkInspectionView('wildlife.goat',state.time));
       wildlife.update(wildlifeSeen,state.time,appearance.hour,camera,reducedMotion);
       weather.update(ambientTime,dt,state.player,camera,host.clientWidth<600||host.clientHeight<500,reducedMotion);
+      outdoorShadows.update(state,dt,light.sunDirection,sky.night,player.position);
       localOcclusion.update(state,dt,camera,sky.night);
+      localOcclusion.updateCamera(camera,host.clientHeight);
+      characterContacts.update(characters.footContacts());
+      localOcclusion.setCharacterContacts(characterContacts.contacts());
       renderer.info.reset();renderer.info.autoReset=false;
       renderer.render(scene, camera);
       weather.renderLens(renderer);
@@ -732,6 +728,7 @@ export async function createScene(
         occlusion:cabinPlayer&&cabinRoom?cabinRoom.occlusion.stats():localOcclusion.stats(),
         sceneSpace:{active:cabinPlayer?'cabin':'outdoor',outsideFrames,fade:fadeAmount,cabin:cabinRoom?.stats()??null,
           outdoorCamera:{yaw,elevation,zoom,target:target.toArray()}},
+        shadows:outdoorShadows.stats(),characterContacts:characterContacts.stats(),
         wildlife:wildlife.stats(),
         drawCalls: renderer.info.render.calls,
         triangles: renderer.info.render.triangles,
@@ -770,6 +767,7 @@ export async function createScene(
       pointers.clear();
       cabinRoom?.dispose();
       localOcclusion.dispose();
+      characterContacts.dispose();outdoorShadows.dispose();
       weather.dispose();
       woodcraft.dispose();
       workshop.dispose();

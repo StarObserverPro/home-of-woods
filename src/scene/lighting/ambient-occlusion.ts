@@ -4,6 +4,20 @@ import type {CanopyField,OcclusionVolume} from '../../world/occlusion.ts';
 import type {Resources} from '../resources.ts';
 import {bakeLocalOcclusion} from '../../world/local-occlusion-field.ts';
 import type {LocalOcclusionField} from '../../world/local-occlusion-field.ts';
+import {SHADOW_PROFILES} from '../../content/shadows.ts';
+import type {CharacterContactPatch} from './character-contact-shadows.ts';
+
+const contactBudget=SHADOW_PROFILES.character.maxFeet;
+const finiteVector=(v:THREE.Vector3)=>Number.isFinite(v.x)&&Number.isFinite(v.y)&&Number.isFinite(v.z);
+
+/** Screen footprint in CSS pixels; projection matrix includes lens, zoom and view offsets. */
+export function occlusionFootprintPixels(camera:THREE.Camera,viewportHeight:number,viewDepth:number,footprint:number=C.detailFootprint){
+  const scale=Math.abs(camera.projectionMatrix.elements[5])*viewportHeight*.5;
+  if(!Number.isFinite(scale)||scale<=0||!Number.isFinite(viewDepth))return 0;
+  if((camera as THREE.OrthographicCamera).isOrthographicCamera)return footprint*scale;
+  if((camera as THREE.PerspectiveCamera).isPerspectiveCamera)return footprint*scale/Math.max(.001,Math.abs(viewDepth));
+  return 0;
+}
 
 /** Shared, world-anchored ambient attenuation. No framebuffer pass or extra draws. */
 export function createAmbientOcclusion(resources:Resources){
@@ -20,6 +34,11 @@ export function createAmbientOcclusion(resources:Resources){
   }
   const core=texture(),outer=texture();
   const uniforms={howAOEnabled:{value:1},howAOVolumeCount:{value:0},howAOBroadCount:{value:0},howAOMin:{value:new THREE.Vector3()},howAOMax:{value:new THREE.Vector3()},howAOLocal:{value:local},howAOGrid:{value:new THREE.Vector3(1,1,1)},howAONight:{value:0},howAOCore:{value:core},howAOOuter:{value:outer},howAOCoreBounds:{value:new THREE.Vector4(-150,-150,300,300)},howAOOuterBounds:{value:new THREE.Vector4(-750,-750,1500,1500)},howAOFieldEnabled:{value:0}};
+  const viewUniforms={howAOProjection:{value:new THREE.Vector2()},howAOContactCount:{value:0},
+    howAOContactCenters:{value:Array.from({length:contactBudget},()=>new THREE.Vector3())},
+    howAOContactNormals:{value:Array.from({length:contactBudget},()=>new THREE.Vector3(0,1,0))},
+    howAOContactTangents:{value:Array.from({length:contactBudget},()=>new THREE.Vector3(0,0,1))},
+    howAOContactShape:{value:Array.from({length:contactBudget},()=>new THREE.Vector4())}};
   let volumes:readonly OcclusionVolume[]=[],coreField:CanopyField|undefined,outerField:CanopyField|undefined,updates=0,disposed=false;
   const materials=new Map<THREE.Material,{compile:THREE.Material['onBeforeCompile'];key:THREE.Material['customProgramCacheKey'];installed:THREE.Material['onBeforeCompile'];onDispose:()=>void}>();
   // Streamed action trees own temporary materials; their disposal must also release our references.
@@ -38,6 +57,33 @@ export function createAmbientOcclusion(resources:Resources){
     uniform vec3 howAOGrid;
     uniform sampler2D howAOCore,howAOOuter;
     uniform vec4 howAOCoreBounds,howAOOuterBounds;
+    uniform vec2 howAOProjection;
+    uniform int howAOContactCount;
+    uniform vec3 howAOContactCenters[${contactBudget}],howAOContactNormals[${contactBudget}],howAOContactTangents[${contactBudget}];
+    uniform vec4 howAOContactShape[${contactBudget}];
+    float howDetailVisibility(vec3 viewPosition){
+      // Old independent sandboxes retain their original distance behavior until opted in.
+      if(howAOProjection.x<.5)return 1.-smoothstep(${C.nearFull.toFixed(1)},${C.nearEnd.toFixed(1)},length(viewPosition));
+      float pixels=${C.detailFootprint}*howAOProjection.y;
+      if(howAOProjection.x<1.5)pixels/=max(.001,abs(viewPosition.z));
+      return smoothstep(${C.detailMinPixels.toFixed(1)},${C.detailFullPixels.toFixed(1)},pixels);
+    }
+    float howCharacterContact(vec3 p,vec3 normal){
+      float contact=0.;
+      for(int i=0;i<${contactBudget};i++){
+        if(i>=howAOContactCount)break;
+        vec3 n=howAOContactNormals[i],t=howAOContactTangents[i],d=p-howAOContactCenters[i];
+        vec4 shape=howAOContactShape[i];
+        if(any(greaterThan(abs(d),vec3(max(shape.x,shape.y)+shape.w))))continue;
+        vec2 footprint=vec2(dot(d,cross(n,t))/shape.x,dot(d,t)/shape.y);
+        float radial=1.-smoothstep(.35,1.,length(footprint));
+        float plane=1.-smoothstep(shape.w*.2,shape.w,abs(dot(d,n)));
+        float facing=smoothstep(.35,.85,dot(normal,n));
+        // Overlapping feet use the stronger footprint, never an accumulating dark disk.
+        contact=max(contact,shape.z*radial*plane*facing);
+      }
+      return contact;
+    }
     float howCanopyAO(vec3 p){
       if(howAOFieldEnabled<.5)return 0.;
       vec2 co=(p.xz-howAOCoreBounds.xy)/howAOCoreBounds.zw;
@@ -60,7 +106,7 @@ export function createAmbientOcclusion(resources:Resources){
     if(materials.has(material)||material.customProgramCacheKey().includes(':how-ao-v1'))return;
     const compile=material.onBeforeCompile,key=material.customProgramCacheKey,oldKey=key.call(material);
     const installed:THREE.Material['onBeforeCompile']=function(this:THREE.Material,shader,renderer){
-      compile.call(this,shader,renderer);Object.assign(shader.uniforms,uniforms);
+      compile.call(this,shader,renderer);Object.assign(shader.uniforms,uniforms,viewUniforms);
       if(!shader.vertexShader.includes('#include <project_vertex>')||!shader.fragmentShader.includes('#include <aomap_fragment>'))throw new Error(`Ambient occlusion shader anchors missing: ${material.name}`);
       shader.vertexShader='varying vec3 vHowAOPosition;\n'+shader.vertexShader;
       shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>',`#include <project_vertex>
@@ -75,7 +121,7 @@ export function createAmbientOcclusion(resources:Resources){
       shader.fragmentShader=fragment+'\n'+shader.fragmentShader;
       shader.fragmentShader=shader.fragmentShader.replace('#include <aomap_fragment>',`#include <aomap_fragment>
         if(howAOEnabled>.5){
-          float howNear=1.-smoothstep(${C.nearFull.toFixed(1)},${C.nearEnd.toFixed(1)},length(vViewPosition));
+          float howNear=howDetailVisibility(vViewPosition);
           float howBroad=0.,howDetail=0.;
           // One cached trilinear lookup replaces per-pixel traversal of every room/contact volume.
           if(howAOVolumeCount>0&&all(greaterThanEqual(vHowAOPosition,howAOMin))&&all(lessThanEqual(vHowAOPosition,howAOMax))){
@@ -86,12 +132,16 @@ export function createAmbientOcclusion(resources:Resources){
           vec3 howWN=inverseTransformDirection(normal,viewMatrix);
           float howPreset=${C.distantUnderside}*(1.-smoothstep(-.3,.65,howWN.y));
           float howOccluded=max(max(howBroad,howDetail*howNear),max(howCanopyAO(vHowAOPosition),howPreset));
+          float howContact=howCharacterContact(vHowAOPosition,howWN);
           float howAmbient=max(${C.minimumAmbient},1.-howOccluded*mix(1.,.72,howAONight));
+          // The small sole contacts are the only layered term: retain an anchor in dense canopy,
+          // limit it to remaining indirect light, and never cross the existing ambient floor.
+          howAmbient=max(${C.minimumAmbient},howAmbient*(1.-howContact*mix(1.,.72,howAONight)));
           reflectedLight.indirectDiffuse*=howAmbient;
           reflectedLight.indirectSpecular*=sqrt(howAmbient);
         }`);
     };
-    material.onBeforeCompile=installed;material.customProgramCacheKey=()=>`${oldKey}:how-ao-v1`;
+    material.onBeforeCompile=installed;material.customProgramCacheKey=()=>`${oldKey}:how-ao-v1:projection-contact-v1`;
     const onDispose=()=>releaseMaterial(material);
     material.needsUpdate=true;materials.set(material,{compile,key,installed,onDispose});material.addEventListener('dispose',onDispose);
   }
@@ -117,11 +167,34 @@ export function createAmbientOcclusion(resources:Resources){
     (kind==='core'?uniforms.howAOCoreBounds:uniforms.howAOOuterBounds).value.set(b.minX,b.minZ,b.maxX-b.minX,b.maxZ-b.minZ);
     if(kind==='core')coreField=field;else outerField=field;uniforms.howAOFieldEnabled.value=coreField&&outerField?1:0;
   }
+  function updateCamera(camera:THREE.Camera,viewportHeight:number){
+    if(disposed)return;
+    const mode=(camera as THREE.PerspectiveCamera).isPerspectiveCamera?1:(camera as THREE.OrthographicCamera).isOrthographicCamera?2:0;
+    const scale=Math.abs(camera.projectionMatrix.elements[5])*viewportHeight*.5;
+    viewUniforms.howAOProjection.value.set(mode&&Number.isFinite(scale)&&scale>0?mode:0,Number.isFinite(scale)?Math.max(0,scale):0);
+  }
+  function setCharacterContacts(contacts:readonly CharacterContactPatch[]){
+    if(disposed)return;
+    if(contacts.length>contactBudget)throw new Error(`Character contact budget exceeded: ${contacts.length}/${contactBudget}`);
+    let count=0;
+    for(const contact of contacts){
+      if(!finiteVector(contact.center)||!finiteVector(contact.normal)||!finiteVector(contact.tangent)
+        ||!Number.isFinite(contact.radii.x)||!Number.isFinite(contact.radii.y)||!Number.isFinite(contact.strength)||!Number.isFinite(contact.receiverThickness)
+        ||contact.radii.x<=0||contact.radii.y<=0||contact.receiverThickness<=0||contact.strength<=0)continue;
+      viewUniforms.howAOContactCenters.value[count].copy(contact.center);
+      viewUniforms.howAOContactNormals.value[count].copy(contact.normal);
+      viewUniforms.howAOContactTangents.value[count].copy(contact.tangent);
+      viewUniforms.howAOContactShape.value[count].set(contact.radii.x,contact.radii.y,Math.min(SHADOW_PROFILES.character.maxStrength,contact.strength),contact.receiverThickness);
+      count++;
+    }
+    viewUniforms.howAOContactCount.value=count;
+  }
   return {bind:(root:THREE.Object3D)=>visitMaterials(root,bindMaterial),
-    unbind:(root:THREE.Object3D)=>visitMaterials(root,releaseMaterial),bindMaterial,setVolumes,setCanopy,
+    unbind:(root:THREE.Object3D)=>visitMaterials(root,releaseMaterial),bindMaterial,setVolumes,setCanopy,updateCamera,setCharacterContacts,
     setEnabled(value:boolean){uniforms.howAOEnabled.value=value?1:0;},
     setNight(value:number){uniforms.howAONight.value=THREE.MathUtils.clamp(value,0,1);},
-    stats(){return {version:C.version,enabled:!!uniforms.howAOEnabled.value,volumes:volumes.map(v=>v.id),regions:volumes.map(v=>({id:v.id,center:[...v.center],halfSize:[...v.halfSize],yaw:v.yaw,detail:v.detail})),volumeBudget:count,broadVolumes:uniforms.howAOBroadCount.value,spatialBounds:[uniforms.howAOMin.value.toArray(),uniforms.howAOMax.value.toArray()],updates,materials:materials.size,canopyFields:[coreField?.size??1,outerField?.size??1],localFieldSize:[...localField.size],localTextureBytes:localField.data.byteLength,lastLocalBakeMs:Math.round(localBakeMs*100)/100,textureBytes:localField.data.byteLength+(coreField?.data.byteLength??4)+(outerField?.data.byteLength??4),extraDrawCalls:0,extraRenderPasses:0,near:[C.nearFull,C.nearEnd],minimumAmbient:C.minimumAmbient};},
-    dispose(){if(disposed)return;disposed=true;for(const material of materials.keys())releaseMaterial(material);},
+    stats(){return {version:C.version,enabled:!!uniforms.howAOEnabled.value,volumes:volumes.map(v=>v.id),regions:volumes.map(v=>({id:v.id,center:[...v.center],halfSize:[...v.halfSize],yaw:v.yaw,detail:v.detail})),volumeBudget:count,broadVolumes:uniforms.howAOBroadCount.value,spatialBounds:[uniforms.howAOMin.value.toArray(),uniforms.howAOMax.value.toArray()],updates,materials:materials.size,canopyFields:[coreField?.size??1,outerField?.size??1],localFieldSize:[...localField.size],localTextureBytes:localField.data.byteLength,lastLocalBakeMs:Math.round(localBakeMs*100)/100,textureBytes:localField.data.byteLength+(coreField?.data.byteLength??4)+(outerField?.data.byteLength??4),extraDrawCalls:0,extraRenderPasses:0,near:[C.nearFull,C.nearEnd],minimumAmbient:C.minimumAmbient,
+      detailMode:viewUniforms.howAOProjection.value.x>0?'projected-footprint':'legacy-distance',detailPixelRange:[C.detailMinPixels,C.detailFullPixels],characterContacts:viewUniforms.howAOContactCount.value};},
+    dispose(){if(disposed)return;disposed=true;viewUniforms.howAOContactCount.value=0;for(const material of materials.keys())releaseMaterial(material);},
   };
 }

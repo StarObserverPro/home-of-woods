@@ -25,6 +25,7 @@ import { createCharacterWardrobe } from './character-wardrobe.ts';
 import { DEFAULT_WARDROBE, resolveWardrobe, wardrobeForMountedItems } from '../content/wardrobe-preview.ts';
 import type { WardrobeLook } from '../content/wardrobe-preview.ts';
 import { createWardrobeVisual } from './wardrobe-visual.ts';
+import { createFootContactAnchors } from './lighting/foot-contact-anchors.ts';
 import { axeHeadSamples, geometryContactTarget, contactClearance, findAxeStop, stoppedStrokeFraction } from './axe-contact.ts';
 import type { AxeTarget, AxeStop } from './axe-contact.ts';
 
@@ -40,6 +41,8 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   visitor.position.set(CAMP_VISITOR.x,heightAt(CAMP_VISITOR.x,CAMP_VISITOR.z),CAMP_VISITOR.z);visitor.rotation.y=.5;
   const body=models.clone('ranger'),npc=models.clone('visitor'),tool=models.clone('axe');
   tool.name='forestry-hand-axe';tool.visible=false;player.add(body,tool);visitor.add(npc);
+  const walkingFeet=createFootContactAnchors(body,{idPrefix:'player'});
+  const visitorFeet=createFootContactAnchors(npc,{idPrefix:CAMP_VISITOR.id});
   const clips=new Map((models.animations.get('motions')??[]).map(c=>[c.name,c]));
   const need=(name:string)=>{const clip=clips.get(name);if(!clip)throw new Error(`Missing character animation: ${name}`);return clip;};
   const mixer=new THREE.AnimationMixer(body),npcMixer=new THREE.AnimationMixer(npc);
@@ -57,6 +60,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   const wave=npcMixer.clipAction(partial);wave.play();
   const npcWalk=npcMixer.clipAction(sourceClips.walk);npcWalk.play();
   const procedural=createActor(models.templates.get('ranger')!,models.animations.get('motions')!);procedural.root.scale.setScalar(1);player.add(procedural.root);procedural.root.visible=false;
+  const actionFeet=createFootContactAnchors(procedural.body,{idPrefix:'player:action'});
   const standardClothes=createCharacterWardrobe(r,body),actionClothes=createCharacterWardrobe(r,procedural.body);
   let previewLook:WardrobeLook={...DEFAULT_WARDROBE},lastLookKey='';
   function updateWardrobe(state:GameState,reducedMotion:boolean,moving:boolean){
@@ -251,7 +255,12 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     setWardrobe(value:Partial<WardrobeLook>){previewLook=resolveWardrobe(value,previewLook);lastLookKey='';},
     getInspection:()=>inspection,
     getImpact:()=>impact,
-    stats:()=>({model:'KayKit R3',mode,inspection,wardrobe:{standard:standardClothes.stats(),action:actionClothes.stats()},stopFound:stop?.found??null,stopFraction:stop?.fraction??null,contactClearance:Number.isFinite(lastContact)?lastContact:null,grip,planMs,disposed}),
+    // Read after life/broom/housing finish posing; alternate rigs never cast duplicate contacts.
+    footContacts:()=>[
+      ...(player.visible?(procedural.root.visible?actionFeet.update():body.visible?walkingFeet.update():[]):[]),
+      ...(visitor.visible?visitorFeet.update():[]),
+    ],
+    stats:()=>({model:'KayKit R3',mode,inspection,footAnchors:{walking:walkingFeet.stats(),action:actionFeet.stats(),visitor:visitorFeet.stats()},wardrobe:{standard:standardClothes.stats(),action:actionClothes.stats()},stopFound:stop?.found??null,stopFraction:stop?.fraction??null,contactClearance:Number.isFinite(lastContact)?lastContact:null,grip,planMs,disposed}),
     dispose(){
       if(disposed)return;disposed=true;
       for(const m of [mixer,npcMixer]){m.stopAllAction();m.uncacheRoot(m.getRoot());}

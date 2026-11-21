@@ -67,7 +67,7 @@ export function createCampOcclusion(options:Options){
       // Covers late-loaded wildlife/clothing and chained weather/rarity variants without per-frame traversal.
       if(bindClock>=1){bindClock=0;ao.bind(scene);}
     },
-    bind:ao.bind,unbind:ao.unbind,bindMaterial:ao.bindMaterial,setEnabled:ao.setEnabled,
+    bind:ao.bind,unbind:ao.unbind,bindMaterial:ao.bindMaterial,setEnabled:ao.setEnabled,updateCamera:ao.updateCamera,setCharacterContacts:ao.setCharacterContacts,
     stats(){return {...ao.stats(),forestBakes,lastForestBakeMs:Math.round(forestBakeMs*100)/100,omittedVolumes,forestMode:'canopy-coverage; no forest-near-field AO'};},
     dispose:ao.dispose,
   };
