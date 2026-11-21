@@ -11,6 +11,7 @@
     "verify:cabin-assets": "node tools/verify-cabin-assets.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test:ai": "node --experimental-strip-types --test tests/visitor-ai.test.ts",
     "verify:assets": "node tools/verify-assets.mjs",
     "check": "npm run verify:assets && npm test && npm run build",
     "verify:evidence": "node tools/run-archived-evidence-audits.mjs",
