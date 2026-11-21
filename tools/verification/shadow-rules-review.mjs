@@ -219,9 +219,154 @@ async function forestSmoke(){
   report.checks.push({name:'production forest expedition smoke',status:'passed',scene});
   await context.close();context=null;page=null;
 }
+async function forestProduceSmoke(){
+  if(!existsSync(path.join(cwd,'src/scene/expedition-produce.ts'))) return;
+  const sites=[
+    ['upper','windfall-berries'],['upper','wet-log'],['mixed','maple-shelves'],
+    ['mixed','edge-serviceberry'],['lower','hardwood-fungi'],['lower','bank-wood-ear'],['lower','berries'],
+  ];
+  const {createExpeditionLayout}=await import('../../src/world/forest-expedition.ts');
+  const {createForestExpedition,serializeForestExpedition}=await import('../../src/domain/forest-expedition.ts');
+  const maps=Object.fromEntries(['upper','mixed','lower'].map(id=>[id,createExpeditionLayout(id)]));
+  for(const [index,[id,key]] of sites.entries()){
+    const siteId=`expedition.${id}.${key}`;
+    const mobile=index===sites.length-1;
+    phase=`forest-produce-${key}`;
+    const state=createForestExpedition({maps},{initialMapId:id});
+    const site=maps[id].resourceSites.find(site=>site.id===siteId);
+    state.player={x:site.x,z:site.z};
+    await newPage(mobile?{width:390,height:844}:{width:960,height:640},mobile);
+    await context.addInitScript(raw=>{
+      if(!localStorage.getItem('home-of-woods.forest-expedition.v1')) localStorage.setItem('home-of-woods.forest-expedition.v1',raw);
+    },serializeForestExpedition(state));
+    await page.goto(`${origin}/sandbox/forest-expedition/?inspect=1`);
+    await page.waitForFunction(siteId=>window.__forestExpedition?.snapshot().scene?.sourceVisuals[siteId],siteId);
+    const near=await page.evaluate(siteId=>{
+      const api=window.__forestExpedition;
+      api.camera('near');
+      const {scene}=api.snapshot();
+      const point=scene.sourceVisuals[siteId];
+      const projected=api.project(point),rect=document.querySelector('canvas').getBoundingClientRect();
+      return {point, projected, x:projected.x+rect.left, y:projected.y+rect.top, scene};
+    },siteId);
+    assert.equal(near.scene.shaderErrors,0,phase);
+    assert.ok(near.projected.visible,phase);
+    const session=await context.newCDPSession(page);
+    try{
+      const capture=await session.send('Page.captureScreenshot',{format:'png',fromSurface:true,captureBeyondViewport:false});
+      await fs.writeFile(path.join(out,`${phase}.png`),Buffer.from(capture.data,'base64'));
+    }finally{await session.detach();}
+    if(mobile) await page.touchscreen.tap(near.x,near.y);
+    else await page.mouse.click(near.x,near.y);
+    const selected=await page.evaluate(()=>window.__forestExpedition.snapshot().selected);
+    assert.deepEqual(selected,{kind:'source',id:siteId},phase);
+    if(key==='edge-serviceberry'){
+      const before=await page.evaluate(siteId=>window.__forestExpedition.snapshot().sources.find(s=>s.id===siteId).remaining,siteId);
+      await page.getByRole('button',{name:'采集',exact:true}).click();
+      await page.evaluate(()=>window.__forestExpedition.advance(2));
+      const after=await page.evaluate(siteId=>{
+        const state=window.__forestExpedition.snapshot();
+        return {remaining:state.sources.find(s=>s.id===siteId).remaining,items:state.carried};
+      },siteId);
+      assert.equal(after.remaining,before-1);
+      assert.ok(after.items.some(item=>item.itemId==='serviceberry'&&item.quantity===1));
+    }
+    report.checks.push({name:phase,status:'passed',viewport:near.scene.viewport,point:near.point,projected:near.projected,drawCalls:near.scene.drawCalls,triangles:near.scene.triangles});
+    await context.close();context=null;page=null;
+  }
+}
+
+async function openCampTrail(){
+  await page.goto(`${origin}/?inspect=1`);
+  await page.waitForFunction(()=>window.__HOW_ADVANCE_SIMULATION__);
+  // Keep the fixed-step diagnostics available without covering the route controls.
+  await page.locator('details.diagnostics').evaluate(details=>{details.style.display='none';});
+  await page.getByRole('button',{name:'路线',exact:true}).click();
+  await page.getByRole('button',{name:'风景',exact:true}).click();
+  await page.getByRole('button',{name:'林地小径',exact:true}).click();
+  await page.getByRole('button',{name:'进入林地',exact:true}).click();
+  await page.waitForFunction(()=>window.__forestExpedition?.snapshot().activeMapId==='upper');
+}
+async function campForestRoundtrip(){
+  if(!existsSync(path.join(cwd,'src/ui/CampForestTrip.tsx')))return;
+  phase='camp-forest-roundtrip';
+  await newPage({width:960,height:640});
+  await openCampTrail();
+  assert.equal(await page.evaluate(()=>document.querySelector('.game-shell').inert),true);
+  await page.getByRole('button',{name:'物产',exact:true}).click();
+  const sourceId='expedition.upper.windfall-berries';
+  const row=page.locator(`[data-source-id="${sourceId}"]`);
+  await row.getByRole('button',{name:'走近',exact:true}).click();
+  for(let i=0;i<12;i++){
+    const near=await page.evaluate(id=>window.__forestExpedition.snapshot().sources.find(source=>source.id===id).near,sourceId);
+    if(near)break;
+    await page.evaluate(()=>window.__forestExpedition.advance(5));
+  }
+  await page.getByRole('button',{name:'采集',exact:true}).click();
+  await page.evaluate(()=>window.__forestExpedition.advance(2));
+  const berry='red-forest-berry';
+  const saved=async()=>page.evaluate(async()=>{
+    const {createBrowserWorldSaveStore}=await import('/src/app/world-save-store.ts');
+    return JSON.parse((await createBrowserWorldSaveStore().read()).primary).world;
+  });
+  // Await a committed game save, then exercise the normal refresh entry point mid-trip.
+  await page.waitForFunction(async itemId=>{
+    const {createBrowserWorldSaveStore}=await import('/src/app/world-save-store.ts');
+    const raw=(await createBrowserWorldSaveStore().read()).primary;
+    const world=raw&&JSON.parse(raw).world;
+    return world?.expedition?.active&&world.inventory.stacks.some(s=>s.itemId===itemId&&s.transport?.kind==='carried'&&s.quantity===1);
+  },berry,{polling:250});
+  await page.reload();
+  await page.waitForFunction(itemId=>window.__forestExpedition?.snapshot().carried.some(s=>s.itemId===itemId&&s.quantity===1),berry);
+  await page.getByRole('button',{name:'去出口',exact:true}).click();
+  for(let i=0;i<12&&!await page.getByRole('button',{name:'回营地',exact:true}).isVisible();i++){
+    await page.evaluate(()=>window.__forestExpedition.advance(5));
+  }
+  await page.getByRole('button',{name:'回营地',exact:true}).click();
+  await page.locator('.camp-forest-trip').waitFor({state:'detached'});
+  let world=await saved();
+  assert.equal(world.expedition.active,false);
+  assert.equal(world.inventory.stacks.find(s=>s.itemId===berry).transport.kind,'carried');
+  assert.equal(world.expedition.localStacks.some(s=>s.itemId===berry),false);
+  await page.getByRole('button',{name:'打开仓库',exact:true}).click();
+  const warehouse=page.getByRole('dialog',{name:'物品与仓库'});
+  await warehouse.getByRole('button',{name:/^高林红果，1份/}).waitFor();
+  await warehouse.getByRole('button',{name:'走近仓库',exact:true}).first().click();
+  for(let i=0;i<12&&!await page.getByRole('button',{name:'放入原木架与营地仓库',exact:true}).isVisible();i++){
+    await page.evaluate(()=>window.__HOW_ADVANCE_SIMULATION__(2));
+  }
+  await page.getByRole('button',{name:'放入原木架与营地仓库',exact:true}).click();
+  await page.waitForFunction(async itemId=>{
+    const {createBrowserWorldSaveStore}=await import('/src/app/world-save-store.ts');
+    const world=JSON.parse((await createBrowserWorldSaveStore().read()).primary).world;
+    return world.inventory.stacks.some(s=>s.itemId===itemId&&!s.transport&&s.quantity===1);
+  },berry,{polling:250});
+  world=await saved();
+  assert.equal(world.inventory.stacks.filter(s=>s.itemId===berry).reduce((n,s)=>n+s.quantity,0),1);
+  await page.locator('.target-card').getByRole('button',{name:'打开仓库',exact:true}).click();
+  await warehouse.getByRole('button',{name:'营地',exact:true}).click();
+  await warehouse.getByRole('button',{name:/^高林红果，1份/}).waitFor();
+  report.checks.push({name:phase,status:'passed',carriedAcrossReload:1,delivered:1});
+  await context.close();context=null;page=null;
+
+  phase='camp-forest-narrow';
+  await newPage({width:390,height:844},true);
+  await openCampTrail();
+  const exit=page.getByRole('button',{name:'回营地',exact:true});
+  const box=await exit.boundingBox();
+  assert.ok(box&&box.width>=44&&box.height>=44&&box.x>=0&&box.x+box.width<=390,JSON.stringify(box));
+  await exit.tap();
+  await page.locator('.camp-forest-trip').waitFor({state:'detached'});
+  assert.equal((await saved()).expedition.active,false);
+  report.checks.push({name:phase,status:'passed',viewport:[390,844],exit:box});
+  await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));
+  await context.close();context=null;page=null;
+}
+
 try{
   await ready();browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});
   report.browser=await browser.version();
+  await campForestRoundtrip();
   await load({width:1100,height:800});
   await workerRoundtrip();
   await treeHeightFadeProbe();
@@ -259,6 +404,7 @@ try{
   await release();
   await mainSmoke();
   await forestSmoke();
+  await forestProduceSmoke();
   assert.deepEqual(report.errors,[]);report.status='passed-automated';console.log('SHADOW_RULES_GPU_REVIEW_PASS');
 }catch(error){
   report.status='failed';report.failure={phase,message:String(error.stack??error)};process.exitCode=1;console.error(error);

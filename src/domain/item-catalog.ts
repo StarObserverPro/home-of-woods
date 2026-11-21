@@ -1,16 +1,16 @@
+import { EXPEDITION_ITEMS, EXPEDITION_TAXONOMY } from '../content/expedition-resources.ts';
 import { ITEMS } from '../content/items.ts';
 import { OWNED_ITEM_DEFINITIONS } from '../content/owned-item-definitions.ts';
 import type { OwnedItemDefinition } from '../content/owned-item-definitions.ts';
 import type { ItemDefinition } from '../content/items.ts';
 import { QUALITIES } from '../content/qualities.ts';
 import type { QualityDefinition } from '../content/qualities.ts';
-import { ITEM_TAXONOMY } from '../content/item-types.ts';
 import type { ItemTaxonomy } from '../content/item-types.ts';
 
 export const isStableId = (id: unknown): id is string =>
   typeof id === 'string' && /^[a-z0-9][a-z0-9._:-]{0,159}$/.test(id);
 
-export function createItemCatalog(items: readonly ItemDefinition[] = ITEMS, qualities: readonly QualityDefinition[] = QUALITIES, taxonomy: ItemTaxonomy = ITEM_TAXONOMY, ownedDefinitions: readonly OwnedItemDefinition[] = OWNED_ITEM_DEFINITIONS) {
+export function createItemCatalog(items: readonly ItemDefinition[] = [...ITEMS, ...EXPEDITION_ITEMS], qualities: readonly QualityDefinition[] = QUALITIES, taxonomy: ItemTaxonomy = EXPEDITION_TAXONOMY, ownedDefinitions: readonly OwnedItemDefinition[] = OWNED_ITEM_DEFINITIONS) {
   const unique = <T>(entries: readonly T[], key: (entry: T) => string) => {
     const map = new Map<string, T>();
     for (const entry of entries) { const id = key(entry); if (!isStableId(id) || map.has(id)) throw new Error('Duplicate or invalid taxonomy ID'); map.set(id, entry); }

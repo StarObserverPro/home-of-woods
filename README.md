@@ -4,6 +4,8 @@ OpenAI 接入草稿：本地开发与构建预览支持行商“讲个路上见�
 
 > 2026-11-14 归档说明：历史原始录屏、构建包、日志和快照已从 main 清理；[只读旧版证据索引](evidence/README.md)可按旧提交追溯。PR #35 的独立证据未动。历史结论不等于当前主线验收。
 
+2026-11-19 三类林地代表样区：`npm run dev:forest` 打开 `/sandbox/forest-expedition/`，可分别进入雾杉高林、斑荫横岭与白桦溪甸，进行寻路、采集、搬运、寄存和基础加工。三图共用库存及有限长材额度，来源区欠料分别判断。当前为独立可玩样区，主营地跨图转场和主存档接线留待后续；构建与 36 项定向测试通过，真实 3D 画面及最终 UI 合同尚未验收。范围、接口和验证边界见 [林地说明](docs/FOREST_EXPEDITIONS.md)，操作见 [入口说明](sandbox/forest-expedition/README.md)。
+
 2026-11-13 粗木 UI 共用语言：主游戏、木屋展台与木作组件统一消费程序化木质表面；开发入口 `/sandbox/timber-ui/` 可检视比例、状态、长文字和纯色回退。当前契约见 [DESIGN](DESIGN.md)，实现与实际验证见 [本轮范围](docs/scopes/timber-ui-system.md)。
 
 2026-11-12 木屋内部新增独立审计入口：开发时打开 `/sandbox/cabin-interior/`，或 `npm run dev:cabin`。默认摆出床、桌、凳、灯，可主动切换完整陈设、逐件查看与重新摆放。规划、PR31 改正及实际验证状态见 [规划胶囊](docs/scopes/cabin-interior-audit.md)，运行、操作和后续接线见 [展台说明](sandbox/cabin-interior/README.md)。正式游戏的家具取得与存档尚未接入。
@@ -77,6 +79,7 @@ WASD/方向键或点地面移动，拖动旋转、滚轮/按钮缩放，R/按钮
 | [M0–M2 与待定参数](docs/MILESTONES.md) | 分阶段交付、验收证据、数值冻结节点 |
 | [世界存档与物品目录](docs/WORLD_SAVE.md) | 全世界快照、事务备份、损坏保护及类别/类型/通用去处 |
 | [运行时与数据](docs/RENDERING.md) | service、状态、地表、渲染与资源生命周期 |
+| [三类林地代表样区](docs/FOREST_EXPEDITIONS.md) | 独立林相地图、地形与路线、资源搬运加工、共享接口及当前验证边界 |
 | [林间行商与铜币经济](docs/MERCHANT.md) | 低频访客、分类货单、三重收购限制、粮袋赊账、可磨损图纸与简洁游戏商店 |
 | [邻居来访、记忆与 AI 边界](docs/NPC_VISITORS.md) | 一个山那边的邻居、重要记忆淡化、营地能力检查、正常动作速度与来访期限；当前用本地规则运行 |
 | [行类道具交互与局部动态](docs/ITEM_BEHAVIORS.md) | 本体动作、词条附加效果、1–2 处局部动态、地图与搬运前置 |
