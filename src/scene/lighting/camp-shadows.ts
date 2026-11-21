@@ -88,7 +88,7 @@ export function createCampShadows({resources,renderer,sun,scene,models,forest,gr
       action.crown.traverse(mesh=>{if(mesh instanceof THREE.Mesh)shadows.configureTreeDepth(mesh,fieldCommitted&&(status==='falling'||status==='stump')?'solid':'crown');});
     });
   }
-  return {update,bindTree,bind:shadows.bind,bindMaterial:shadows.bindMaterial,setEnabled:shadows.setEnabled,
+  return {update,bindTree,bind:shadows.bind,unbind:shadows.unbind,bindMaterial:shadows.bindMaterial,setEnabled:shadows.setEnabled,
     stats:()=>({...shadows.stats(),sourceGeometryCount:boundsByGeometry.size,sourceRule:'actual-crown-vertices; authoritative tree lifecycle'}),
     dispose(){if(disposed)return;disposed=true;shadows.dispose();boundsByGeometry.clear();},
   };

@@ -125,7 +125,13 @@ export function createOutdoorShadows(resources:Resources,options:OutdoorShadowOp
     material.onBeforeCompile=installed;material.customProgramCacheKey=()=>oldKey+KEY;material.needsUpdate=true;
     const onDispose=()=>releaseMaterial(material);materials.set(material,{compile,key,installed,onDispose});material.addEventListener('dispose',onDispose);
   }
-  function bind(root:THREE.Object3D){if(root instanceof THREE.Scene)boundScene=root;root.traverse(o=>{if(o instanceof THREE.Mesh)for(const m of Array.isArray(o.material)?o.material:[o.material])bindMaterial(m);});}
+  function visitMaterials(root:THREE.Object3D,visit:(material:THREE.Material)=>void){
+    root.traverse(object=>{if(object instanceof THREE.Mesh)for(const material of Array.isArray(object.material)?object.material:[object.material])visit(material);});
+  }
+  function bind(root:THREE.Object3D){
+    if(root instanceof THREE.Scene)boundScene=root;
+    visitMaterials(root,bindMaterial);
+  }
   function releaseTree(mesh:THREE.Mesh){
     const old=trees.get(mesh);if(!old)return;
     mesh.geometry.removeEventListener('dispose',old.onGeometryDispose);
@@ -219,7 +225,7 @@ export function createOutdoorShadows(resources:Resources,options:OutdoorShadowOp
     const pose=snappedShadowPose(input.focus,field!.direction);
     sun.target.position.fromArray(pose.target);sun.position.fromArray(pose.position);sun.shadow.camera.up.fromArray(pose.up);
   }
-  return {bind,bindMaterial,configureTreeDepth,setCanopies,update,
+  return {bind,unbind:(root:THREE.Object3D)=>visitMaterials(root,releaseMaterial),bindMaterial,configureTreeDepth,setCanopies,update,
     setEnabled(value:boolean){enabled=value;uniforms.howCrownEnabled.value=value?1:0;},
     stats(){return {version:SHADOW_PROFILES.version,enabled,disposed,mapCount:1,mapSize:P.mapSize,span:P.span,worldUnitsPerTexel:texel,normalBias:sun.shadow.normalBias,solidSoftness:P.solidSoftness,treeHeightFade:{...P.treeHeightFade},fieldSize:[...C.size],fieldBytes:texture.image.data?.byteLength??0,fieldBounds:bounds,sourceCount:field?.sourceCount??0,touchedCells:field?.touchedCells??0,bakes,lastBakeMs:Math.round(lastBakeMs*100)/100,meanBakeMs:completedBuilds?Math.round(totalBakeMs/completedBuilds*100)/100:0,totalBakeMs:Math.round(totalBakeMs*100)/100,cpuMsPerSimulationSecond:elapsedSeconds?Math.round(totalBakeMs/elapsedSeconds*100)/100:0,worker:!!worker,inflight:inflight?1:0,pending:pending?1:0,ready:!!ready,revision,committedRevision,submitted,discarded,workerErrors,fallbackRefreshSeconds:C.fallbackRefreshSeconds,materials:materials.size,treeDepthBindings:trees.size,depthMaterials:depthVariants.size,extraRenderPasses:0,extraDrawCalls:0,fieldLookupsPerPrimaryLight:1};},
     dispose(){

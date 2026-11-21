@@ -1,4 +1,4 @@
-import {daylightAt} from '../domain/scene-props.ts';
+import {createSkySample,sampleSkyLight} from './lighting/sky-light.ts';
 import * as THREE from "three";
 import { Sky } from "three/addons/objects/Sky.js";
 import { ENVIRONMENT_STYLE, MOUNTAINS } from "../content/environment.ts";
@@ -16,6 +16,7 @@ export function createEnvironment(resources:Resources,options:{renderer?:THREE.W
   // A fixed spring daylight adaptation of our own Sky Porch lightingState().
   const daylight=smooth(sunAltitude,-9,12),warm=1-smooth(sunAltitude,2,18);
   const lighting={
+    ...createSkySample(),
     sunDirection,
     sunColor:new THREE.Color(1,.95,.84).lerp(new THREE.Color(1,.48,.19),warm*.83),
     sunIntensity:(.72+2.55*Math.pow(Math.max(0,Math.sin(sunAltitude*Math.PI/180)),.48))*(1-cloud*.82),
@@ -68,7 +69,6 @@ export function createEnvironment(resources:Resources,options:{renderer?:THREE.W
     finally{generator.dispose();capture.clear();u.showSunDisc.value=1;}
   }
   let disposed=false,visualTime=0,weatherCloud=.12,weatherRain=0;
-  const moonDirection=new THREE.Vector3(.45,.7,.65).normalize();
   return{
     setWeather(weather:Pick<WeatherVisualState,'cloud'|'rain'>){
       weatherCloud=THREE.MathUtils.clamp(weather.cloud,0,1);weatherRain=THREE.MathUtils.clamp(weather.rain,0,1);
@@ -77,26 +77,11 @@ export function createEnvironment(resources:Resources,options:{renderer?:THREE.W
       u.showSunDisc.value=1-weatherCloud*.97;
     },
     setHour(hour:number){
-      const {day,night,warm,altitude}=daylightAt(hour);
-      sunDirection.set(-.6,Math.max(.08,altitude),-.32).normalize();
-      u.sunPosition.value.copy(sunDirection);u.reviewNight.value=night;
-      // Keep a soft moon-side fill above the camp so ordinary night actions
-      // remain readable even on the shaded front of the cabin.
-      sunDirection.lerp(moonDirection,night).normalize();
+      const {day,night,warm}=sampleSkyLight(lighting,hour,weatherCloud,weatherRain);
+      u.sunPosition.value.copy(lighting.solarDirection);u.reviewNight.value=night;
       u.pnwSkyTint.value.setRGB(.68+warm*.30,.84-warm*.2,1-warm*.42);
-      lighting.sunColor.set('#fff1d3').lerp(new THREE.Color('#f4a46c'),warm*.75).lerp(new THREE.Color('#9aafff'),night);
-      lighting.sunIntensity=.65*night+2.1*day;
-      lighting.skyColor.set('#a3bfd5').lerp(new THREE.Color('#5d76ac'),night);
-      lighting.groundColor.set('#71784f').lerp(new THREE.Color('#17273e'),night);
-      lighting.ambientIntensity=.62+day*.43;
-      lighting.environmentIntensity=.15+day*.15;
       lighting.haze.set('#819eaf').lerp(new THREE.Color('#171f39'),night);
       mountainAir.value.setRGB(.40,.55,.66).lerp(new THREE.Color('#171f39'),night);
-      const overcast=smooth(weatherCloud,.18,.92);
-      lighting.sunIntensity*=1-overcast*.68;
-      lighting.ambientIntensity*=1-overcast*.08-weatherRain*.04;
-      lighting.skyColor.lerp(new THREE.Color('#a0abb1').lerp(new THREE.Color('#4a5a7a'),night),overcast*.45);
-      lighting.environmentIntensity*=1-overcast*.12;
       return {day,night};
     },
     group,lighting,environmentMap:environmentTarget?.texture??null,

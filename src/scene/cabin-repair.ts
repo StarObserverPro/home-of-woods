@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CABIN_ROOF_REPAIR } from '../content/cabin.ts';
 import type {Models} from './models.ts';
 
 /** Reuse the authored cabin kit; the model cache keeps ownership of its GPU resources. */
@@ -19,8 +20,7 @@ export function createCabinRepair(models:Models) {
     group.add(mesh);
   };
   // Two missing frontward boards. Other roof gaps deliberately remain for later stages.
-  copy('roof_board002','repair-roof-left',-2.35,1.23);
-  copy('roof_board007','repair-roof-right',2.35,2.02);
+  for (const part of CABIN_ROOF_REPAIR) copy(part.source,part.name,part.x,part.z);
   // Additional posts sit outside the opening and inside the existing cabin footprint.
   copy('door_frame','repair-door-left',-1.78,3.57);
   copy('door_frame001','repair-door-right',.58,3.57);

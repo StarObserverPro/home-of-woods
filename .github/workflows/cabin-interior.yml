@@ -5,17 +5,29 @@ on:
       - 'sandbox/cabin-interior/**'
       - 'public/assets/cabin-interior/**'
       - 'public/assets/characters/**'
+      - 'public/assets/m0/cabin.glb'
+      - 'src/app/runtime.ts'
+      - 'src/content/cabin.ts'
       - 'src/content/characters.ts'
       - 'src/content/world.ts'
       - 'src/content/wood-grain.ts'
+      - 'src/domain/cabin.ts'
+      - 'src/scene/cabin/**'
+      - 'src/scene/cabin-repair.ts'
+      - 'src/scene/characters.ts'
+      - 'src/scene/create-scene.ts'
+      - 'src/scene/lighting/sky-light.ts'
       - 'src/scene/resources.ts'
       - 'src/scene/wood-grain.ts'
       - 'src/scene/seated-pose.ts'
       - 'tests/cabin-interior.test.ts'
+      - 'tests/cabin-portal.test.ts'
+      - 'src/ui/App.tsx'
       - 'tools/prepare-cabin-assets.mjs'
       - 'tools/verify-cabin-assets.mjs'
       - 'sources/kaykit/furniture-bits/**'
       - 'tools/verification/cabin-interior-browser.mjs'
+      - 'tools/verification/cabin-portal-browser.mjs'
       - 'package.json'
       - 'package-lock.json'
       - 'vite.config.ts'
@@ -27,6 +39,10 @@ jobs:
   cabin-browser:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [audit, portal]
     env:
       CABIN_EVIDENCE_DIR: /tmp/how-cabin-evidence
     steps:
@@ -44,12 +60,12 @@ jobs:
       - run: npm run test:cabin
       - run: npm run verify:cabin-assets
       - name: Exercise the built cabin with real browser input
-        run: node tools/verification/cabin-interior-browser.mjs
+        run: node tools/verification/cabin-interior-browser.mjs ${{ matrix.suite }}
       - name: Keep screenshots, recordings and exact run report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cabin-interior-evidence
+          name: ${{ matrix.suite == 'audit' && 'cabin-interior-evidence' || 'cabin-portal-evidence' }}
           path: |
             /tmp/how-cabin-evidence/*.png
             /tmp/how-cabin-evidence/report.json
@@ -57,7 +73,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
       - name: Keep continuous interaction recordings separately
-        if: always()
+        if: always() && matrix.suite == 'audit'
         uses: actions/upload-artifact@v4
         with:
           name: cabin-interior-recordings

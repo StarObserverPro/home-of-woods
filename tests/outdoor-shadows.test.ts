@@ -77,8 +77,13 @@ test('direct canopy hook composes with AO and leaves local lights and indirect l
   assert.match(shader.fragmentShader,/reflectedLight\.indirectDiffuse\*=howAmbient/);
   assert.match(shader.fragmentShader,/getPointLightInfo/);
   assert.match(shader.vertexShader,/instanceMatrix\*howCrownWorld/);
-  ao.dispose();assert.equal(material.onBeforeCompile,directHook);
-  shadows.dispose();assert.equal(material.onBeforeCompile,before);
+  const player=new THREE.Mesh(new THREE.BoxGeometry(),material);
+  ao.unbind(player);assert.equal(material.onBeforeCompile,directHook);
+  shadows.unbind(player);assert.equal(material.onBeforeCompile,before);
+  shadows.bind(player);ao.bind(player);
+  assert.equal(shadows.stats().materials,1);assert.equal(ao.stats().materials,1);
+  ao.dispose();shadows.dispose();assert.equal(material.onBeforeCompile,before);
+  player.geometry.dispose();
   material.onBeforeCompile=original;material.dispose();owner.dispose();
 });
 
