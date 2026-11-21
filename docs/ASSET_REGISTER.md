@@ -2,6 +2,10 @@
 
 天气回接采用本项目独立沙盒中已审阅的原创程序雨丝、雪花、局部镜头雨滴、水坑涟漪与材质覆雪。新储木架棚顶和立柱为原木纹、共享几何与材质组成的原创模型，既有 GLB 字节与第三方许可沿用原登记。生产入口为 scene/weather-presentation.ts、weather-particle-seeds.js、environment.ts 与 camp-props.ts，资源归原 Resources owner。强度随机样本与空间坐标独立。当前范围和实机检查见 [天气回接记录](scopes/running-selection-weather.md)。
 
+## 营地邻居资源复用（2026-11-19）
+
+阿榆 `ridge-neighbour` 在 `src/scene/neighbour.ts` 复用当前已准入的 KayKit `visitor.glb`、`motions.glb` 与项目既有 `character-wardrobe.ts` 程序衣帽/背包，不新增第三方模型、动画、贴图或下载素材，原 GLB 字节和 CC0 许可保持原登记；每个角色克隆独立骨架，附件仅替换本实例的材质引用，资源继续由 Models/Resources 管理。实际离线检查及尚未完成的实机画面验收见 [邻居来访 scope](scopes/neighbour-visitors.md)。
+
 ## 跑步动作追加（2026-11-06）
 
 现有 HOW-CHARACTERS-1 的免费 KayKit Character Animations 1.1 已准入源件 MovementBasic.glb 增选 Running_A，沿用 public/assets/licenses/KayKit-Animations-1.1-CC0.txt。采用脚本 prepare-character-assets.mjs 重新打包，仅保留实际消费的七段动作。运行时 public/assets/characters/motions.glb 为 203,564 字节，SHA-256 为 2dd813b43abf0203f4fdad58c8721d19f59fc2e2db950293b2f4b737a5168e36。源件 SHA-256 为 11422afd50abf7e8c92ea107e2e0bc94abd38023d6d15f55ad580347efbfa29e。manifest 与角色子清单同步，Models/Resources 沿用原加载和骨架资源所有权。实际步频消费移动位移，采伐止点继续使用原动作。当前运行及验证见 [本轮记录](scopes/running-selection-weather.md)。
