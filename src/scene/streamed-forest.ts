@@ -26,7 +26,7 @@ export function createStreamedForest(forest:ReturnType<Models['createForest']>,t
   const dummy=new THREE.Object3D(),matrix=new THREE.Matrix4();
   const lifeCache=new Map<string,{status:string;growth:number}>();
   let latest:GameState|undefined,slots:GameState['forestry']['slots']|undefined;
-  let disposed=false,epoch=0,revision=0,loads=0,unloads=0,commits=0,preparedTrees=0;
+  let disposed=false,epoch=0,revision=0,residencyRevision=0,loads=0,unloads=0,commits=0,preparedTrees=0;
   let lastX=NaN,lastZ=NaN;
 
   function writeTree(batch:typeof batches[number],tree:Tree,index:number){
@@ -101,13 +101,15 @@ export function createStreamedForest(forest:ReturnType<Models['createForest']>,t
           }
           unloads++;
         }
-        prepared.length=0;plans.delete(key);commits++;revision++;return true;
+        prepared.length=0;plans.delete(key);commits++;revision++;residencyRevision++;return true;
       },
     });
   }
   return {
     activeChunks,
     get revision(){return revision;},
+    /** Only committed activeChunks membership changes invalidate its dependants. */
+    get residencyRevision(){return residencyRevision;},
     update(state:GameState){
       if(disposed)return;
       latest=state;
@@ -141,7 +143,7 @@ export function createStreamedForest(forest:ReturnType<Models['createForest']>,t
     stats:()=>({chunkSize:WORLD_STREAMING.chunkSize,detailLoad:WORLD_STREAMING.detailLoad,detailRelease:WORLD_STREAMING.detailRelease,
       simulation:WORLD_STREAMING.simulation,loadedChunks:activeChunks.size,totalChunks:chunks.size,detailTrees:forest.selections.size,
       coarseBatches:batches.length,sceneryInstances:batches.reduce((sum,b)=>sum+b.mesh.count,0),loads,unloads,commits,preparedTrees,
-      pendingChunks:plans.size,revision,epoch}),
+      pendingChunks:plans.size,revision,residencyRevision,epoch}),
     dispose(){if(disposed)return;disposed=true;cancelPlans();if(!sharedQueue)queue.dispose();activeChunks.clear();desiredChunks.clear();
       prototypes.clear();chunks.clear();treeChunk.clear();lifeCache.clear();batchFor.clear();batches.forEach(b=>b.mesh.removeFromParent());},
   };
