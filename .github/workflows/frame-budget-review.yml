@@ -40,7 +40,9 @@ concurrency:
 jobs:
   frame-budget:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Both viewport flows include bounded camera travel on software WebGL.
+    # The CI wall-clock allowance is separate from the in-game frame budget.
+    timeout-minutes: 35
     env:
       EVIDENCE_DIR: /tmp/how-frame-budget-review
     steps:
