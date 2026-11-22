@@ -76,7 +76,12 @@ test('mainline horizon and creek share water presentation and release every adde
   try{
     const {ground,water}=createTerrain(r),horizon=createHorizon(r,ground.geometry,makeTrees()),river=createCreek(r,water,horizon.riverExtensions);
     assert.equal(ground.material[0].userData.sceneryTrails.independentRoadMeshes,0);
-    assert.ok(horizon.stats().triangles<100000);assert.equal(horizon.stats().forest.trees,2389);
+    assert.ok(horizon.stats().triangles<100000);
+    const visual=horizon.stats().forest;
+    assert.equal(visual.trees,2389);
+    assert.ok(visual.visualMasses>0,'distant decorative forest actually uses aggregated crowns');
+    assert.equal(visual.renderedSingles+visual.mergedTreeAnchors,visual.trees);
+    assert.ok(visual.triangles<visual.sourceTriangles,'the replacement lowers submitted triangles');
     const reflection=river.group.getObjectByName('bounded-planar-river-reflection') as THREE.Mesh;
     for(const name of ['upstream-continuation','downstream-continuation']){
       const extension=river.group.getObjectByName(name) as THREE.Mesh;
