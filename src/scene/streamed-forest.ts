@@ -28,7 +28,7 @@ export function createStreamedForest(forest:ReturnType<Models['createForest']>,t
   const dummy=new THREE.Object3D(),matrix=new THREE.Matrix4();
   const lifeCache=new Map<string,{status:string;growth:number}>();
   let latest:GameState|undefined,slots:GameState['forestry']['slots']|undefined;
-  let disposed=false,epoch=0,revision=0,loads=0,unloads=0,commits=0,preparedTrees=0;
+  let disposed=false,epoch=0,revision=0,residencyRevision=0,loads=0,unloads=0,commits=0,preparedTrees=0;
   let lastX=NaN,lastZ=NaN;
   let viewIDs:Set<string>|undefined,viewRevision=0,viewSteps=0,viewProcessedTrees=0,maxViewStepTrees=0,immediateViewRepairs=0,immediateViewRepairCalls=0;
   const viewStepLimit=8;
@@ -139,13 +139,15 @@ export function createStreamedForest(forest:ReturnType<Models['createForest']>,t
           }
           unloads++;
         }
-        prepared.length=0;plans.delete(key);commits++;revision++;return true;
+        prepared.length=0;plans.delete(key);commits++;revision++;residencyRevision++;return true;
       },
     });
   }
   return {
     activeChunks,
     get revision(){return revision;},
+    /** Only committed activeChunks membership changes invalidate its dependants. */
+    get residencyRevision(){return residencyRevision;},
     /** Queue only changed far visibility; caller supplies current + bounded future views. */
     requestView(wantedIDs:ReadonlySet<string>){
       if(disposed)return;
@@ -216,7 +218,7 @@ export function createStreamedForest(forest:ReturnType<Models['createForest']>,t
     stats:()=>({chunkSize:WORLD_STREAMING.chunkSize,detailLoad:WORLD_STREAMING.detailLoad,detailRelease:WORLD_STREAMING.detailRelease,
       simulation:WORLD_STREAMING.simulation,loadedChunks:activeChunks.size,totalChunks:chunks.size,detailTrees:forest.selections.size,
       coarseBatches:batches.length,sceneryInstances:batches.reduce((sum,b)=>sum+b.mesh.count,0),loads,unloads,commits,preparedTrees,
-      pendingChunks:plans.size,revision,epoch,viewEnabled:!!viewIDs,viewRevision,viewWanted:viewIDs?.size??farTrees.size,
+      pendingChunks:plans.size,revision,residencyRevision,epoch,viewEnabled:!!viewIDs,viewRevision,viewWanted:viewIDs?.size??farTrees.size,
       pendingViewTrees:batches.reduce((sum,batch)=>sum+batch.pendingView.size,0),viewSteps,viewProcessedTrees,maxViewStepTrees,
       immediateViewRepairs,immediateViewRepairCalls}),
     dispose(){if(disposed)return;disposed=true;cancelPlans();if(!sharedQueue)queue.dispose();activeChunks.clear();desiredChunks.clear();

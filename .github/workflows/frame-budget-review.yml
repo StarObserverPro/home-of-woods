@@ -20,6 +20,7 @@ on:
       - 'src/ui/App.tsx'
       - 'tests/frame-work-queue.test.ts'
       - 'tests/streamed-forest-budget.test.ts'
+      - 'tests/forest-residency-revision.test.ts'
       - 'tests/presentation-loop.test.ts'
       - 'tests/understory-submission.test.ts'
       - 'tests/expedition-crown-opacity.test.ts'
@@ -56,6 +57,7 @@ jobs:
           node --experimental-strip-types --test
           tests/frame-work-queue.test.ts
           tests/streamed-forest-budget.test.ts
+          tests/forest-residency-revision.test.ts
           tests/presentation-loop.test.ts
           tests/lifecycle.test.ts
           tests/understory-submission.test.ts

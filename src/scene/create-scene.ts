@@ -675,7 +675,7 @@ export async function createScene(
       streaming.update(state);
       frameWork.run({budgetMs:mobile?FRAME_WORK_BUDGET.compactMs:FRAME_WORK_BUDGET.desktopMs,maxSteps:FRAME_WORK_BUDGET.maxSteps});
       bridge.update(state);
-      forestry.update(state,reducedMotion);understory.update(state,streaming.activeChunks,streaming.revision);
+      forestry.update(state,reducedMotion);understory.update(state,streaming.activeChunks,streaming.residencyRevision);
       if(mealFraming&&(state.player.moving||state.route.length||state.workshop.job||state.forestry.active||state.gathering.action?.phase==='performing'))view.cancelMeal();
       life.restorePose();
       broom.restorePose();
