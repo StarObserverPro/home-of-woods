@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      EVIDENCE_DIR: ${{ runner.temp }}/how-frame-budget-review
+      EVIDENCE_DIR: /tmp/how-frame-budget-review
     steps:
       - uses: actions/checkout@v7
         with:

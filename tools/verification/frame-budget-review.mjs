@@ -9,7 +9,7 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {fileURLToPath} from 'node:url';
 import {chromium} from 'playwright';
 
-const root = fileURLToPath(new URL('../../', import.meta.url));
+const root = path.resolve(fileURLToPath(new URL('../../', import.meta.url)));
 const out = path.resolve(process.env.EVIDENCE_DIR ?? path.join(os.tmpdir(), 'how-frame-budget-review'));
 assert.ok(out !== root && !out.startsWith(root + path.sep), 'Screenshots must stay outside the repository');
 fs.mkdirSync(out, {recursive:true});
@@ -92,6 +92,7 @@ async function capture(name) {
 async function fresh(viewport) {
   flow = {name:viewport.width < 600 ? 'mobile' : 'desktop', viewport, steps:[]};
   report.flows.push(flow);
+  console.log('FLOW', flow.name, JSON.stringify(viewport));
   context = await browser.newContext({viewport, deviceScaleFactor:1, hasTouch:viewport.width < 600});
   page = await context.newPage(); page.setDefaultTimeout(60000);
   page.on('pageerror', error => report.errors.push({flow:flow.name, message:error.message}));
@@ -143,6 +144,7 @@ async function fresh(viewport) {
   assert.ok(initial.frameWork.totalSteps > preparing[0].frameWork.totalSteps, 'Paused frames actually execute queued steps');
   assert.ok(samples.filter(s => s.paused).every(s => s.worldUnchanged), 'Paused preparation never changes the world');
   flow.pausedStartup = {samples:preparing.length, from:preparing[0].frameWork, to:initial.frameWork, worldSha256:digest(await readWorld())};
+  console.log('PAUSED_CONVERGED', flow.name, JSON.stringify(flow.pausedStartup));
   await resume();
   await capture(flow.name + '-camp');
 }
@@ -228,7 +230,8 @@ async function walkAcrossChunks() {
 try {
   const log = fs.createWriteStream(path.join(out, 'vite.log'));
   server = spawn(process.execPath, [path.join(root, 'node_modules/vite/bin/vite.js'), '--host', '127.0.0.1', '--port', '5191', '--strictPort'], {cwd:root, stdio:['ignore','pipe','pipe'], detached:process.platform !== 'win32'});
-  server.stdout.pipe(log); server.stderr.pipe(log);
+  server.stdout.pipe(log, {end:false}); server.stderr.pipe(log, {end:false});
+  server.once('close', () => log.end());
   server.on('error', error => { serverExit = String(error); });
   server.on('exit', (code, signal) => { serverExit = {code, signal}; });
   const deadline = Date.now() + 45000;

@@ -444,7 +444,7 @@ export async function createScene(
   localOcclusion.bindMaterial(fadeMat);
   propFades.forEach(({materials})=>materials.forEach(({fade})=>localOcclusion.bindMaterial(fade)));
   const view = {
-    hasPendingPresentation:()=>frameWork.stats().pending>0,
+    hasPendingPresentation:()=>!cabinPlayer&&frameWork.stats().pending>0,
     setPresentationScheduler(callback:()=>void){schedulePresentation=callback;},
     setAmbientOcclusion:(enabled:boolean)=>(cabinPlayer&&cabinRoom?cabinRoom.occlusion:localOcclusion).setEnabled(enabled),
     setCanopyShadows:(enabled:boolean)=>outdoorShadows.setEnabled(enabled),
