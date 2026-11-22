@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {random,riverX,riverY,routeDistance,smooth} from '../world/horizon.js';
+import {clusterDistantForest} from './distant-forest-mass.js';
 
 export const OUTER_FOREST={seed:105071,triangleBudget:57000,maxTrees:2850};
 const definitions={
@@ -59,21 +60,42 @@ export function planOuterForest(sample,triangleCounts,existing=[]){
  return {placements,triangles};
 }
 
-export function createOuterForest(r,sample,existing=[]){
+export function createOuterForest(r,sample,existing=[],options={}){
  const group=new THREE.Group();group.name='scenery-only-altitude-forest';
  const geometries=Object.fromEntries(Object.keys(definitions).map(key=>[key,r.own(distantTreeGeometry(key))]));
  const counts=Object.fromEntries(Object.entries(geometries).map(([key,g])=>[key,(g.index?.count??g.getAttribute('position').count)/3]));
- const plan=planOuterForest(sample,counts,existing),dummy=new THREE.Object3D(),color=new THREE.Color(),air=new THREE.Color('#b7c7cc');
+ const plan=planOuterForest(sample,counts,existing),visual=clusterDistantForest(plan.placements,{enabled:options.mass!==false});
+ const dummy=new THREE.Object3D(),color=new THREE.Color(),air=new THREE.Color('#b7c7cc');
  const mat=r.own(new THREE.MeshStandardMaterial({color:'#ffffff',vertexColors:true,roughness:1,flatShading:true}));
  const summary={};
  for(const key of Object.keys(definitions)){
-  const list=plan.placements.filter(p=>p.kind===key);summary[key]=list.length;
+  const list=visual.singles.filter(p=>p.kind===key);summary[key]=plan.placements.filter(p=>p.kind===key).length;
   const mesh=r.own(new THREE.InstancedMesh(geometries[key],mat,list.length));mesh.name=`horizon-tree-${key}`;
   list.forEach((p,i)=>{
    dummy.position.set(p.x,p.y-.08,p.z);dummy.rotation.set(0,p.angle,0);dummy.scale.set(p.width,p.height,p.width);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);
    color.set('#ffffff').multiplyScalar(.86+p.tone*.24).lerp(air,smooth(260,800,Math.hypot(p.x,p.z))*.6);mesh.setColorAt(i,color);
   });mesh.computeBoundingSphere();group.add(mesh);
  }
+ if(visual.masses.length){
+  const shape=r.own(new THREE.IcosahedronGeometry(1,0));
+  const material=r.own(new THREE.MeshStandardMaterial({color:'#ffffff',roughness:1,flatShading:true}));
+  const mesh=r.own(new THREE.InstancedMesh(shape,material,visual.masses.length));
+  mesh.name='horizon-visual-canopy-masses';
+  const leaves=new THREE.Color();
+  visual.masses.forEach((p,i)=>{
+   dummy.position.set(p.x,p.y,p.z);dummy.rotation.set(0,(i*2.3999632297)%(Math.PI*2),0);
+   dummy.scale.set(p.rx,p.ry,p.rz);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);
+   leaves.set(p.conifer?'#537a57':'#789551').multiplyScalar(.83+p.tone*.17)
+    .lerp(air,smooth(260,800,Math.hypot(p.x,p.z))*.6);
+   mesh.setColorAt(i,leaves);
+  });
+  mesh.computeBoundingSphere();group.add(mesh);
+ }
+ const triangles=visual.singles.reduce((sum,t)=>sum+counts[t.kind],0)+visual.masses.length*20;
+ // Occlusion retains the original visual seed; nothing in this layer gains an entity ID.
  group.userData.canopySeeds=plan.placements.map(p=>({x:p.x,z:p.z,radius:(p.kind==='oak'?2.65:2.05)*p.width,height:8*p.height}));
- group.userData={...group.userData,trees:plan.placements.length,triangles:plan.triangles,species:summary,placement:'rendered-terrain',triangleBudget:OUTER_FOREST.triangleBudget};return group;
+ group.userData={...group.userData,trees:plan.placements.length,renderedSingles:visual.singles.length,
+  visualMasses:visual.masses.length,mergedTreeAnchors:visual.mergedTrees,triangles,sourceTriangles:plan.triangles,
+  species:summary,placement:'rendered-terrain',representation:'scenery-only',triangleBudget:OUTER_FOREST.triangleBudget};
+ return group;
 }

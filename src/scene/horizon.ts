@@ -11,7 +11,7 @@ import type {CanopySeed} from '../world/occlusion.ts';
 import type {Tree} from '../world/layout.ts';
 
 /** Decorative extension of the scene-owned terrain. No navigation, IDs or save state. */
-export function createHorizon(r:Resources,ground:THREE.BufferGeometry,trees:Tree[]){
+export function createHorizon(r:Resources,ground:THREE.BufferGeometry,trees:Tree[],visual:'mass'|'trees'='mass'){
   const group=new THREE.Group();group.name='continuous-valley-horizon';
   const geometry=r.own(buildApron(ground)),material=createGroundMaterial(r),compile=material.onBeforeCompile;
   material.vertexColors=true;
@@ -26,7 +26,7 @@ export function createHorizon(r:Resources,ground:THREE.BufferGeometry,trees:Tree
   material.customProgramCacheKey=()=> 'continuous-horizon-ground-r2';
   paintSceneryTrails(material);
   const apron=new THREE.Mesh(geometry,material);apron.name='continuous-exterior-apron';apron.receiveShadow=true;
-  const sample=createTerrainSampler([ground,geometry]),forest=createOuterForest(r,sample,trees);
+  const sample=createTerrainSampler([ground,geometry]),forest=createOuterForest(r,sample,trees,{mass:visual==='mass'});
   group.add(apron,forest,createRocks(r,sample),portalProps(r,sample));
   // Creek owns presentation of every segment and shares its reflection/lighting uniforms.
   const riverExtensions=[[-720,WORLD.minZ],[WORLD.maxZ,720]].map(([start,end])=>r.own(buildRiver(start,end).translate(0,-WORLD.waterY,0)));
