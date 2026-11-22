@@ -8,6 +8,7 @@ import json
 import sys
 
 import bpy
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from motion import FPS, PERIOD, STRIDE, boot_contacts, key_pose, pose_at
@@ -88,6 +89,77 @@ def tint_glb(path):
     path.write_bytes(pack('<4sIII4s',b'glTF',2,20+len(chunk)+len(binary),len(chunk),b'JSON')+chunk+binary)
 
 
+# Skin outlines on the original 1024 px atlas, in top-left image coordinates.
+# The head and arm meshes also include the scalp and wrist wraps.
+J01_02_SKIN = (
+    ((0,0),(69,0),(88,38),(103,82),(129,105),(142,136),(181,152),
+     (207,164),(216,194),(198,227),(175,239),(158,256),(128,285),
+     (94,307),(72,325),(49,324),(27,301),(0,308)),
+    ((241,290),(275,290),(307,306),(340,318),(375,324),(419,324),
+     (416,403),(361,406),(321,423),(286,437),(231,422),(232,384),(247,365)),
+    ((0,404),(80,396),(110,409),(147,429),(183,425),(219,407),(250,405),
+     (287,443),(313,477),(319,533),(301,568),(249,594),(212,585),
+     (177,566),(130,577),(104,592),(70,573),(25,566),(0,569)),
+    ((0,838),(190,828),(198,880),(211,954),(212,1024),(0,1024)),
+)
+
+
+def skin_atlas_mask(width, height):
+    y,x = np.ogrid[:height,:width]
+    x = (x+.5)*1024/width
+    y = (height-y-.5)*1024/height
+    mask = np.zeros((height,width),dtype=np.float32)
+    for outline in J01_02_SKIN:
+        inside = np.zeros((height,width),dtype=bool)
+        distance = np.full((height,width),np.inf,dtype=np.float32)
+        for (ax,ay),(bx,by) in zip(outline,(*outline[1:],outline[0])):
+            dx,dy = bx-ax,by-ay
+            if dy:
+                inside ^= ((ay>y)!=(by>y)) & (x<(y-ay)*dx/dy+ax)
+            t = np.clip(((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy),0,1)
+            np.minimum(distance,(x-ax-t*dx)**2+(y-ay-t*dy)**2,out=distance)
+        mask = np.maximum(mask,np.clip(np.where(inside,1,-1)*np.sqrt(distance)/7+.5,0,1))
+    return mask
+
+
+def recolor_j01_02(obj):
+    _, islands = mesh_islands(obj)
+    if [len(ids) for ids in islands[:6]] != [552,528,455,302,302,203]:
+        raise ValueError('J01_02 拓扑与原模不同，需重新选取皮肤范围')
+
+    # Isolate the head/neck and both arms from the grey hair and clothing.
+    material = obj.data.materials[0].copy()
+    material.name = 'J01_02 complexion'
+    shader = next(node for node in material.node_tree.nodes if node.type == 'BSDF_PRINCIPLED')
+    texture = shader.inputs['Base Color'].links[0].from_node
+    original = texture.image
+    width, height = original.size
+    pixels = np.empty(width*height*4, dtype=np.float32)
+    original.pixels.foreach_get(pixels)
+    rgba = pixels.reshape(height,width,4)
+    rgb = rgba[:,:,:3]
+    grey = rgb @ np.array([.2126,.7152,.0722],dtype=np.float32)
+    chroma = rgb.max(axis=-1)-rgb.min(axis=-1)
+    # Keep the amber eyes and dark painted details. The curve lifts the
+    # complexion without flattening the baked shadow and highlight detail.
+    neutral = 1-np.clip((chroma-.035)/.080,0,1)
+    light = np.clip((grey-.095)/.215,0,1)
+    weight = (neutral*light*skin_atlas_mask(width,height))[:,:,None]
+    tone = grey[:,:,None] + (1-grey[:,:,None])*np.array([.39,.23,.14],dtype=np.float32)
+    rgb[:] = rgb*(1-weight)+tone*weight
+    atlas = bpy.data.images.new('J01_02 warm skin',width=width,height=height,alpha=True)
+    atlas.colorspace_settings.name = original.colorspace_settings.name
+    atlas.pixels.foreach_set(pixels)
+    atlas.update()
+    atlas.pack()
+    texture.image = atlas
+    obj.data.materials.append(material)
+    skin = set(islands[1]+islands[3]+islands[4])
+    for face in obj.data.polygons:
+        if all(i in skin for i in face.vertices):
+            face.material_index = len(obj.data.materials)-1
+
+
 def key_bone(bone, at):
     bone.keyframe_insert(data_path='location',frame=at,group=bone.name)
     bone.keyframe_insert(data_path='rotation_quaternion',frame=at,group=bone.name)
@@ -107,8 +179,10 @@ def export_model(scene, source, path, recolor):
         rig.animation_data_clear()
         rest = {b.name:rig.matrix_world@b.matrix_local for b in rig.data.bones}
         points,soles = boot_contacts(body)
-        if recolor:
+        if recolor == 'villager-j01':
             recolor_j01(body)
+        elif recolor == 'villager-j01-02':
+            recolor_j01_02(body)
         for bone in rig.pose.bones:
             bone.rotation_mode = 'QUATERNION'
         for step in range(PERIOD+1):
@@ -131,7 +205,7 @@ def export_model(scene, source, path, recolor):
             export_extras=True,export_yup=True,export_animation_mode='SCENE',
             export_frame_range=True,export_anim_slide_to_zero=True,export_force_sampling=True,
         )
-        if recolor:
+        if recolor == 'villager-j01':
             tint_glb(destination)
         destination.replace(path)
         for material in body.data.materials[:1]:
@@ -157,7 +231,7 @@ def prepare(archive, output=LOCAL_MODELS):
                 if name.startswith('NP120_') and Path(name).suffix.lower() in ('.png','.fbx'):
                     (source/name).write_bytes(package.read(entry))
             for role, stem in MODELS.items():
-                export_model(scene,source/(stem+'.FBX'),output/(role+'.glb'),role=='villager-j01')
+                export_model(scene,source/(stem+'.FBX'),output/(role+'.glb'),role)
     finally:
         bpy.context.window.scene = prior
         bpy.data.scenes.remove(scene)
