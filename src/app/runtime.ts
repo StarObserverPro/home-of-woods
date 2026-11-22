@@ -50,6 +50,7 @@ import {CAMP_VISITOR} from '../content/characters.ts';
 import type {WardrobeLook} from '../content/wardrobe-preview.ts';
 import {beginRitual,advanceRitual,ritualBusy} from '../domain/ritual.ts';
 import { MOVEMENT, WAYPOINTS } from "../content/world.ts";
+import {OVERLOOK} from '../content/camera.ts';
 import { CABIN_PORTAL, CABIN_ROOM } from '../content/cabin.ts';
 import {FORESTRY} from '../content/forestry.ts';
 import type { Point } from "../content/world.ts";
@@ -384,7 +385,8 @@ export async function createRuntime(
         dz = 0;
       let routeDistance=Infinity;
       if(placement||woodcraft.isDropping()){sx=sz=0;state.route=[];}
-      if (sx || sz) {
+      const movementReady=!!cabin||!(sx||sz||state.route.length)||view.prepareForMovement();
+      if (movementReady && (sx || sz)) {
         if(!cabin){
           view.inspectScene(null);
           const cancelled=cancelPlayerAction(state);if(cancelled)message=cancelled;
@@ -396,7 +398,7 @@ export async function createRuntime(
         const yaw = view.getYaw();
         dx = sx * Math.cos(yaw) + sz * Math.sin(yaw);
         dz = -sx * Math.sin(yaw) + sz * Math.cos(yaw);
-      } else if (!cabin && state.route.length) {
+      } else if (movementReady && !cabin && state.route.length) {
         const p = state.route[0],
           distance = Math.hypot(p.x - state.player.x, p.z - state.player.z);
         if (distance < 0.18) state.route.shift();
@@ -1051,11 +1053,12 @@ export async function createRuntime(
       syncPause();
       if (value) void persistence.saveNow(state);
     },
-    camera(action: "reset" | "left" | "right" | "in" | "out") {
+    camera(action: "reset" | "left" | "right" | "in" | "out" | "raise" | "lower") {
       if(destroyed||crossing)return;
       if (action === "reset") {view.inspectScene(null);if(inspectionOpen){inspectionOpen=false;view.inspectCharacter(null);view.inspectScene(null);syncPause();}view.resetCamera();}
       else if (action === "left" || action === "right")
         view.rotate(action === "left" ? -0.35 : 0.35);
+      else if(action === 'raise' || action === 'lower')view.elevate(action === 'raise'?OVERLOOK.elevationStep:-OVERLOOK.elevationStep);
       else view.zoomBy(action === "in" ? 1.18 : 1 / 1.18);
       if (manualPause || inspectionOpen) view.render(state, 0);
       publishSnapshot();

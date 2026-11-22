@@ -37,7 +37,12 @@ function checkScene(s, label) {
   assert.equal(s.characters?.disposed, false, `${label}: the actual character asset is mounted`);
   assert.ok(s.frameWork.lastSteps <= 12, `${label}: per-frame work respects the step cap`);
   assert.equal(s.frameWork.lastBudgetMs, flow.viewport.width < 600 ? 1.5 : 3);
-  if (requiresCamera) assert.ok(camera(s), `${label}: this revision must expose its anchored camera`);
+  if (requiresCamera) {
+    assert.ok(camera(s), `${label}: this revision must expose its anchored camera`);
+    assert.equal(s.streaming.viewEnabled, true, `${label}: the real scene consumes its view plan`);
+    assert.ok(s.streaming.maxViewStepTrees <= 8, `${label}: each visibility slice stays bounded`);
+    assert.ok(s.forestView.current > 0 && s.forestView.wanted >= s.forestView.current, `${label}: current and predicted sets are populated`);
+  }
 }
 
 async function waitFor(predicate, timeout=120000) {
@@ -53,6 +58,7 @@ async function settledPause() {
   assert.equal(s.streaming.pendingChunks, 0);
   assert.equal((await page.evaluate(() => window.__HOW_CAPTURE_HOLD__.read())).owners.manualPause, true);
   checkScene(s, flow.name + ': paused');
+  if (requiresCamera) assert.equal(s.forestView.ready, true, 'Paused view preparation converges');
   return s;
 }
 
@@ -77,7 +83,7 @@ async function capture(name) {
       report.frames.push({name, viewport:flow.viewport, dpr:1, seed:s.seed, gameTime:s.gameTime,
         player:s.player, camera:s.sceneSpace.outdoorCamera, drawCalls:s.drawCalls, triangles:s.triangles,
         shaderErrors:s.shaderErrors, graphicsBackend:s.graphicsBackend, gpu:s.gpu,
-        frameWork:s.frameWork, streaming:s.streaming, understory:s.understory,
+        frameWork:s.frameWork, streaming:s.streaming, understory:s.understory, forestView:s.forestView,
         pngBytes:bytes.length, pngSha256:digest(bytes)});
       console.log('FRAME', name, JSON.stringify({drawCalls:s.drawCalls, triangles:s.triangles, pending:s.frameWork.pending}));
     } finally { await cdp.detach(); }

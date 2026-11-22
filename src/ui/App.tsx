@@ -339,6 +339,8 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
   useEffect(()=>{runtime.current?.setMenuOpen(warehouseOpen||readerOpen||mapOpen||help||!!snapshot.selected&&!snapshot.placement&&!snapshot.woodcraft.dropping);},[warehouseOpen,readerOpen,mapOpen,help,snapshot.selected,snapshot.placement,snapshot.woodcraft.dropping,ready]);
   useEffect(()=>{runtime.current?.setNpcHostFocused(snapshot.selected===WORKBENCH.id);},[snapshot.selected,ready]);
   const selectedTree = snapshot.selected ? treeById.get(snapshot.selected) : undefined;
+  const cameraOwner=(snapshot.stats.sceneSpace as {outdoorCamera?:{owner?:string}}|undefined)?.outdoorCamera?.owner;
+  const cameraExpansionBlocked=cameraOwner==='action'||cameraOwner==='placement';
   const forest = snapshot.forestry;
   const treeAction = forest.selectedTree;
   const activeAction = forest.active;
@@ -546,7 +548,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
         </button>
       </aside>
       <div className="hud-dock">
-      {cameraOpen&&<div className="camera-tools" aria-label="镜头控制">
+      {cameraOpen&&<div className={`camera-tools${inCabin?'':' camera-tools--overlook'}`} aria-label="镜头控制" data-ui-grid="hud">
         <button
           aria-label="镜头左转"
           onClick={() => runtime.current?.camera("left")}
@@ -562,6 +564,8 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
         <span />
         <button
           aria-label="缩小"
+          disabled={cameraExpansionBlocked}
+          title={cameraExpansionBlocked?'近景操作结束后可缩远':'缩小'}
           onClick={() => runtime.current?.camera("out")}
         >
           −
@@ -569,6 +573,10 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
         <button aria-label="放大" onClick={() => runtime.current?.camera("in")}>
           ＋
         </button>
+        {!inCabin&&<>
+          <button aria-label="抬高镜头" disabled={cameraExpansionBlocked} title={cameraExpansionBlocked?'近景操作结束后可升降':'抬高镜头，固定观察点'} onClick={()=>runtime.current?.camera('raise')}>↑</button>
+          <button aria-label="降低镜头" disabled={cameraExpansionBlocked} title={cameraExpansionBlocked?'近景操作结束后可升降':'降低镜头'} onClick={()=>runtime.current?.camera('lower')}>↓</button>
+        </>}
         <span />
         <button
           aria-label="复位镜头"
@@ -765,7 +773,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
             </button>
           </div>
           <IconTabs label="操作分类" value={helpPage} onChange={setHelpPage} tabs={[{id:'move',name:'探索',icon:'route'},{id:'life',name:'营地',icon:'workbench'},{id:'display',name:'显示',icon:'camera'}]}/>
-          {helpPage==='move'&&<TextPages text="移动：WASD、方向键或点击地面，按住 Shift 跑动；手机用摇杆，点走／跑切换。拖动空地转镜头，滚轮或双指缩放。点选树木和设施，再选择操作；Esc 收起窗口。" size={70}/>}
+          {helpPage==='move'&&<TextPages text="移动：WASD、方向键或点击地面，按住 Shift 跑动；手机用摇杆，点走／跑切换。拖动空地转镜头，滚轮或双指缩放。镜头工具的 ↑/↓ 可抬高、降低观察角度；高处固定观察点，开始走动会先收回镜头，再继续移动。R 或复位按钮回到原构图。点选树木和设施，再选择操作；Esc 收起窗口。" size={70}/>}
           {helpPage==='life'&&<TextPages text="B 打开物品，材料带到原木架存放。工作台制作，火塘煮饭，行商买卖。吃正餐后，下次日出能做重活。傍晚可回帐篷休息。" size={70}/>}
           {helpPage==='display'&&<><label className="reduced"><input type="checkbox" checked={reduced} onChange={e=>setReduced(e.target.checked)}/>减少动态效果</label><RarityVfxControls mode={rarityVfxMode} onChange={changeRarityVfxMode} disabled={!ready} notice={displayNotice}/><WhimsyControls mode={whimsyMode} onChange={changeWhimsyMode} disabled={!ready} notice={whimsyNotice}/></>}
 
