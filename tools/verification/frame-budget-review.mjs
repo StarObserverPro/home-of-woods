@@ -210,12 +210,15 @@ async function walkAcrossChunks() {
     // Advance normal navigation, then use the visible pause control to expose
     // any remaining presentation work without another simulation frame.
     const paused = await page.evaluate(() => {
+      const preparationBefore = JSON.parse(document.querySelector('#runtime-stats').textContent).current.frameWork.frame;
       window.__HOW_ADVANCE_SIMULATION__(5);
+      const preparationAfter = JSON.parse(document.querySelector('#runtime-stats').textContent).current.frameWork.frame;
       document.querySelector('button[aria-label="暂停"]').click();
       const hold = window.__HOW_CAPTURE_HOLD__.begin();
       window.__HOW_CAPTURE_HOLD__.end(hold.token);
-      return {world:hold.before.world, loop:hold.before.loop};
+      return {world:hold.before.world, loop:hold.before.loop, preparationBefore, preparationAfter};
     });
+    assert.equal(paused.preparationAfter, paused.preparationBefore, 'Immediate redraws never grant a second preparation slice');
     const after = await settledPause();
     assert.equal(await readWorld(), paused.world, 'Queued residency commits leave the paused world untouched');
     flow.steps.push({step, player:after.player, routeNodes:after.routeNodes, pausedMode:paused.loop.mode,

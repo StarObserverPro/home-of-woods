@@ -352,11 +352,11 @@ export async function createRuntime(
   synchronizeWildlife();
   const frameTimes: number[] = [];
   let lastSampleAt:number|null=null;
-  const tick = (dt: number, now:number, mode: Exclude<FrameMode, 'stopped'> = 'simulation') => {
+  const tick = (dt: number, now:number, mode: Exclude<FrameMode, 'stopped'> = 'simulation', grantPreparation = false) => {
     if (mode === 'presentation') {
       // Continue bounded visual preparation/camera motion without advancing the
       // world, actions, weather, cabin transitions or fixed-step remainder.
-      view.render(state, 0, dt);
+      view.render(state, 0, dt, grantPreparation);
       reportTime += dt;
       if (reportTime > .15 || !view.hasPendingPresentation()) {
         reportTime = 0;
@@ -447,7 +447,7 @@ export async function createRuntime(
       }
     }
     const crossed=advanceCabinCrossing(dt);
-    view.render(state, dt);
+    view.render(state, dt, dt, grantPreparation);
     if (lastSampleAt!==null && dt > 0) {
       frameTimes.push(now-lastSampleAt);
       if (frameTimes.length > 360) frameTimes.shift();
@@ -460,7 +460,7 @@ export async function createRuntime(
     }
   };
   const loop = createLoop(
-    tick,
+    (dt,now,mode)=>tick(dt,now,mode,true),
     {
       request: (cb) => requestAnimationFrame(cb),
       cancel: (id) => cancelAnimationFrame(id),
@@ -646,7 +646,7 @@ export async function createRuntime(
   const unsubscribeSave = persistence.subscribe(() => {
     if (destroyed) return;
     if (persistence.status().state === 'protected' || persistence.status().state === 'conflict') {
-      manualPause = true; loop.setPaused(true);
+      manualPause = true; loop.setMode(desiredFrameMode());
     }
     publishSnapshot();
   });

@@ -632,7 +632,7 @@ export async function createScene(
       characters.setInspection(value);
       overlook.setBorrower(value?'character':scenePreset?'scene':null);
     },
-    render(state: GameState, dt: number, presentationDt = dt) {
+    render(state: GameState, dt: number, presentationDt = dt, prepareWork = false) {
       if (destroyed) return;
       presentationDirty=false;
       lastState=state;
@@ -673,7 +673,9 @@ export async function createScene(
         y = travelHeightAt(x,z,travelAccess(state));
       followPlayer.set(x,y,z);
       streaming.update(state);
-      frameWork.run({budgetMs:mobile?FRAME_WORK_BUDGET.compactMs:FRAME_WORK_BUDGET.desktopMs,maxSteps:FRAME_WORK_BUDGET.maxSteps});
+      // Immediate UI/capture redraws can reconcile state but cannot consume
+      // another allowance. Only the main frame owner grants this slice.
+      if(prepareWork)frameWork.run({budgetMs:mobile?FRAME_WORK_BUDGET.compactMs:FRAME_WORK_BUDGET.desktopMs,maxSteps:FRAME_WORK_BUDGET.maxSteps});
       bridge.update(state);
       forestry.update(state,reducedMotion);understory.update(state,streaming.activeChunks,streaming.residencyRevision);
       if(mealFraming&&(state.player.moving||state.route.length||state.workshop.job||state.forestry.active||state.gathering.action?.phase==='performing'))view.cancelMeal();
