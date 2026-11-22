@@ -25,6 +25,7 @@ import { createCharacterWardrobe } from './character-wardrobe.ts';
 import { DEFAULT_WARDROBE, resolveWardrobe, wardrobeForMountedItems } from '../content/wardrobe-preview.ts';
 import type { WardrobeLook } from '../content/wardrobe-preview.ts';
 import { createWardrobeVisual } from './wardrobe-visual.ts';
+import { createJ01Player } from './j01-player.ts';
 import { createFootContactAnchors } from './lighting/foot-contact-anchors.ts';
 import { axeHeadSamples, geometryContactTarget, contactClearance, findAxeStop, stoppedStrokeFraction } from './axe-contact.ts';
 import type { AxeTarget, AxeStop } from './axe-contact.ts';
@@ -50,7 +51,6 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   const actions=Object.fromEntries(Object.entries(sourceClips).map(([key,c])=>[key,mixer.clipAction(c)])) as Record<Mode,THREE.AnimationAction>;
   let mode:Mode='idle',disposed=false,inspection:CharacterInspection=null,cutKey='',stop:AxeStop|null=null;
   let lastContact=Infinity,planMs=0,grip:ReturnType<typeof syncTwoHandedAxe>|null=null,impact:CharacterImpact|null=null;
-  actions.idle.play();mixer.update(0);
   npcMixer.clipAction(sourceClips.idle).play();npcMixer.setTime(.01);
   const basePose:{bone:THREE.Bone;p:THREE.Vector3;q:THREE.Quaternion;s:THREE.Vector3}[]=[];
   npc.traverse(o=>{if(o instanceof THREE.Bone)basePose.push({bone:o,p:o.position.clone(),q:o.quaternion.clone(),s:o.scale.clone()});});
@@ -60,6 +60,9 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   const wave=npcMixer.clipAction(partial);wave.play();
   const npcWalk=npcMixer.clipAction(sourceClips.walk);npcWalk.play();
   const procedural=createActor(models.templates.get('ranger')!,models.animations.get('motions')!);procedural.root.scale.setScalar(1);player.add(procedural.root);procedural.root.visible=false;
+  const localPlayer=createJ01Player(r,models,player,[body,procedural.body]);
+  const localFeet=localPlayer&&createFootContactAnchors(localPlayer.root,{idPrefix:'player',toePrefix:'ball'});
+  actions.idle.play();mixer.update(0);
   const actionFeet=createFootContactAnchors(procedural.body,{idPrefix:'player:action'});
   const standardClothes=createCharacterWardrobe(r,body),actionClothes=createCharacterWardrobe(r,procedural.body);
   let previewLook:WardrobeLook={...DEFAULT_WARDROBE},lastLookKey='';
@@ -67,6 +70,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     const next=wardrobeForMountedItems(previewLook,state.inventory.instances??[]);
     const key=JSON.stringify(next);
     if(key!==lastLookKey){standardClothes.apply(next);actionClothes.apply(next);lastLookKey=key;}
+    localPlayer?.clothes(state.inventory,next,inspection==='wardrobe');
     standardClothes.update(state.time,moving,reducedMotion);
     actionClothes.update(state.time,moving,reducedMotion);
   }
@@ -76,6 +80,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   let reading=false;
   let lastMoveSample:{x:number;z:number;time:number}|null=null;
   let movementTime=0,locomotionSpeed=0;
+  let localWalkTime:number|null=null;
   let readingSeat:SeatContact|null=null;
   // Main + procedural action body each have their own cloned skeleton and bone-mounted accessories.
   const clothing=createWardrobeVisual(r,body),actionClothing=createWardrobeVisual(r,procedural.body);
@@ -130,6 +135,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     return running;
   }
   function updatePlayerBase(state:GameState,pose:CabinPlayer,height:number,reducedMotion:boolean){
+    localWalkTime=null;
     for(const [bone,base] of readingPoseBase){bone.position.copy(base.p);bone.quaternion.copy(base.q);}readingPoseBase.clear();
     clothing.update(state.inventory);actionClothing.update(state.inventory);
     player.position.set(pose.x,height,pose.z);player.rotation.y=pose.facing;
@@ -176,6 +182,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
       const next:Mode=gather?.phase==='performing'?'gather':(state.player.moving||emerging)&&!reducedMotion?(running?'run':'walk'):'idle';setMode(next);
       const clip=sourceClips[mode];
       const animationTime=mode==='walk'||mode==='run'?emerging?ambientTime*1.6:movementTime:ambientTime;
+      if(mode==='walk')localWalkTime=animationTime;
       actions[mode].time=mode==='gather'?Math.min(.999,gather!.progress)*clip.duration:reducedMotion?.01:animationTime%clip.duration;
       mixer.update(0);
       // Render-only doorway emergence after sleep. Gameplay position is already at the tent exit.
@@ -238,8 +245,16 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     npcWalk.setEffectiveWeight(visit.active&&!visit.parked&&!reducedMotion?1:0);npcWalk.time=state.time%sourceClips.walk.duration;
     npcMixer.update(0);
   }
+  function present(ambientTime:number,reducedMotion:boolean,holding:boolean){
+    if(!localPlayer)return;
+    const action=procedural.root.visible;
+    const special=action||reading||holding||tool.visible;
+    localPlayer.present(action?procedural.body:body,special?null:localWalkTime,!special&&mode==='idle',
+      ambientTime,reducedMotion,reading,special);
+    body.visible=false;procedural.root.visible=false;
+  }
   return {
-    player,visitor,update,
+    player,visitor,update,present,
     resetLocomotion(){lastMoveSample=null;movementTime=0;locomotionSpeed=0;},
     updateInCabin(state:GameState,pose:CabinPlayer,height:number,reducedMotion:boolean,ambientTime:number){
       const running=sampleLocomotion(pose,ambientTime);
@@ -249,6 +264,8 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
       const time=mode==='idle'?ambientTime:movementTime;
       actions[mode].time=reducedMotion?.01:time%sourceClips[mode].duration;
       mixer.update(0);
+      if(mode==='walk')localWalkTime=time;
+      present(ambientTime,reducedMotion,false);
     },
     setReading(value:boolean,seat?:SeatContact){reading=value;readingSeat=value&&seat?seat:null;},
     setInspection(value:CharacterInspection){inspection=value;cutKey='';stop=null;},
@@ -257,16 +274,17 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     getImpact:()=>impact,
     // Read after life/broom/housing finish posing; alternate rigs never cast duplicate contacts.
     footContacts:()=>[
-      ...(player.visible?(procedural.root.visible?actionFeet.update():body.visible?walkingFeet.update():[]):[]),
+      ...(player.visible?(localFeet?localFeet.update():procedural.root.visible?actionFeet.update():body.visible?walkingFeet.update():[]):[]),
       ...(visitor.visible?visitorFeet.update():[]),
     ],
-    stats:()=>({model:'KayKit R3',mode,inspection,footAnchors:{walking:walkingFeet.stats(),action:actionFeet.stats(),visitor:visitorFeet.stats()},wardrobe:{standard:standardClothes.stats(),action:actionClothes.stats()},stopFound:stop?.found??null,stopFraction:stop?.fraction??null,contactClearance:Number.isFinite(lastContact)?lastContact:null,grip,planMs,disposed}),
+    stats:()=>({model:localPlayer?'J01 林工':'KayKit R3',mode,inspection,localPlayer:localPlayer?.stats()??null,footAnchors:{walking:walkingFeet.stats(),action:actionFeet.stats(),visitor:visitorFeet.stats(),local:localFeet?.stats()??null},wardrobe:{standard:standardClothes.stats(),action:actionClothes.stats()},stopFound:stop?.found??null,stopFraction:stop?.fraction??null,contactClearance:Number.isFinite(lastContact)?lastContact:null,grip,planMs,disposed}),
     dispose(){
       if(disposed)return;disposed=true;
       for(const m of [mixer,npcMixer]){m.stopAllAction();m.uncacheRoot(m.getRoot());}
       standardClothes.dispose();actionClothes.dispose();
       clothing.dispose();actionClothing.dispose();
       procedural.dispose();
+      localPlayer?.dispose();
       player.removeFromParent();visitor.removeFromParent();player.clear();visitor.clear();byId.clear();
       // Shared geometry, textures/materials and each cloned skeleton belong to Resources.
     },

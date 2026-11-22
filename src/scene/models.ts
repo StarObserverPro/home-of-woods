@@ -2,12 +2,14 @@ import {CREEK_BRIDGE} from '../content/regions.ts';
 import * as THREE from "three";
 import {createTree} from "./actions/tree.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import type { GLTF } from "three/addons/loaders/GLTFLoader.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import {geometryContactTarget} from './axe-contact.ts';
 import {heightAt} from '../world/surface.ts';
 import { PALETTE } from "../content/world.ts";
 import { ENABLED_RUNTIME_MODELS } from '../content/assets.ts';
+import { LOCAL_CHARACTER_MODELS,LOCAL_CHARACTER_PREFIX } from '../content/characters.ts';
 import type { Tree } from "../world/layout.ts";
 import type { Resources } from "./resources.ts";
 import {makeTree} from './forest-shapes.js';
@@ -31,31 +33,41 @@ export class Models {
   async load() {
     const loader = new GLTFLoader();
     let failed = false;
+    const register=(name:string,gltf:GLTF)=>{
+      gltf.scene.traverse((o) => {
+        if (o instanceof THREE.SkinnedMesh) this.r.own(o.skeleton);
+        if (o instanceof THREE.Mesh) {
+          this.r.own(o.geometry);
+          const mats = Array.isArray(o.material) ? o.material : [o.material];
+          mats.forEach((m) => {
+            this.r.own(m);
+            for(const value of Object.values(m))if(value instanceof THREE.Texture)this.r.own(value);
+          });
+          o.castShadow = true;
+          o.receiveShadow = true;
+        }
+      });
+      if (!failed && !this.r.disposed){
+        this.templates.set(name,gltf.scene);this.animations.set(name,gltf.animations);
+      }
+    };
     try {
-      await Promise.all(
-        ENABLED_RUNTIME_MODELS.map(async (spec) => {
-          const {name, url} = spec;
-          const gltf = await loader.loadAsync(url).catch(error => {
-            if ('optional' in spec && spec.optional) { console.warn(`Optional wildlife unavailable: ${name}`, error); return null; }
-            throw error;
-          });
-          if (!gltf) return;
-          gltf.scene.traverse((o) => {
-            if (o instanceof THREE.SkinnedMesh) this.r.own(o.skeleton);
-            if (o instanceof THREE.Mesh) {
-              this.r.own(o.geometry);
-              const mats = Array.isArray(o.material) ? o.material : [o.material];
-              mats.forEach((m) => {
-                this.r.own(m);
-                for(const value of Object.values(m))if(value instanceof THREE.Texture)this.r.own(value);
-              });
-              o.castShadow = true;
-              o.receiveShadow = true;
-            }
-          });
-          if (!failed && !this.r.disposed){this.templates.set(name, gltf.scene);this.animations.set(name,gltf.animations);}
-        }),
-      );
+      const loading=ENABLED_RUNTIME_MODELS.map(async spec=>{
+        const gltf=await loader.loadAsync(spec.url).catch(error=>{
+          if('optional' in spec&&spec.optional){console.warn(`Optional wildlife unavailable: ${spec.name}`,error);return null;}
+          throw error;
+        });
+        if(gltf)register(spec.name,gltf);
+      });
+      if(import.meta.env?.DEV)loading.push(...LOCAL_CHARACTER_MODELS.map(async name=>{
+        try{
+          const response=await fetch(`${LOCAL_CHARACTER_PREFIX}${name}.glb`);
+          if(response.status===204)return;
+          if(!response.ok)throw new Error(`HTTP ${response.status}`);
+          register(name,await loader.parseAsync(await response.arrayBuffer(),''));
+        }catch(error){console.warn(`Local character unavailable: ${name}`,error);}
+      }));
+      await Promise.all(loading);
     } catch (error) {
       failed = true;
       this.templates.clear();

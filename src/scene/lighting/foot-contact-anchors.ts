@@ -13,7 +13,7 @@ type Anchor = {
  * starting animation. Thereafter only two bone transforms are read per update.
  * Pass the active body, not a parent containing alternate character rigs.
  */
-export function createFootContactAnchors(body:THREE.Object3D, options:{idPrefix?:string}={}) {
+export function createFootContactAnchors(body:THREE.Object3D, options:{idPrefix?:string;toePrefix?:string}={}) {
   const meshes:THREE.SkinnedMesh[]=[];
   body.traverse(object=>{if(object instanceof THREE.SkinnedMesh)meshes.push(object);});
   function updateRigWorld(){
@@ -28,7 +28,7 @@ export function createFootContactAnchors(body:THREE.Object3D, options:{idPrefix?
   const anchors:Anchor[]=[];
   let inspectedVertices=0;
   for(const side of ['l','r'] as const){
-    const footName=`foot${side}`,toeName=`toes${side}`;
+    const footName=`foot${side}`,toeName=`${options.toePrefix??'toes'}${side}`;
     const bone=meshes.flatMap(mesh=>mesh.skeleton.bones).find(value=>canonical(value.name)===footName);
     if(!bone)continue;
     const toe=meshes.flatMap(mesh=>mesh.skeleton.bones).find(value=>canonical(value.name)===toeName);

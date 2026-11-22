@@ -25,22 +25,26 @@ export function applySeatedLegPose(player:THREE.Object3D,bones:ReadonlyMap<strin
   }
 }
 
+export function poseLimbAt(player:THREE.Object3D,first:THREE.Bone,joint:THREE.Bone,tip:THREE.Bone,target:THREE.Vector3,pole:THREE.Vector3){
+  player.updateWorldMatrix(true,false);
+  const start=first.getWorldPosition(new THREE.Vector3()),middle=joint.getWorldPosition(new THREE.Vector3()),end=tip.getWorldPosition(new THREE.Vector3());
+  const upperLength=start.distanceTo(middle),lowerLength=middle.distanceTo(end),difference=target.clone().sub(start);
+  const distance=THREE.MathUtils.clamp(difference.length(),Math.abs(upperLength-lowerLength)+1e-5,upperLength+lowerLength-1e-5),direction=difference.normalize();
+  const reachable=start.clone().addScaledVector(direction,distance);
+  const along=(upperLength*upperLength-lowerLength*lowerLength+distance*distance)/(2*distance);
+  const height=Math.sqrt(Math.max(0,upperLength*upperLength-along*along));
+  const bend=pole.clone().addScaledVector(direction,-pole.dot(direction)).normalize();
+  const desiredJoint=start.clone().addScaledVector(direction,along).addScaledVector(bend,height);
+  aimJoint(player,first,joint,desiredJoint.sub(start));
+  aimJoint(player,joint,tip,reachable.sub(joint.getWorldPosition(new THREE.Vector3())));
+}
+
 /** Two-bone reach to an explicit prop contact, rather than putting a prop inside resting arms. */
 export function poseHandAt(player:THREE.Object3D,bones:ReadonlyMap<string,THREE.Bone>,side:'l'|'r',handContact:THREE.Vector3,gripContact:THREE.Vector3){
   const shoulder=bones.get('upperarm'+side),elbow=bones.get('lowerarm'+side),hand=bones.get('hand'+side),slot=bones.get('handslot'+side);
   if(!shoulder||!elbow||!hand)return;
-  player.updateWorldMatrix(true,false);
-  const start=shoulder.getWorldPosition(new THREE.Vector3()),middle=elbow.getWorldPosition(new THREE.Vector3()),end=hand.getWorldPosition(new THREE.Vector3());
-  const upperLength=start.distanceTo(middle),lowerLength=middle.distanceTo(end),target=player.localToWorld(handContact.clone()),difference=target.clone().sub(start);
-  const distance=THREE.MathUtils.clamp(difference.length(),Math.abs(upperLength-lowerLength)+1e-5,upperLength+lowerLength-1e-5),direction=difference.normalize();
-  target.copy(start).addScaledVector(direction,distance);
-  const along=(upperLength*upperLength-lowerLength*lowerLength+distance*distance)/(2*distance);
-  const height=Math.sqrt(Math.max(0,upperLength*upperLength-along*along));
   const bend=new THREE.Vector3(side==='l'?1:-1,-.15,0).applyQuaternion(player.getWorldQuaternion(new THREE.Quaternion()));
-  bend.addScaledVector(direction,-bend.dot(direction)).normalize();
-  const desiredElbow=start.clone().addScaledVector(direction,along).addScaledVector(bend,height);
-  aimJoint(player,shoulder,elbow,desiredElbow.sub(start));
-  aimJoint(player,elbow,hand,target.sub(elbow.getWorldPosition(new THREE.Vector3())));
+  poseLimbAt(player,shoulder,elbow,hand,player.localToWorld(handContact.clone()),bend);
   if(slot){
     const grip=player.localToWorld(gripContact.clone()).sub(hand.getWorldPosition(new THREE.Vector3()));aimJoint(player,hand,slot,grip);
   }

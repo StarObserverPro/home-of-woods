@@ -34,7 +34,8 @@ import { CABIN, CAMERA, GIANT, HOME, TENT, WORLD } from "../content/world.ts";
 import { CABIN_EXTERIOR, CABIN_PORTAL, CABIN_ROOM } from '../content/cabin.ts';
 import type { CabinPlayer } from '../domain/cabin.ts';
 import type { GameState } from "../domain/state.ts";
-import type { Tree } from "../world/layout.ts";
+import {makeColliders} from "../world/layout.ts";
+import type { Collider,Tree } from "../world/layout.ts";
 import { heightAt, clamp } from "../world/surface.ts";
 import { Resources } from "./resources.ts";
 import { Models, createSign } from "./models.ts";
@@ -59,6 +60,7 @@ import type { GatheringRegistry } from '../domain/gathering-registry.ts';
 import {ramp} from './actions/motion.js';
 import {createCharacters} from './characters.ts';
 import {createNeighbourPresentation} from './neighbour.ts';
+import {createVillagers} from './villagers.ts';
 import {RIDGE_NEIGHBOUR} from '../content/npcs/ridge-neighbour/profile.ts';
 import type {CharacterInspection} from './characters.ts';
 import type {WardrobeLook} from '../content/wardrobe-preview.ts';
@@ -74,6 +76,7 @@ export async function createScene(
   trees: Tree[],
   intent: (value: SceneIntent) => void,
   gatheringRegistry: GatheringRegistry,
+  campColliders:()=>Collider[]=()=>makeColliders(trees),
 ) {
   const r = new Resources(),
     models = new Models(r);
@@ -207,6 +210,7 @@ export async function createScene(
   });
   const characters=createCharacters(r,models,trees,forest.selections),player=characters.player;
   const neighbour=createNeighbourPresentation(r,models);scene.add(neighbour.group);
+  const villagers=createVillagers(models,campColliders);scene.add(villagers.group);
   const visibleObject=(object:THREE.Object3D|undefined|null)=>{if(!object)return null;for(let current:THREE.Object3D|null=object;current;current=current.parent)if(!current.visible)return null;return object;};
   const life=createLifePresentation(r,player,{curtainTargets(event,state){
     const cue=event.curtain;if(!cue)return {pot:null,spoon:null};
@@ -542,7 +546,7 @@ export async function createScene(
     },
     setWardrobe(patch:Partial<WardrobeLook>){characters.setWardrobe(patch);},
     inspectCharacter(value:CharacterInspection){
-      if(value&&!inspectionCamera){inspectionCamera={yaw,elevation,zoom,target:target.clone()};yaw=player.rotation.y-.6;elevation=.24;zoom=1;}
+      if(value&&!inspectionCamera){inspectionCamera={yaw,elevation,zoom,target:target.clone()};yaw=player.rotation.y-(value==='wardrobe'?.34:.6);elevation=value==='wardrobe'?.16:.24;zoom=1;}
       if(!value&&inspectionCamera){({yaw,elevation,zoom}=inspectionCamera);target.copy(inspectionCamera.target);inspectionCamera=null;}
       characters.setInspection(value);
     },
@@ -590,6 +594,7 @@ export async function createScene(
       broom.restorePose();
       characters.update(state,reducedMotion,ambientTime);
       neighbour.update(state,reducedMotion,ambientTime);
+      villagers.update(state,reducedMotion);
       life.update(state,dt,reducedMotion);
       broom.update(state,dt,reducedMotion,sky.night);
       if(mealFraming&&!life.isMealPlaying())view.cancelMeal();
@@ -602,6 +607,7 @@ export async function createScene(
       campExteriors.update(state.workshop);
       const action=state.gathering.action,ritual=state.ritual,craft=state.workshop.job;
       const sweeping=broom.action();
+      characters.present(ambientTime,reducedMotion,!!sweeping||life.isMealPlaying());
       cameraAction=sweeping?.id??(craft?.phase==='working'?craft.id:action?.phase==='performing'?action.actionId:ritual?.phase==='performing'?`prayer-${ritual.startedAt}`:'');
       const guidedCraft=craft?.phase==='working'&&!!craft.assembly;
       const framed=!!cameraAction && cameraOverride!==cameraAction && (!reducedMotion||guidedCraft||sweeping) && !scenePreset;
@@ -624,7 +630,8 @@ export async function createScene(
       const focusPlacement=placementMode&&!scenePreset&&!framed;
       const actionDistance=guidedCraft?(mobile?13:11.5):sweeping?(mobile?13:11):climbing?THREE.MathUtils.lerp(9,22,ramp(actionTime,2,3.2)):10;
       const framing = Math.min(1, (CAMERA.zoom / zoom) ** 2);
-      const inspecting=characters.getInspection()!==null;
+      const inspection=characters.getInspection(),inspecting=inspection!==null;
+      const wardrobeCamera=inspection==='wardrobe';
       desired.set(x,y+(inspecting?1.25:1.5),z).lerp(overview,inspecting?0:(mobile ? .12 : .75)*framing*clamp(1-(Math.hypot(x-HOME.x,z-HOME.z)-20)/50,0,1));
       if(focusHousing){
         const focusHeight=focusDoor?heightAt(CABIN.x,CABIN.z)+CABIN_EXTERIOR.threshold.y*CABIN_EXTERIOR.scale+1.6:
@@ -644,9 +651,9 @@ export async function createScene(
           Math.sin(viewElevation),
           Math.cos(viewYaw) * Math.cos(viewElevation),
         )
-        .multiplyScalar(inspecting?11:scenePreset?VIEWS[scenePreset].distance:focusPlacement?22:focusHousing?21:THREE.MathUtils.lerp(110,actionDistance,blend));
+        .multiplyScalar(wardrobeCamera?7.5:inspecting?11:scenePreset?VIEWS[scenePreset].distance:focusPlacement?22:focusHousing?21:THREE.MathUtils.lerp(110,actionDistance,blend));
       camera.position.copy(target).add(offset);
-      if(camera.position.x>WORLD.minX&&camera.position.x<WORLD.maxX&&camera.position.z>WORLD.minZ&&camera.position.z<WORLD.maxZ)camera.position.y=Math.max(camera.position.y,heightAt(camera.position.x,camera.position.z)+THREE.MathUtils.lerp(3,.4,blend));
+      if(camera.position.x>WORLD.minX&&camera.position.x<WORLD.maxX&&camera.position.z>WORLD.minZ&&camera.position.z<WORLD.maxZ)camera.position.y=Math.max(camera.position.y,heightAt(camera.position.x,camera.position.z)+(wardrobeCamera?.8:THREE.MathUtils.lerp(3,.4,blend)));
       if(scenePreset)for(const tree of trees)if(Math.hypot(camera.position.x-tree.x,camera.position.z-tree.z)<3*tree.scale)camera.position.y=Math.max(camera.position.y,heightAt(tree.x,tree.z)+9*tree.scale);
       camera.lookAt(target);
       workshop.update(state,camera,dt,reducedMotion,sky.night);woodcraft.update(state.woodcraft);
@@ -719,7 +726,7 @@ export async function createScene(
       outdoorShadows.update(state,dt,light.sunDirection,sky.night,player.position);
       localOcclusion.update(state,dt,camera,sky.night);
       localOcclusion.updateCamera(camera,host.clientHeight);
-      characterContacts.update(characters.footContacts());
+      characterContacts.update([...characters.footContacts(),...villagers.footContacts()]);
       localOcclusion.setCharacterContacts(characterContacts.contacts());
       renderer.info.reset();renderer.info.autoReset=false;
       renderer.render(scene, camera);
@@ -751,6 +758,7 @@ export async function createScene(
         gatheringHits: gathering.hits.size,
         characters:characters.stats(),
         neighbour:neighbour.stats(),
+        villagers:villagers.stats(),
         gatheringPresentation: gathering.stats(),
         environment:environment.stats(),
         weatherPresentation:weather.stats(),
@@ -784,6 +792,7 @@ export async function createScene(
       streaming.dispose();bridge.dispose();
       characters.dispose();
       neighbour.dispose();
+      villagers.dispose();
       merchantWagon.dispose();
       wildlife.dispose();
       gathering.dispose();
