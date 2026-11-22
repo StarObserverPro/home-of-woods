@@ -3,6 +3,8 @@ import {createCampOcclusion} from './lighting/camp-occlusion.ts';
 import {createCampShadows} from './lighting/camp-shadows.ts';
 import {createCharacterContactShadows} from './lighting/character-contact-shadows.ts';
 import {createStreamedForest} from './streamed-forest.ts';
+import {createFrameWorkQueue} from './frame-work-queue.ts';
+import {FRAME_WORK_BUDGET} from '../content/frame-budget.ts';
 import {createCreekBridge} from './creek-bridge.ts';
 import {CREEK_BRIDGE} from '../content/regions.ts';
 import {travelAccess} from '../world/regions.ts';
@@ -146,6 +148,7 @@ export async function createScene(
   let cabinPlayer:CabinPlayer|null=null;
   let cabinTime=0, lastCabinLightAt=0, outsideFrames=0;
   let fadeAmount=0, returnDoorView=false, snapOutdoorTarget=false;
+  let schedulePresentation=()=>{};
   const cabinSky=createSkySample();
   let sceneCamera:{yaw:number;elevation:number;zoom:number;target:THREE.Vector3}|null=null;
   scene.add(ground, water);
@@ -154,7 +157,8 @@ export async function createScene(
   const forest = models.createForest(trees,true);
   scene.add(forest.group);
   const understory=createUnderstory(r,trees,forest.selections);scene.add(understory.group);
-  const streaming=createStreamedForest(forest,trees);
+  const frameWork=createFrameWorkQueue();
+  const streaming=createStreamedForest(forest,trees,frameWork);
   const props = new Map<string, THREE.Object3D>();
   for (const [name, p] of [
     ["cabin", CABIN],
@@ -440,6 +444,8 @@ export async function createScene(
   localOcclusion.bindMaterial(fadeMat);
   propFades.forEach(({materials})=>materials.forEach(({fade})=>localOcclusion.bindMaterial(fade)));
   const view = {
+    hasPendingPresentation:()=>frameWork.stats().pending>0,
+    setPresentationScheduler(callback:()=>void){schedulePresentation=callback;},
     setAmbientOcclusion:(enabled:boolean)=>(cabinPlayer&&cabinRoom?cabinRoom.occlusion:localOcclusion).setEnabled(enabled),
     setCanopyShadows:(enabled:boolean)=>outdoorShadows.setEnabled(enabled),
     setCharacterContacts:(enabled:boolean)=>characterContacts.setEnabled(enabled),
@@ -531,7 +537,7 @@ export async function createScene(
     presentMeal(kind:'soup'|'bread',event?:MealCommitted){broom.cancel();const seat=diningReadingSpot().seat;readingFocus=seat;life.presentMeal(kind,event);mealFraming=true;characters.setReading(true,seat);view.inspectScene('meal');yaw=DINING_SEAT.facing-.55;},
     presentBroom(event:BroomUseEvent){view.cancelMeal();readingMode=false;readingFocus=null;life.setReading(false);characters.setReading(false);view.inspectScene(null);return broom.present(event);},
     isBroomPlaying:()=>broom.isPlaying(),cancelBroom:()=>broom.cancel(),
-    resetPresentationHistory(){view.cancelMeal();life.resetPresentationHistory();broom.resetPresentationHistory();},
+    resetPresentationHistory(){streaming.reset();view.cancelMeal();life.resetPresentationHistory();broom.resetPresentationHistory();},
     isMealPlaying:()=>life.isMealPlaying(),
     cancelMeal(){if(!mealFraming)return;life.cancelMeal();mealFraming=false;if(!readingMode){readingFocus=null;characters.setReading(false);view.inspectScene(null);}},
     ringHousingBell(id:string){housing.ring(id);},
@@ -546,7 +552,7 @@ export async function createScene(
       if(!value&&inspectionCamera){({yaw,elevation,zoom}=inspectionCamera);target.copy(inspectionCamera.target);inspectionCamera=null;}
       characters.setInspection(value);
     },
-    render(state: GameState, dt: number) {
+    render(state: GameState, dt: number, presentationDt = dt) {
       if (destroyed) return;
       lastState=state;
       if(cabinPlayer&&cabinRoom){
@@ -563,6 +569,7 @@ export async function createScene(
         renderer.toneMappingExposure=cabinRoom.exposure;
         renderer.info.reset();renderer.info.autoReset=false;
         renderer.render(cabinRoom.scene,cabinRoom.camera);
+        schedulePresentation();
         return;
       }
       renderer.toneMappingExposure=light.recommendedExposure;
@@ -583,8 +590,10 @@ export async function createScene(
       camp.update(ambientTime,appearance,state.inventory,sky.night,reducedMotion,!!state.food.drying,(state.workshop.upgrades[CAMP_PROPS.dryer.id]?.level??0)>0);
       const { x, z, facing, moving } = state.player,
         y = travelHeightAt(x,z,travelAccess(state));
-      streaming.update(state);bridge.update(state);
-      forestry.update(state,reducedMotion);understory.update(state,streaming.activeChunks);
+      streaming.update(state);
+      frameWork.run({budgetMs:mobile?FRAME_WORK_BUDGET.compactMs:FRAME_WORK_BUDGET.desktopMs,maxSteps:FRAME_WORK_BUDGET.maxSteps});
+      bridge.update(state);
+      forestry.update(state,reducedMotion);understory.update(state,streaming.activeChunks,streaming.revision);
       if(mealFraming&&(state.player.moving||state.route.length||state.workshop.job||state.forestry.active||state.gathering.action?.phase==='performing'))view.cancelMeal();
       life.restorePose();
       broom.restorePose();
@@ -725,6 +734,7 @@ export async function createScene(
       renderer.render(scene, camera);
       weather.renderLens(renderer);
       outsideFrames++;
+      schedulePresentation();
     },
     stats() {
       return {
@@ -748,6 +758,7 @@ export async function createScene(
         managedTrees: trees.filter((t) => t.role === "managed").length,
         hauling:hauling.stats(),
         streaming:streaming.stats(),
+        frameWork:frameWork.stats(),
         gatheringHits: gathering.hits.size,
         characters:characters.stats(),
         neighbour:neighbour.stats(),
@@ -763,6 +774,8 @@ export async function createScene(
     destroy() {
       if (destroyed) return;
       destroyed = true;
+      frameWork.dispose();
+      schedulePresentation=()=>{};
       observer.disconnect();
       canvas.removeEventListener("pointerdown", pointerDown);
       canvas.removeEventListener("pointermove", pointerMove);
