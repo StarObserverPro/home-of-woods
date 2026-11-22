@@ -491,7 +491,9 @@ export async function createScene(
     },
     getCameraPlan(){
       const plan=overlook.plan();
-      const navigation=cameraOwner==='navigation';
+      // A borrowed view can return between frames, before cameraOwner is
+      // reassigned by render. Its resumed high rig still needs a forecast now.
+      const navigation=!cabinPlayer&&!borrowedOutdoorCamera()&&(cameraOwner==='navigation'||!overlook.groundReady());
       const destination=plan.destination??navigationTarget(plan.desired.zoom,forecastTarget);
       const desiredTarget=[destination.x,destination.y,destination.z];
       if(navigation){
