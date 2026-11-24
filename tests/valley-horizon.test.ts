@@ -54,7 +54,7 @@ test('fixed scenery identities and full crowns clear the planned bridge corridor
   }
 });
 
-test('five forest silhouettes stay within budget and transition from broadleaf valley to conifer high slopes',()=>{
+test('Rainier canopy stays conifer-dominant within budget, with local broadleaf pockets and taller emergents',()=>{
   const ground=buildClosedTerrain(),apron=buildApron(ground),sample=createTerrainSampler([ground,apron]);
   const kinds:DistantTreeKind[]=['oak','poplar','pine','spruce','fir'];
   const geometries=kinds.map(kind=>distantTreeGeometry(kind));
@@ -63,7 +63,10 @@ test('five forest silhouettes stay within budget and transition from broadleaf v
   assert.deepEqual(plan,planOuterForest(sample,counts,trees));assert.ok(plan.triangles<=OUTER_FOREST.triangleBudget);
   assert.equal(new Set(plan.placements.map(t=>t.kind)).size,5);
   const low=plan.placements.filter(t=>t.y<55),high=plan.placements.filter(t=>t.y>100),broad=(t:{kind:string})=>['oak','poplar'].includes(t.kind);
-  assert.ok(low.filter(broad).length/low.length>.45);assert.ok(high.filter(broad).length/high.length<.1);
+  assert.ok(low.filter(broad).length/low.length<.25);assert.ok(high.filter(broad).length/high.length<.1);
+  const meanHeight=(kind:string)=>{const p=plan.placements.filter(t=>t.kind===kind);return p.reduce((sum,t)=>sum+t.height,0)/p.length;};
+  assert.ok(meanHeight('pine')>meanHeight('spruce'));
+  assert.ok(meanHeight('oak')<meanHeight('spruce'));
   for(const tree of plan.placements)assert.equal(tree.y,sample(tree.x,tree.z));
   geometries.forEach(g=>g.dispose());ground.dispose();apron.dispose();
 });
@@ -78,7 +81,8 @@ test('mainline horizon and creek share water presentation and release every adde
     assert.equal(ground.material[0].userData.sceneryTrails.independentRoadMeshes,0);
     assert.ok(horizon.stats().triangles<100000);
     const visual=horizon.stats().forest;
-    assert.equal(visual.trees,2389);
+    assert.ok(visual.trees>1500&&visual.trees<=OUTER_FOREST.maxTrees);
+    assert.equal(visual.biome,'rainier-southwest-foothills');
     assert.ok(visual.visualMasses>0,'distant decorative forest actually uses aggregated crowns');
     assert.equal(visual.renderedSingles+visual.mergedTreeAnchors,visual.trees);
     assert.ok(visual.triangles<visual.sourceTriangles,'the replacement lowers submitted triangles');

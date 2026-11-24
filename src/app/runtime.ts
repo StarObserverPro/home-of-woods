@@ -65,6 +65,8 @@ import type { CabinAction, CabinVisit } from '../domain/cabin.ts';
 import { makeColliders, makeTrees } from "../world/layout.ts";
 import { heightAt, zoneName } from "../world/surface.ts";
 import { createScene } from "../scene/create-scene.ts";
+import type {AtmosphereDebug} from '../scene/atmosphere-lite.ts';
+import type {OverlookOpticsMode} from '../content/overlook-optics.ts';
 import { createLoop, requiredFrameMode } from "./runtime-loop.ts";
 import type { FrameMode } from "./runtime-loop.ts";
 import { RUNTIME_MODELS } from '../content/assets.ts';
@@ -706,10 +708,12 @@ export async function createRuntime(
   type InspectionWindow=Window&{
     __HOW_ADVANCE_SIMULATION__?:(seconds:number)=>void;
     __HOW_CAPTURE_HOLD__?:ReturnType<typeof createCaptureHoldInspection>;
+    __HOW_RENDER_REVIEW__?:{set:(modes:{atmosphere?:AtmosphereDebug;optics?:OverlookOpticsMode})=>void};
   };
   const inspectionWindow=window as InspectionWindow;
   let advanceInspection:((seconds:number)=>void)|undefined;
   let captureInspection:ReturnType<typeof createCaptureHoldInspection>|undefined;
+  let renderInspection:InspectionWindow['__HOW_RENDER_REVIEW__'];
   if(import.meta.env.DEV&&new URLSearchParams(window.location.search).has('inspect')){
     captureInspection=createCaptureHoldInspection();
     inspectionWindow.__HOW_CAPTURE_HOLD__=captureInspection;
@@ -720,6 +724,19 @@ export async function createRuntime(
       finally{loop.setMode(desiredFrameMode());publishSnapshot();}
     };
     inspectionWindow.__HOW_ADVANCE_SIMULATION__=advanceInspection;
+    renderInspection={set(modes){
+      if(destroyed||contextLost||captureHoldToken===null)throw new Error('Render review requires a capture hold');
+      if(modes.atmosphere){
+        if(!['final','off','transmittance','inscatter'].includes(modes.atmosphere))throw new Error('Unknown atmosphere mode');
+        view.setAtmosphereMode(modes.atmosphere);
+      }
+      if(modes.optics){
+        if(!['final','off','depth','coc'].includes(modes.optics))throw new Error('Unknown optics mode');
+        view.setOpticsMode(modes.optics);
+      }
+      view.render(state,0,0,false);publishSnapshot();
+    }};
+    inspectionWindow.__HOW_RENDER_REVIEW__=renderInspection;
   }
   return {
     requestCabinEntry,
@@ -1094,6 +1111,7 @@ export async function createRuntime(
       destroyed = true;
       if(import.meta.env.DEV&&inspectionWindow.__HOW_ADVANCE_SIMULATION__===advanceInspection)delete inspectionWindow.__HOW_ADVANCE_SIMULATION__;
       if(import.meta.env.DEV&&inspectionWindow.__HOW_CAPTURE_HOLD__===captureInspection)delete inspectionWindow.__HOW_CAPTURE_HOLD__;
+      if(import.meta.env.DEV&&inspectionWindow.__HOW_RENDER_REVIEW__===renderInspection)delete inspectionWindow.__HOW_RENDER_REVIEW__;
       captureHoldToken=null;
       unsubscribeSave();
       if(!inForest())void persistence.saveNow(state);

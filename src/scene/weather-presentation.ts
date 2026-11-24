@@ -51,6 +51,7 @@ export function createWeatherPresentation(resources:Resources,scene:THREE.Scene,
     patched.add(material);patchedCount++;
     const previous=material.onBeforeCompile,previousKey=material.customProgramCacheKey();
     const ground=kind==='ground'||material.name==='planned-understory-meadow-digital-blocks';
+    const forestImpostor=material.userData.forestImpostor===true;
     material.onBeforeCompile=function(shader,renderer){
       previous.call(this,shader,renderer);
       // Item rarity variants can already compose the original weather hook.
@@ -72,7 +73,7 @@ export function createWeatherPresentation(resources:Resources,scene:THREE.Scene,
         float howPatch=howWeatherField(vHowWeatherPosition.xz*.72);
         float howDamp=smoothstep(howPatch*.5,howPatch*.5+.43,howWetness)*howExposure;
         diffuseColor.rgb*=1.-howDamp*${ground?'.32':'.16'};
-        float howUp=normalize(vHowWeatherNormal).y;
+        float howUp=${forestImpostor?'inverseTransformDirection(normalize(vImpostorNormalToView*impostorAssetNormal),viewMatrix).y':'normalize(vHowWeatherNormal).y'};
         float howSnowMask=smoothstep(.035,.42,howSnow-howPatch*.18)*smoothstep(${kind==='tree'?'.12,.58':'.3,.78'},howUp)*howExposure;
         ${kind==='tree'?`
           #ifdef USE_COLOR
@@ -88,7 +89,7 @@ export function createWeatherPresentation(resources:Resources,scene:THREE.Scene,
         roughnessFactor=mix(roughnessFactor,.93,howSnowMask);
       `);
     };
-    material.customProgramCacheKey=()=>`${previousKey}:how-weather-r1:${kind}`;
+    material.customProgramCacheKey=()=>`${previousKey}:how-weather-r1:${kind}${forestImpostor?':atlas-normal':''}`;
     material.needsUpdate=true;
   }
   function bind(root:THREE.Object3D,kind:SurfaceKind='surface'){

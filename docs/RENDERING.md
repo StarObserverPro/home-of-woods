@@ -1,5 +1,7 @@
 # 运行时、数据与资源管理
 
+2026-11-23 Rainier 山麓表现接入：地域权重仍消费唯一地表；空气透视消费共享太阳、天光与天气；高位导航镜头加入 24–28 mm 等效广角和克制的前后焦外。默认远林仍为 `mass`，`farForest=impostor` 提供图集 A/B。实现、成本估算、诊断入口及待 CI 的 GPU 验证统一维护在 [Rainier 渲染实现](RAINIER_RENDERING.md)；生态来源及美术缩尺见 [生态原型](RAINIER_ECOLOGY.md)。本轮不改变经营树 ID、资源和存档所有权。
+
 光照/阴影共享规则见 [SHADOW_RULES](SHADOW_RULES.md)：生成和调度共用，室外环境、人物、室内按类别配置；场景与资源所有权独立。新林地按未来正式模块接入，旧沙盒本轮不回填，木作入场快照和室内专题边界以该文档为准。
 
 天气与湿度已获准回接。domain/weather 消费唯一游戏时间，runtime 在正常推进、睡觉和恢复后结算。scene/weather-presentation 复用原相机、Resources 和渲染循环，降水位置与密度阈值采用独立稳定随机数，强度在完整空间范围内增减粒子。四处水坑、地表洇湿、覆雪、屋顶遮蔽与局部镜头雨滴由原场景更新；储木架新增遮雨棚，立柱几何与导航碰撞共用配置。天气与湿度继续由原世界存档写入者保存。实际结果见 [天气回接记录](scopes/running-selection-weather.md)。
@@ -23,6 +25,10 @@
 | src/world/surface.ts、layout.ts、domain/navigation.ts | 同一三角形地表插值、固定布局、碰撞与寻路；林业碰撞读取当前阶段 |
 | src/scene/create-scene.ts、models.ts、resources.ts | 场景、相机、拾取、模型加载、共享 GPU 资源及销毁 |
 | src/scene/forestry-presentation.ts、ground-material.ts、environment.ts | 消费状态的挥斧倒树、规划地被、原创雪山、天空/PMREM 与原河面材质；不提交经济 |
+| src/content/rainier-ecology.ts、scene/outer-forest.js | 确定性地域外观、装饰林权重与原有实例预算；不生成经营资源或更改持久树位 |
+| src/scene/atmosphere-lite.ts、atmosphere-rules.ts | 高度积分消光与天空驱动散射近似；独占 128×2 RGBA16F LUT 及材质补丁，天气量化键变化才重建 LUT |
+| src/scene/overlook-optics.ts、overlook-optics-rules.ts | 导航广角投影、同次场景绘制的颜色/深度与两次全屏焦外合成；控制器拥有并释放目标，不另开 RAF 或几何深度 pass |
+| src/scene/impostors/、tools/impostors/ | 远处装饰树簇的图集加载/绘制与离线导出；批次释放自身网格/材质，图集由加载所有者单独释放 |
 | src/ui/App.tsx | 读取快照并发意图；持有同一会话状态引用供重入，不另存余额或复制玩法规则 |
 | src/content/upgrades.ts、domain/upgrades.ts | 图纸升级路径、操作点、材料校验、实际投入账本和阶段；共用 workshop 任务与唯一世界存档 |
 | src/domain/interaction-access.ts、ui/useItemDrag.ts | 分离距离资格与材料资格；鼠标/触控发送同类取放意图，app 在松手时复核并调用原事务 |
