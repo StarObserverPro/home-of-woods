@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import * as THREE from 'three';
+import {createExportFileMiddleware, EXPORTED_ASSET_ROUTE} from '../tools/impostors/export-files.mjs';
 import {dilateTransparentRgb, impostorFrames, selectImpostorFrames, validateImpostorManifest} from '../src/scene/impostors/atlas-layout.ts';
 import type {ImpostorManifest} from '../src/scene/impostors/atlas-layout.ts';
 import {createImpostorBatch} from '../src/scene/impostors/runtime.ts';
@@ -68,4 +72,34 @@ test('unsupported atlas layout and invalid transforms fail before GPU resources 
   assert.throws(() => validateImpostorManifest(broken), /layout/);
   const atlas = {manifest: manifest(), albedo: new THREE.Texture(), normal: new THREE.Texture(), dispose() {}};
   assert.throws(() => createImpostorBatch(atlas, [{position: [0, 0, 0], scale: [1, 0, 1]}]), /placement/);
+});
+
+test('export route reads newly written files and never falls through to SPA HTML', async () => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'how-impostor-route-'));
+  const middleware = createExportFileMiddleware(directory, 'fixture');
+  const request = async (url: string) => {
+    let status = 0, headers: Record<string, string | number> = {}, body: Buffer | string = '', fallback = false;
+    await middleware({url, method: 'GET'}, {
+      writeHead(code: number, fields: typeof headers) {status = code; headers = fields;},
+      end(bytes: typeof body) {body = bytes;},
+    }, () => {fallback = true;});
+    return {status, headers, body, fallback};
+  };
+  try {
+    assert.equal((await request(`${EXPORTED_ASSET_ROUTE}fixture.json`)).status, 404);
+    await fs.writeFile(path.join(directory, 'fixture.json'), JSON.stringify(manifest()));
+    await fs.writeFile(path.join(directory, 'fixture-albedo.png'), Buffer.from([137, 80, 78, 71]));
+    const json = await request(`${EXPORTED_ASSET_ROUTE}fixture.json`);
+    assert.equal(json.status, 200); assert.equal(json.fallback, false);
+    assert.match(String(json.headers['Content-Type']), /^application\/json/);
+    assert.deepEqual(JSON.parse(json.body.toString()), manifest());
+    const png = await request(`${EXPORTED_ASSET_ROUTE}fixture-albedo.png`);
+    assert.equal(png.headers['Content-Type'], 'image/png');
+    assert.deepEqual(png.body, Buffer.from([137, 80, 78, 71]));
+    for (const name of ['missing.json', '../index.html', '%2e%2e/index.html']) {
+      const missing = await request(EXPORTED_ASSET_ROUTE + name);
+      assert.equal(missing.status, 404); assert.equal(missing.fallback, false);
+    }
+    assert.equal((await request('/tools/impostors/browser.ts')).fallback, true);
+  } finally {await fs.rm(directory, {recursive: true, force: true});}
 });

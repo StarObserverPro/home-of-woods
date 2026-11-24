@@ -507,7 +507,7 @@ export async function createScene(
   atmosphere.bind(scene);atmosphere.bindMaterial(fadeMat);
   propFades.forEach(({materials})=>materials.forEach(({fade})=>atmosphere.bindMaterial(fade)));
   let airScannedRevision=-1;
-  const dynamicSurfaceRoots=[housing.group,housing.mountedGroup,workshop.group,woodcraft.group,hauling.group,gathering.group,broom.group];
+  const dynamicSurfaceRoots=[housing.group,housing.mountedGroup,workshop.group,woodcraft.group,hauling.group,gathering.group,broom.group,wildlife.group];
   const view = {
     hasPendingPresentation:()=>!cabinPlayer&&frameWork.stats().pending>0||presentationDirty||overlook.pending()||followTargetPending,
     setPresentationScheduler(callback:()=>void){schedulePresentation=callback;},
@@ -540,7 +540,7 @@ export async function createScene(
     setAmbientOcclusion:(enabled:boolean)=>(cabinPlayer&&cabinRoom?cabinRoom.occlusion:localOcclusion).setEnabled(enabled),
     setCanopyShadows:(enabled:boolean)=>outdoorShadows.setEnabled(enabled),
     setCharacterContacts:(enabled:boolean)=>characterContacts.setEnabled(enabled),
-    setAtmosphereMode:(mode:AtmosphereDebug)=>{atmosphere.setDebug(mode);requestPresentation();},
+    setAtmosphereMode:(mode:AtmosphereDebug)=>{atmosphere.setDebug(mode);river.invalidate();requestPresentation();},
     setOpticsMode:(mode:OverlookOpticsMode)=>{optics.setMode(mode);requestPresentation();},
     getAppearance:()=>({...appearance}),
     wildlifeAvailable:()=>wildlife.available(),
