@@ -37,7 +37,7 @@ test('real fox watches the player, keeps the camera out of attention, freezes wi
     assert.ok(a.stats().expressions[0].gaze[0]<-.1&&a.stats().expressions[0].head[0]<-.05);
     a.update([{...v,motionTag:'wildlife.move',behavior:'flee',speed:3.2}],4.02,14,cameraA,false,player);
     assert.equal(a.stats().expressions[0].clip,'run');
-    a.update([v],4.04,14,cameraA,true,player);assert.deepEqual(a.stats().expressions[0],{id:v.id,clip:'idle',blink:0,gaze:[0,0],head:[0,0]});
+    a.update([v],4.04,14,cameraA,true,player);assert.deepEqual(a.stats().expressions[0],{id:v.id,clip:'idle',blink:0,gaze:[0,0],head:[0,0],eyeWetness:1});
   }finally{a.dispose();b.dispose();models.clear();resources.dispose();}
 });
 
@@ -68,10 +68,26 @@ test('eye uniforms are private, survive recompilation, and preserve the main-gam
   try {
     const first=compile(a),second=compile(a),other=compile(b),u=first.uniforms as Record<string,{value:THREE.Vector2}>;
     assert.equal(previous,2);assert.equal(u.howFoxGaze,(second.uniforms as typeof u).howFoxGaze);assert.notEqual(u.howFoxGaze,(other.uniforms as typeof u).howFoxGaze);
-    assert.ok(first.fragmentShader.includes('#include <aomap_fragment>'),'the shared AO wrapper must still find its anchor');
+    for(const anchor of ['aomap_fragment','lights_fragment_begin','tonemapping_fragment'])
+      assert.ok(first.fragmentShader.includes(`#include <${anchor}>`),'shared light, shadow, AO and atmosphere hooks retain their anchors');
     for(const map of ['vMapUv','vRoughnessMapUv','vMetalnessMapUv'])assert.ok(first.fragmentShader.includes(`howFoxEyeUv(${map})`));
     const key=a.customProgramCacheKey();x.beforeAnimation();x.update(foxInspectionView(),0,0,false,undefined,{seconds:0,blink:0,gaze:[1,-1]});
     assert.deepEqual(u.howFoxGaze.value.toArray(),[1,-1]);assert.deepEqual((other.uniforms as typeof u).howFoxGaze.value.toArray(),[0,0]);
     assert.equal(a.customProgramCacheKey(),key,'looking around must not create shader programs');
+    const wet=(first.uniforms as unknown as Record<string,{value:number}>).howFoxWetness;
+    const otherWet=(other.uniforms as unknown as Record<string,{value:number}>).howFoxWetness;
+    assert.ok(a.clearcoat>0&&a.clearcoatRoughness>=.1,'a bounded physical layer is enabled once');
+    assert.equal(wet,(second.uniforms as unknown as Record<string,{value:number}>).howFoxWetness);
+    assert.notEqual(wet,otherWet);assert.equal(wet.value,1);
+    x.beforeAnimation();x.update(foxInspectionView(),0,0,false,undefined,{seconds:0,blink:1});
+    assert.equal(wet.value,0,'closed eyelids suppress the entire cornea contribution');
+    assert.equal(otherWet.value,1,'blinking one instance does not affect another');
+    x.beforeAnimation();x.update(foxInspectionView(),0,0,false,undefined,{seconds:0,blink:.5});
+    assert.ok(wet.value>0&&wet.value<1,'the layer fades during closure');
+    x.beforeAnimation();x.update(foxInspectionView(),0,0,false,undefined,{seconds:0,blink:0,eyeWetness:0});
+    assert.equal(wet.value,0,'the paused A/B control restores the original painted eye');
+    x.beforeAnimation();x.update(foxInspectionView(),0,0,true);
+    assert.equal(wet.value,1,'leaving review restores ordinary passive reflections even with reduced motion');
+    assert.equal(a.customProgramCacheKey(),key,'blink and dry/wet comparison do not compile new programs');
   } finally {x.dispose();y.dispose();a.dispose();b.dispose();gltf.scene.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();(o.material as THREE.Material).dispose();}if(o instanceof THREE.SkinnedMesh)o.skeleton.dispose();});}
 });

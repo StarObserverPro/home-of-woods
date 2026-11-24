@@ -6,6 +6,7 @@ import type { WildlifeView } from '../domain/wildlife.ts';
 export type FoxReviewPose = {
   seconds: number; blink?: number; gaze?: readonly [number, number];
   head?: readonly [number, number]; motion?: 'idle' | 'walk' | 'run';
+  eyeWetness?: number;
 };
 const clamp = THREE.MathUtils.clamp;
 function hash(text:string) {
@@ -33,11 +34,23 @@ export function foxBlinkAt(time:number,seed:number) {
 }
 
 /** The original eyes are painted, not separate eyeballs. Move a small atlas region consistently in PBR. */
-function bindEyes(material:THREE.Material,gaze:{value:THREE.Vector2}) {
+function bindEyes(material:THREE.Material,gaze:{value:THREE.Vector2},wetness:{value:number}) {
   if(!(material instanceof THREE.MeshStandardMaterial))return;
   const compile=material.onBeforeCompile,key=material.customProgramCacheKey();
+  if(material instanceof THREE.MeshPhysicalMaterial){
+    // Enable the existing physical layer once. The fragment mask limits it to eyes.
+    material.clearcoat=F.eyeOptics.coatStrength;
+    material.clearcoatRoughness=F.eyeOptics.coatRoughness;
+  }
   const glsl=`
     uniform vec2 howFoxGaze;
+    uniform float howFoxWetness;
+    vec2 howFoxEyeCoordinate(vec2 uv) {
+      vec2 radius=vec2(${F.eyeRadius.join(',')});
+      vec2 a=(uv-vec2(${F.eyes[0].join(',')}))/radius;
+      vec2 b=(uv-vec2(${F.eyes[1].join(',')}))/radius;
+      return dot(a,a)<dot(b,b)?a:b;
+    }
     vec2 howFoxEyeUv(vec2 uv) {
       vec2 radius=vec2(${F.eyeRadius.join(',')});
       float a=length((uv-vec2(${F.eyes[0].join(',')}))/radius);
@@ -45,21 +58,71 @@ function bindEyes(material:THREE.Material,gaze:{value:THREE.Vector2}) {
       float mask=1.0-smoothstep(.85,1.45,min(a,b));
       return uv+vec2(howFoxGaze.x*${F.eyeUvTravel[0]},-howFoxGaze.y*${F.eyeUvTravel[1]})*mask;
     }
+    // The atlas has no tangent/normal map. Derive a stable frame on the skinned face.
+    mat3 howFoxEyeFrame(vec3 position,vec3 n,vec2 uv) {
+      vec3 dx=dFdx(position),dy=dFdy(position);
+      vec2 du=dFdx(uv),dv=dFdy(uv);
+      vec3 tx=cross(dy,n),ty=cross(n,dx);
+      vec3 t=tx*du.x+ty*dv.x,b=tx*du.y+ty*dv.y;
+      float scale=inversesqrt(max(max(dot(t,t),dot(b,b)),1e-12));
+      return mat3(t*scale,b*scale,n);
+    }
+  `;
+  const eyeMask=`
+    vec2 howFoxCorneaUv=vec2(0.0);
+    float howFoxEyeWet=0.0;
+    #if defined(USE_MAP) && defined(USE_ROUGHNESSMAP) && defined(USE_CLEARCOAT)
+      howFoxCorneaUv=howFoxEyeCoordinate(howFoxEyeUv(vMapUv));
+      float howFoxEyeRadius=length(howFoxCorneaUv);
+      float howFoxEyeAA=max(fwidth(howFoxEyeRadius),0.01);
+      float howFoxEyeRegion=1.0-smoothstep(.83-howFoxEyeAA,1.04+howFoxEyeAA,howFoxEyeRadius);
+      float howFoxPaintedEye=1.0-smoothstep(${F.eyeOptics.roughnessMask.join(',')},texelRoughness.g);
+      howFoxEyeWet=howFoxEyeRegion*howFoxPaintedEye*howFoxWetness;
+      roughnessFactor=mix(roughnessFactor,${F.eyeOptics.irisRoughness},howFoxEyeWet);
+    #endif
+  `;
+  const corneaNormal=`
+    #if defined(USE_CLEARCOAT) && defined(USE_MAP)
+      // Evaluate derivatives uniformly, including off-eye fragments; never create NaNs.
+      mat3 howFoxFrame=howFoxEyeFrame(-vViewPosition,nonPerturbedNormal,vMapUv);
+      #ifdef DOUBLE_SIDED
+        howFoxFrame[0]*=faceDirection;
+        howFoxFrame[1]*=faceDirection;
+      #endif
+      vec2 howFoxDome=clamp(howFoxCorneaUv,vec2(-1.3),vec2(1.3));
+      vec3 howFoxCorneaNormal=normalize(howFoxFrame*vec3(howFoxDome*${F.eyeOptics.domeSlope},1.0));
+      clearcoatNormal=normalize(mix(clearcoatNormal,howFoxCorneaNormal,howFoxEyeWet));
+    #endif
+  `;
+  const corneaMaterial=`
+    #ifdef USE_CLEARCOAT
+      material.clearcoat*=howFoxEyeWet;
+      // Keep a finite, filtered reflection when the eyes occupy only a few pixels.
+      vec3 howFoxCoatDx=dFdx(clearcoatNormal),howFoxCoatDy=dFdy(clearcoatNormal);
+      float howFoxCoatVariance=max(dot(howFoxCoatDx,howFoxCoatDx),dot(howFoxCoatDy,howFoxCoatDy));
+      material.clearcoatRoughness=max(material.clearcoatRoughness,min(1.0,
+        sqrt(${F.eyeOptics.coatRoughness*F.eyeOptics.coatRoughness}+${F.eyeOptics.specularVariance}*howFoxCoatVariance)));
+    #endif
   `;
   // The original ORM red channel is constant white. Leave aomap_fragment as an
   // include so the game's shared contact/canopy AO can append its own shading.
   const chunks=[['map_fragment','vMapUv'],['roughnessmap_fragment','vRoughnessMapUv'],
     ['metalnessmap_fragment','vMetalnessMapUv']] as const;
   material.onBeforeCompile=function(shader,renderer) {
-    compile.call(this,shader,renderer);shader.uniforms.howFoxGaze=gaze;
+    compile.call(this,shader,renderer);shader.uniforms.howFoxGaze=gaze;shader.uniforms.howFoxWetness=wetness;
     shader.fragmentShader=glsl+'\n'+shader.fragmentShader;
     for(const [chunk,uv] of chunks) {
       const anchor=`#include <${chunk}>`,source=THREE.ShaderChunk[chunk];
       if(!shader.fragmentShader.includes(anchor)||!source.includes(uv))throw Error(`Fox eye shader anchor missing: ${chunk}`);
-      shader.fragmentShader=shader.fragmentShader.replace(anchor,source.replaceAll(uv,`howFoxEyeUv(${uv})`));
+      shader.fragmentShader=shader.fragmentShader.replace(anchor,source.replaceAll(uv,`howFoxEyeUv(${uv})`)+(chunk==='roughnessmap_fragment'?eyeMask:''));
+    }
+    for(const [chunk,body] of [['clearcoat_normal_fragment_maps',corneaNormal],['lights_physical_fragment',corneaMaterial]]){
+      const anchor=`#include <${chunk}>`;
+      if(!shader.fragmentShader.includes(anchor))throw Error(`Fox cornea shader anchor missing: ${chunk}`);
+      shader.fragmentShader=shader.fragmentShader.replace(anchor,anchor+'\n'+body);
     }
   };
-  material.customProgramCacheKey=()=>`${key}:how-fox-eyes-v1`;
+  material.customProgramCacheKey=()=>`${key}:how-fox-eyes-v2`;
   material.needsUpdate=true;
 }
 
@@ -67,16 +130,17 @@ export function createFoxExpression(model:THREE.Object3D,root:THREE.Object3D,mat
   const head=model.getObjectByName('Head'),lids=model.getObjectByName('Lids');
   if(!head||!lids)throw Error('Admitted fox is missing Head / Lids');
   const seed=hash(id),restLids=lids.position.clone(),closedDelta=new THREE.Vector3(...F.lidsClosedDelta);
-  const authoredHead=head.quaternion.clone(),gaze={value:new THREE.Vector2()},eyeTarget=new THREE.Vector2(),wantedGaze=new THREE.Vector2();
+  const authoredHead=head.quaternion.clone(),gaze={value:new THREE.Vector2()},wetness={value:1},eyeTarget=new THREE.Vector2(),wantedGaze=new THREE.Vector2();
   const position=new THREE.Vector3(),direction=new THREE.Vector3(),up=new THREE.Vector3(),right=new THREE.Vector3();
   const inverseHead=new THREE.Quaternion(),bodyRotation=new THREE.Quaternion(),yawRotation=new THREE.Quaternion(),pitchRotation=new THREE.Quaternion();
-  let yaw=0,pitch=0,blink=0;
-  materials.forEach(material=>bindEyes(material,gaze));
+  let yaw=0,pitch=0,blink=0,eyeWetness=1;
+  materials.forEach(material=>bindEyes(material,gaze,wetness));
   return {
     // PropertyMixer may skip unchanged tracks: always remove last frame's additive rotation first.
     beforeAnimation(){head.quaternion.copy(authoredHead);},
     update(view:WildlifeView,time:number,dt:number,reducedMotion:boolean,player?:THREE.Vector3,review?:FoxReviewPose) {
       authoredHead.copy(head.quaternion);
+      eyeWetness=review?clamp(review.eyeWetness??1,0,1):1;
       if(review) {
         const sample=review.seconds;
         blink=clamp(review.blink??foxBlinkAt(sample,seed),0,1);
@@ -115,6 +179,7 @@ export function createFoxExpression(model:THREE.Object3D,root:THREE.Object3D,mat
       }
       // Retract a shifted iris under the original closed lid; keep shared textures untouched.
       gaze.value.copy(eyeTarget).multiplyScalar(1-blink);
+      wetness.value=eyeWetness*(1-smooth((blink-F.eyeOptics.blinkFade[0])/(F.eyeOptics.blinkFade[1]-F.eyeOptics.blinkFade[0])));
       lids.position.copy(restLids).addScaledVector(closedDelta,blink);
       root.updateWorldMatrix(true,true);
       head.getWorldQuaternion(inverseHead).invert();
@@ -123,8 +188,8 @@ export function createFoxExpression(model:THREE.Object3D,root:THREE.Object3D,mat
       right.set(1,0,0).applyQuaternion(bodyRotation).applyQuaternion(inverseHead).normalize();
       head.quaternion.multiply(yawRotation.setFromAxisAngle(up,yaw)).multiply(pitchRotation.setFromAxisAngle(right,-pitch));
     },
-    stats:()=>({blink,gaze:eyeTarget.toArray(),head:[yaw,pitch]}),
-    dispose(){head.quaternion.copy(authoredHead);lids.position.copy(restLids);gaze.value.set(0,0);},
+    stats:()=>({blink,gaze:eyeTarget.toArray(),head:[yaw,pitch],eyeWetness}),
+    dispose(){head.quaternion.copy(authoredHead);lids.position.copy(restLids);gaze.value.set(0,0);wetness.value=0;},
   };
 }
 

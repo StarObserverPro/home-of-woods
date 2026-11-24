@@ -293,6 +293,7 @@ async function captureSample(page, flow, label, requested, reference = null) {
     await page.waitForFunction(pose => {
       const expression = JSON.parse(document.querySelector('#runtime-stats').textContent).current.wildlife.expressions.find(value => value.id.includes('inspect:wildlife.fox'));
       return expression && expression.clip === pose.motion && Math.abs(expression.blink - pose.blink) < 1e-6 &&
+        Math.abs(expression.eyeWetness - pose.eyeWetness) < 1e-6 &&
         expression.gaze.every((value, index) => Math.abs(value - pose.gaze[index]) < 1e-6) &&
         expression.head.every((value, index) => Math.abs(value - pose.head[index]) < 1e-6);
     }, requested, { polling: 100 });
@@ -304,20 +305,30 @@ async function captureSample(page, flow, label, requested, reference = null) {
 
 async function sampled(page, flow) {
   phase = flow.name + ': select fox inspector'; await inspect(page);
-  const frozen = await stats(page), baseline = { seconds: .25, blink: 0, gaze: [0, 0], head: [0, 0], motion: 'idle' };
+  const frozen = await stats(page), baseline = { seconds: .25, blink: 0, gaze: [0, 0], head: [0, 0], motion: 'idle', eyeWetness: 1 };
   const open = await captureSample(page, flow, 'open', baseline);
   await delay(350);
   const repeated = await captureSample(page, flow, 'open-repeat', baseline, open.image);
   assert.deepEqual(poseState(repeated.state), poseState(open.state), 'Two held samples have exactly the same pose/world diagnostic values');
   flow.samePose = { equivalent: true, stateSha256: digest(JSON.stringify(poseState(open.state))), pixelDifference: repeated.pixels };
+  const openDry = await captureSample(page, flow, 'open-dry', { ...baseline, eyeWetness: 0 }, open.image);
+  assert.ok(openDry.pixels.changedPixels > 8, 'Wet eyes must visibly differ from the same open pose with wetness disabled');
+  assert.ok(openDry.pixels.changedPixels < openDry.pixels.width * openDry.pixels.height * .015, 'Wetness must stay localized to the eye region');
   const closed = await captureSample(page, flow, 'closed', { ...baseline, blink: 1 }, open.image);
   assert.ok(closed.pixels.changedPixels > 8, 'Closing the original lids must visibly change the canvas');
+  const closedDry = await captureSample(page, flow, 'closed-dry', { ...baseline, blink: 1, eyeWetness: 0 }, closed.image);
+  assert.equal(closedDry.pixels.changedPixels, 0, 'Closed lids must fully suppress wet-eye rendering');
   const left = await captureSample(page, flow, 'gaze-model-minus-x', { ...baseline, gaze: [-1, 0] }, open.image);
   const right = await captureSample(page, flow, 'gaze-model-plus-x', { ...baseline, gaze: [1, 0] }, left.image);
   assert.ok(right.pixels.changedPixels > 8, 'Opposite eye directions must visibly change the canvas');
   const headLeft = await captureSample(page, flow, 'head-model-minus-x', { ...baseline, head: [-.24, .06] });
   const headRight = await captureSample(page, flow, 'head-model-plus-x', { ...baseline, head: [.24, .06] }, headLeft.image);
   assert.ok(headRight.pixels.changedPixels > 8, 'Opposite head turns must visibly change the canvas');
+  const headLeftDry = await captureSample(page, flow, 'head-model-minus-x-dry', { ...baseline, head: [-.24, .06], eyeWetness: 0 }, headLeft.image);
+  const headRightDry = await captureSample(page, flow, 'head-model-plus-x-dry', { ...baseline, head: [.24, .06], eyeWetness: 0 }, headRight.image);
+  assert.ok(headLeftDry.pixels.changedPixels > 8, 'Wet eyes remain visible at the model-minus-x head angle');
+  assert.ok(headRightDry.pixels.changedPixels > 8, 'Wet eyes remain visible at the model-plus-x head angle');
+  flow.wetEyes = { open: openDry.pixels, closed: closedDry.pixels, headModelMinusX: headLeftDry.pixels, headModelPlusX: headRightDry.pixels };
   for (const [motion, first, second] of [['walk', .08, .43], ['run', .04, .29]]) {
     const a = await captureSample(page, flow, `${motion}-phase-a`, { ...baseline, motion, seconds: first });
     const b = await captureSample(page, flow, `${motion}-phase-b`, { ...baseline, motion, seconds: second }, a.image);
@@ -328,7 +339,7 @@ async function sampled(page, flow) {
   assert.deepEqual(after.worldState, frozen.worldState, 'Sampling leaves all animals, player and world state unchanged');
   assert.deepEqual(after.wildlifeViews, frozen.wildlifeViews, 'Sampling never wanders the original common animals away');
   flow.sampled = { worldSha256: digest(JSON.stringify(frozen.worldState)), gameTime: frozen.gameTime,
-    inspectedId: inspectedFox(after).id, captureCount: 11 };
+    inspectedId: inspectedFox(after).id, captureCount: 15 };
 }
 
 try {

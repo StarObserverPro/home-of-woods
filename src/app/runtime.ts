@@ -839,7 +839,7 @@ export async function createRuntime(
   let foxInspection:InspectionWindow['__HOW_FOX_REVIEW__'];
   if(import.meta.env.DEV&&new URLSearchParams(window.location.search).has('inspect')){
     foxInspection={sample(pose){
-      const values=[pose.seconds,pose.blink??0,...(pose.gaze??[0,0]),...(pose.head??[0,0])];
+      const values=[pose.seconds,pose.blink??0,pose.eyeWetness??1,...(pose.gaze??[0,0]),...(pose.head??[0,0])];
       if(destroyed||contextLost||!inspectionOpen||!values.every(Number.isFinite)||pose.seconds<0||pose.seconds>600||
         pose.motion!==undefined&&!['idle','walk','run'].includes(pose.motion))throw Error('Invalid fox inspection sample');
       view.sampleFox(pose);view.render(state,0);publishSnapshot();
