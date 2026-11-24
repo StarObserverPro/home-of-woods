@@ -19,7 +19,7 @@ const boxes = TENT_ROOM_BLOCKERS.map(b => ({
   minZ: b.z - b.halfZ - radius, maxZ: b.z + b.halfZ + radius,
 }));
 export function tentFloorPoint({ x, z }: Point): Point {
-  const maxZ = TENT_ROOM.depth / 2 - radius;
+  const maxZ = TENT_ROOM.depth / 2 - TENT_ROOM.wallClearance;
   return { x: Math.max(-TENT_ROOM.walkHalfX, Math.min(TENT_ROOM.walkHalfX, x)), z: Math.max(-maxZ, Math.min(maxZ, z)) };
 }
 export function tentCanStand(p: Point) {
@@ -104,9 +104,27 @@ export function atTentEntrance(point: Point) {
   return Math.hypot(point.x - TENT_PORTAL.landing.x, point.z - TENT_PORTAL.landing.z) <= TENT_PORTAL.approachReach;
 }
 export function tentApproachRoute(from: Point, colliders: Collider[], access: TravelAccess): Point[] {
-  const { landing } = TENT_PORTAL, grid = navigationGridPoint(landing);
-  if (!canStand(landing, colliders, undefined, access) || !canStand(grid, colliders, undefined, access)) return [];
-  const end = move(grid, landing.x - grid.x, landing.z - grid.z, colliders, access);
-  if (Math.hypot(end.x - landing.x, end.z - landing.z) > .01) return [];
-  return findPath(from, landing, colliders, access);
+  const { landing, approach } = TENT_PORTAL, grid = navigationGridPoint(approach);
+  const reaches = (start: Point, end: Point) => {
+    if (!canStand(end, colliders, undefined, access)) return false;
+    const reached = move(start, end.x - start.x, end.z - start.z, colliders, access);
+    return Math.hypot(reached.x - end.x, reached.z - end.z) < .01;
+  };
+  if (!canStand(landing, colliders, undefined, access)) return [];
+  // A cancelled approach can leave the player in the off-grid strip already.
+  const porchReach = Math.hypot(approach.x - landing.x, approach.z - landing.z) + TENT_PORTAL.approachReach;
+  if (Math.hypot(from.x - landing.x, from.z - landing.z) <= porchReach && reaches(from, landing)) return [{ ...landing }];
+  if (!canStand(grid, colliders, undefined, access) || !reaches(grid, approach) || !reaches(approach, landing)) return [];
+  const route = findPath(from, grid, colliders, access);
+  if (!route.length) return [];
+  route.push({ ...approach }, { ...landing });
+  // Validate the actual start and every connector against live furniture/trees.
+  let previous = from;
+  const connected: Point[] = [];
+  for (const point of route) {
+    if (!reaches(previous, point)) return [];
+    if (Math.hypot(previous.x - point.x, previous.z - point.z) > .01) connected.push(point);
+    previous = point;
+  }
+  return connected;
 }

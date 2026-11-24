@@ -8,6 +8,10 @@ on:
       - 'src/scene/tent/**'
       - 'src/scene/create-scene.ts'
       - 'src/scene/camp-exteriors.ts'
+      - 'src/scene/lighting/interior-lighting.ts'
+      - 'src/scene/lighting/building-occlusion.ts'
+      - 'src/content/shadows.ts'
+      - 'src/world/shadow-field.ts'
       - 'src/app/runtime.ts'
       - 'src/ui/App.tsx'
       - 'src/ui/hud-layout.css'
@@ -25,6 +29,10 @@ jobs:
   tent:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [material, portal]
     steps:
       - uses: actions/checkout@v7
         with:
@@ -39,12 +47,14 @@ jobs:
       - run: npm run verify:ui && npm run build
       - run: npx playwright install --with-deps chromium
       - run: sudo apt-get install -y fonts-noto-cjk
-      - name: Walk through the tent in the built game
+      - name: Review the tent in the built game
         run: node tools/verification/tent-review.mjs
+        env:
+          TENT_REVIEW_SUITE: ${{ matrix.suite }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: tent-review-evidence
+          name: tent-${{ matrix.suite }}-evidence
           path: /tmp/how-tent-evidence/
           if-no-files-found: warn
           retention-days: 14

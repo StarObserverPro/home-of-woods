@@ -588,6 +588,8 @@ export async function createScene(
     wildlifeAvailable:()=>wildlife.available(),
     wildlifeObserved:()=>wildlife.observedIds(),
     inspectScene(preset:SceneViewPreset|null,overrides:Partial<SceneAppearance>={}){
+      // Resetting a room camera must keep its borrowed camp rig untouched.
+      if(inside())return;
       if(preset&&!sceneCamera)sceneCamera={yaw,elevation,zoom,target:target.clone()};
       if(!preset&&sceneCamera){({yaw,elevation,zoom}=sceneCamera);target.copy(sceneCamera.target);sceneCamera=null;}
       scenePreset=preset;sceneOverrides=preset?{...overrides}:{};

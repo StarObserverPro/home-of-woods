@@ -5,12 +5,12 @@ import { join } from 'node:path';
 const button = (page, name) => page.getByRole('button', { name, exact: true });
 const act = (locator, touch) => touch ? locator.tap() : locator.click();
 export const tentStats = async page => JSON.parse(await page.locator('#runtime-stats').textContent()).current;
-const waitForSpace = (page, space) => page.waitForFunction(expected => {
+const waitForSpace = (page, space, timeout = 90000) => page.waitForFunction(expected => {
   const text = document.querySelector('#runtime-stats')?.textContent;
   if (!text) return false;
   const value = JSON.parse(text).current?.sceneSpace;
   return value?.active === expected && value.fade === 0;
-}, space);
+}, space, { timeout });
 const waitForCurtain = (page, open) => page.waitForFunction(expected => {
   const text = document.querySelector('#runtime-stats')?.textContent;
   return text && JSON.parse(text).current?.tent?.doorOpen === expected;
@@ -110,7 +110,15 @@ export async function verifyTentPortal(browser, origin, out, report) {
       await selectTent(page, touch);
       await captureTentFrame(page, out, report, `tent-${label}-selected`);
       await act(button(page, '走到帐篷门前'), touch);
-      await waitForSpace(page, 'tent');
+      await page.waitForFunction(() => {
+        const current = JSON.parse(document.querySelector('#runtime-stats').textContent).current;
+        return current.routeNodes > 0 || current.tent.crossing || current.tent.inside;
+      }, null, { timeout: 15000 });
+      // SwiftShader renders the full camp at a few frames per second. Keep the
+      // production movement owner and allow its fixed steps to complete.
+      console.log(`TENT_PORTAL_APPROACH ${label}`);
+      await waitForSpace(page, 'tent', 600000);
+      console.log(`TENT_PORTAL_ENTERED ${label}`);
       const entered = await captureTentFrame(page, out, report, `tent-${label}-inside`);
       assert.equal(await page.locator('.scene-host canvas').count(), 1);
       assert.equal(entered.tent.inside, true);

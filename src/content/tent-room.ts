@@ -9,16 +9,23 @@ export const TENT_ROOM = {
   height: TENT_SHAPE.ridgeY * TENT_SCALE,
   floorY: TENT_SHAPE.floorY * TENT_SCALE,
   actorRadius: MOVEMENT.radius,
-  // Keep the standing actor below the sloping canvas, clear of the low hems.
-  walkHalfX: 2.65,
+  // The real ranger is ~2.53 m tall and its turned head/hat reaches ~.66 m
+  // beyond the standing point. The central band leaves room below the curved
+  // inner canvas, including the full authored wind excursion.
+  walkHalfX: 1.45,
+  // The turned silhouette reaches .714 m; add the .056 m canvas thickness and
+  // a small clearance. Feet still use the smaller radius around low belongings.
+  wallClearance: .8,
 } as const;
 
 export const TENT_ENTRY = { x: 0, z: 2.85 };
 export const TENT_USE_REACH = .4;
 export const TENT_PORTAL = {
   threshold: { x: TENT.x, z: TENT.z + TENT_SHAPE.doorZ * TENT_SCALE },
-  // The navigation grid is 1.5 m: +5.5 snaps to the clear +6 m row.
-  landing: { x: TENT.x, z: TENT.z + 5.5 },
+  // The door and workbench leave a clear strip too narrow for the 1.5 m grid.
+  // Enter it from the right shoulder instead of snapping the landing into either object.
+  landing: { x: TENT.x, z: TENT.z + 5.15 },
+  approach: { x: TENT.x + 5, z: TENT.z + 5.15 },
   outward: { x: 0, z: 1 }, outwardFacing: 0, approachReach: .65,
 } as const;
 

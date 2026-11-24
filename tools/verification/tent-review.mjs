@@ -8,13 +8,15 @@ import { chromium } from 'playwright';
 import { captureTentFrame, observeTentPage, tentReady, tentStats, verifyTentPortal } from './tent-portal-browser.mjs';
 
 const cwd = process.cwd(), out = path.resolve(process.env.TENT_EVIDENCE_DIR ?? '/tmp/how-tent-evidence');
+const suite = process.env.TENT_REVIEW_SUITE ?? 'all';
+assert.ok(['all', 'portal', 'material'].includes(suite), 'Unknown tent review suite');
 const origin = process.env.TENT_REVIEW_ORIGIN ?? 'http://127.0.0.1:4189';
 const port = new URL(origin).port;
 await fs.mkdir(out, { recursive: true });
 const entry = await fs.readFile(path.join(cwd, 'dist/index.html'));
 const report = {
   startedAt: new Date().toISOString(), sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
-  builtEntrySha256: createHash('sha256').update(entry).digest('hex'), status: 'running', origin, node: process.version,
+  builtEntrySha256: createHash('sha256').update(entry).digest('hex'), status: 'running', suite, origin, node: process.version,
   captureInputs: { seed: 104729, dpr: 1, hours: [14, 1], bookmarks: ['tentNear', 'tentSide', 'tentFar'],
     diagnosticWindTimes: [0, 2.5], materialModes: ['final', 'clay', 'normals', 'wireframe'] },
   frames: [], flows: [], errors: [], consoleWarnings: [], networkFailures: [],
@@ -93,8 +95,8 @@ try {
     ...(process.env.CHROMIUM_EXECUTABLE ? { executablePath: process.env.CHROMIUM_EXECUTABLE } : {}),
     args: ['--no-sandbox', '--disable-dev-shm-usage', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   report.browser = await browser.version();
-  phase = 'actual tent portal'; await verifyTentPortal(browser, origin, out, report);
-  phase = 'material and fixed-view captures'; await materialCaptures();
+  if (suite !== 'portal') { phase = 'material and fixed-view captures'; await materialCaptures(); }
+  if (suite !== 'material') { phase = 'actual tent portal'; await verifyTentPortal(browser, origin, out, report); }
   assert.deepEqual(report.errors, [], 'Browser or shader errors');
   assert.deepEqual(report.networkFailures, [], 'Runtime requests failed');
   report.status = 'passed-automated'; console.log('TENT_REVIEW_PASS');
