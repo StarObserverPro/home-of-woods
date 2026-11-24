@@ -349,7 +349,7 @@ try {
       await sampled(page, flow);
       if (flow.name === 'desktop') {
         await page.setViewportSize(report.captureInputs.naturalViewport);
-        await page.getByRole('button', { name: '结束场景检视', exact: true }).evaluate(button => button.click());
+        await page.getByRole('button', { name: '结束场景检视', exact: true, includeHidden: true }).evaluate(button => button.click());
         await natural(page, flow);
       }
       assert.ok(report.assetResponses.some(response => response.flow === flow.name && response.url.endsWith('/assets/wildlife/fox.glb') && response.status === 200), 'The actual fox GLB request succeeds');
