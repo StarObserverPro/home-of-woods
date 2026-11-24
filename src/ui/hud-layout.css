@@ -18,6 +18,8 @@
 .bottom-toolbar button { width:56px; min-height:48px; }
 .camera-tools { position:absolute; right:0; bottom:64px; display:flex; padding:8px; border: 0; border-radius:12px; background:#18392ee8; }
 .camera-tools button { width:44px; height:44px; }
+.camera-tools.camera-tools--overlook { display:grid; grid-template-columns:repeat(4,44px); gap:4px; width:max-content; }
+.camera-tools--overlook button:last-child { grid-column:3 / 5; grid-row:auto; width:auto; height:44px; }
 .target-card, .panel { background:linear-gradient(120deg,#18382edb,#18382eb8); border: 0; border-radius:14px; backdrop-filter:blur(4px); }
 .target-card { width:340px; padding:14px 16px; max-height:55dvh; bottom:94px; }
 .target-card:has(.upgrade-controls), .target-card:has(.workshop-controls), .target-card:has(.upgrade-module-list) { max-height:55dvh; }

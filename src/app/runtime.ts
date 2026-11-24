@@ -50,6 +50,7 @@ import {CAMP_VISITOR} from '../content/characters.ts';
 import type {WardrobeLook} from '../content/wardrobe-preview.ts';
 import {beginRitual,advanceRitual,ritualBusy} from '../domain/ritual.ts';
 import { MOVEMENT, WAYPOINTS } from "../content/world.ts";
+import {OVERLOOK} from '../content/camera.ts';
 import { CABIN_PORTAL, CABIN_ROOM } from '../content/cabin.ts';
 import {FORESTRY} from '../content/forestry.ts';
 import type { Point } from "../content/world.ts";
@@ -64,7 +65,10 @@ import type { CabinAction, CabinVisit } from '../domain/cabin.ts';
 import { makeColliders, makeTrees } from "../world/layout.ts";
 import { heightAt, zoneName } from "../world/surface.ts";
 import { createScene } from "../scene/create-scene.ts";
-import { createLoop } from "./runtime-loop.ts";
+import type {AtmosphereDebug} from '../scene/atmosphere-lite.ts';
+import type {OverlookOpticsMode} from '../content/overlook-optics.ts';
+import { createLoop, requiredFrameMode } from "./runtime-loop.ts";
+import type { FrameMode } from "./runtime-loop.ts";
 import { RUNTIME_MODELS } from '../content/assets.ts';
 import { START,TENT } from '../content/world.ts';
 import { createGatheringRegistry } from '../domain/gathering-registry.ts';
@@ -350,7 +354,18 @@ export async function createRuntime(
   synchronizeWildlife();
   const frameTimes: number[] = [];
   let lastSampleAt:number|null=null;
-  const tick = (dt: number, now:number) => {
+  const tick = (dt: number, now:number, mode: Exclude<FrameMode, 'stopped'> = 'simulation', grantPreparation = false) => {
+    if (mode === 'presentation') {
+      // Continue bounded visual preparation/camera motion without advancing the
+      // world, actions, weather, cabin transitions or fixed-step remainder.
+      view.render(state, 0, dt, grantPreparation);
+      reportTime += dt;
+      if (reportTime > .15 || !view.hasPendingPresentation()) {
+        reportTime = 0;
+        publishSnapshot();
+      }
+      return;
+    }
     accumulator += dt;
     while (accumulator >= MOVEMENT.fixedStep) {
       // An open inventory freezes walking and the world clock, while nearby wood can settle.
@@ -372,7 +387,8 @@ export async function createRuntime(
         dz = 0;
       let routeDistance=Infinity;
       if(placement||woodcraft.isDropping()){sx=sz=0;state.route=[];}
-      if (sx || sz) {
+      const movementReady=!!cabin||!(sx||sz||state.route.length)||view.prepareForMovement();
+      if (movementReady && (sx || sz)) {
         if(!cabin){
           view.inspectScene(null);
           const cancelled=cancelPlayerAction(state);if(cancelled)message=cancelled;
@@ -384,7 +400,7 @@ export async function createRuntime(
         const yaw = view.getYaw();
         dx = sx * Math.cos(yaw) + sz * Math.sin(yaw);
         dz = -sx * Math.sin(yaw) + sz * Math.cos(yaw);
-      } else if (!cabin && state.route.length) {
+      } else if (movementReady && !cabin && state.route.length) {
         const p = state.route[0],
           distance = Math.hypot(p.x - state.player.x, p.z - state.player.z);
         if (distance < 0.18) state.route.shift();
@@ -433,7 +449,7 @@ export async function createRuntime(
       }
     }
     const crossed=advanceCabinCrossing(dt);
-    view.render(state, dt);
+    view.render(state, dt, dt, grantPreparation);
     if (lastSampleAt!==null && dt > 0) {
       frameTimes.push(now-lastSampleAt);
       if (frameTimes.length > 360) frameTimes.shift();
@@ -446,7 +462,7 @@ export async function createRuntime(
     }
   };
   const loop = createLoop(
-    tick,
+    (dt,now,mode)=>tick(dt,now,mode,true),
     {
       request: (cb) => requestAnimationFrame(cb),
       cancel: (id) => cancelAnimationFrame(id),
@@ -547,9 +563,14 @@ export async function createRuntime(
       appearance:view.getAppearance(),
     });
   }
-  const loopPauseRequired=()=>captureHoldToken!==null||manualPause||inspectionOpen||contextLost||document.hidden||destroyed||inForest();
+  const desiredFrameMode=()=>requiredFrameMode(
+    captureHoldToken!==null||contextLost||document.hidden||destroyed||inForest(),
+    manualPause||inspectionOpen,
+    view.hasPendingPresentation(),
+  );
+  view.setPresentationScheduler(()=>loop.setMode(desiredFrameMode()));
   const syncPause = () => {
-    loop.setPaused(loopPauseRequired());
+    loop.setMode(desiredFrameMode());
     resetMovementInput();
     state.player.moving = false;
     if(cabin)cabin.player.moving=false;
@@ -627,7 +648,7 @@ export async function createRuntime(
   const unsubscribeSave = persistence.subscribe(() => {
     if (destroyed) return;
     if (persistence.status().state === 'protected' || persistence.status().state === 'conflict') {
-      manualPause = true; loop.setPaused(true);
+      manualPause = true; loop.setMode(desiredFrameMode());
     }
     publishSnapshot();
   });
@@ -655,7 +676,7 @@ export async function createRuntime(
   const transferBlocked=()=>destroyed||manualPause||inspectionOpen||contextLost||document.hidden||!!cabin||!!crossing||!!placement||workshopBusy(state)||!!state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state);
   const itemTransfers=createItemTransfers(state,woodcraft,view,activeColliders,transferBlocked);
   const clearPlacement=()=>{placement=null;view.setPlacement(null);};
-  loop.setPaused(loopPauseRequired());
+  loop.setMode(desiredFrameMode());
   publishSnapshot();
   // DEV inspection advances the existing fixed-step owner between captured frames.
   // It neither changes movement speed nor creates a second clock/RAF in the shipped game.
@@ -678,7 +699,7 @@ export async function createRuntime(
         // Capture release keeps the fixed-step remainder and input intent. Only
         // the existing loop's wall-time/sampling baselines restart after the hold.
         restoringCaptureHold=true;
-        try{loop.setPaused(loopPauseRequired());}
+        try{loop.setMode(desiredFrameMode());}
         finally{restoringCaptureHold=false;}
         return {released:true,held,after:snapshot()};
       },
@@ -687,10 +708,12 @@ export async function createRuntime(
   type InspectionWindow=Window&{
     __HOW_ADVANCE_SIMULATION__?:(seconds:number)=>void;
     __HOW_CAPTURE_HOLD__?:ReturnType<typeof createCaptureHoldInspection>;
+    __HOW_RENDER_REVIEW__?:{set:(modes:{atmosphere?:AtmosphereDebug;optics?:OverlookOpticsMode})=>void};
   };
   const inspectionWindow=window as InspectionWindow;
   let advanceInspection:((seconds:number)=>void)|undefined;
   let captureInspection:ReturnType<typeof createCaptureHoldInspection>|undefined;
+  let renderInspection:InspectionWindow['__HOW_RENDER_REVIEW__'];
   if(import.meta.env.DEV&&new URLSearchParams(window.location.search).has('inspect')){
     captureInspection=createCaptureHoldInspection();
     inspectionWindow.__HOW_CAPTURE_HOLD__=captureInspection;
@@ -698,9 +721,22 @@ export async function createRuntime(
       if(captureHoldToken!==null||inputBlocked()||!Number.isFinite(seconds)||seconds<=0||seconds>5)throw new Error('Inspection step unavailable');
       loop.setPaused(true);
       try{tick(seconds,performance.now());}
-      finally{loop.setPaused(loopPauseRequired());publishSnapshot();}
+      finally{loop.setMode(desiredFrameMode());publishSnapshot();}
     };
     inspectionWindow.__HOW_ADVANCE_SIMULATION__=advanceInspection;
+    renderInspection={set(modes){
+      if(destroyed||contextLost||captureHoldToken===null)throw new Error('Render review requires a capture hold');
+      if(modes.atmosphere){
+        if(!['final','off','transmittance','inscatter'].includes(modes.atmosphere))throw new Error('Unknown atmosphere mode');
+        view.setAtmosphereMode(modes.atmosphere);
+      }
+      if(modes.optics){
+        if(!['final','off','depth','coc'].includes(modes.optics))throw new Error('Unknown optics mode');
+        view.setOpticsMode(modes.optics);
+      }
+      view.render(state,0,0,false);publishSnapshot();
+    }};
+    inspectionWindow.__HOW_RENDER_REVIEW__=renderInspection;
   }
   return {
     requestCabinEntry,
@@ -1034,11 +1070,12 @@ export async function createRuntime(
       syncPause();
       if (value) void persistence.saveNow(state);
     },
-    camera(action: "reset" | "left" | "right" | "in" | "out") {
+    camera(action: "reset" | "left" | "right" | "in" | "out" | "raise" | "lower") {
       if(destroyed||crossing)return;
       if (action === "reset") {view.inspectScene(null);if(inspectionOpen){inspectionOpen=false;view.inspectCharacter(null);view.inspectScene(null);syncPause();}view.resetCamera();}
       else if (action === "left" || action === "right")
         view.rotate(action === "left" ? -0.35 : 0.35);
+      else if(action === 'raise' || action === 'lower')view.elevate(action === 'raise'?OVERLOOK.elevationStep:-OVERLOOK.elevationStep);
       else view.zoomBy(action === "in" ? 1.18 : 1 / 1.18);
       if (manualPause || inspectionOpen) view.render(state, 0);
       publishSnapshot();
@@ -1074,6 +1111,7 @@ export async function createRuntime(
       destroyed = true;
       if(import.meta.env.DEV&&inspectionWindow.__HOW_ADVANCE_SIMULATION__===advanceInspection)delete inspectionWindow.__HOW_ADVANCE_SIMULATION__;
       if(import.meta.env.DEV&&inspectionWindow.__HOW_CAPTURE_HOLD__===captureInspection)delete inspectionWindow.__HOW_CAPTURE_HOLD__;
+      if(import.meta.env.DEV&&inspectionWindow.__HOW_RENDER_REVIEW__===renderInspection)delete inspectionWindow.__HOW_RENDER_REVIEW__;
       captureHoldToken=null;
       unsubscribeSave();
       if(!inForest())void persistence.saveNow(state);

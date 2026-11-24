@@ -1,0 +1,88 @@
+name: Frame Budget Review
+on:
+  pull_request:
+    paths:
+      - 'src/app/runtime.ts'
+      - 'src/app/runtime-loop.ts'
+      - 'src/content/frame-budget.ts'
+      - 'src/content/camera.ts'
+      - 'src/content/regions.ts'
+      - 'src/scene/create-scene.ts'
+      - 'src/scene/frame-work-queue.ts'
+      - 'src/scene/streamed-forest.ts'
+      - 'src/scene/anchored-overlook.ts'
+      - 'src/scene/camera-forecast.ts'
+      - 'src/scene/forest-view-plan.ts'
+      - 'src/scene/understory*'
+      - 'src/scene/expedition-vegetation.ts'
+      - 'src/scene/forestry-presentation.ts'
+      - 'src/scene/forest-expedition*'
+      - 'src/ui/App.tsx'
+      - 'tests/frame-work-queue.test.ts'
+      - 'tests/streamed-forest-budget.test.ts'
+      - 'tests/forest-residency-revision.test.ts'
+      - 'tests/presentation-loop.test.ts'
+      - 'tests/understory-submission.test.ts'
+      - 'tests/expedition-crown-opacity.test.ts'
+      - 'tests/anchored-overlook.test.ts'
+      - 'tests/forest-view-plan.test.ts'
+      - 'tools/verification/frame-budget-review.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.*'
+      - '.github/workflows/frame-budget-review.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: frame-budget-review-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  frame-budget:
+    runs-on: ubuntu-latest
+    # Both viewport flows include bounded camera travel on software WebGL.
+    # The CI wall-clock allowance is separate from the in-game frame budget.
+    timeout-minutes: 35
+    env:
+      EVIDENCE_DIR: /tmp/how-frame-budget-review
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22.14.0'
+          package-manager-cache: false
+      - run: npm ci
+      - name: Scheduling, forest residency and paused lifecycle checks
+        run: >-
+          node --experimental-strip-types --test
+          tests/frame-work-queue.test.ts
+          tests/streamed-forest-budget.test.ts
+          tests/forest-residency-revision.test.ts
+          tests/presentation-loop.test.ts
+          tests/lifecycle.test.ts
+          tests/understory-submission.test.ts
+          tests/expedition-crown-opacity.test.ts
+      - name: Anchored camera behavior when included in this revision
+        run: |
+          if test -f tests/anchored-overlook.test.ts; then
+            node --experimental-strip-types --test tests/anchored-overlook.test.ts tests/forest-view-plan.test.ts
+          fi
+      - run: npm run build
+      - name: Install WebGL browser and CJK fonts
+        run: |
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y fonts-noto-cjk
+      - name: Walk and settle the actual desktop and mobile game
+        env:
+          SOURCE_REVISION: ${{ github.sha }}
+        run: node tools/verification/frame-budget-review.mjs
+      - name: Upload current runtime diagnostics and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frame-budget-review-evidence
+          path: ${{ env.EVIDENCE_DIR }}/
+          if-no-files-found: warn
+          retention-days: 7
