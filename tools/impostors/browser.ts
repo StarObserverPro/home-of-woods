@@ -14,6 +14,27 @@ const debug = renderer.getContext().getExtension('WEBGL_debug_renderer_info');
 const backend = debug ? renderer.getContext().getParameter(debug.UNMASKED_RENDERER_WEBGL) : 'unknown';
 let review: {dispose(): void} | null = null;
 
+function rendererMemory() {
+  return {geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures};
+}
+
+function warmRendererBaseline() {
+  const geometry = new THREE.PlaneGeometry(1, 1), material = new THREE.MeshStandardMaterial({roughness: .7, metalness: .5});
+  const trace: {dfg?: {value: unknown}} = {};
+  material.onBeforeCompile = shader => {trace.dfg = shader.uniforms.dfgLUT;};
+  const scene = new THREE.Scene(), camera = new THREE.OrthographicCamera(-1, 1, 1, -1, .1, 10);
+  camera.position.z = 2;
+  const light = new THREE.DirectionalLight(0xffffff, 1); light.position.set(1, 2, 3);
+  scene.add(new THREE.Mesh(geometry, material), light);
+  try {renderer.render(scene, camera);} finally {geometry.dispose(); material.dispose(); scene.clear();}
+  // Three's WebGLRenderer assigns getDFGLUT() to Standard uniforms. This global
+  // cache belongs to the renderer/engine, not to a tree batch or its atlas.
+  const dfg = trace.dfg?.value;
+  return {...rendererMemory(), sharedStandardTexture: dfg instanceof THREE.Texture ? dfg.name : null};
+}
+
+const rendererBaseline = warmRendererBaseline();
+
 function dilatedTexels(bytes: Uint8Array) {
   let count = 0;
   for (let i = 0; i < bytes.length; i += 4) if (bytes[i + 3] === 0 && (bytes[i] || bytes[i + 1] || bytes[i + 2])) count++;
@@ -46,7 +67,7 @@ const api = {
     const source = coniferClusterSource();
     try {
       const prior = {colourSpace: renderer.outputColorSpace, toneMapping: renderer.toneMapping,
-        viewport: renderer.getViewport(new THREE.Vector4()).toArray(), target: renderer.getRenderTarget()};
+        viewport: renderer.getViewport(new THREE.Vector4()).toArray(), target: renderer.getRenderTarget(), memory: rendererMemory()};
       const first = bakeImpostor(renderer, source.group, {id: 'rainier-conifer-cluster', frameSize,
         source: 'Project-owned distantTreeGeometry, composed by tools/impostors/source.ts'});
       const repeat = bakeImpostor(renderer, source.group, {id: 'rainier-conifer-cluster', frameSize,
@@ -66,6 +87,7 @@ const api = {
       return {manifest: first.manifest,
         albedo: impostorRgbaBase64(first.albedo), normal: impostorRgbaBase64(first.normal),
         checks: {deterministic, restored, coverage, errors: [...errors], backend,
+          bakerMemoryRestored: JSON.stringify(prior.memory) === JSON.stringify(rendererMemory()), rendererBaseline,
           dilatedTexels: {albedo: dilatedTexels(first.albedo), normal: dilatedTexels(first.normal)}}};
     } finally {source.dispose();}
   },
@@ -107,7 +129,7 @@ const api = {
   },
   disposeReview() {
     review?.dispose(); review = null;
-    return {geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, errors: [...errors]};
+    return {...rendererMemory(), rendererBaseline, errors: [...errors]};
   },
 };
 (window as unknown as {__IMPOSTOR_TOOL__: typeof api}).__IMPOSTOR_TOOL__ = api;

@@ -83,10 +83,14 @@ jobs:
           npx playwright install --with-deps chromium
           sudo apt-get install -y fonts-noto-cjk
       - name: Bake and render the deterministic 25-view tree cluster
+        id: bake
         env:
           IMPOSTOR_EVIDENCE_DIR: /tmp/how-rainier-review/baker
         run: node tools/impostors/export.mjs
       - name: Review the actual camp at desktop and mobile sizes
+        # Keep a failed bake review red, but collect independent integration
+        # evidence when its asset files were successfully written.
+        if: ${{ !cancelled() && steps.bake.outcome != 'skipped' && hashFiles('public/assets/forest-impostors/rainier-conifer-cluster.json') != '' }}
         env:
           EVIDENCE_DIR: /tmp/how-rainier-review/game
           SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}

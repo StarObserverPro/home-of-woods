@@ -23,7 +23,7 @@ const server = await createServer({configFile: false, root, logLevel: 'error',
   }}],
   server: {host: '127.0.0.1', port: 5194, strictPort: true}});
 let browser, page;
-const errors = [];
+const errors = [], diagnostics = {};
 try {
   await server.listen();
   const executablePath = process.env.CHROMIUM_EXECUTABLE ?? (existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : undefined);
@@ -36,8 +36,10 @@ try {
   await page.goto('http://127.0.0.1:5194/tools/impostors/entry.html');
   await page.waitForFunction(() => window.__IMPOSTOR_TOOL__, undefined, {timeout: 30000});
   const result = await page.evaluate(size => window.__IMPOSTOR_TOOL__.bake(size), frameSize);
+  diagnostics.checks = result.checks;
   assert.ok(result.checks.deterministic, 'Repeated bakes have identical pixels');
   assert.ok(result.checks.restored, 'Baker restores renderer state');
+  assert.ok(result.checks.bakerMemoryRestored, 'Baker returns to the warmed renderer resource baseline');
   assert.ok(result.checks.coverage.every(frame => frame.opaque > 100 && frame.borderAlpha === 0), 'Every view has a silhouette with a clear gutter');
   assert.ok(result.checks.dilatedTexels.albedo > 0 && result.checks.dilatedTexels.normal > 0, 'Both raw atlases have transparent RGB padding');
   assert.deepEqual(result.checks.errors, []);
@@ -66,13 +68,15 @@ try {
   assert.match(response.headers.get('content-type') ?? '', /^application\/json\b/, 'Export route must return JSON, never SPA HTML');
   assert.deepEqual(await response.json(), manifest, 'Export route serves the just-written manifest');
   const verification = await page.evaluate(url => window.__IMPOSTOR_TOOL__.review(url), manifestUrl);
+  diagnostics.verification = verification;
   await page.screenshot({path: path.join(evidence, 'source-and-impostor-albedo.png')});
   const disposed = await page.evaluate(() => window.__IMPOSTOR_TOOL__.disposeReview());
+  diagnostics.disposed = disposed;
   assert.deepEqual(verification.errors, []); assert.deepEqual(disposed.errors, []); assert.deepEqual(errors, []);
   assert.ok(verification.texturePadding.albedo > 0 && verification.texturePadding.normal > 0, 'Actual GPU textures retain transparent RGB padding');
   assert.equal(verification.batch.triangles, 2); assert.equal(verification.batch.textureBytes, manifest.width * manifest.height * 8);
-  assert.equal(disposed.textures, 0, 'All temporary and atlas textures are released');
-  assert.equal(disposed.geometries, 0, 'All temporary and runtime geometries are released');
+  assert.equal(disposed.textures, disposed.rendererBaseline.textures, 'Atlas textures return to the warmed renderer baseline');
+  assert.equal(disposed.geometries, disposed.rendererBaseline.geometries, 'Runtime geometry returns to the warmed renderer baseline');
   const report = {result: 'passed', frameSize, checks: {...result.checks, pngRgbaRoundtrip: true}, verification, disposed,
     note: 'Unlit data and shader validation in Chromium/SwiftShader; gameplay composition and physical-device GPU performance require main-scene review.'};
   await fs.writeFile(path.join(evidence, 'report.json'), JSON.stringify(report, null, 2) + '\n');
@@ -81,7 +85,7 @@ try {
     textureMiB: verification.batch.textureBytes / 1048576, views: 25, result: report.result}, null, 2));
 } catch (error) {
   await fs.mkdir(evidence, {recursive: true});
-  await fs.writeFile(path.join(evidence, 'failure.json'), JSON.stringify({result: 'failed', error: String(error.stack ?? error), errors}, null, 2) + '\n');
+  await fs.writeFile(path.join(evidence, 'failure.json'), JSON.stringify({result: 'failed', error: String(error.stack ?? error), errors, diagnostics}, null, 2) + '\n');
   if (page && !page.isClosed()) await page.screenshot({path: path.join(evidence, 'failure.png'), timeout: 10000}).catch(() => {});
   throw error;
 } finally {await browser?.close(); await server.close();}
