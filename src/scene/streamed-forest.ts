@@ -16,18 +16,22 @@ export function createStreamedForest(forest:ReturnType<Models['createForest']>,t
   const prototypes=new Map(managed.map(t=>[t.id,(forest.selections.get(t.id) as THREE.Mesh).geometry]));
   for(const tree of managed){const key=chunkKey(tree);treeChunk.set(tree.id,key);const members=chunks.get(key)??[];members.push(tree);chunks.set(key,members);}
   const activeChunks=new Set(chunks.keys()),desiredChunks=new Set(activeChunks),plans=new Map<string,boolean>();
-  const batches=forest.sceneryBatches.map(batch=>({...batch,submitted:[] as Tree[],indices:new Map<string,number>()}));
+  const batches=forest.sceneryBatches.map((batch,index)=>({...batch,submitted:[] as Tree[],indices:new Map<string,number>(),
+    viewKey:`forest:view:${index}`,pendingView:new Set<Tree>()}));
   const batchFor=new Map<string,typeof batches[number]>();
+  const farTrees=new Map<string,Tree>();
   for(const batch of batches){
     batch.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     batch.mesh.count=0;batch.mesh.visible=false;
-    for(const tree of batch.members)batchFor.set(tree.id,batch);
+    for(const tree of batch.members){batchFor.set(tree.id,batch);farTrees.set(tree.id,tree);}
   }
   const dummy=new THREE.Object3D(),matrix=new THREE.Matrix4();
   const lifeCache=new Map<string,{status:string;growth:number}>();
   let latest:GameState|undefined,slots:GameState['forestry']['slots']|undefined;
   let disposed=false,epoch=0,revision=0,residencyRevision=0,loads=0,unloads=0,commits=0,preparedTrees=0;
   let lastX=NaN,lastZ=NaN;
+  let viewIDs:Set<string>|undefined,viewRevision=0,viewSteps=0,viewProcessedTrees=0,maxViewStepTrees=0,immediateViewRepairs=0,immediateViewRepairCalls=0;
+  const viewStepLimit=8;
 
   function writeTree(batch:typeof batches[number],tree:Tree,index:number){
     dummy.position.set(tree.x,heightAt(tree.x,tree.z),tree.z);
@@ -57,11 +61,44 @@ export function createStreamedForest(forest:ReturnType<Models['createForest']>,t
     batch.mesh.count=batch.submitted.length;batch.mesh.visible=batch.mesh.count>0;revision++;
     // Original all-members bounds stay conservative after swaps and re-appends.
   }
-  function wantedFar(tree:Tree){
+  function eligibleFar(tree:Tree){
     if(!latest)return tree.role==='scenery';
     const life=latest.forestry.slots[tree.id];
     return (tree.role==='scenery'||!activeChunks.has(treeChunk.get(tree.id)!)&&life?.status!=='stump'&&life?.status!=='falling')
       &&Math.hypot(tree.x-latest.player.x,tree.z-latest.player.z)<=WORLD_STREAMING.sceneryDraw;
+  }
+  function wantedFar(tree:Tree){return eligibleFar(tree)&&(!viewIDs||viewIDs.has(tree.id));}
+  function queueViewTree(tree:Tree){
+    const batch=batchFor.get(tree.id);if(!batch)return;
+    batch.pendingView.add(tree);if(queue.has(batch.viewKey))return;
+    const generation=epoch;
+    queue.enqueue({key:batch.viewKey,priority:FRAME_WORK_BUDGET.priority.prefetch,
+      onCancel(){batch.pendingView.clear();},
+      step(){
+        if(disposed||generation!==epoch){batch.pendingView.clear();return true;}
+        let processed=0;
+        // A new camera plan changes this set, not a restarted batch cursor.
+        // Every item reads the newest plan/lifecycle at the moment it commits.
+        for(const member of batch.pendingView){
+          batch.pendingView.delete(member);setFar(member,wantedFar(member));
+          if(++processed>=viewStepLimit)break;
+        }
+        viewSteps++;viewProcessedTrees+=processed;maxViewStepTrees=Math.max(maxViewStepTrees,processed);
+        return batch.pendingView.size===0;
+      },
+    });
+  }
+  function reconcileFar(tree:Tree,refresh=false){
+    const batch=batchFor.get(tree.id);if(!batch)return;
+    const wanted=wantedFar(tree),submitted=batch.indices.has(tree.id);
+    // Preserve the synchronous legacy adapter when no view plan is installed.
+    if(!viewIDs){setFar(tree,wanted,refresh);return;}
+    const life=latest?.forestry.slots[tree.id];
+    if(tree.role!=='scenery'&&(life?.status==='stump'||life?.status==='falling')){
+      batch.pendingView.delete(tree);setFar(tree,false);return;
+    }
+    if(wanted!==submitted)queueViewTree(tree);
+    else if(refresh&&wanted)setFar(tree,true,true);
   }
   // Models initially contains both representations. Remove duplicates before
   // the first queued step, while keeping every scenery and gameplay tree.
@@ -71,6 +108,7 @@ export function createStreamedForest(forest:ReturnType<Models['createForest']>,t
     epoch++;
     for(const key of [...plans.keys()])queue.cancel(`forest:chunk:${key}`);
     plans.clear();
+    for(const batch of batches){queue.cancel(batch.viewKey);batch.pendingView.clear();}
   }
   function plan(key:string,wanted:boolean,priority:number){
     const members=chunks.get(key)!,generation=epoch,prepared:THREE.Mesh[]=[];
@@ -110,6 +148,43 @@ export function createStreamedForest(forest:ReturnType<Models['createForest']>,t
     get revision(){return revision;},
     /** Only committed activeChunks membership changes invalidate its dependants. */
     get residencyRevision(){return residencyRevision;},
+    /** Queue only changed far visibility; caller supplies current + bounded future views. */
+    requestView(wantedIDs:ReadonlySet<string>){
+      if(disposed)return;
+      const first=!viewIDs;if(!viewIDs)viewIDs=new Set();let changed=first;
+      for(const batch of batches){
+        for(const tree of batch.members){
+          const wanted=wantedIDs.has(tree.id),previous=viewIDs.has(tree.id);
+          if(wanted!==previous){if(wanted)viewIDs.add(tree.id);else viewIDs.delete(tree.id);changed=true;}
+          if(wantedFar(tree)!==batch.indices.has(tree.id))queueViewTree(tree);
+          else batch.pendingView.delete(tree);
+        }
+        if(!batch.pendingView.size)queue.cancel(batch.viewKey);
+      }
+      if(changed)viewRevision++;
+    },
+    isViewReady(requiredIDs:ReadonlySet<string>){
+      if(disposed)return false;
+      for(const id of requiredIDs){
+        const tree=farTrees.get(id);if(!tree)return false;
+        if(eligibleFar(tree)&&!batchFor.get(id)!.indices.has(id))return false;
+      }
+      return true;
+    },
+    /** Ground turns/presets may repair the current frame immediately; this is
+     * explicitly counted outside the cooperative preparation budget. */
+    ensureCurrentView(requiredIDs:ReadonlySet<string>){
+      if(disposed)return 0;let repaired=0;
+      for(const id of requiredIDs){
+        const tree=farTrees.get(id);if(!tree||!eligibleFar(tree))continue;
+        if(viewIDs&&!viewIDs.has(id)){viewIDs.add(id);viewRevision++;}
+        const batch=batchFor.get(id)!;batch.pendingView.delete(tree);
+        if(!batch.indices.has(id)){setFar(tree,true);repaired++;}
+      }
+      for(const batch of batches)if(!batch.pendingView.size)queue.cancel(batch.viewKey);
+      if(repaired){immediateViewRepairCalls++;immediateViewRepairs+=repaired;}
+      return repaired;
+    },
     update(state:GameState){
       if(disposed)return;
       latest=state;
@@ -128,12 +203,12 @@ export function createStreamedForest(forest:ReturnType<Models['createForest']>,t
         const life=state.forestry.slots[tree.id],status=life?.status??'standing';
         const growth=Math.round(treeScaleFactor(life,state.time)*FRAME_WORK_BUDGET.growthSteps),old=lifeCache.get(tree.id);
         if(old?.status!==status||old.growth!==growth){
-          lifeCache.set(tree.id,{status,growth});setFar(tree,wantedFar(tree),true);
+          lifeCache.set(tree.id,{status,growth});reconcileFar(tree,true);
         }
       }
       if(Math.hypot(state.player.x-lastX,state.player.z-lastZ)>=1||!Number.isFinite(lastX)){
         lastX=state.player.x;lastZ=state.player.z;
-        for(const batch of batches)for(const tree of batch.members)setFar(tree,wantedFar(tree));
+        for(const batch of batches)for(const tree of batch.members)reconcileFar(tree);
       }
       // Standalone users retain a synchronous adapter. The game supplies its
       // shared queue and drains it once with the per-frame allowance.
@@ -143,8 +218,10 @@ export function createStreamedForest(forest:ReturnType<Models['createForest']>,t
     stats:()=>({chunkSize:WORLD_STREAMING.chunkSize,detailLoad:WORLD_STREAMING.detailLoad,detailRelease:WORLD_STREAMING.detailRelease,
       simulation:WORLD_STREAMING.simulation,loadedChunks:activeChunks.size,totalChunks:chunks.size,detailTrees:forest.selections.size,
       coarseBatches:batches.length,sceneryInstances:batches.reduce((sum,b)=>sum+b.mesh.count,0),loads,unloads,commits,preparedTrees,
-      pendingChunks:plans.size,revision,residencyRevision,epoch}),
+      pendingChunks:plans.size,revision,residencyRevision,epoch,viewEnabled:!!viewIDs,viewRevision,viewWanted:viewIDs?.size??farTrees.size,
+      pendingViewTrees:batches.reduce((sum,batch)=>sum+batch.pendingView.size,0),viewSteps,viewProcessedTrees,maxViewStepTrees,
+      immediateViewRepairs,immediateViewRepairCalls}),
     dispose(){if(disposed)return;disposed=true;cancelPlans();if(!sharedQueue)queue.dispose();activeChunks.clear();desiredChunks.clear();
-      prototypes.clear();chunks.clear();treeChunk.clear();lifeCache.clear();batchFor.clear();batches.forEach(b=>b.mesh.removeFromParent());},
+      prototypes.clear();chunks.clear();treeChunk.clear();lifeCache.clear();batchFor.clear();farTrees.clear();viewIDs?.clear();batches.forEach(b=>b.mesh.removeFromParent());},
   };
 }

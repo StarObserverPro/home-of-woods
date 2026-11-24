@@ -11,6 +11,8 @@ on:
       - 'src/scene/frame-work-queue.ts'
       - 'src/scene/streamed-forest.ts'
       - 'src/scene/anchored-overlook.ts'
+      - 'src/scene/camera-forecast.ts'
+      - 'src/scene/forest-view-plan.ts'
       - 'src/scene/understory*'
       - 'src/scene/expedition-vegetation.ts'
       - 'src/scene/forestry-presentation.ts'
@@ -23,6 +25,7 @@ on:
       - 'tests/understory-submission.test.ts'
       - 'tests/expedition-crown-opacity.test.ts'
       - 'tests/anchored-overlook.test.ts'
+      - 'tests/forest-view-plan.test.ts'
       - 'tools/verification/frame-budget-review.mjs'
       - 'package.json'
       - 'package-lock.json'
@@ -37,7 +40,9 @@ concurrency:
 jobs:
   frame-budget:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Both viewport flows include bounded camera travel on software WebGL.
+    # The CI wall-clock allowance is separate from the in-game frame budget.
+    timeout-minutes: 35
     env:
       EVIDENCE_DIR: /tmp/how-frame-budget-review
     steps:
@@ -62,7 +67,7 @@ jobs:
       - name: Anchored camera behavior when included in this revision
         run: |
           if test -f tests/anchored-overlook.test.ts; then
-            node --experimental-strip-types --test tests/anchored-overlook.test.ts
+            node --experimental-strip-types --test tests/anchored-overlook.test.ts tests/forest-view-plan.test.ts
           fi
       - run: npm run build
       - name: Install WebGL browser and CJK fonts
