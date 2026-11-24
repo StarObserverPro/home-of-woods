@@ -19,7 +19,7 @@ const report = {
   status: 'running', startedAt: new Date().toISOString(), origin,
   sourceRevision: process.env.SOURCE_REVISION ?? execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
   target: 'Actual main game served by Vite DEV; production compilation is checked separately by the workflow.',
-  captureInputs: { seed: 104729, dpr: 1, hour: 14, weather: 'sunny', naturalMinimumGameSeconds: 10,
+  captureInputs: { seed: 104729, dpr: 1, hour: 14, weather: 'sunny', naturalMinimumGameSeconds: 2,
     viewports: [{ width: 1100, height: 760 }, { width: 390, height: 844 }] },
   limits: [
     'SwiftShader and touch emulation provide functional WebGL evidence, not physical mobile GPU performance.',
@@ -241,6 +241,20 @@ async function natural(page, flow) {
   phase = flow.name + ': natural gameplay';
   await page.evaluate(() => { window.__HOW_FOX_OBSERVATION__.stage = 'natural'; });
   await page.getByRole('button', { name: '回到山谷', exact: true }).evaluate(button => button.click());
+  // Use the ordinary player camera controls. The default wide valley framing
+  // made software WebGL spend four wall minutes on fewer than six game seconds.
+  // Zooming is a normal UI action and never borrows the paused scene inspector.
+  await page.getByRole('button', { name: '镜头', exact: true }).evaluate(button => button.click());
+  await page.getByRole('button', { name: '放大', exact: true }).evaluate(button => {
+    for (let index = 0; index < 7; index++) button.click();
+  });
+  await page.getByRole('button', { name: '镜头', exact: true }).evaluate(button => button.click());
+  await page.waitForFunction(() => {
+    const state = JSON.parse(document.querySelector('#runtime-stats').textContent).current;
+    const camera = state.sceneSpace.outdoorCamera;
+    return state.scenePreset === null && camera.owner === 'navigation' && camera.overlook.current.zoom > 2.3 && !camera.overlook.pending;
+  }, undefined, { timeout: 120000, polling: 100 });
+  flow.naturalCamera = { controls: ['镜头', '放大 × 7', '镜头'], camera: (await stats(page)).sceneSpace.outdoorCamera };
   await page.waitForFunction(minimumGameSeconds => {
     const samples = window.__HOW_FOX_OBSERVATION__.samples.filter(sample => sample.stage === 'natural' && sample.scenePreset === null && sample.loop === 'simulation');
     const blinks = samples.flatMap(sample => sample.expressions.filter(expression => !expression.id.includes('inspect:')).map(expression => expression.blink));

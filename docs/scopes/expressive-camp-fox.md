@@ -16,4 +16,16 @@
 
 ## 实现与验证
 
-进行中。完成后补入实际检查结果、预算和 PR。
+实现已进入 [PR #51](https://github.com/StarObserverPro/home-of-woods/pull/51)。运行资产只含一个 mesh / material、7,300 三角形和 19 根骨骼，GLB 641,856 bytes；几何与贴图由缓存共享，实例仅拥有自己的材质和骨架。原版重复 LOD 及无关动画已移除。
+
+已完成本地验证：
+
+- `npm run verify:assets`、`npm run build`、`git diff --check` 通过。
+- `node --experimental-strip-types --test tests/fox-expression.test.ts tests/wildlife*.test.ts tests/final-integration.test.ts`：28 / 28 通过。
+- 真实 GLB 的睁闭眼位移、左右注视方向、相机不参与注视、暂停 60 次更新无额外旋转累积、run 切换和五次生成／退场后的资源归还均通过。
+- 独立检查确认身体转向后，头部仍绕正确的世界竖直与横向轴偏转；albedo 与 ORM 粗糙度使用同一局部位移，保持营地 AO、树冠阴影和空气透视的材质钩子。
+- 离线复建输出一致；源 ORM 的 R 通道全 255、B 通道全 0，输出显式非金属因子不改变外观。
+
+实际主游戏画面由 `Fox Appearance and Expressions` 工作流生成，结果、人工看图结论与 artifact 链接维护在 PR #51。脚本检查桌面 1100 × 760 / 手机 390 × 844 的自然眨眼、固定开闭眼和左右视线、步态两相位、暂停与资源请求；固定取样使用暂停的原场景，不等同于自然游戏录像。截图、探针和 JSON 仅在 Actions artifact，软件 WebGL 与手机视口模拟不作为真实手机 GPU 性能结论。
+
+本地浏览器因执行环境限制未启动，因此未以本地构建或参数测试替代实机看图。合并与发布状态以 PR 为准。
