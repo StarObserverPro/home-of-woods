@@ -7,4 +7,4 @@ export function forestWeights(y:number,bankDistance:number):Record<DistantTreeKi
 export function planOuterForest(sample:(x:number,z:number)=>number,counts:Record<DistantTreeKind,number>,existing?:{x:number;z:number}[]):{
   placements:{x:number;y:number;z:number;kind:DistantTreeKind;width:number;height:number;angle:number;tone:number}[];triangles:number;
 };
-export function createOuterForest(resources:Resources,sample:(x:number,z:number)=>number,existing?:{x:number;z:number}[]):Group;
+export function createOuterForest(resources:Resources,sample:(x:number,z:number)=>number,existing?:{x:number;z:number}[],options?:{mass?:boolean}):Group;

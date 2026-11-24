@@ -155,7 +155,9 @@ export async function createScene(
   const sun = new THREE.DirectionalLight(light.sunColor, light.sunIntensity);
   scene.add(sun, sun.target);
   const { ground, water } = createTerrain(r);
-  const horizon=createHorizon(r,ground.geometry,trees);
+  // Visual-only forest is replaceable without changing the playable world.
+  const horizon=createHorizon(r,ground.geometry,trees,
+    new URLSearchParams(window.location.search).get('farForest')==='trees'?'trees':'mass');
   scene.add(horizon.group);
   const river=createCreek(r,water,horizon.riverExtensions),camp=createCampProps(r);
   const bridge=createCreekBridge(r);
@@ -709,7 +711,8 @@ export async function createScene(
         const upcoming=forestViewPlanner.plan({camera,state,forecastCameras:view.getCameraPlan().forecastCameras,
           shadowCamera:sun.shadow.camera,mirrorY:WORLD.waterY,guard:5});
         streaming.requestView(upcoming.wantedIDs);
-        overlook.setAdvanceScale(streaming.isViewReady(upcoming.wantedIDs)?1:0);
+        // The solid horizon already exists: keep aerial turns at the requested rate.
+        overlook.setAdvanceScale(1);
       }
       const wasReturning=overlook.plan().mode==='returning';
       overlook.update(presentationDt,followTarget);
@@ -842,7 +845,8 @@ export async function createScene(
       streaming.requestView(forestView.wantedIDs);
       frameViewRepairs=streaming.ensureCurrentView(forestView.currentIDs);
       forestViewReady=streaming.isViewReady(forestView.wantedIDs);
-      overlook.setAdvanceScale(forestViewReady?1:0);
+      // Keep readiness in diagnostics; do not stall the camera for fine scenic trees.
+      overlook.setAdvanceScale(1);
       forestViewStats=forestView.stats;
       localOcclusion.update(state,dt,camera,sky.night);
       localOcclusion.updateCamera(camera,host.clientHeight);
