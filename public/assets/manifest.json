@@ -513,32 +513,43 @@
       "limitations": "Decorative encounters only; no hunting, feeding or inventory reward. Physical mobile GPU performance remains unverified."
     },
     {
-      "assetId": "how-wildlife-hare",
-      "batchId": "HOW-WILDLIFE-PHASE1",
+      "assetId": "how-wildlife-fox",
+      "batchId": "HOW-WILDLIFE-FOX",
       "role": "runtime",
-      "status": "integrated",
-      "file": "public/assets/wildlife/hare.glb",
-      "bytes": 95676,
-      "sha256": "061a80d8a4e3800ff73aaba16320cb194bdbf4210884a240c085ecaf9a986d3b",
+      "status": "integrated-on-branch",
+      "file": "public/assets/wildlife/fox.glb",
+      "bytes": 641856,
+      "sha256": "b6e924d63eed35b972720bbd1919c767745ed91205d66ffd7bda6333bc8aaf9d",
       "source": {
-        "author": "Gobkit",
-        "pack": "Gobkit animal006 / Animal Pack Vol.4",
-        "page": "https://gobkit.com/freebies",
-        "catalog": "https://gobkit.com/api/free",
-        "url": "https://gobkit.com/freebies/animal006/Hare.glb",
+        "author": "Vuena / Popyca",
+        "pack": "Cute Pets & Wildlife free sample",
+        "page": "https://vuena.itch.io/blocky-pets-free",
+        "repository": "https://github.com/Vuena/free-low-poly-animals-cc0",
+        "commit": "a3944e5e54eb7e1ab2c24744b88a1ae6617e4534",
+        "url": "https://github.com/Vuena/free-low-poly-animals-cc0/blob/a3944e5e54eb7e1ab2c24744b88a1ae6617e4534/GLB/animal_fox.glb",
         "files": [
           {
-            "file": "sources/gobkit/animal006/Hare.glb",
-            "sha256": "3342949e3b124441d4ac8a7bdffd93835c90752bfe0f3b7785a6cdd8f5b99cfb"
+            "file": "sources/vuena/cute-pets/animal_fox.glb",
+            "sha256": "78aed50756a15654bf544859d676556fd0cf884ef69bfdb4eb4945741cd64432"
+          },
+          {
+            "file": "sources/vuena/cute-pets/LICENSE",
+            "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499"
+          },
+          {
+            "file": "sources/vuena/cute-pets/LICENSE.txt",
+            "sha256": "822f8e5c86a8a43113482bd1bb90efcde2b7483e0b513751e0aedda75c505746"
           }
         ]
       },
       "license": {
         "id": "CC0-1.0",
-        "evidence": "public/assets/licenses/gobkit-CC0-1.0.txt",
-        "notice": "sources/gobkit/animal006/README.md"
+        "evidence": "public/assets/licenses/vuena-cute-pets-CC0.txt",
+        "notice": "sources/vuena/cute-pets/README.md",
+        "thirdPartyContent": true,
+        "rights": "The free sample models, animations and textures may be modified, used in games and publicly redistributed under CC0; original license and scope statement retained."
       },
-      "adaptation": "Common .68 roughness, nonmetallic materials, centered grounded scale; keep idle and walk; no attack/death gameplay.",
+      "adaptation": "tools/prepare-fox-asset.mjs: retain original LOD0 mesh, skin, roughness and embedded textures; explicitly set metallicFactor to 0, equivalent to the source ORM texture whose blue channel is entirely zero; strip LOD1 and unused data; keep idle/walk/run with Lids translation removed for runtime blink ownership; normalize a shared root to 1.10 height, centered and grounded, +Y up and +Z forward.",
       "integration": {
         "loader": "src/scene/models.ts",
         "render": "src/scene/wildlife-presentation.ts",
@@ -546,15 +557,18 @@
         "disposal": "src/scene/resources.ts"
       },
       "metrics": {
-        "triangles": 596,
-        "joints": 16,
+        "triangles": 7300,
+        "vertices": 4286,
+        "joints": 19,
+        "meshes": 1,
         "height": 1.1,
         "clips": [
           "idle",
-          "walk"
+          "walk",
+          "run"
         ]
       },
-      "limitations": "Decorative encounters only; no hunting, feeding or inventory reward. Physical mobile GPU performance remains unverified."
+      "limitations": "Decorative encounters only; no hunting, feeding or inventory reward. Eyes are textured on the head, with a shared eyelid bone; gaze is a project presentation adaptation. Physical mobile GPU performance remains unverified."
     },
     {
       "assetId": "how-wildlife-stag",

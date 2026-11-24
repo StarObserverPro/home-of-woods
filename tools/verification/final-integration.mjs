@@ -36,8 +36,8 @@ async function capture(p,preset,name){
 try{
  for(const viewport of [{width:900,height:650},{width:390,height:844}]){
   const ctx=await browser.newContext({viewport});const p=await ctx.newPage();currentPage=p;p.setDefaultTimeout(60000);p.on('pageerror',e=>report.errors.push(String(e)));p.on('request',r=>{if(r.url().endsWith('/wildlife/goat.glb'))report.rejectedRequests.push(r.url());});
-  await seed(p);const initial=await stats(p);assert.deepEqual(initial.wildlife.available.sort(),['wildlife.goat','wildlife.hare','wildlife.squirrel','wildlife.stag']);
-  assert.equal(initial.wildlifeState.encounters.filter(e=>e.definitionId==='wildlife.hare'||e.definitionId==='wildlife.squirrel').length,2);console.log('NATURAL_SMALL_ANIMALS',viewport.width);await p.locator('details.diagnostics').evaluate(e=>e.open=false);
+  await seed(p);const initial=await stats(p);assert.deepEqual(initial.wildlife.available.sort(),['wildlife.fox','wildlife.goat','wildlife.squirrel','wildlife.stag']);
+  assert.equal(initial.wildlifeState.encounters.filter(e=>e.definitionId==='wildlife.fox'||e.definitionId==='wildlife.squirrel').length,2);console.log('NATURAL_SMALL_ANIMALS',viewport.width);await p.locator('details.diagnostics').evaluate(e=>e.open=false);
   if(viewport.width>600){
    await p.getByRole('button',{name:'打开仓库'}).evaluate(e=>e.click());await p.getByRole('button',{name:'去木料堆',exact:true}).evaluate(e=>e.click());console.log('WOODCRAFT_OPEN');
    await p.waitForFunction(()=>{try{const s=JSON.parse(document.querySelector('#runtime-stats').textContent).current;return s.worldState.woodcraft.pieces.length===7&&s.worldState.woodcraft.pieces.every(p=>p.phase==='loose');}catch{return false;}});

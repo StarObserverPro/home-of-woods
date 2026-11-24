@@ -11,34 +11,40 @@ import {createWildlifePresentation} from '../src/scene/wildlife-presentation.ts'
 import {createWildlife, advanceWildlife, validateWildlifeRegistry} from '../src/domain/wildlife.ts';
 import {START, WORLD_SEED} from '../src/content/world.ts';
 import {makeTrees, makeColliders} from '../src/world/layout.ts';
+import {parseGeometryFile} from './glb-fixtures.ts';
 
 test('only the accepted final animal set ships; rejected legacy goat stays absent',()=>{
   assert.equal(RUNTIME_MODELS.some(s=>String(s.name)==='goat'),false,'rejected candidates are not runtime catalogue entries');
   assert.equal(runtimeModelEnabled('goat'),false);
+  assert.equal(runtimeModelEnabled('hare'),false);
   assert.equal(runtimeModelEnabled('unregistered-model'),false);
   assert.equal(runtimeModelEnabled('mountain-goat'),true);
-  for(const name of ['stag','squirrel','hare']) assert.equal(runtimeModelEnabled(name),true);
+  for(const name of ['stag','squirrel','fox']) assert.equal(runtimeModelEnabled(name),true);
   assert.equal(ENABLED_RUNTIME_MODELS.some(s=>s.name==='goat'),false);
   assert.equal(INSPECTABLE_VIEWS.some(([id])=>id==='goatVista'),true);
   assert.ok(INSPECTABLE_VIEWS.some(([id])=>id==='stagVista'));
   validateWildlifeRegistry(RUNTIME_MODELS.map(s=>s.assetId));
 });
 
-test('production loader avoids rejected legacy goat while admitting rigged original and deer',async()=>{
+test('production loader admits fox, original mountain goat and deer without retired animals',async()=>{
   const original=GLTFLoader.prototype.loadAsync, calls:string[]=[];
   const resources=new Resources(),models=new Models(resources);
   GLTFLoader.prototype.loadAsync=async function(url){
     calls.push(url);
+    if(url==='/assets/wildlife/fox.glb')return parseGeometryFile('public/assets/wildlife/fox.glb');
     return {scene:new Group(),animations:['idle','walk','survey'].map(name=>new AnimationClip(name,1,[]))} as unknown as GLTF;
   };
   let presentation:ReturnType<typeof createWildlifePresentation>|undefined;
   try{
     await models.load();
     assert.equal(calls.includes('/assets/wildlife/goat.glb'),false);
+    assert.equal(calls.includes('/assets/wildlife/hare.glb'),false);
+    assert.ok(calls.includes('/assets/wildlife/fox.glb'));
     assert.ok(calls.includes('/assets/wildlife/stag.glb'));
     assert.ok(calls.includes('/assets/wildlife/mountain-goat.glb'));
     presentation=createWildlifePresentation(resources,models);
     const available=presentation.available();
+    assert.ok(available.includes('wildlife.fox'));
     assert.equal(available.includes('wildlife.goat'),true);
     assert.ok(available.includes('wildlife.stag'));
     const state=createWildlife(0), colliders=makeColliders(makeTrees());

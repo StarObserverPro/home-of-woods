@@ -5,9 +5,9 @@ export type WildlifeAnchor = Point & { id: string; definitionId: WildlifeDefinit
   patrol?: Point; facing?: number; };
 export const WILDLIFE_ANCHORS: readonly WildlifeAnchor[] = [
   { id: 'wildlife.home.squirrel', definitionId: 'wildlife.squirrel', habitat: 'forest-edge', x: -43, z: -4 },
-  { id: 'wildlife.home.hare', definitionId: 'wildlife.hare', habitat: 'meadow-edge', x: -31, z: 1 },
+  { id: 'wildlife.home.fox', definitionId: 'wildlife.fox', habitat: 'meadow-edge', x: -31, z: 1 },
   { id: 'wildlife.trail.squirrel', definitionId: 'wildlife.squirrel', habitat: 'forest-edge', x: -37, z: 23 },
-  { id: 'wildlife.trail.hare', definitionId: 'wildlife.hare', habitat: 'meadow-edge', x: -29, z: 18 },
+  { id: 'wildlife.trail.fox', definitionId: 'wildlife.fox', habitat: 'meadow-edge', x: -29, z: 18 },
   // Far east ridge: relatively open grass/trees, good skyline silhouette looking from camp.
   { id: 'wildlife.ridge.stag.high', definitionId: 'wildlife.stag', habitat: 'ridge-meadow', x: 70, z: -40, patrol: {x: 68.6,z: -41}, facing: -2.4 },
   { id: 'wildlife.ridge.stag.lower', definitionId: 'wildlife.stag', habitat: 'ridge-meadow', x: 55, z: -40, patrol: {x: 56.3,z: -39.4}, facing: -1.6 },

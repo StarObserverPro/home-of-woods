@@ -69,6 +69,7 @@ import { makeColliders, makeTrees } from "../world/layout.ts";
 import { heightAt, zoneName } from "../world/surface.ts";
 import { createScene } from "../scene/create-scene.ts";
 import type {AtmosphereDebug} from '../scene/atmosphere-lite.ts';
+import type {FoxReviewPose} from '../scene/fox-expression.ts';
 import type {OverlookOpticsMode} from '../content/overlook-optics.ts';
 import { createLoop, requiredFrameMode } from "./runtime-loop.ts";
 import type { FrameMode } from "./runtime-loop.ts";
@@ -829,12 +830,21 @@ export async function createRuntime(
     __HOW_ADVANCE_SIMULATION__?:(seconds:number)=>void;
     __HOW_CAPTURE_HOLD__?:ReturnType<typeof createCaptureHoldInspection>;
     __HOW_RENDER_REVIEW__?:{set:(modes:{atmosphere?:AtmosphereDebug;optics?:OverlookOpticsMode})=>void};
+    __HOW_FOX_REVIEW__?:{sample:(pose:FoxReviewPose)=>void};
   };
   const inspectionWindow=window as InspectionWindow;
   let advanceInspection:((seconds:number)=>void)|undefined;
   let captureInspection:ReturnType<typeof createCaptureHoldInspection>|undefined;
   let renderInspection:InspectionWindow['__HOW_RENDER_REVIEW__'];
+  let foxInspection:InspectionWindow['__HOW_FOX_REVIEW__'];
   if(import.meta.env.DEV&&new URLSearchParams(window.location.search).has('inspect')){
+    foxInspection={sample(pose){
+      const values=[pose.seconds,pose.blink??0,...(pose.gaze??[0,0]),...(pose.head??[0,0])];
+      if(destroyed||contextLost||!inspectionOpen||!values.every(Number.isFinite)||pose.seconds<0||pose.seconds>600||
+        pose.motion!==undefined&&!['idle','walk','run'].includes(pose.motion))throw Error('Invalid fox inspection sample');
+      view.sampleFox(pose);view.render(state,0);publishSnapshot();
+    }};
+    inspectionWindow.__HOW_FOX_REVIEW__=foxInspection;
     captureInspection=createCaptureHoldInspection();
     inspectionWindow.__HOW_CAPTURE_HOLD__=captureInspection;
     advanceInspection=seconds=>{
@@ -1237,6 +1247,7 @@ export async function createRuntime(
       destroyed = true;
       if(import.meta.env.DEV&&inspectionWindow.__HOW_ADVANCE_SIMULATION__===advanceInspection)delete inspectionWindow.__HOW_ADVANCE_SIMULATION__;
       if(import.meta.env.DEV&&inspectionWindow.__HOW_CAPTURE_HOLD__===captureInspection)delete inspectionWindow.__HOW_CAPTURE_HOLD__;
+      if(import.meta.env.DEV&&inspectionWindow.__HOW_FOX_REVIEW__===foxInspection)delete inspectionWindow.__HOW_FOX_REVIEW__;
       if(import.meta.env.DEV&&inspectionWindow.__HOW_RENDER_REVIEW__===renderInspection)delete inspectionWindow.__HOW_RENDER_REVIEW__;
       captureHoldToken=null;
       unsubscribeSave();

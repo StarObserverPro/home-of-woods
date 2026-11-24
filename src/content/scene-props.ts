@@ -24,7 +24,7 @@ export const VIEWS = {
   stagVista:{label:'远坡雄鹿 · 检视',target:[70,39.8,-40],yaw:-.75,elevation:.28,distance:32,zoom:1},
   goatVista:{label:'崖上山羊 · 检视',target:[55,16.8,36],yaw:-.72,elevation:.28,distance:26,zoom:1},
   squirrel:{label:'松鼠近景',target:[-43,22.05,-4],yaw:-.55,elevation:.35,distance:6,zoom:1},
-  hare:{label:'野兔近景',target:[-31,22.05,1],yaw:.5,elevation:.35,distance:6,zoom:1},
+  fox:{label:'小狐狸 · 眼神检视',target:[-31,22.15,1.2],yaw:.18,elevation:.18,distance:3.6,zoom:1},
 
   homeLighting:{label:'木屋墙根 · 光照检视',target:[CABIN.x,23.5,CABIN.z+2],yaw:-.65,elevation:.38,distance:22,zoom:1},
   tentLighting:{label:'帐篷内外 · 光照检视',target:[TENT.x,23,TENT.z],yaw:-.3,elevation:.25,distance:13,zoom:1},

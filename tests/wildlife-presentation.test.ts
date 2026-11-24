@@ -11,10 +11,16 @@ import { START, WORLD_SEED } from '../src/content/world.ts';
 import { makeColliders, makeTrees } from '../src/world/layout.ts';
 import { characterModels, parseGeometryFile } from './glb-fixtures.ts';
 
-test('actual normalized models share a scale family and only the admitted two locomotion clips', async () => {
-  for (const id of ['squirrel', 'hare']) {
+test('actual normalized small animals share a scale family and only their admitted locomotion clips', async () => {
+  for (const id of ['squirrel', 'fox']) {
     const gltf = await parseGeometryFile(`public/assets/wildlife/${id}.glb`), mixer = new THREE.AnimationMixer(gltf.scene);
-    assert.deepEqual(gltf.animations.map(a => a.name).sort(), ['idle', 'walk']);
+    assert.deepEqual(gltf.animations.map(a => a.name).sort(), id==='fox'?['idle','run','walk']:['idle', 'walk']);
+    if(id==='fox'){
+      const meshes:THREE.SkinnedMesh[]=[];gltf.scene.traverse(o=>{if(o instanceof THREE.SkinnedMesh)meshes.push(o);});
+      assert.equal(meshes.length,1,'the original two visible LODs must not overlap');
+      assert.equal(meshes[0].skeleton.bones.length,19);
+      assert.ok(gltf.animations.every(c=>!c.tracks.some(t=>t.name==='Lids.position')),'procedural blinking owns lid position');
+    }
     mixer.clipAction(gltf.animations.find(a => a.name === 'idle')!).play(); mixer.update(0);
     gltf.scene.updateMatrixWorld(true); gltf.scene.traverse(o => { if (o instanceof THREE.SkinnedMesh) { o.skeleton.update(); o.computeBoundingBox(); } });
     const box = new THREE.Box3().setFromObject(gltf.scene);

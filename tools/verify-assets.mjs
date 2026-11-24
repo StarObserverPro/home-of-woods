@@ -8,7 +8,9 @@ const manifest = JSON.parse(
 assert.equal(manifest.assets.filter(a=>a.batchId==='HOW-M0-R3').length, 5);
 assert.equal(manifest.assets.filter(a=>a.batchId==='HOW-GATHERING-1').length, 2);
 assert.equal(manifest.assets.filter(a=>a.batchId==='HOW-CHARACTERS-1').length, 4);
-assert.equal(manifest.assets.filter(a=>a.batchId==='HOW-WILDLIFE-PHASE1').length, 2);
+assert.deepEqual(manifest.assets.filter(a=>a.batchId==='HOW-WILDLIFE-PHASE1').map(a=>a.assetId), ['how-wildlife-squirrel']);
+assert.deepEqual(manifest.assets.filter(a=>a.batchId==='HOW-WILDLIFE-FOX').map(a=>a.assetId), ['how-wildlife-fox']);
+assert.equal(manifest.assets.some(a=>a.assetId==='how-wildlife-hare'), false, 'retired hare is not shipped');
 assert.equal(manifest.assets.filter(a=>a.batchId==='HOW-WILDLIFE-PHASE2').length, 1);
 assert.equal(manifest.assets.some(a=>a.assetId==='how-wildlife-goat'), false, 'rejected model is not shipped');
 assert.equal(manifest.assets.filter(a=>a.batchId==='HOW-WILDLIFE-MOUNTAIN-GOAT').length, 1);
@@ -62,6 +64,21 @@ for (const asset of manifest.assets) {
     assert.equal(gltf.materials.length, 1);
     const triangles=gltf.meshes.reduce((sum,m)=>sum+m.primitives.reduce((n,p)=>n+gltf.accessors[p.indices].count/3,0),0);
     assert.ok(triangles <= 650);
+  }
+  if(asset.batchId === 'HOW-WILDLIFE-FOX') {
+    assert.equal(gltf.skins.length, 1);
+    assert.equal(gltf.skins[0].joints.length, 19);
+    assert.equal(gltf.meshes.length, 1, 'only the admitted fox LOD is shipped');
+    assert.deepEqual(gltf.animations.map(a=>a.name).sort(), ['idle','run','walk']);
+    const triangles=gltf.meshes.reduce((sum,m)=>sum+m.primitives.reduce((n,p)=>n+gltf.accessors[p.indices].count/3,0),0);
+    assert.equal(triangles, 7300);
+    const lids=gltf.nodes.flatMap((node,index)=>node.name==='Lids'?[index]:[]);
+    assert.equal(lids.length, 1, 'fox has one shared eyelid bone');
+    assert.ok(gltf.skins[0].joints.includes(lids[0]), 'eyelid bone belongs to the fox skin');
+    for(const animation of gltf.animations) assert.equal(
+      animation.channels.some(channel=>channel.target.node===lids[0]&&channel.target.path==='translation'),
+      false, `${animation.name}: eyelid position is owned by the expression controller`,
+    );
   }
   if(asset.batchId === 'HOW-WILDLIFE-MOUNTAIN-GOAT') {
     assert.equal(gltf.skins.length, 1);

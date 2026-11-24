@@ -35,7 +35,7 @@ test('first window has matching common pair, typed stable identities and no fake
 });
 test('global capacity counts exiting encounters, never per-region or render-instance allocations', () => {
   const state = initial(); state.encounters[0].exitAt = 0;
-  state.encounters.push({ ...state.encounters[0], id: 'fixture:third', definitionId: 'wildlife.hare' });
+  state.encounters.push({ ...state.encounters[0], id: 'fixture:third', definitionId: 'wildlife.fox' });
   assert.equal(state.encounters.length, WILDLIFE.maxMammals);
   for (const id of available) assert.equal(wildlifeHasCapacity(state, id), false);
 });
