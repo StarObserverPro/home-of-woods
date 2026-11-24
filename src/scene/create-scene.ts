@@ -8,7 +8,8 @@ import {loadImpostorAtlas} from './impostors/runtime.ts';
 import type {ImpostorAtlas} from './impostors/runtime.ts';
 import {createAnchoredOverlook} from './anchored-overlook.ts';
 import {OVERLOOK} from '../content/camera.ts';
-import {updateNavigationForecast} from './camera-forecast.ts';
+import {positionNavigationCamera,updateNavigationForecast} from './camera-forecast.ts';
+import {navigationZoomForProjection} from './overlook-optics-rules.ts';
 import {createCampOcclusion} from './lighting/camp-occlusion.ts';
 import {createCampShadows} from './lighting/camp-shadows.ts';
 import {createCharacterContactShadows} from './lighting/character-contact-shadows.ts';
@@ -402,9 +403,10 @@ export async function createScene(
   const releaseHousingFocus=()=>{
     if(cameraOwner!=='housing'||!overlook.groundReady())return;
     const viewOffset=camera.position.clone().sub(target);
+    const releasedElevation=Math.atan2(viewOffset.y,Math.hypot(viewOffset.x,viewOffset.z));
     overlook.releaseFocus({yaw:Math.atan2(viewOffset.x,viewOffset.z),
-      elevation:Math.atan2(viewOffset.y,Math.hypot(viewOffset.x,viewOffset.z)),
-      zoom:camera.zoom/(mobile?1.45:1),distance:viewOffset.length()},target);
+      elevation:releasedElevation,
+      zoom:navigationZoomForProjection(camera.zoom,releasedElevation,camera.aspect,mobile),distance:viewOffset.length()},target);
     releasedHousingId=lastState?.selected??null;
     cameraOwner='navigation';
   };
@@ -802,7 +804,8 @@ export async function createScene(
         )
         .multiplyScalar(inspecting?11:scenePreset?VIEWS[scenePreset].distance:focusPlacement?22:focusHousing?21:THREE.MathUtils.lerp(cameraPlan.current.distance,actionDistance,blend));
       camera.position.copy(target).add(offset);
-      if(camera.position.x>WORLD.minX&&camera.position.x<WORLD.maxX&&camera.position.z>WORLD.minZ&&camera.position.z<WORLD.maxZ)camera.position.y=Math.max(camera.position.y,heightAt(camera.position.x,camera.position.z)+THREE.MathUtils.lerp(3,.4,blend));
+      if(cameraOwner==='navigation')positionNavigationCamera(camera,cameraPlan.current,target);
+      else if(camera.position.x>WORLD.minX&&camera.position.x<WORLD.maxX&&camera.position.z>WORLD.minZ&&camera.position.z<WORLD.maxZ)camera.position.y=Math.max(camera.position.y,heightAt(camera.position.x,camera.position.z)+THREE.MathUtils.lerp(3,.4,blend));
       if(scenePreset)for(const tree of trees)if(Math.hypot(camera.position.x-tree.x,camera.position.z-tree.z)<3*tree.scale)camera.position.y=Math.max(camera.position.y,heightAt(tree.x,tree.z)+9*tree.scale);
       camera.lookAt(target);
       workshop.update(state,camera,dt,reducedMotion,sky.night);woodcraft.update(state.woodcraft);

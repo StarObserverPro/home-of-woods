@@ -4,8 +4,11 @@ export const OVERLOOK_OPTICS = {
   // A rotated 36 mm long-edge gate keeps portrait framing finite. Landscape
   // uses the conventional 36 mm horizontal full-frame equivalence.
   filmLongEdgeMm: 36,
-  widestFocalLengthMm: 24,
-  overviewFocalLengthMm: 28,
+  widestFocalLengthMm: 16,
+  wideViewportMinFocalLengthMm: 12,
+  panoramaMinVerticalFov: 68,
+  overviewFocalLengthMm: 24,
+  maxDollyScale: 2,
   fullElevation: .86,
   fullZoom: .50,
   nearFullFocusRatio: .28,

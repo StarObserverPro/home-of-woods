@@ -1,6 +1,7 @@
 // Real main-scene review. Run after baking the optional impostor asset:
 // EVIDENCE_DIR=/tmp/how-rainier-review node tools/verification/rainier-optics-review.mjs
 // TEST_ORIGIN reuses Vite; CHROMIUM_EXECUTABLE overrides Playwright's CI browser.
+// REVIEW_FLOW=all (default), desktop, mobile or mass-fallback selects independent evidence.
 import assert from 'node:assert/strict';
 import {execFileSync, spawn} from 'node:child_process';
 import {createHash} from 'node:crypto';
@@ -17,12 +18,14 @@ assert.ok(out !== root && !out.startsWith(root + path.sep), 'Keep review images 
 const origin = process.env.TEST_ORIGIN ?? 'http://127.0.0.1:5195';
 const hour = Number(process.env.REVIEW_HOUR ?? 12);
 const weather = process.env.REVIEW_WEATHER ?? 'sunny';
+const flowSelection = process.env.REVIEW_FLOW ?? 'all';
 assert.ok(Number.isFinite(hour) && hour >= 0 && hour <= 24, 'REVIEW_HOUR must be in [0, 24]');
 assert.ok(['sunny', 'cloudy', 'rain', 'snow'].includes(weather), 'Unknown REVIEW_WEATHER');
+assert.ok(['all','desktop','mobile','mass-fallback'].includes(flowSelection),'Unknown REVIEW_FLOW');
 const digest = value => createHash('sha256').update(value).digest('hex');
 const report = {
   sourceRevision:process.env.SOURCE_REVISION ?? execFileSync('git', ['rev-parse', 'HEAD'], {cwd:root, encoding:'utf8'}).trim(),
-  result:'running', startedAt:new Date().toISOString(), origin, hour, weather,
+  result:'running', startedAt:new Date().toISOString(), origin, hour, weather, flowSelection,
   rendererNote:'Headless Chromium/SwiftShader provides functional WebGL evidence, not physical-device GPU timings.',
   comparisonNote:'Each mode group holds the same world, camera and animation clock. Direct rendering has canvas MSAA; the HDR capture does not. Whole-scene differences therefore include coverage changes. The separate overlook-optics-probe checks exact zero-effect output and focused color transfer.',
   captureNote:'Every PNG is read synchronously from the real game canvas immediately after the held zero-dt review render. UI panels are excluded. The JSON does not substitute for inspecting these images.',
@@ -116,6 +119,9 @@ async function frame(name, modes, {reference = false, compare = true} = {}) {
     let changedPixels = 0, absoluteTotal = 0, maximum = 0, opaque = 0, minimumAlpha = 255;
     let sum = 0, squareSum = 0, samples = 0;
     const bins = new Set(), alphaHistogram = new Array(256).fill(0), partialAlphaSamples = [];
+    const grayHistogram = new Array(256).fill(0), channelMin = [255,255,255], channelMax = [0,0,0];
+    let grayPixels=0, grayGeometryPixels=0, grayGradientEdges=0, nonzeroRgbPixels=0;
+    let nearCoCPixels=0, farCoCPixels=0, focusedOrSkyPixels=0;
     const canCompare = compare && previous?.width === canvas.width && previous?.height === canvas.height;
     for (let i = 0; i < pixels.length; i += 4) {
       const alpha = pixels[i + 3];
@@ -125,6 +131,14 @@ async function frame(name, modes, {reference = false, compare = true} = {}) {
         x:(i / 4) % canvas.width, y:canvas.height - 1 - Math.floor(i / 4 / canvas.width),
         rgba:Array.from(pixels.subarray(i, i + 4)),
       });
+      const r=pixels[i],g=pixels[i+1],b=pixels[i+2];
+      for(let c=0;c<3;c++){channelMin[c]=Math.min(channelMin[c],pixels[i+c]);channelMax[c]=Math.max(channelMax[c],pixels[i+c]);}
+      if(r||g||b)nonzeroRgbPixels++;else focusedOrSkyPixels++;
+      if(b>r&&b>g)nearCoCPixels++;if(r>g&&r>b)farCoCPixels++;
+      if(r===g&&g===b){
+        grayPixels++;grayHistogram[r]++;if(r>0)grayGeometryPixels++;
+        if((i/4)%canvas.width<canvas.width-1&&r>0&&pixels[i+4]>0&&pixels[i+4]===pixels[i+5]&&pixels[i+5]===pixels[i+6]&&r!==pixels[i+4])grayGradientEdges++;
+      }
       if (canCompare) {
         let changed = false;
         for (let c = 0; c < 3; c++) {
@@ -146,7 +160,10 @@ async function frame(name, modes, {reference = false, compare = true} = {}) {
       image:{opaqueFraction:opaque / count, colorBins:bins.size, meanLuminance:sum / samples,
         luminanceDeviation:Math.sqrt(Math.max(0, squareSum / samples - (sum / samples) ** 2)),
         minimumAlpha, zeroAlphaPixels:alphaHistogram[0], partialAlphaPixels:count - opaque - alphaHistogram[0],
-        alphaHistogram, partialAlphaSamples},
+        alphaHistogram, partialAlphaSamples, channelMin, channelMax, nonzeroRgbPixels,
+        grayPixels, grayGeometryPixels, grayGradientEdges, grayHistogram,
+        grayGeometryLevels:grayHistogram.slice(1).filter(value=>value>0).length,
+        nearCoCPixels, farCoCPixels, focusedOrSkyPixels},
       differenceFromReference:canCompare ? {changedPixels, maximum, meanAbsolute:absoluteTotal / (count * 3)} : null};
   }, {modes, reference, compare});
   // Persist the actual pixels and raw readback diagnostics before any assertion
@@ -186,10 +203,20 @@ async function frame(name, modes, {reference = false, compare = true} = {}) {
     assert.equal(result.contextAttributes.antialias, true);
     assert.ok(result.framebufferSamples > 0, `${name}: coverage edges use the actual multisampled direct framebuffer`);
   } else assert.equal(result.image.opaqueFraction, 1, `${name}: the final composite or ordinary opaque path writes alpha one`);
-  // A view that lies entirely inside the broad focus band can legitimately
-  // produce a black CoC mask. Keep that real mask for visual review.
-  if (modes.optics !== 'coc') assert.ok(result.image.colorBins > 8, `${name}: the actual color image is not a blank canvas`);
-  assert.ok(bytes.length > (modes.optics === 'coc' ? 500 : 4000), `${name}: PNG contains scene detail`);
+  const diagnostic=modes.optics==='depth'||modes.optics==='coc'||modes.atmosphere==='transmittance'||modes.atmosphere==='inscatter';
+  if(modes.optics==='depth'){
+    // Log depth is grayscale and can legitimately occupy only two 4-bit RGB
+    // bins. Test its actual 8-bit geometry values and spatial depth variation.
+    assert.ok(result.image.grayGeometryPixels>0,`${name}: depth contains non-sky geometry`);
+    assert.ok(result.image.grayGeometryLevels>1&&result.image.grayGradientEdges>0,`${name}: geometry has resolved spatial depth variation`);
+    if(weather==='sunny'||weather==='cloudy')assert.equal(result.image.grayPixels,s.canvas.width*s.canvas.height,`${name}: depth uses a grayscale transfer`);
+  }else if(modes.atmosphere==='transmittance'||modes.atmosphere==='inscatter'){
+    // Transmission can be nearly uniform and night in-scatter can be black.
+    // Their valid ranges must not be judged by a colorful-scene palette count.
+    if(modes.atmosphere==='transmittance')assert.ok(result.image.nonzeroRgbPixels>0,`${name}: transmission is not an empty black image`);
+    if(result.differenceFromReference)assert.ok(result.differenceFromReference.changedPixels>0,`${name}: the atmospheric diagnostic changes the held color output`);
+  }else if(modes.optics!=='coc')assert.ok(result.image.colorBins>8,`${name}: the actual color scene is not blank`);
+  assert.ok(bytes.length > (diagnostic ? 500 : 4000), `${name}: PNG contains the rendered output`);
   assert.deepEqual(result.canvas, s.canvas);
   if (s.optics.active) {
     assert.deepEqual(s.optics.sceneResolution, [s.canvas.width, s.canvas.height]);
@@ -223,6 +250,11 @@ async function modeGroup(label, full = true) {
       assert.equal(captured.metadata.worldSha256, first.metadata.worldSha256);
       if (suffix === 'off') assert.equal(captured.stats.optics.active, false);
       if (suffix === 'depth' || suffix === 'coc') assert.equal(captured.stats.optics.extraFullscreenPasses, 1);
+      if(suffix==='coc'&&label.endsWith('-panorama')){
+        const mask=captured.metadata.image;
+        assert.ok(mask.nearCoCPixels>0&&mask.farCoCPixels>0&&mask.focusedOrSkyPixels>0,'Panorama exposes both near/far focus tails and a clear middle');
+        flow.panorama.coc={nearPixels:mask.nearCoCPixels,farPixels:mask.farCoCPixels,focusedOrSkyPixels:mask.focusedOrSkyPixels};
+      }
     }
     await page.evaluate(() => { window.__HOW_RENDER_REVIEW__.set({atmosphere:'final', optics:'final'}); delete window.__HOW_RAINIER_PIXELS__; });
     return first.stats;
@@ -298,14 +330,65 @@ async function installFixture(viewport, {missingAtlas = false, captureGround = t
   assert.equal(orbit(initial).groundReady, true);
   assert.equal(initial.optics.active, false);
   assert.equal(initial.optics.targets, 0, 'Ground startup does not allocate the aerial HDR buffers');
-  flow.initial = {worldSha256:digest(JSON.stringify(initial.worldState)), optics:initial.optics,
+  flow.initial = {worldSha256:digest(JSON.stringify(initial.worldState)), camera:pose(initial), optics:initial.optics,
     atmosphere:initial.atmosphere, horizon:initial.horizon};
   if (captureGround) await modeGroup(flow.name + '-ground', false);
 }
 
-async function raiseAndPause({captureStages = true, fullModes = true} = {}) {
+async function openCameraControls() {
   await page.getByRole('button', {name:'回到山谷', exact:true}).click();
-  await page.getByRole('button', {name:'镜头', exact:true}).click();
+  // The panorama leaves this panel open. Do not toggle it shut for the second
+  // (steeper bird's-eye) phase of the same real UI flow.
+  if(!await page.getByRole('button',{name:'抬高镜头',exact:true}).isVisible())
+    await page.getByRole('button', {name:'镜头', exact:true}).click();
+  await page.getByRole('button',{name:'抬高镜头',exact:true}).waitFor({state:'visible'});
+}
+
+async function zoomToPanorama({fullModes = true} = {}) {
+  await openCameraControls();
+  const hold=await page.evaluate(()=>{
+    window.__HOW_RAINIER_REVIEW__.stage='zooming-panorama';
+    const out=document.querySelector('button[aria-label="缩小"]');
+    if(!out||out.disabled||!out.getClientRects().length)throw new Error('Zoom-out control is unavailable');
+    for(let i=0;i<3;i++)out.click();
+    document.querySelector('button[aria-label="暂停"]').click();
+    return window.__HOW_CAPTURE_HOLD__.begin();
+  });
+  await releaseHold(hold,flow.name+'-panorama-input');
+  const s=await settledPause();
+  assert.equal(JSON.stringify(s.worldState),hold.before.world,'Paused dolly never advances gameplay');
+  assert.equal(orbit(s).mode,'overlook');assert.equal(orbit(s).current.elevation,.24);
+  assert.equal(orbit(s).current.zoom,.48);assert.equal(orbit(s).current.distance,220);
+  assert.equal(s.optics.amount,1);assert.equal(s.optics.active,true);
+  const framing=await page.evaluate(async()=>{
+    const THREE=await import('/node_modules/three/build/three.module.js');
+    const {MOUNTAINS}=await import('/src/content/environment.ts');
+    const {CABIN,TENT,GIANT}=await import('/src/content/world.ts');
+    const {heightAt}=await import('/src/world/surface.ts');
+    const {buildMountainGeometry}=await import('/src/scene/mountain-geometry.js');
+    const {navigationOpticsProjection}=await import('/src/scene/overlook-optics-rules.ts');
+    const s=JSON.parse(document.querySelector('#runtime-stats').textContent).current,c=s.sceneSpace.outdoorCamera;
+    const camera=new THREE.PerspectiveCamera(c.fov,c.aspect,.1,3200);
+    camera.position.fromArray(c.position);camera.lookAt(...c.target);camera.updateMatrixWorld(true);
+    const geometry=buildMountainGeometry(MOUNTAINS.find(m=>m.id==='crown')),positions=geometry.getAttribute('position');
+    let highest=0;for(let i=1;i<positions.count;i++)if(positions.getY(i)>positions.getY(highest))highest=i;
+    const summit=new THREE.Vector3().fromBufferAttribute(positions,highest);geometry.dispose();
+    const points=[['main-summit',summit],['camp-anchor',new THREE.Vector3(...c.target)],
+      ...[['cabin',CABIN],['tent',TENT],['giant-base',GIANT]].map(([name,p])=>[name,new THREE.Vector3(p.x,heightAt(p.x,p.z),p.z)])];
+    return {lens:navigationOpticsProjection(c.overlook.current,c.aspect,c.aspect<.8),
+      points:points.map(([name,p])=>{const ndc=p.clone().project(camera);return{name,world:p.toArray(),ndc:ndc.toArray(),
+        inside:Math.abs(ndc.x)<1&&Math.abs(ndc.y)<1&&ndc.z>-1&&ndc.z<1};})};
+  });
+  for(const point of framing.points)assert.equal(point.inside,true,`${flow.name}: ${point.name} lies inside the actual panorama`);
+  assert.ok(framing.lens.focalLengthMm>=12&&framing.lens.focalLengthMm<=16);
+  assert.ok(s.sceneSpace.outdoorCamera.position[1]>flow.initial.camera.position[1],'Zoom-out raises the eye as well as widening the frame');
+  flow.panorama={pausedWorldSha256:digest(hold.before.world),camera:pose(s),framing,optics:s.optics};
+  await page.evaluate(()=>{window.__HOW_RAINIER_REVIEW__.stage='panorama';});
+  await modeGroup(flow.name+'-panorama',fullModes);
+}
+
+async function raiseAndPause({captureStages = true} = {}) {
+  await openCameraControls();
   const hold = await page.evaluate(() => {
     window.__HOW_RAINIER_REVIEW__.stage = 'raising';
     const click = label => {
@@ -314,7 +397,6 @@ async function raiseAndPause({captureStages = true, fullModes = true} = {}) {
       button.click();
     };
     for (let i = 0; i < 4; i++) click('抬高镜头');
-    for (let i = 0; i < 3; i++) click('缩小');
     click('镜头右转'); click('暂停');
     return window.__HOW_CAPTURE_HOLD__.begin();
   });
@@ -338,11 +420,12 @@ async function raiseAndPause({captureStages = true, fullModes = true} = {}) {
   assert.equal(s.optics.active, true);
   const c = s.sceneSpace.outdoorCamera;
   const longAxisFov = c.aspect < 1 ? c.fov : 2 * Math.atan(Math.tan(c.fov * Math.PI / 360) * c.aspect) * 180 / Math.PI;
-  assert.ok(longAxisFov >= 65 && longAxisFov <= 75, 'The aerial long-axis field is a 24–28 mm full-frame equivalent');
-  assert.ok(c.fov < 80, 'Portrait view does not gain an unbounded vertical FOV');
+  assert.ok(longAxisFov>=95&&longAxisFov<=113,'The bounded ultra-wide gate remains active in the bird\'s-eye view');
+  assert.ok(c.fov<100,'Portrait remains inside the rotated 16 mm gate');
+  assert.equal(orbit(s).current.distance,220);
   flow.lift = {pausedWorldSha256:digest(hold.before.world), camera:pose(s), longAxisFov, optics:s.optics};
-  await page.evaluate(() => { window.__HOW_RAINIER_REVIEW__.stage = 'overlook'; });
-  await modeGroup(flow.name + '-overlook', fullModes);
+  await page.evaluate(() => { window.__HOW_RAINIER_REVIEW__.stage = 'birds-eye'; });
+  await modeGroup(flow.name + '-birds-eye', false);
 }
 
 async function resizeAndReturn() {
@@ -453,24 +536,35 @@ try {
     ...(process.env.CHROMIUM_EXECUTABLE ? {executablePath:process.env.CHROMIUM_EXECUTABLE} : {}),
     args:['--no-sandbox', '--disable-dev-shm-usage', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader']});
   for (const viewport of [{width:1280, height:800}, {width:390, height:844}]) {
-    await independentFlow(viewport.width < 600 ? 'mobile' : 'desktop', async () => {
-      await installFixture(viewport); await raiseAndPause(); await resizeAndReturn();
+    const name=viewport.width<600?'mobile':'desktop';
+    if(flowSelection!=='all'&&flowSelection!==name)continue;
+    await independentFlow(name, async () => {
+      await installFixture(viewport); await zoomToPanorama(); await raiseAndPause(); await resizeAndReturn();
     });
   }
   // Missing optional files must still produce the default mass geometry. One
   // additional high view gives that representation its own final/off evidence.
-  await independentFlow('mass-fallback', async () => {
-    await installFixture({width:1280, height:800}, {missingAtlas:true, captureGround:false});
-    await raiseAndPause({captureStages:false, fullModes:false});
-    flow.samples = await page.evaluate(() => window.__HOW_RAINIER_REVIEW__.samples);
-  });
-  report.fallbackNote = 'The deliberately missing atlas renders the same mass geometry used by default; this flow is explicitly fallback, not a successful impostor load.';
+  if(flowSelection==='all'||flowSelection==='mass-fallback')
+    await independentFlow('mass-fallback', async () => {
+      await installFixture({width:1280, height:800}, {missingAtlas:true, captureGround:false});
+      await zoomToPanorama({fullModes:false});
+      flow.samples = await page.evaluate(() => window.__HOW_RAINIER_REVIEW__.samples);
+    });
+  if(report.flows.some(f=>f.missingAtlas))report.fallbackNote = 'The deliberately missing atlas renders the same mass geometry used by default; this flow is explicitly fallback, not a successful impostor load.';
   assert.equal(report.flowFailures.length, 0, 'Every viewport and fallback flow must pass; see flowFailures for independent results');
   assert.deepEqual(report.errors, []); assert.deepEqual(report.failedRequests, []);
-  assert.ok(report.assetResponses.some(r => /\.json(\?|$)/i.test(r.url) && r.status === 200), 'An actual atlas manifest was fetched');
-  assert.ok(report.assetResponses.filter(r => /\.png(\?|$)/i.test(r.url) && r.status === 200).length >= 2, 'Both atlas textures were fetched');
+  for(const selected of report.flows){
+    const responses=report.assetResponses.filter(r=>r.flow===selected.name);
+    if(selected.missingAtlas){
+      assert.ok(responses.some(r=>/\.json(\?|$)/i.test(r.url)&&r.status===404),'The fallback flow observes its intentionally missing atlas');
+      assert.equal(responses.some(r=>r.status===200),false,'The missing-atlas flow does not silently load a successful atlas');
+    }else{
+      assert.ok(responses.some(r=>/\.json(\?|$)/i.test(r.url)&&r.status===200),`${selected.name}: an actual atlas manifest was fetched`);
+      assert.ok(responses.filter(r=>/\.png(\?|$)/i.test(r.url)&&r.status===200).length>=2,`${selected.name}: both atlas textures were fetched`);
+    }
+  }
   report.result = 'passed';
-  console.log(`Rainier optics review passed: two viewports plus the missing-atlas fallback, ${report.frames.length} real PNG frames`);
+  console.log(`Rainier optics review passed: ${flowSelection}, ${report.flows.length} flows, ${report.frames.length} real PNG frames`);
 } catch (error) {
   report.result = 'failed'; report.failure = String(error); report.stack = error.stack; process.exitCode = 1;
   console.error(error);

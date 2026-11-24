@@ -1,0 +1,356 @@
+{
+  "version": 1,
+  "id": "rainier-conifer-cluster",
+  "source": "Project-owned distantTreeGeometry, composed by tools/impostors/source.ts",
+  "encoding": "linear-rgba8",
+  "normalSpace": "asset",
+  "alpha": "coverage",
+  "frameSize": 128,
+  "padding": 4,
+  "columns": 8,
+  "rows": 4,
+  "width": 1024,
+  "height": 512,
+  "frameSpan": 14.244347007251665,
+  "center": [
+    -0.045220136642456055,
+    4.542499964237212,
+    0.3694344758987427
+  ],
+  "bounds": {
+    "min": [
+      -4.158507823944092,
+      -1.0967254837623841e-7,
+      -2.6875247955322266
+    ],
+    "max": [
+      4.06806755065918,
+      9.085000038146973,
+      3.426393747329712
+    ]
+  },
+  "frames": [
+    {
+      "index": 0,
+      "column": 0,
+      "row": 0,
+      "azimuth": 0,
+      "elevation": 0,
+      "direction": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "index": 1,
+      "column": 1,
+      "row": 0,
+      "azimuth": 0.7853981633974483,
+      "elevation": 0,
+      "direction": [
+        0.7071067811865475,
+        0,
+        0.7071067811865476
+      ]
+    },
+    {
+      "index": 2,
+      "column": 2,
+      "row": 0,
+      "azimuth": 1.5707963267948966,
+      "elevation": 0,
+      "direction": [
+        1,
+        0,
+        6.123233995736766e-17
+      ]
+    },
+    {
+      "index": 3,
+      "column": 3,
+      "row": 0,
+      "azimuth": 2.356194490192345,
+      "elevation": 0,
+      "direction": [
+        0.7071067811865476,
+        0,
+        -0.7071067811865475
+      ]
+    },
+    {
+      "index": 4,
+      "column": 4,
+      "row": 0,
+      "azimuth": 3.141592653589793,
+      "elevation": 0,
+      "direction": [
+        1.2246467991473532e-16,
+        0,
+        -1
+      ]
+    },
+    {
+      "index": 5,
+      "column": 5,
+      "row": 0,
+      "azimuth": 3.9269908169872414,
+      "elevation": 0,
+      "direction": [
+        -0.7071067811865475,
+        0,
+        -0.7071067811865477
+      ]
+    },
+    {
+      "index": 6,
+      "column": 6,
+      "row": 0,
+      "azimuth": 4.71238898038469,
+      "elevation": 0,
+      "direction": [
+        -1,
+        0,
+        -1.8369701987210297e-16
+      ]
+    },
+    {
+      "index": 7,
+      "column": 7,
+      "row": 0,
+      "azimuth": 5.497787143782138,
+      "elevation": 0,
+      "direction": [
+        -0.7071067811865477,
+        0,
+        0.7071067811865474
+      ]
+    },
+    {
+      "index": 8,
+      "column": 0,
+      "row": 1,
+      "azimuth": 0,
+      "elevation": 0.5235987755982988,
+      "direction": [
+        0,
+        0.49999999999999994,
+        0.8660254037844387
+      ]
+    },
+    {
+      "index": 9,
+      "column": 1,
+      "row": 1,
+      "azimuth": 0.7853981633974483,
+      "elevation": 0.5235987755982988,
+      "direction": [
+        0.6123724356957945,
+        0.49999999999999994,
+        0.6123724356957946
+      ]
+    },
+    {
+      "index": 10,
+      "column": 2,
+      "row": 1,
+      "azimuth": 1.5707963267948966,
+      "elevation": 0.5235987755982988,
+      "direction": [
+        0.8660254037844387,
+        0.49999999999999994,
+        5.3028761936245346e-17
+      ]
+    },
+    {
+      "index": 11,
+      "column": 3,
+      "row": 1,
+      "azimuth": 2.356194490192345,
+      "elevation": 0.5235987755982988,
+      "direction": [
+        0.6123724356957946,
+        0.49999999999999994,
+        -0.6123724356957945
+      ]
+    },
+    {
+      "index": 12,
+      "column": 4,
+      "row": 1,
+      "azimuth": 3.141592653589793,
+      "elevation": 0.5235987755982988,
+      "direction": [
+        1.0605752387249069e-16,
+        0.49999999999999994,
+        -0.8660254037844387
+      ]
+    },
+    {
+      "index": 13,
+      "column": 5,
+      "row": 1,
+      "azimuth": 3.9269908169872414,
+      "elevation": 0.5235987755982988,
+      "direction": [
+        -0.6123724356957945,
+        0.49999999999999994,
+        -0.6123724356957947
+      ]
+    },
+    {
+      "index": 14,
+      "column": 6,
+      "row": 1,
+      "azimuth": 4.71238898038469,
+      "elevation": 0.5235987755982988,
+      "direction": [
+        -0.8660254037844387,
+        0.49999999999999994,
+        -1.5908628580873602e-16
+      ]
+    },
+    {
+      "index": 15,
+      "column": 7,
+      "row": 1,
+      "azimuth": 5.497787143782138,
+      "elevation": 0.5235987755982988,
+      "direction": [
+        -0.6123724356957947,
+        0.49999999999999994,
+        0.6123724356957945
+      ]
+    },
+    {
+      "index": 16,
+      "column": 0,
+      "row": 2,
+      "azimuth": 0,
+      "elevation": 1.0471975511965976,
+      "direction": [
+        0,
+        0.8660254037844386,
+        0.5000000000000001
+      ]
+    },
+    {
+      "index": 17,
+      "column": 1,
+      "row": 2,
+      "azimuth": 0.7853981633974483,
+      "elevation": 1.0471975511965976,
+      "direction": [
+        0.3535533905932738,
+        0.8660254037844386,
+        0.35355339059327384
+      ]
+    },
+    {
+      "index": 18,
+      "column": 2,
+      "row": 2,
+      "azimuth": 1.5707963267948966,
+      "elevation": 1.0471975511965976,
+      "direction": [
+        0.5000000000000001,
+        0.8660254037844386,
+        3.0616169978683836e-17
+      ]
+    },
+    {
+      "index": 19,
+      "column": 3,
+      "row": 2,
+      "azimuth": 2.356194490192345,
+      "elevation": 1.0471975511965976,
+      "direction": [
+        0.35355339059327384,
+        0.8660254037844386,
+        -0.3535533905932738
+      ]
+    },
+    {
+      "index": 20,
+      "column": 4,
+      "row": 2,
+      "azimuth": 3.141592653589793,
+      "elevation": 1.0471975511965976,
+      "direction": [
+        6.123233995736767e-17,
+        0.8660254037844386,
+        -0.5000000000000001
+      ]
+    },
+    {
+      "index": 21,
+      "column": 5,
+      "row": 2,
+      "azimuth": 3.9269908169872414,
+      "elevation": 1.0471975511965976,
+      "direction": [
+        -0.3535533905932738,
+        0.8660254037844386,
+        -0.3535533905932739
+      ]
+    },
+    {
+      "index": 22,
+      "column": 6,
+      "row": 2,
+      "azimuth": 4.71238898038469,
+      "elevation": 1.0471975511965976,
+      "direction": [
+        -0.5000000000000001,
+        0.8660254037844386,
+        -9.184850993605151e-17
+      ]
+    },
+    {
+      "index": 23,
+      "column": 7,
+      "row": 2,
+      "azimuth": 5.497787143782138,
+      "elevation": 1.0471975511965976,
+      "direction": [
+        -0.3535533905932739,
+        0.8660254037844386,
+        0.35355339059327373
+      ]
+    },
+    {
+      "index": 24,
+      "column": 0,
+      "row": 3,
+      "azimuth": 0,
+      "elevation": 1.5707963267948966,
+      "direction": [
+        0,
+        1,
+        0
+      ]
+    }
+  ],
+  "sourceTriangles": 74,
+  "albedo": "rainier-conifer-cluster-albedo.png",
+  "normal": "rainier-conifer-cluster-normal.png",
+  "build": {
+    "three": "0.186.1",
+    "tool": "tools/impostors/export.mjs",
+    "sourceSha256": {
+      "src/content/rainier-ecology.ts": "7241fdf4180b4e4844d7a95274c68caa93329b3bf5ca2bc4369c1bf85ada7d3d",
+      "src/scene/outer-forest.js": "2f8a7b5a466ad8d3fa7b483c0c443e8c5dcd39533a8e99b468b1626df73893ea",
+      "src/scene/impostors/atlas-layout.ts": "3e7754600cc45bc6a49d16910dfa98b93f46effd2b5bf8e4653284c2e41ac70d",
+      "src/scene/impostors/bake.ts": "107672bea9d1449c49a86e428277a34dde3f55722388fc41964d8cc03517add9",
+      "tools/impostors/source.ts": "01e51c745970d4b231f5db4e6eebe4c4938265abb1abe527c9431a8f90aef286",
+      "tools/impostors/browser.ts": "5405bd375466fdce2eee108863d7241b2df6afc8a32e784286517afa56e33b78",
+      "tools/impostors/rgba-png.mjs": "234b1bbd4ccfac392f0cd8fe86fa1431066778ced3a94f6b31b0bd6b17eba5c2",
+      "tools/impostors/export.mjs": "177755ac3af40ea843c29532fb7fc3aff00fb566e80b4f00dc30235bb84d18c5",
+      "tools/impostors/export-files.mjs": "fe7167bc6b2aa336bfac50760a1b625ec2228a1edfef76c5451ad30092123840"
+    },
+    "files": {
+      "rainier-conifer-cluster-albedo.png": "b97bf26aebbde5f0e39de9b0f1c649bbfafc125ca80c87162a806660cd61fb69",
+      "rainier-conifer-cluster-normal.png": "d823f560a75a5b88c81cdbc72134870d8337f49e02c8500a970d4275a48ff341"
+    }
+  }
+}

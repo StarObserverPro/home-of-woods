@@ -15,23 +15,47 @@ export function overlookAmount(pose:Pick<OrbitPose,'elevation'|'zoom'>){
     1-smooth(O.fullZoom,OVERLOOK.enterZoom,pose.zoom));
 }
 
+/** Target only: the existing orbit controller advances this radius at its distanceRate. */
+export function navigationDollyScale(zoom:number){
+  if(!Number.isFinite(zoom))return 1;
+  return 1+(O.maxDollyScale-1)*(1-smooth(O.fullZoom,OVERLOOK.enterZoom,zoom));
+}
+
 export function navigationOpticsProjection(pose:Pick<OrbitPose,'elevation'|'zoom'>,aspect:number,mobile:boolean){
   const safeAspect=Number.isFinite(aspect)&&aspect>0?aspect:1;
   const poseZoom=Number.isFinite(pose.zoom)?Math.max(.01,pose.zoom):CAMERA.zoom;
   const amount=overlookAmount(pose);
   const defaultZoom=poseZoom*(mobile?1.45:1);
   const wideFraction=clamp((poseZoom-CAMERA.minZoom)/(CAMERA.zoom-CAMERA.minZoom),0,1);
-  const focalLengthMm=(O.widestFocalLengthMm+(O.overviewFocalLengthMm-O.widestFocalLengthMm)*wideFraction)
+  // The normal 16 mm panorama expands to at most 12 mm on an extra-wide
+  // viewport; moving the eye farther than 2x would enter the valley shoulders.
+  const minimumFocalLengthMm=clamp(O.filmLongEdgeMm/(2*Math.max(1,safeAspect)*Math.tan(O.panoramaMinVerticalFov*Math.PI/360)),
+    O.wideViewportMinFocalLengthMm,O.widestFocalLengthMm);
+  const authoredFocalLengthMm=(minimumFocalLengthMm+(O.overviewFocalLengthMm-minimumFocalLengthMm)*wideFraction)
     *Math.max(1,poseZoom/CAMERA.zoom);
   const baseTan=Math.tan(O.baseVerticalFov*Math.PI/360);
   const viewHeightMm=O.filmLongEdgeMm/Math.max(1,safeAspect);
-  const aerialTan=viewHeightMm/(2*focalLengthMm);
+  // Lifting alone must not narrow the pre-existing ground view. Preserve that
+  // image-plane extent, including its ordinary zoom-in scaling, when wider.
+  const groundTan=baseTan/(Math.max(CAMERA.zoom,poseZoom)*(mobile?1.45:1));
+  const aerialTan=Math.max(viewHeightMm/(2*authoredFocalLengthMm),groundTan);
+  const focalLengthMm=viewHeightMm/(2*aerialTan);
   // Interpolating the image-plane extent avoids two stacked camera smoothers.
   const tanHalf=baseTan/defaultZoom+(aerialTan-baseTan/defaultZoom)*amount;
   const zoom=amount===0?defaultZoom:baseTan/tanHalf;
-  return {fov:O.baseVerticalFov,zoom,amount,focalLengthMm,
+  return {fov:O.baseVerticalFov,zoom,amount,focalLengthMm,dollyScale:navigationDollyScale(poseZoom),
     verticalFov:2*Math.atan(tanHalf)*180/Math.PI,
     horizontalFov:2*Math.atan(tanHalf*safeAspect)*180/Math.PI};
+}
+
+/** Preserve a borrowed close view's lens when the navigation owner resumes. */
+export function navigationZoomForProjection(projectedZoom:number,elevation:number,aspect:number,mobile:boolean){
+  let lo=CAMERA.minZoom,hi=CAMERA.maxZoom;
+  for(let i=0;i<48;i++){
+    const mid=(lo+hi)/2;
+    if(navigationOpticsProjection({elevation,zoom:mid},aspect,mobile).zoom<projectedZoom)lo=mid;else hi=mid;
+  }
+  return (lo+hi)/2;
 }
 
 export function overlookFocusBands(focusDistance:number){

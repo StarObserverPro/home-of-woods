@@ -1,6 +1,6 @@
 # Rainier 山麓营地、远树烘焙与全景镜头
 
-日期：2026-11-23。状态：施工中，验证完成后补充实际结果。
+实现与验证更新：2026-11-23（America/New_York）。状态：实现已接入；第五轮独立焦外 probe、完整图集烘焙及缺失图集回退通过，主营地部分模式已通过；新全景镜头的实景构图与剩余组合验收待下一轮。
 
 ## 本轮目标
 
@@ -20,6 +20,18 @@
 固定 seed、时刻、天况、镜头和分辨率，比较地面与高位、最终画面与无效果、深度/散射/焦外诊断。营地及主要林冠保持可读；近处遮挡和远山无明显漏色光边；高位转向、升降、返回地面和视口调整连续。天空、环境与表面大气共享太阳和天况。烘焙图集须有可重现入口、透明边缘处理、视角选择及资源释放，并以实际渲染检查。
 
 构建、针对性行为检查、浏览器与着色器错误及资源尺寸分别记录。CPU 耗时与软件 WebGL 的结果不能当作实体手机 GPU 帧率。
+
+## 当前实际结果
+
+已核对第五轮 [CI run 45303052228](https://github.com/StarObserverPro/home-of-woods/actions/runs/45303052228)，代码为 [`f3c200ef81e325aeb2a8027e2fbc5703dbf02e25`](https://github.com/StarObserverPro/home-of-woods/commit/f3c200ef81e325aeb2a8027e2fbc5703dbf02e25)。
+
+- `optics` job：五份定向测试共 **29 项通过、0 失败**，`npm run build` 通过。独立 probe 的零效果输出字节差为 0，5 个色块最大通道差为 1/255，shader/GL 无错误；resize、关闭/恢复、挂起及目标释放检查通过。
+- `valley` 的 baker 步骤：**完整通过**。25 帧确定性烘焙、透明边距、PNG RGBA 字节回读、21 次运行时视角/模式渲染及资源恢复均有报告。释放恢复至预热后的共享 DFG 缓存基线，不将 renderer 自有的一张 LUT 当作资产泄漏。
+- 主营地桌面与手机：ground 的 final/repeat/off、lift 起始与过渡、overlook 的 final/repeat/off、atmosphere-only、optics-only **均已完成检查**；冻结重复帧的变化像素数均为 0。有效的深度图随后被旧 `colorBins > 8` 门槛误判，导致后续 CoC、透射率 T、散射 L、暂停 resize/旋转和返回地面未执行，`valley` 整体仍未通过。
+- 缺失图集的 `mass-fallback` 独立流程：**完整通过**，包括预期 404、实体林片回退与 final/repeat/off；重复帧变化为 0。
+- 第五轮使用的俯视镜头**不构成全景构图证明**。之后的新镜头已有 **4/4 本地视锥测试通过**，用真实 `crown` 网格最高点与营地地标覆盖 1280×800、16:9、844×390 和竖屏；新镜头的实景构图及剩余诊断/操作正准备下一轮验收。
+
+25 帧主营地证据及 baker 报告位于 [artifact 14880955839](https://github.com/StarObserverPro/home-of-woods/actions/runs/45303052228/artifacts/14880955839)；正式图集 [artifact 14880945916](https://github.com/StarObserverPro/home-of-woods/actions/runs/45303052228/artifacts/14880945916) 已核对 9/9 源文件 hash，独立 probe 位于同轮 `rainier-optics-probe` artifact。真实 WebGL 后端为 Chromium / ANGLE / Vulkan SwiftShader，未测实体显卡或手机帧时，也尚未完成全气候及室内往返的实机场景矩阵。详细数值、成本和唯一验证表见 [RAINIER_RENDERING](../RAINIER_RENDERING.md#验证状态)。
 
 ## 范围边界
 
