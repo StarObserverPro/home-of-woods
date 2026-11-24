@@ -11,6 +11,7 @@ on:
       - 'src/scene/overlook-optics*'
       - 'src/scene/impostors/**'
       - 'src/scene/create-scene.ts'
+      - 'src/scene/creek.ts'
       - 'src/scene/anchored-overlook.ts'
       - 'src/scene/camera-forecast.ts'
       - 'src/scene/environment.ts'

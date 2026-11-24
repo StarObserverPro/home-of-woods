@@ -465,13 +465,28 @@ async function resizeAndReturn() {
   });
   await settledPause();
   await page.evaluate(() => { window.__HOW_RAINIER_REVIEW__.stage = 'returning'; });
-  // Use the actual pause dialog's reset/resume action, then pause again through
-  // its visible HUD control. Camera recovery continues on presentation frames.
+  // Use the actual reset/resume action. The main UI deliberately consumes the
+  // first outside pointer click to dismiss an open camera panel; close that
+  // panel explicitly before clicking Pause, so the HUD action actually runs.
   await page.getByRole('button', {name:'复位镜头并继续', exact:true}).click();
+  await page.waitForFunction(() => window.__HOW_CAPTURE_HOLD__.read().owners.manualPause === false &&
+    !document.querySelector('.pause-dialog')?.open, undefined, {timeout:30000});
+  const cameraToggle = page.getByRole('button', {name:'镜头', exact:true});
+  if (await cameraToggle.getAttribute('aria-expanded') === 'true') {
+    await cameraToggle.click();
+    await page.waitForFunction(() => document.querySelector('button[aria-label="镜头"]')?.getAttribute('aria-expanded') === 'false',
+      undefined, {timeout:30000});
+    await page.getByRole('button', {name:'抬高镜头', exact:true}).waitFor({state:'hidden'});
+  }
   await page.getByRole('button', {name:'暂停', exact:true}).click();
-  const pausedWorld = await page.evaluate(() => {
-    const hold = window.__HOW_CAPTURE_HOLD__.begin(); window.__HOW_CAPTURE_HOLD__.end(hold.token); return hold.before.world;
+  await page.waitForFunction(() => window.__HOW_CAPTURE_HOLD__.read().owners.manualPause === true &&
+    document.querySelector('.pause-dialog')?.open, undefined, {timeout:30000});
+  const returnHold = await page.evaluate(() => {
+    if (!window.__HOW_CAPTURE_HOLD__.read().owners.manualPause) throw new Error('The real Pause action must precede the return capture');
+    return window.__HOW_CAPTURE_HOLD__.begin();
   });
+  await releaseHold(returnHold, flow.name + '-return-input');
+  const pausedWorld = returnHold.before.world;
   const ground = await settledPause();
   assert.equal(JSON.stringify(ground.worldState), pausedWorld, 'Paused recovery preserves world state');
   assert.equal(orbit(ground).groundReady, true);
