@@ -44,26 +44,38 @@ test('the real tent remains inside the HUD-safe frame after resize, orbit and zo
   } finally { room.dispose(); }
 });
 
-test('felt scatter preserves night and weather differences while a closed curtain retains ambient light', () => {
+test('felt scatter and lining reflection keep night readable without another shadow map', () => {
   const scene = new THREE.Scene(), light = createInteriorLighting(scene, new THREE.Vector3(0, 3.2, 3.7));
   const sample = createSkySample();
   const luminance = (rgb: number[]) => rgb[0] * .2126 + rgb[1] * .7152 + rgb[2] * .0722;
   try {
     sampleSkyLight(sample, 14, 0, 0); light.setSky(sample, 14);
     const day = light.stats();
+    assert.equal(day.sky, 1.7475); assert.equal(day.opening, 4.41); assert.equal(day.reflection, 0);
     sampleSkyLight(sample, 1, 0, 0); light.setSky(sample, 1);
     const night = light.stats();
     const dayDiffuse = day.sky * luminance(day.skyColor), nightDiffuse = night.sky * luminance(night.skyColor);
-    assert.ok(nightDiffuse > .25, 'the shared night sky still illuminates the small furnishings');
-    assert.ok(dayDiffuse > nightDiffuse * 2, 'night is visibly dimmer than day');
+    assert.ok(night.sky > 1.6 && night.opening > 2 && night.reflection > .8);
+    assert.ok(nightDiffuse > .5, 'night has enough broad light for the small furnishings');
+    assert.ok(dayDiffuse > nightDiffuse * 1.7, 'night retains lower diffuse light than day');
     assert.ok(night.skyColor[2] > night.skyColor[0], 'night scatter retains the cool moon tint');
+    const reflection = scene.getObjectByName('tent-cloth-reflection') as THREE.DirectionalLight;
+    assert.ok(reflection instanceof THREE.DirectionalLight, 'metal needs a directional specular source');
+    assert.deepEqual(reflection.position.toArray(), [-3.8, 4.8, 5]);
+    assert.deepEqual(reflection.target.position.toArray(), [0, 1, 0]);
+    assert.ok(reflection.color.b > reflection.color.r);
+    assert.equal(reflection.castShadow, false);
     light.setOpening(false);
     assert.equal(light.stats().sky, night.sky);
+    assert.equal(light.stats().reflection, night.reflection);
     assert.equal(light.stats().opening, night.opening * .12);
     sampleSkyLight(sample, 1, 1, 1); light.setSky(sample, 1);
     assert.ok(light.stats().sky < night.sky, 'weather still reduces the inherited ambient sample');
+    assert.ok(light.stats().reflection < night.reflection, 'reflected light follows the same weather input');
     assert.equal(light.stats().exposure, day.exposure);
-    assert.equal(scene.children.filter(child => child instanceof THREE.Light).length, 3);
+    const lights = scene.children.filter(child => child instanceof THREE.Light);
+    assert.equal(lights.length, 4);
+    assert.equal(lights.filter(light => light.castShadow).length, 1);
   } finally { light.dispose(); }
   assert.equal(scene.children.length, 0);
 });

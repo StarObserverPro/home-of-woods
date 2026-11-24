@@ -596,7 +596,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
         </TimberButton></>:inTent?<><TimberButton aria-label="出帐篷" disabled={roomCrossing} onClick={()=>runtime.current?.requestTentExit()}>
           <GameIcon name="tent"/><span>出帐篷</span>
         </TimberButton><TimberButton aria-label={tentDoorOpen?'放下门帘':'掀起门帘'} aria-pressed={tentDoorOpen} disabled={roomCrossing} onClick={()=>runtime.current?.toggleTentDoor()}>
-          <GameIcon name="canvas-roll"/><span>{tentDoorOpen?'放下门帘':'掀起门帘'}</span>
+          <GameIcon name="canvas-roll"/><span>{tentDoorOpen?'放门帘':'掀门帘'}</span>
         </TimberButton></>:<><button
           disabled={roomCrossing}
           className={mapOpen ? "active" : ""}
