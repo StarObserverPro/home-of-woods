@@ -1,6 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
+import {ART_ICONS, NEW_ART_ICONS} from "../src/ui/art-icons.ts";
 const root = new URL("../", import.meta.url);
 const manifest = JSON.parse(
   await readFile(new URL("public/assets/manifest.json", root), "utf8"),
@@ -21,7 +22,7 @@ assert.equal(worldData.heights.length,rows*rows,'complete surface grid');
 assert.ok(worldData.heights.every(Number.isFinite),'finite terrain heights');
 const listed = new Set();
 for (const asset of manifest.assets) {
-  assert.match(asset.file, /^public\/assets\/(m0|gathering|characters|wildlife)\/[a-z-]+\.glb$/);
+  assert.match(asset.file, /^public\/assets\/(m0|gathering|characters|wildlife|merchant|camp)\/[a-z-]+\.glb$/);
   assert.ok(!listed.has(asset.file));
   listed.add(asset.file);
   const bytes = await readFile(new URL(asset.file, root));
@@ -62,6 +63,18 @@ for (const asset of manifest.assets) {
     assert.equal(gltf.materials.length, 1);
     const triangles=gltf.meshes.reduce((sum,m)=>sum+m.primitives.reduce((n,p)=>n+gltf.accessors[p.indices].count/3,0),0);
     assert.ok(triangles <= 650);
+  }
+  if(asset.assetId==='how-merchant-wagon'){
+    for(const name of ['wheelFL','wheelFR','wheelRL','wheelRR'])
+      assert.equal(gltf.nodes.filter(node=>node.name===name&&node.children?.length).length,1);
+    assert.ok(gltf.meshes.length<=22);
+  }
+  if(asset.assetId==='how-camp-drying-vessels'){
+    for(const name of ['amber-bottle','terracotta-jar','sage-teapot'])
+      assert.ok(gltf.nodes.some(node=>node.name===name&&node.children?.length));
+    assert.equal(gltf.images?.length??0,0);
+    const triangles=gltf.meshes.flatMap(mesh=>mesh.primitives).reduce((sum,p)=>sum+gltf.accessors[p.indices].count/3,0);
+    assert.ok(triangles<=2500);
   }
   if(asset.batchId === 'HOW-WILDLIFE-MOUNTAIN-GOAT') {
     assert.equal(gltf.skins.length, 1);
@@ -107,22 +120,29 @@ for (const asset of manifest.assets) {
     }
   }
 }
-for(const folder of ['m0','gathering','characters','wildlife']) assert.deepEqual(
+for(const folder of ['m0','gathering','characters','wildlife','merchant','camp']) assert.deepEqual(
   (await readdir(new URL(`public/assets/${folder}/`, root))).sort(),
   [...listed].filter(p=>p.startsWith(`public/assets/${folder}/`)).map((path) => path.split("/").at(-1)).sort(),
 );
 console.log(
   `Verified ${listed.size} registered GLBs and terrain data: hashes, source licenses, embedded resources, nonmetallic palette, legacy pivots, skinned characters and complete finite surface grid.`,
 );
-const uiManifest=JSON.parse(await readFile(new URL('public/assets/ui-r1/manifest.json',root),'utf8'));
-assert.equal(uiManifest.batch,'HOW-UI-ART-R1');
 const uiFiles=new Set();
-for(const asset of uiManifest.files){
-  assert.match(asset.file,/^public\/assets\/ui-r1\/(icons\/[a-z-]+-(64|128)\.png|inventory-slot\.png)$/);
-  assert.ok(!uiFiles.has(asset.file));uiFiles.add(asset.file);
-  const bytes=await readFile(new URL(asset.file,root));
-  assert.equal(bytes.length,asset.bytes);assert.equal(createHash('sha256').update(bytes).digest('hex'),asset.sha256);
-  assert.equal(bytes.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
-  if(asset.size){assert.equal(bytes.readUInt32BE(16),asset.size);assert.equal(bytes.readUInt32BE(20),asset.size);}
+for(const [revision,icons] of [[1,ART_ICONS],[3,NEW_ART_ICONS]]){
+  const folder=`public/assets/ui-r${revision}`;
+  const uiManifest=JSON.parse(await readFile(new URL(`${folder}/manifest.json`,root),'utf8'));
+  assert.equal(uiManifest.batch,`HOW-UI-ART-R${revision}`);
+  const expected=Object.keys(icons).flatMap(id=>[64,128].map(size=>`${folder}/icons/${id}-${size}.png`));
+  if(revision===1)expected.push(`${folder}/inventory-slot.png`);
+  assert.deepEqual(uiManifest.files.map(asset=>asset.file).sort(),expected.sort());
+  for(const asset of uiManifest.files){
+    if(asset.size)assert.equal(asset.file,`${folder}/icons/${asset.id}-${asset.size}.png`);
+    assert.ok(!uiFiles.has(asset.file));uiFiles.add(asset.file);
+    const bytes=await readFile(new URL(asset.file,root));
+    assert.equal(bytes.length,asset.bytes);assert.equal(createHash('sha256').update(bytes).digest('hex'),asset.sha256);
+    assert.equal(bytes.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+    if(asset.size){assert.equal(bytes.readUInt32BE(16),asset.size);assert.equal(bytes.readUInt32BE(20),asset.size);}
+    if(revision===3)assert.equal(bytes[25],6,'RGBA icon');
+  }
 }
 console.log(`Verified ${uiFiles.size} admitted generated UI PNGs: hashes, paths and image dimensions.`);

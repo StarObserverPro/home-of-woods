@@ -7,24 +7,27 @@ import {travelAccess,bridgeOpen} from '../world/regions.ts';
 import type {GameState} from '../domain/state.ts';
 import type {Resources} from './resources.ts';
 import {InteractionRegistry} from './interaction-registry.ts';
-import {createSign} from './models.ts';
+import {createSign} from './wayfinding-sign.ts';
+import {woodCoordinates,woodMaterial} from './wood-grain.ts';
+import {beveledTimber} from './beveled-timber.ts';
 
 /** Original modular timber bridge. Every plank and the walking surface share one profile. */
 export function createCreekBridge(r:Resources){
   const group=new THREE.Group(),built=new THREE.Group(),hits=new InteractionRegistry();
   group.name=CREEK_BRIDGE.id;built.name='creek-bridge-deck';group.add(built);
   const {west,east,width}=CREEK_BRIDGE,length=east.x-west.x;
-  const box=r.geometry('bridge-timber-unit',()=>new THREE.BoxGeometry(1,1,1));
-  const timber=r.material('#956b40',.8),plank=r.material('#ba935e',.78),end=r.material('#d1b080',.8);
+  const box=r.geometry('bridge-timber-unit',()=>woodCoordinates(beveledTimber(1,1,1,.04),'board','y'));
+  const timber=woodMaterial(r,'#8c6442'),plank=woodMaterial(r,'#b28b61'),end=woodMaterial(r,'#bf9a69');
   function beam(parent:THREE.Group,a:THREE.Vector3,b:THREE.Vector3,thickness:number,material=timber){
     const mesh=new THREE.Mesh(box,material),delta=b.clone().sub(a);mesh.position.copy(a).add(b).multiplyScalar(.5);mesh.scale.set(thickness,delta.length(),thickness);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());mesh.castShadow=mesh.receiveShadow=true;parent.add(mesh);
   }
   const count=48,parts:THREE.BufferGeometry[]=[];
   for(let i=0;i<count;i++){
-    const x=west.x+(i+.5)*length/count,geometry=box.clone(),position=geometry.getAttribute('position');
+    const x=west.x+(i+.5)*length/count;
+    const geometry=woodCoordinates(beveledTimber(1,1,1,.024),'board','z',i),position=geometry.getAttribute('position');
     for(let j=0;j<position.count;j++){
       const wx=x+position.getX(j)*length/count*.96,wz=west.z+position.getZ(j)*width;
-      position.setXYZ(j,wx,bridgeHeightAt(wx,wz)+(position.getY(j)>.0?0:-.26),wz);
+      position.setXYZ(j,wx,bridgeHeightAt(wx,wz)+(position.getY(j)-.5)*.26,wz);
     }
     geometry.computeVertexNormals();parts.push(geometry);
   }
@@ -34,10 +37,12 @@ export function createCreekBridge(r:Resources){
     const z=west.z+side*(width/2-.1);
     for(let i=0;i<9;i++){
       const x=west.x+i*length/8,y=bridgeHeightAt(x,z);
-      beam(built,new THREE.Vector3(x,y-.4,z),new THREE.Vector3(x,y+1.25,z),.2,end);
+      beam(built,new THREE.Vector3(x,y-.4,z),new THREE.Vector3(x,y+1.27,z),i===0||i===8?.29:.21,end);
       if(i){const px=west.x+(i-1)*length/8,py=bridgeHeightAt(px,z);
-        beam(built,new THREE.Vector3(px,py+1.1,z),new THREE.Vector3(x,y+1.1,z),.14);
+        beam(built,new THREE.Vector3(px,py+1.08,z),new THREE.Vector3(x,y+1.08,z),.19);
+        beam(built,new THREE.Vector3(px,py+.51,z),new THREE.Vector3(x,y+.51,z),.11);
         beam(built,new THREE.Vector3(px,py-.4,z),new THREE.Vector3(x,y-.4,z),.32);
+        if(i%2)beam(built,new THREE.Vector3(px,py+.51,z),new THREE.Vector3(x,y+1.08,z),.10);
       }
       if(i%2===0)beam(built,new THREE.Vector3(x,heightAt(x,z)-.4,z),new THREE.Vector3(x,y-.25,z),.34);
     }

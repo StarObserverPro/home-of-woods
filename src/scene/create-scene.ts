@@ -56,7 +56,8 @@ import {makeColliders} from "../world/layout.ts";
 import type { Collider,Tree } from "../world/layout.ts";
 import { heightAt, clamp } from "../world/surface.ts";
 import { Resources } from "./resources.ts";
-import { Models, createSign } from "./models.ts";
+import { Models } from "./models.ts";
+import {createSign} from "./wayfinding-sign.ts";
 import { createScenery, createTerrain } from "./terrain.ts";
 import {createEnvironment} from './environment.ts';
 import {createWeatherPresentation} from './weather-presentation.ts';
@@ -193,7 +194,7 @@ export async function createScene(
   // Batches are registered before their shared atlas, so teardown releases users first.
   if(forestAtlas)r.own(forestAtlas);
   scene.add(horizon.group);
-  const river=createCreek(r,water,horizon.riverExtensions),camp=createCampProps(r);
+  const river=createCreek(r,water,horizon.riverExtensions),camp=createCampProps(r,models.clone('drying-vessels'));
   const bridge=createCreekBridge(r);
   scene.add(river.group,camp.group,bridge.group);
   const auditParams=new URLSearchParams(window.location.search),auditHour=auditParams.has('inspect')&&auditParams.has('hour')?Number(auditParams.get('hour')):NaN;
@@ -300,7 +301,7 @@ export async function createScene(
   let readingMode=false,mealFraming=false;
   let lastState:GameState|null=null;
   scene.add(player,characters.visitor);
-  const merchantWagon=createMerchantWagon(r);scene.add(merchantWagon.group);
+  const merchantWagon=createMerchantWagon(r,models.clone('merchant-wagon'));scene.add(merchantWagon.group);
   const wildlife=createWildlifePresentation(r,models);scene.add(wildlife.group);
   const workshop=createWorkshopPresentation(r,models);scene.add(workshop.group);workshop.hits.register(characters.visitor,CAMP_VISITOR.id);workshop.hits.register(merchantWagon.group,CAMP_VISITOR.id);
   workshop.hits.register(neighbour.group,RIDGE_NEIGHBOUR.id);

@@ -7,7 +7,6 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import {geometryContactTarget} from './axe-contact.ts';
 import {heightAt} from '../world/surface.ts';
-import { PALETTE } from "../content/world.ts";
 import { ENABLED_RUNTIME_MODELS } from '../content/assets.ts';
 import { LOCAL_CHARACTER_MODELS,LOCAL_CHARACTER_PREFIX } from '../content/characters.ts';
 import type { Tree } from "../world/layout.ts";
@@ -210,48 +209,4 @@ export class Models {
     }
     return { group, selections, mappings, material,sceneryBatches,canopyTrees };
   }
-}
-export function createSign(r: Resources, label: string) {
-  const group = new THREE.Group();
-  const post = new THREE.Mesh(
-    r.geometry(
-      "sign-post",
-      () => new THREE.CylinderGeometry(0.13, 0.17, 2.4, 7),
-    ),
-    r.material(PALETTE.wood),
-  );
-  post.position.y = 1.2;
-  post.castShadow = true;
-  group.add(post);
-  const board = new THREE.Mesh(
-    r.geometry("sign-board", () => new THREE.BoxGeometry(2.7, 0.95, 0.18)),
-    r.material("#c0a270"),
-  );
-  board.position.set(0, 2.1, 0);
-  board.castShadow = true;
-  group.add(board);
-  const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 160;
-  const ctx = canvas.getContext("2d")!;
-  ctx.fillStyle = "#443f2c";
-  ctx.font = '600 55px "Microsoft YaHei",sans-serif';
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(label, 256, 80);
-  const texture = r.own(new THREE.CanvasTexture(canvas));
-  texture.colorSpace = THREE.SRGBColorSpace;
-  const text = new THREE.Mesh(
-    r.geometry("sign-text", () => new THREE.PlaneGeometry(2.55, 0.8)),
-    r.own(
-      new THREE.MeshBasicMaterial({
-        map: texture,
-        transparent: true,
-        depthWrite: false,
-      }),
-    ),
-  );
-  text.position.set(0, 2.1, 0.1);
-  group.add(text);
-  return group;
 }

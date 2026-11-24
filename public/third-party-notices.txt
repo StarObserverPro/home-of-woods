@@ -115,3 +115,12 @@ Home of Woods rustic UI surfaces — HOW-UI-RUSTIC-R2 (2026-11-06)
 Project-authored SVG bark and split-wood textures in /assets/ui-r2/.
 Created for this project from its accepted UI prototype. No third-party inputs;
 not designated third-party CC0. Existing UI icons retain the R1 provenance above.
+
+Home of Woods UI artwork — HOW-UI-ART-R3
+AI-generated with built-in ImageGen using existing R1 icons as style references.
+The 64/128 px deliverables and their hashes are in /assets/ui-r3/manifest.json.
+
+Camp props — CC0 1.0 Universal
+Covered Wagon v1, Potion Bottle v1 and Teapot v1 by Codels.
+Pickup Jar by Quaternius, via Poly Pizza. Models adapted for Home of Woods.
+Sources, adaptations and license paths: /assets/manifest.json

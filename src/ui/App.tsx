@@ -67,34 +67,9 @@ import type {ArtIconName} from './art-icons.ts';
 import {HousingControls,housingDetails,isHousingItem} from './Housing.tsx';
 import {BroomControls,broomDetails,ItemOracleControls} from './Household.tsx';
 
-function Leaf({ size = 24 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 32 32"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M27 4C12 2 4 8 5 18c.5 7 7 10 13 6C24 20 26 12 27 4Z"
-        fill="currentColor"
-      />
-      <path
-        d="m7 27 15-17M12 21l-1-8M15 18l8-1"
-        stroke="#f5f0de"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-const HUD_ART:Record<string,ArtIconName>={pause:'pause',home:'cabin',map:'route',warehouse:'inventory',axe:'axe',help:'settings',camera:'camera'};
-function Icon({name}:{name:string}) {
-  if(HUD_ART[name])return <GameIcon name={HUD_ART[name]} size={28}/>;
-  return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    {name==='walk'?<><circle cx="13" cy="4" r="2"/><path d="m10 9 3-2 3 5 3 1M13 8l-2 7-4 6M11 15l5 6M9 10l-4 3"/></>:name==='reset'?<path d="M4 8a8 8 0 1 1 0 8M4 3v5h5"/>:<path d="m15 6-6 6 6 6"/>}
-  </svg>;
+const HUD_ART={pause:'pause',home:'cabin',map:'route',warehouse:'inventory',axe:'axe',help:'settings',camera:'camera',walk:'approach',reset:'camera-reset'} as const satisfies Record<string,ArtIconName>;
+function Icon({name}:{name:keyof typeof HUD_ART}) {
+  return <GameIcon name={HUD_ART[name]} size={28}/>;
 }
 
 const trees = makeTrees();
@@ -466,7 +441,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
       <div className="vignette" aria-hidden="true" />
       <header className="topbar">
         <section className="brand" aria-label="当前位置">
-          <Leaf size={30} />
+          <GameIcon name="forest-leaf" size={25}/>
           <div className="journey-summary">
             <h1>{snapshot.zone}</h1>
             <p className="journey-meta">
@@ -556,13 +531,13 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
           aria-label="镜头左转"
           onClick={() => runtime.current?.camera("left")}
         >
-          ↶
+          <GameIcon name="camera-left" size={26}/>
         </button>
         <button
           aria-label="镜头右转"
           onClick={() => runtime.current?.camera("right")}
         >
-          ↷
+          <GameIcon name="camera-right" size={26}/>
         </button>
         <span />
         <button
@@ -571,14 +546,14 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
           title={cameraExpansionBlocked?'近景操作结束后可缩远':'缩小'}
           onClick={() => runtime.current?.camera("out")}
         >
-          −
+          <GameIcon name="camera-zoom-out" size={26}/>
         </button>
         <button aria-label="放大" onClick={() => runtime.current?.camera("in")}>
-          ＋
+          <GameIcon name="camera-zoom-in" size={26}/>
         </button>
         {!indoors&&<>
-          <button aria-label="抬高镜头" disabled={cameraExpansionBlocked} title={cameraExpansionBlocked?'近景操作结束后可升降':'抬高镜头，固定观察点'} onClick={()=>runtime.current?.camera('raise')}>↑</button>
-          <button aria-label="降低镜头" disabled={cameraExpansionBlocked} title={cameraExpansionBlocked?'近景操作结束后可升降':'降低镜头'} onClick={()=>runtime.current?.camera('lower')}>↓</button>
+          <button aria-label="抬高镜头" disabled={cameraExpansionBlocked} title={cameraExpansionBlocked?'近景操作结束后可升降':'抬高镜头，固定观察点'} onClick={()=>runtime.current?.camera('raise')}><GameIcon name="camera-raise" size={26}/></button>
+          <button aria-label="降低镜头" disabled={cameraExpansionBlocked} title={cameraExpansionBlocked?'近景操作结束后可升降':'降低镜头'} onClick={()=>runtime.current?.camera('lower')}><GameIcon name="camera-lower" size={26}/></button>
         </>}
         <span />
         <button
@@ -863,7 +838,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
       </dialog>
       {!ready && !error && (
         <div className="loading">
-          <Leaf size={40} />
+          <GameIcon name="forest-leaf" size={40}/>
           <h2>山谷正在醒来</h2>
           <p>铺好小路，等你回家。</p>
         </div>

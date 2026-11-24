@@ -4,6 +4,8 @@ import type {ForestExpeditionRuntime} from '../app/forest-expedition-runtime.ts'
 import {EXPEDITIONS, EXPEDITION_BY_ID} from '../content/forest-expedition.ts';
 import type {ExpeditionPoint} from '../content/forest-expedition.ts';
 import type {ForestExpeditionSnapshot} from '../domain/forest-expedition.ts';
+import {GameIcon} from './GameIcon.tsx';
+import {itemIcon} from './art-icons.ts';
 import {TimberButton, TimberHeading, TimberPanel} from './timber/components.tsx';
 import {useWindowFocus} from './timber/use-window-focus.ts';
 import './timber/theme.css';
@@ -19,6 +21,10 @@ const decimal = (value: number) => Number(value.toFixed(1)).toString();
 const distanceLabel = (value: number) => value < 2 ? '就在身边' : `约 ${Math.ceil(value)} 米`;
 const durationLabel = (seconds: number) => seconds < 60 ? `${Math.ceil(seconds)} 秒` : `${Math.ceil(seconds / 60)} 分钟`;
 const pendingLabel = (mapId: keyof typeof EXPEDITION_BY_ID | null) => mapId ? `${EXPEDITION_BY_ID[mapId].name}的长材待归架` : '';
+
+function ProduceName({itemId,children}:{itemId:string;children:ReactNode}) {
+  return <span className="expedition-produce-name"><GameIcon name={itemIcon(itemId)} size={28}/><span>{children}</span></span>;
+}
 
 /** Lists retain their place while distances and quantities change. */
 function PagedList<T>({items, render, label, empty, pageSize = 4}: {
@@ -141,14 +147,14 @@ export function ForestExpeditionApp({runtime,onReturn}: {runtime: ForestExpediti
       </div>
       {bagTab === 'carried' && <PagedList items={domain.carried} label="随身物品" empty="行囊还是空的。走近林间物产，采集后就会放在这里。" render={stack =>
         <div key={stack.key} className="expedition-stock-row" data-ui-grid="row">
-          <div className="expedition-row-copy"><strong>{stack.name} <span>× {stack.quantity}</span></strong>{stack.pendingMapId && <small>{pendingLabel(stack.pendingMapId)}</small>}</div>
+          <div className="expedition-row-copy"><strong><ProduceName itemId={stack.itemId}>{stack.name} × {stack.quantity}</ProduceName></strong>{stack.pendingMapId && <small>{pendingLabel(stack.pendingMapId)}</small>}</div>
           <div className="expedition-row-actions"><TimberButton emphasis="quiet" disabled={busy || view.paused} aria-label={`放下全部${stack.name}`} onClick={() => runtime.carry({kind: 'drop', key: stack.key, quantity: 'max'})}>放下</TimberButton>
             <TimberButton disabled={busy || view.paused} aria-label={domain.storage.near ? `存入全部${stack.name}` : '走到补给架'} onClick={() => domain.storage.near ? runtime.carry({kind: 'store', key: stack.key}) : supply()}>{domain.storage.near ? '存入' : '归架'}</TimberButton></div>
         </div>}/>}
       {bagTab === 'stored' && <>
         <p className="expedition-note">三块林地共用这些寄存物。{domain.storage.near ? '在补给架旁可取回。' : '走回补给架后才能取回。'}</p>
         <PagedList items={domain.stored} label="寄存物品" empty="补给架上还没有你的材料。把随身采集物带回来存放，也能用于加工。" render={stack =>
-          <div key={stack.key} className="expedition-stock-row" data-ui-grid="row"><div className="expedition-row-copy"><strong>{stack.name}</strong><span>共 {stack.quantity} 份</span></div>
+          <div key={stack.key} className="expedition-stock-row" data-ui-grid="row"><div className="expedition-row-copy"><strong><ProduceName itemId={stack.itemId}>{stack.name}</ProduceName></strong><span>共 {stack.quantity} 份</span></div>
             <div className="expedition-row-actions"><TimberButton disabled={busy || view.paused} aria-label={`取回一份${stack.name}`} onClick={() => domain.storage.near ? runtime.carry({kind: 'withdraw', key: stack.key, quantity: 1}) : supply()}>{domain.storage.near ? '取一份' : '去补给'}</TimberButton>
               {domain.storage.near && stack.quantity > 1 && <TimberButton emphasis="quiet" disabled={busy || view.paused} aria-label={`尽量取回${stack.name}`} onClick={() => runtime.carry({kind: 'withdraw', key: stack.key, quantity: 'max'})}>尽量取</TimberButton>}</div>
           </div>}/>
@@ -156,7 +162,7 @@ export function ForestExpeditionApp({runtime,onReturn}: {runtime: ForestExpediti
       {bagTab === 'ground' && <>
         <p className="expedition-note">这里列出本林地放下的材料；离开后仍会留在原处。</p>
         <PagedList items={ground} label="地面物品" empty="这块林地没有尚未拿回的材料。" render={stack =>
-          <div key={stack.key} className="expedition-stock-row" data-ui-grid="row"><div className="expedition-row-copy"><strong>{stack.name} <span>× {stack.quantity}</span></strong><span>{distanceLabel(stack.distance)}</span>{stack.near && stack.takeReason && <small>{stack.takeReason}</small>}</div>
+          <div key={stack.key} className="expedition-stock-row" data-ui-grid="row"><div className="expedition-row-copy"><strong><ProduceName itemId={stack.itemId}>{stack.name} × {stack.quantity}</ProduceName></strong><span>{distanceLabel(stack.distance)}</span>{stack.near && stack.takeReason && <small>{stack.takeReason}</small>}</div>
             <TimberButton disabled={view.paused || (stack.near && !!stack.takeReason)} onClick={() => stack.near ? runtime.carry({kind: 'take', key: stack.key, quantity: 'max'}) : inspectGround(stack)}>{stack.near ? '拿起来' : '走近'}</TimberButton>
           </div>}/>
       </>}
@@ -169,7 +175,7 @@ export function ForestExpeditionApp({runtime,onReturn}: {runtime: ForestExpediti
       <p className="expedition-note">按距离排列。先查看或走近，到达后再决定采集。</p>
       <PagedList items={sources} label="附近物产" empty="附近暂时没有可查看的物产。" render={source =>
         <div key={source.id} className="expedition-source-row" data-ui-grid="row" data-source-id={source.id}>
-          <div className="expedition-row-copy"><strong>{source.name}</strong><span>{distanceLabel(source.distance)} · 余量 {source.remaining}</span>{source.depleted && <small>{source.recoverable ? `${durationLabel(source.waitSeconds)}后再来` : '已收取'}</small>}</div>
+          <div className="expedition-row-copy"><strong><ProduceName itemId={source.itemId}>{source.name}</ProduceName></strong><span>{distanceLabel(source.distance)} · 余量 {source.remaining}</span>{source.depleted && <small>{source.recoverable ? `${durationLabel(source.waitSeconds)}后再来` : '已收取'}</small>}</div>
           <div className="expedition-row-actions"><TimberButton emphasis="quiet" onClick={() => inspectSource(source)}>查看</TimberButton><TimberButton disabled={view.paused} onClick={() => inspectSource(source, true)}>走近</TimberButton></div>
         </div>}/>
       <div className="expedition-landmark-list" data-ui-grid="content"><h3>林地地标</h3>
@@ -238,10 +244,10 @@ export function ForestExpeditionApp({runtime,onReturn}: {runtime: ForestExpediti
         <DirectionButton runtime={runtime} className="expedition-direction-down" label="向后走" x={0} y={1}>↓</DirectionButton>
       </div>
       <div className={`expedition-camera${view.selected ? ' expedition-camera-with-target' : ''}`} data-ui-grid="hud" aria-label="镜头控制">
-        <TimberButton emphasis="quiet" aria-label="镜头向左转" onClick={() => runtime.orbit(36)}>↶</TimberButton>
-        <TimberButton emphasis="quiet" aria-label="镜头向右转" onClick={() => runtime.orbit(-36)}>↷</TimberButton>
-        <TimberButton emphasis="quiet" aria-label="拉近镜头" onClick={() => runtime.zoom(-160)}>＋</TimberButton>
-        <TimberButton emphasis="quiet" aria-label="拉远镜头" onClick={() => runtime.zoom(160)}>−</TimberButton>
+        <TimberButton emphasis="quiet" aria-label="镜头向左转" onClick={() => runtime.orbit(36)}><GameIcon name="camera-left" size={24}/></TimberButton>
+        <TimberButton emphasis="quiet" aria-label="镜头向右转" onClick={() => runtime.orbit(-36)}><GameIcon name="camera-right" size={24}/></TimberButton>
+        <TimberButton emphasis="quiet" aria-label="拉近镜头" onClick={() => runtime.zoom(-160)}><GameIcon name="camera-zoom-in" size={24}/></TimberButton>
+        <TimberButton emphasis="quiet" aria-label="拉远镜头" onClick={() => runtime.zoom(160)}><GameIcon name="camera-zoom-out" size={24}/></TimberButton>
         <TimberButton className="expedition-camera-reset" emphasis="quiet" onClick={() => runtime.resetCamera()}>复位</TimberButton>
       </div>
     </>}

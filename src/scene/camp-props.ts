@@ -3,6 +3,8 @@ import {setWoodInstanceTone} from './wood-tones.ts';
 import {woodCoordinates,woodMaterial} from './wood-grain.ts';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
+import {beveledTimber} from './beveled-timber.ts';
 import {CAMP_PROPS,DINING_SEAT} from '../content/scene-props.ts';
 import {LOG_SHELTER_POSTS} from '../content/weather.ts';
 import type {SceneAppearance} from '../content/scene-props.ts';
@@ -15,7 +17,7 @@ import {planStoneFoundation} from '../world/prop-foundation.ts';
 import {createStoneFoundation} from './stone-foundation.ts';
 import {createAltarCrown} from './altar.ts';
 
-export function createCampProps(r:Resources){
+export function createCampProps(r:Resources,dryingVessels?:THREE.Group){
   const group=new THREE.Group();group.name='r5-camp-and-grove';
   const roots=new Map<string,THREE.Group>();
   for(const spec of Object.values(CAMP_PROPS)){const root=new THREE.Group();root.name=spec.id;root.userData.propId=spec.id;root.position.set(spec.x,heightAt(spec.x,spec.z),spec.z);roots.set(spec.id,root);group.add(root);}
@@ -26,7 +28,12 @@ export function createCampProps(r:Resources){
   const merge=(parent:THREE.Object3D,parts:THREE.BufferGeometry[],color:string)=>{const g=mergeGeometries(parts);parts.forEach(p=>p.dispose());if(!g)throw new Error('Cannot merge prop');return mesh(parent,g,color);};
   const woodMesh=(parent:THREE.Object3D,g:THREE.BufferGeometry,color:string,x=0,y=0,z=0)=>{const m=new THREE.Mesh(r.own(g),woodMaterial(r,color,.78));m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;parent.add(m);return m;};
   const woodCylinder=(top:number,bottom:number,height:number,segments=8)=>woodCoordinates(new THREE.CylinderGeometry(top,bottom,height,segments),'raw','y');
-  const woodBox=(x:number,y:number,z:number)=>woodCoordinates(new THREE.BoxGeometry(x,y,z));
+  const woodBox=(x:number,y:number,z:number,axis?:'x'|'y'|'z')=>woodCoordinates(beveledTimber(x,y,z,.022),'board',axis);
+  const timberBrace=(parent:THREE.Object3D,a:THREE.Vector3,b:THREE.Vector3,width:number)=>{
+    const line=b.clone().sub(a),center=a.clone().lerp(b,.5);
+    const brace=woodMesh(parent,woodBox(width,line.length(),width,'y'),'#886549',center.x,center.y,center.z);
+    brace.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),line.normalize());
+  };
   const stones:THREE.BufferGeometry[]=[];
   for(let i=0;i<11;i++){const a=i/11*Math.PI*2;stones.push(new THREE.IcosahedronGeometry(.36,0).scale(1.1,.7,.9).rotateY(a).translate(Math.cos(a)*1.15,.2,Math.sin(a)*1.15));}
   merge(fire,stones,'#8c9690');mesh(fire,new THREE.CylinderGeometry(1.04,1.1,.11,12),'#41392e',0,.06);
@@ -49,14 +56,32 @@ export function createCampProps(r:Resources){
   }
   woodMesh(dryerSite,woodCylinder(.08,.08,1.7,6).rotateZ(Math.PI/2).rotateY(.45),'#97754b',0,.18,0);
   const dryerFrame=new THREE.Group();dryerFrame.name='built-drying-rack';dryer.add(dryerFrame);
-  for(const x of [-.95,.95])for(const z of [-.5,.5])woodMesh(dryerFrame,woodCylinder(.09,.11,2.1,6),'#816646',x,1.05,z);
-  for(const z of [-.5,.5])woodMesh(dryerFrame,woodCylinder(.085,.085,2.05,6).rotateZ(Math.PI/2),'#aa865e',0,2.1,z);
-  for(const x of [-.95,.95])woodMesh(dryerFrame,woodCylinder(.065,.065,1.1,6).rotateX(Math.PI/2),'#aa865e',x,2.05,0);
+  for(const x of [-.95,.95])for(const z of [-.5,.5]){
+    const foot=heightAt(CAMP_PROPS.dryer.x+x,CAMP_PROPS.dryer.z+z)-dryer.position.y;
+    const base=foot+.09,top=2.09;
+    woodMesh(dryerFrame,woodBox(.14,top-base,.145,'y'),'#856747',x,(top+base)/2,z);
+    mesh(dryerFrame,new RoundedBoxGeometry(.235,.13,.23,1,.025),'#858074',x,foot+.055,z);
+  }
+  for(const z of [-.5,.5]){
+    woodMesh(dryerFrame,woodBox(2.21,.16,.15,'x'),'#b38a60',0,2.10,z);
+    for(const x of [-.95,.95])timberBrace(dryerFrame,new THREE.Vector3(x,1.62,z),new THREE.Vector3(x*.66,2.05,z),.09);
+  }
+  for(const x of [-.95,.95]){
+    woodMesh(dryerFrame,woodBox(.12,.11,1.18,'z'),'#a88056',x,1.98,0);
+    woodMesh(dryerFrame,woodBox(.15,.11,1.14,'z'),'#a88056',x,.695,0);
+  }
+  woodMesh(dryerFrame,woodBox(2.04,.07,.075,'x'),'#b88d62',0,1.95,0);
+  for(const z of [-.38,-.23,-.08,.08,.23,.38])woodMesh(dryerFrame,woodBox(2.05,.05,.115,'x'),'#bd986b',0,.77,z);
+  if(dryingVessels){
+    dryingVessels.position.y=.795;
+    dryerFrame.add(dryingVessels);
+  }
   const dryingMushrooms=new THREE.Group();dryingMushrooms.name='hung-mushrooms';dryerFrame.add(dryingMushrooms);
   for(let i=0;i<5;i++){
     const x=-.76+i*.38;
     mesh(dryingMushrooms,new THREE.CylinderGeometry(.022,.022,.38,5),'#c7b690',x,1.77,0);
-    mesh(dryingMushrooms,new THREE.ConeGeometry(.17,.16,7),'#ac8764',x,1.57,0);
+    const cap=new THREE.LatheGeometry([[0,0],[.1,0],[.165,.045],[.13,.095],[.07,.12],[0,.126]].map(([r,y])=>new THREE.Vector2(r,y)),9);
+    mesh(dryingMushrooms,cap,'#ac7951',x,1.51,0);
   }
   // An unobtrusive stump for voluntary evening reading beside the existing fire.
   const sitX=DINING_SEAT.x-CAMP_PROPS.fire.x,sitZ=DINING_SEAT.z-CAMP_PROPS.fire.z;
@@ -78,11 +103,22 @@ export function createCampProps(r:Resources){
   for(const z of [-1.4,1.4])woodMesh(store,woodBox(4,.2,.2),'#786044',0,.15,z);
   // The stored stock has a real roof matching the sheltered weather footprint.
   const canopy=new THREE.Group();canopy.name='log-store-rain-canopy';store.add(canopy);
-  for(const post of LOG_SHELTER_POSTS)woodMesh(canopy,woodBox(.14,2.65,.14),'#795b3b',post.x,1.325,post.z);
+  for(const post of LOG_SHELTER_POSTS){
+    const foot=heightAt(CAMP_PROPS.logs.x+post.x,CAMP_PROPS.logs.z+post.z)-store.position.y-.06;
+    woodMesh(canopy,woodBox(.14,2.58-foot,.14,'y'),'#795b3b',post.x,(foot+2.58)/2,post.z);
+    timberBrace(canopy,new THREE.Vector3(post.x,2.16,post.z),new THREE.Vector3(post.x,2.52,post.z*.64),.10);
+  }
+  for(const side of [-1,1])woodMesh(canopy,woodBox(.16,.22,3.46,'z'),'#856244',side*1.9,2.595,0);
   const roofAngle=Math.atan2(.55,2.2),roofLength=Math.hypot(2.2,.55);
   for(const side of [-1,1]){
-    const roof=woodMesh(canopy,woodBox(roofLength+.12,.12,3.6),'#7c6245',side*1.1,2.925,0);
-    roof.rotation.z=-side*roofAngle;roof.name='log-store-roof';
+    const slope=new THREE.Group();
+    slope.position.set(side*1.1,2.925,0);slope.rotation.z=-side*roofAngle;canopy.add(slope);
+    const roof=woodMesh(slope,woodBox(roofLength+.10,.09,3.6,'x'),'#765c44');
+    roof.name='log-store-roof';
+    for(let i=0;i<9;i++){
+      const color=['#946f50','#896749','#9c7855'][i%3];
+      woodMesh(slope,woodBox(roofLength+.12,.065,.387,'x'),color,0,.062,(i-4)*.4);
+    }
   }
   woodMesh(canopy,woodBox(.17,.16,3.75),'#a5855b',0,3.23,0).name='log-store-roof-ridge';
   const logGeo=r.geometry('r5-stock-log',()=>woodCoordinates(new THREE.CylinderGeometry(.31,.33,2.6,9),'raw','y').rotateX(Math.PI/2));
