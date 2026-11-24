@@ -19,11 +19,11 @@ const report = {
   status: 'running', startedAt: new Date().toISOString(), origin,
   sourceRevision: process.env.SOURCE_REVISION ?? execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
   target: 'Actual main game served by Vite DEV; production compilation is checked separately by the workflow.',
-  captureInputs: { seed: 104729, dpr: 1, hour: 14, weather: 'sunny', naturalMinimumGameSeconds: 2,
+  captureInputs: { seed: 104729, dpr: 1, hour: 14, weather: 'sunny', naturalMinimumGameSeconds: 2, naturalViewport: { width: 550, height: 380 },
     viewports: [{ width: 1100, height: 760 }, { width: 390, height: 844 }] },
   limits: [
     'SwiftShader and touch emulation provide functional WebGL evidence, not physical mobile GPU performance.',
-    'Natural blink evidence uses normal game time and published diagnostics, with no fixed-step advance or extra RAF.',
+    'Natural blink evidence uses normal game time and published diagnostics in a compact 550x380 desktop canvas, with no fixed-step advance or extra RAF. Full-size desktop and portrait-phone frames use the paused inspector.',
     'Frames named sampled use the paused fox inspector and absolute animation samples; they are not natural gameplay.',
     'Private NP120/J01 files are absent from public CI; exact optional local-character 204/404 responses are recorded and the shipped KayKit fallback remains visible.',
     'Human inspection of the actual PNGs is required for eye appeal, gaze direction, silhouette and foot placement.',
@@ -117,7 +117,7 @@ async function doctor() {
 }
 
 async function fresh(flow) {
-  const context = await browser.newContext({ viewport: flow.viewport, deviceScaleFactor: 1,
+  const context = await browser.newContext({ viewport: report.captureInputs.naturalViewport, deviceScaleFactor: 1,
     hasTouch: flow.name === 'phone', isMobile: flow.name === 'phone', reducedMotion: 'no-preference' });
   flow.context = context;
   await context.addInitScript(() => {
@@ -224,7 +224,7 @@ async function saveFrame(page, flow, name, image, state, requested = null, refer
     const gl = canvas.getContext('webgl2');
     return gl ? { available: true, contextLost: gl.isContextLost(), error: gl.getError(), version: gl.getParameter(gl.VERSION) } : { available: false };
   });
-  report.frames.push({ name, viewport: flow.viewport, dpr: 1, sampled: requested !== null, requested,
+  report.frames.push({ name, viewport: page.viewportSize(), dpr: 1, sampled: requested !== null, requested,
     actualFox: requested ? inspectedFox(state) : state.wildlife.expressions, gameTime: state.gameTime,
     camera: state.sceneSpace.outdoorCamera, drawCalls: state.drawCalls, triangles: state.triangles,
     shaderErrors: state.shaderErrors, graphicsBackend: state.graphicsBackend, webgl, pixels: pixelStats,
@@ -241,20 +241,7 @@ async function natural(page, flow) {
   phase = flow.name + ': natural gameplay';
   await page.evaluate(() => { window.__HOW_FOX_OBSERVATION__.stage = 'natural'; });
   await page.getByRole('button', { name: '回到山谷', exact: true }).evaluate(button => button.click());
-  // Use the ordinary player camera controls. The default wide valley framing
-  // made software WebGL spend four wall minutes on fewer than six game seconds.
-  // Zooming is a normal UI action and never borrows the paused scene inspector.
-  await page.getByRole('button', { name: '镜头', exact: true }).evaluate(button => button.click());
-  await page.getByRole('button', { name: '放大', exact: true }).evaluate(button => {
-    for (let index = 0; index < 7; index++) button.click();
-  });
-  await page.getByRole('button', { name: '镜头', exact: true }).evaluate(button => button.click());
-  await page.waitForFunction(() => {
-    const state = JSON.parse(document.querySelector('#runtime-stats').textContent).current;
-    const camera = state.sceneSpace.outdoorCamera;
-    return state.scenePreset === null && camera.owner === 'navigation' && camera.overlook.current.zoom > 2.3 && !camera.overlook.pending;
-  }, undefined, { timeout: 120000, polling: 100 });
-  flow.naturalCamera = { controls: ['镜头', '放大 × 7', '镜头'], camera: (await stats(page)).sceneSpace.outdoorCamera };
+  flow.naturalCamera = { viewport: page.viewportSize(), camera: (await stats(page)).sceneSpace.outdoorCamera };
   await page.waitForFunction(minimumGameSeconds => {
     const samples = window.__HOW_FOX_OBSERVATION__.samples.filter(sample => sample.stage === 'natural' && sample.scenePreset === null && sample.loop === 'simulation');
     const blinks = samples.flatMap(sample => sample.expressions.filter(expression => !expression.id.includes('inspect:')).map(expression => expression.blink));
@@ -365,7 +352,15 @@ try {
     const flow = { name: viewport.width < 600 ? 'phone' : 'desktop', viewport }; report.flows.push(flow);
     try {
       phase = flow.name + ': load starter'; const page = await fresh(flow);
-      await natural(page, flow); await sampled(page, flow);
+      // Produce the requested full-size eye/rig images first. A slow optional
+      // live observation must never discard those already reviewable frames.
+      await page.setViewportSize(flow.viewport);
+      await sampled(page, flow);
+      if (flow.name === 'desktop') {
+        await page.setViewportSize(report.captureInputs.naturalViewport);
+        await page.getByRole('button', { name: '结束场景检视', exact: true }).evaluate(button => button.click());
+        await natural(page, flow);
+      }
       assert.ok(report.assetResponses.some(response => response.flow === flow.name && response.url.endsWith('/assets/wildlife/fox.glb') && response.status === 200), 'The actual fox GLB request succeeds');
     } catch (error) {
       flow.failure = { phase, message: String(error.stack ?? error), stats: activePage ? await stats(activePage).catch(() => null) : null };
