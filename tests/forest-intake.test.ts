@@ -29,6 +29,6 @@ test('production understory has all admitted families, stays bounded and follows
  const grass=under.group.getObjectByName('understory-grass') as T.InstancedMesh,mat=new T.Matrix4(),pos=new T.Vector3();
  for(let i=0;i<grass.count;i++){grass.getMatrixAt(i,mat);pos.setFromMatrixPosition(mat);assert.ok(Math.abs(pos.y-heightAt(pos.x,pos.z)-.01)<.001);assert.ok(pathDistance(pos.x,pos.z)>2.79);}
  const state=createState(trees);under.update(state);const fern=under.group.getObjectByName('understory-fern') as T.InstancedMesh;fern.getMatrixAt(0,mat);assert.ok(mat.determinant()>0);
- for(const life of Object.values(state.forestry.slots))life.status='stump';under.update(state);fern.getMatrixAt(0,mat);assert.equal(mat.determinant(),0);
+ for(const life of Object.values(state.forestry.slots))life.status='stump';under.update(state);assert.equal(fern.count,0);
  assert.equal(JSON.stringify(trees),before);r.dispose();assert.equal(r.stats().extras,0);
 });

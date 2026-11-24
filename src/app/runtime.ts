@@ -64,7 +64,8 @@ import type { CabinAction, CabinVisit } from '../domain/cabin.ts';
 import { makeColliders, makeTrees } from "../world/layout.ts";
 import { heightAt, zoneName } from "../world/surface.ts";
 import { createScene } from "../scene/create-scene.ts";
-import { createLoop } from "./runtime-loop.ts";
+import { createLoop, requiredFrameMode } from "./runtime-loop.ts";
+import type { FrameMode } from "./runtime-loop.ts";
 import { RUNTIME_MODELS } from '../content/assets.ts';
 import { START,TENT } from '../content/world.ts';
 import { createGatheringRegistry } from '../domain/gathering-registry.ts';
@@ -350,7 +351,18 @@ export async function createRuntime(
   synchronizeWildlife();
   const frameTimes: number[] = [];
   let lastSampleAt:number|null=null;
-  const tick = (dt: number, now:number) => {
+  const tick = (dt: number, now:number, mode: Exclude<FrameMode, 'stopped'> = 'simulation', grantPreparation = false) => {
+    if (mode === 'presentation') {
+      // Continue bounded visual preparation/camera motion without advancing the
+      // world, actions, weather, cabin transitions or fixed-step remainder.
+      view.render(state, 0, dt, grantPreparation);
+      reportTime += dt;
+      if (reportTime > .15 || !view.hasPendingPresentation()) {
+        reportTime = 0;
+        publishSnapshot();
+      }
+      return;
+    }
     accumulator += dt;
     while (accumulator >= MOVEMENT.fixedStep) {
       // An open inventory freezes walking and the world clock, while nearby wood can settle.
@@ -433,7 +445,7 @@ export async function createRuntime(
       }
     }
     const crossed=advanceCabinCrossing(dt);
-    view.render(state, dt);
+    view.render(state, dt, dt, grantPreparation);
     if (lastSampleAt!==null && dt > 0) {
       frameTimes.push(now-lastSampleAt);
       if (frameTimes.length > 360) frameTimes.shift();
@@ -446,7 +458,7 @@ export async function createRuntime(
     }
   };
   const loop = createLoop(
-    tick,
+    (dt,now,mode)=>tick(dt,now,mode,true),
     {
       request: (cb) => requestAnimationFrame(cb),
       cancel: (id) => cancelAnimationFrame(id),
@@ -547,9 +559,14 @@ export async function createRuntime(
       appearance:view.getAppearance(),
     });
   }
-  const loopPauseRequired=()=>captureHoldToken!==null||manualPause||inspectionOpen||contextLost||document.hidden||destroyed||inForest();
+  const desiredFrameMode=()=>requiredFrameMode(
+    captureHoldToken!==null||contextLost||document.hidden||destroyed||inForest(),
+    manualPause||inspectionOpen,
+    view.hasPendingPresentation(),
+  );
+  view.setPresentationScheduler(()=>loop.setMode(desiredFrameMode()));
   const syncPause = () => {
-    loop.setPaused(loopPauseRequired());
+    loop.setMode(desiredFrameMode());
     resetMovementInput();
     state.player.moving = false;
     if(cabin)cabin.player.moving=false;
@@ -627,7 +644,7 @@ export async function createRuntime(
   const unsubscribeSave = persistence.subscribe(() => {
     if (destroyed) return;
     if (persistence.status().state === 'protected' || persistence.status().state === 'conflict') {
-      manualPause = true; loop.setPaused(true);
+      manualPause = true; loop.setMode(desiredFrameMode());
     }
     publishSnapshot();
   });
@@ -655,7 +672,7 @@ export async function createRuntime(
   const transferBlocked=()=>destroyed||manualPause||inspectionOpen||contextLost||document.hidden||!!cabin||!!crossing||!!placement||workshopBusy(state)||!!state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state);
   const itemTransfers=createItemTransfers(state,woodcraft,view,activeColliders,transferBlocked);
   const clearPlacement=()=>{placement=null;view.setPlacement(null);};
-  loop.setPaused(loopPauseRequired());
+  loop.setMode(desiredFrameMode());
   publishSnapshot();
   // DEV inspection advances the existing fixed-step owner between captured frames.
   // It neither changes movement speed nor creates a second clock/RAF in the shipped game.
@@ -678,7 +695,7 @@ export async function createRuntime(
         // Capture release keeps the fixed-step remainder and input intent. Only
         // the existing loop's wall-time/sampling baselines restart after the hold.
         restoringCaptureHold=true;
-        try{loop.setPaused(loopPauseRequired());}
+        try{loop.setMode(desiredFrameMode());}
         finally{restoringCaptureHold=false;}
         return {released:true,held,after:snapshot()};
       },
@@ -698,7 +715,7 @@ export async function createRuntime(
       if(captureHoldToken!==null||inputBlocked()||!Number.isFinite(seconds)||seconds<=0||seconds>5)throw new Error('Inspection step unavailable');
       loop.setPaused(true);
       try{tick(seconds,performance.now());}
-      finally{loop.setPaused(loopPauseRequired());publishSnapshot();}
+      finally{loop.setMode(desiredFrameMode());publishSnapshot();}
     };
     inspectionWindow.__HOW_ADVANCE_SIMULATION__=advanceInspection;
   }

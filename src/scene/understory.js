@@ -39,15 +39,61 @@ for(let pass=0;pass<160;pass++)for(const tree of eligible){
  const y=height(x,z)+.18;put('log',broken,0x67503c,x,y,z,.25,1.7,.23,0,0,Math.PI/2);put('hollow',rod,0x342c24,x-.85,y,z,.16,.018,.14,0,0,Math.PI/2);put('moss',shrub,0x7f934e,x,y+.17,z,.45,.06,.15);put('snag',broken,0x67503c,x+.2,y+.15,z,.05,.5,.05,.6,0,.5);logCount++;
  }
 }
-const live=[];let triangles=0;
+// Keep the generated placements immutable. Visibility only changes the submitted
+// prefix, with matrix and tint moving together; hidden instances never reach a draw.
+const live=[],hosts=new Map(),chunks=new Map(),color=new T.Color();let capacityTriangles=0,capacityInstances=0;
 for(const [name,b] of Object.entries(batches)){
  const geometry=r.own(b.g.clone()),material=r.own(new T.MeshStandardMaterial({color:b.color,roughness:.85,side:T.DoubleSide}));
  const mesh=r.own(new T.InstancedMesh(geometry,material,b.items.length));mesh.name=`understory-${name}`;mesh.receiveShadow=true;
- b.items.forEach((v,i)=>{mesh.setMatrixAt(i,v.matrix);mesh.setColorAt(i,new T.Color().setScalar(v.tint));});mesh.computeBoundingSphere();group.add(mesh);live.push({mesh,items:b.items});triangles+=(geometry.index?.count??geometry.attributes.position.count)/3*b.items.length;
+ const submitted=new Int32Array(b.items.length),trianglesPerInstance=(geometry.index?.count??geometry.attributes.position.count)/3;
+ b.items.forEach((v,i)=>{
+  if(!chunks.has(v.chunk))chunks.set(v.chunk,{key:v.chunk,active:true});v.chunkState=chunks.get(v.chunk);
+  if(v.host&&!hosts.has(v.host))hosts.set(v.host,{id:v.host,active:true});v.hostState=v.host?hosts.get(v.host):null;
+  mesh.setMatrixAt(i,v.matrix);mesh.setColorAt(i,color.setScalar(v.tint));submitted[i]=i;
+ });
+ mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);mesh.instanceColor.setUsage(T.DynamicDrawUsage);
+ mesh.computeBoundingBox();mesh.computeBoundingSphere();group.add(mesh);live.push({mesh,items:b.items,submitted,trianglesPerInstance});
+ capacityTriangles+=trianglesPerInstance*b.items.length;capacityInstances+=b.items.length;
 }
 new Set([sphere,leaf,rod,grassGeometry,box,rock,shrub,fallen,broken]).forEach(g=>g.dispose());
-let last='';return {group,update(state,activeChunks){const signature=(activeChunks?[...activeChunks].sort().join(','):'all')+eligible.map(t=>{const life=state.forestry.slots[t.id];return `${life?.status}:${Math.round(treeScaleFactor(life,state.time)*10)}`;}).join('|');if(signature===last)return;last=signature;
- for(const batch of live){batch.items.forEach((v,i)=>{const life=v.host?state.forestry.slots[v.host]:null;const active=(!activeChunks||activeChunks.has(v.chunk))&&(!v.host||(life?.status!=='stump'&&life?.status!=='falling'&&treeScaleFactor(life,state.time)>.75));batch.mesh.setMatrixAt(i,active?v.matrix:new T.Matrix4().makeScale(0,0,0));});batch.mesh.instanceMatrix.needsUpdate=true;}
-
- },stats:()=>({version:'forest-intake-1',ferns:fernCount,grassTufts:grassCount,shrubs:shrubCount,stones:stoneCount,logs:logCount,triangles,batches:live.length,shadeThreshold:SHADE_THRESHOLD})};
+let previousChunks,previousRevision,previousState;
+return {group,update(state,activeChunks,activeChunksRevision){
+ let changed=false;
+ // A supplied revision belongs to the caller's chunk set. Legacy callers can
+ // mutate the same Set in place: without a revision, its small membership table
+ // is checked directly, without sorting or allocating a string every frame.
+ if(activeChunksRevision===undefined||activeChunks!==previousChunks||activeChunksRevision!==previousRevision||state!==previousState){
+  for(const chunk of chunks.values()){
+   const active=!activeChunks||activeChunks.has(chunk.key);
+   if(chunk.active!==active){chunk.active=active;changed=true;}
+  }
+ }
+ previousChunks=activeChunks;previousRevision=activeChunksRevision;previousState=state;
+ // Domain state can mutate in place, or be replaced by another world at the
+ // same time/revision. Check the actual visibility predicate on every update.
+ for(const host of hosts.values()){
+  const life=state.forestry.slots[host.id];
+  const active=life?.status!=='stump'&&life?.status!=='falling'&&treeScaleFactor(life,state.time)>.75;
+  if(host.active!==active){host.active=active;changed=true;}
+ }
+ if(!changed)return;
+ for(const batch of live){
+  let count=0,written=false;
+  for(let source=0;source<batch.items.length;source++){
+   const item=batch.items[source];if(!item.chunkState.active||(item.hostState&&!item.hostState.active))continue;
+   if(batch.submitted[count]!==source){
+    batch.mesh.setMatrixAt(count,item.matrix);batch.mesh.setColorAt(count,color.setScalar(item.tint));
+    batch.submitted[count]=source;written=true;
+   }
+   count++;
+  }
+  if(written){batch.mesh.instanceMatrix.needsUpdate=true;batch.mesh.instanceColor.needsUpdate=true;}
+  if(written||batch.mesh.count!==count){
+   batch.mesh.count=count;batch.mesh.computeBoundingBox();batch.mesh.computeBoundingSphere();
+  }
+ }
+},stats:()=>({version:'forest-intake-1',ferns:fernCount,grassTufts:grassCount,shrubs:shrubCount,stones:stoneCount,logs:logCount,
+ triangles:live.reduce((sum,batch)=>sum+batch.trianglesPerInstance*batch.mesh.count,0),capacityTriangles,
+ instances:live.reduce((sum,batch)=>sum+batch.mesh.count,0),capacityInstances,
+ batches:live.length,shadeThreshold:SHADE_THRESHOLD})};
 }
