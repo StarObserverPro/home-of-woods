@@ -181,7 +181,7 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 
 ## 最终动物素材
 
-四种运行模型及来源统一见 [最终动物接入](WILDLIFE_GUIDE.md) 与 `public/assets/manifest.json`：Gobkit CC0 松鼠／野兔、Quaternius CC0 雄鹿、项目原创 1908 三角形／21 关节北美山羊。来源原件、许可证、重建脚本保留，旧 Gobkit 羊和候选素材不进入当前树。四个最终 GLB 使用交付版本原始字节；仅将野兔营地锚点移出 Woodcraft 碰撞区。
+四种运行模型及来源统一见 [最终动物接入](WILDLIFE_GUIDE.md) 与 `public/assets/manifest.json`：Gobkit CC0 松鼠、Vuena / Popyca CC0 小狐狸、Quaternius CC0 雄鹿、项目原创 1908 三角形／21 关节北美山羊。小狐狸在 2026-11-24 替换原 Gobkit 野兔，继续使用已避开 Woodcraft 碰撞区的营地和步道锚点；松鼠、雄鹿与山羊的运行 GLB 字节不变。旧野兔的来源原件与许可保留供追溯，`public/assets/wildlife/hare.glb` 不再分发；Gobkit 重建脚本只生成松鼠。
 
 
 2026-11-03「家宅平安」第一批外部装配件由 `src/scene/camp-exteriors.ts` 使用本仓库原创低多边形几何生成（帐篷布面局部复用已登记 `tent.glb` 网格）；不接入外部资产、下载或贴图，不冒标 CC0。新建几何和材质均由 `Resources` 释放，只有顶层 12 个部件状态属于既有营地设施，来源/装配范围见 [家宅平安](CAMP_EXTERIORS.md)。
@@ -277,3 +277,20 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 来源参考只涉及生态知识：[NPS Olympic · Temperate Rain Forests](https://www.nps.gov/olym/learn/nature/temperate-rain-forests.htm) 与 [NPS Acadia · Forests](https://www.nps.gov/acad/learn/nature/forests.htm)。三张图是混合虚构生态，不是具名国家公园的完整复刻；未采纳或分发这些网页的照片、地图和其他资产。新增源码不统称为 CC0，既有第三方资产的许可边界不变。
 
 巨木根盘、横枝老枫及育苗倒木的替换尺寸、分件、材质和碰撞要求见 [Blender 精修备忘](FOREST_BLENDER_NOTES.md)。本批构建与几何/行为定向测试通过；当前环境未提供可用 WebGL，尚无真实 3D 画面、着色器或实体手机性能验收结论，最终记录归本轮 scope。
+
+## HOW-WILDLIFE-FOX（2026-11-24）
+
+采用 [Vuena / Popyca 免费 Cute Pets & Wildlife 样本](https://vuena.itch.io/blocky-pets-free)中的狐狸，原件来自[作者公开仓库的锁定提交](https://github.com/Vuena/free-low-poly-animals-cc0/tree/a3944e5e54eb7e1ab2c24744b88a1ae6617e4534)。`sources/vuena/cute-pets/animal_fox.glb`、`LICENSE` 和 `LICENSE.txt` 保留未经修改的源文件与许可；作者的 CC0 范围声明涵盖该免费样本的模型、动画、贴图及修改与再分发，未引入付费完整版。许可原文随 `public/assets/licenses/vuena-cute-pets-CC0.txt` 分发，具体来源和加工契约见[源文件说明](../sources/vuena/cute-pets/README.md)。
+
+| 运行资产 | 规格 |
+| --- | --- |
+| ID / 文件 | `how-wildlife-fox` / `public/assets/wildlife/fox.glb` |
+| 大小 / SHA-256 | 641,856 bytes / `b6e924d63eed35b972720bbd1919c767745ed91205d66ffd7bda6333bc8aaf9d` |
+| 几何 / 骨架 | 1 mesh、1 primitive、1 material；4,286 顶点、7,300 三角形、19 关节 |
+| 动画 | `idle`、`walk`、`run`，各 56 通道；均无 `Lids.translation` |
+| 尺度 / 方向 | `idle` 首帧总高 1.10；共同根居中落地；`+Y` 向上、`+Z` 朝前；场景 `visualScale` 为 1 |
+| 离线重建 | `node tools/prepare-fox-asset.mjs`，只使用本地已校验源文件 |
+
+加工只保留原始 LOD0 并移除 LOD1 及不再引用的数据，保留原始蒙皮、粗糙度、两张嵌入纹理和三段所需动作；仅显式设置材质 `metallicFactor=0`，与源 ORM 贴图蓝通道全零时的原非金属外观等效。在共同根节点归一尺度与落地位置。`Lids` 负责原作眼皮覆盖片，三段动画中的位置通道已移除以交由项目表情控制器驱动，其余骨骼通道保留。眼部本身是头部贴图，没有独立眼球或眼球骨骼；视线变化属于项目表现层加工，不作为原作者模型自带功能登记。
+
+内容身份为 `wildlife.fox`／小狐狸，沿用原普通动物的数量上限、草地边缘栖息点、行走和逃离速度，不新增狩猎、喂食或物品产出。加载、表现与回收仍经 `src/scene/models.ts`、`src/scene/wildlife-presentation.ts` 和 `src/scene/resources.ts`。`verify:assets` 独立验证本批文件哈希、来源、嵌入资源、19 关节、单一 mesh、7,300 三角形、三段动画及眼皮位置通道所有权；实际眼部表现、游戏内画面与性能范围见[本轮 scope](scopes/expressive-camp-fox.md)。

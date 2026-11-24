@@ -16,9 +16,9 @@ import {WILDLIFE_ANCHORS} from '../src/world/wildlife-layout.ts';
 import {canStand} from '../src/domain/navigation.ts';
 import {makeTrees,makeColliders} from '../src/world/layout.ts';
 
-test('final animal package is exactly squirrel, hare, accepted stag and original mountain goat',()=>{
-  assert.deepEqual(readdirSync('public/assets/wildlife').sort(),['hare.glb','mountain-goat.glb','squirrel.glb','stag.glb']);
-  assert.deepEqual(WILDLIFE_DEFINITIONS.filter(d=>d.category==='common').map(d=>d.model).sort(),['hare','squirrel']);
+test('final animal package is exactly squirrel, fox, accepted stag and original mountain goat',()=>{
+  assert.deepEqual(readdirSync('public/assets/wildlife').sort(),['fox.glb','mountain-goat.glb','squirrel.glb','stag.glb']);
+  assert.deepEqual(WILDLIFE_DEFINITIONS.filter(d=>d.category==='common').map(d=>d.model).sort(),['fox','squirrel']);
   assert.deepEqual(WILDLIFE_DEFINITIONS.filter(d=>d.category==='landmark').map(d=>d.model).sort(),['mountain-goat','stag']);
   assert.equal(existsSync('sources/gobkit/animalB'),false);
   const assets=JSON.parse(readFileSync('public/assets/manifest.json','utf8')).assets;
