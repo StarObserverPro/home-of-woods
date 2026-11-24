@@ -78,7 +78,7 @@ export function createOuterForest(r,sample,existing=[],options={}){
    color.set('#ffffff').multiplyScalar(.86+p.tone*.24);mesh.setColorAt(i,color);
   });mesh.computeBoundingSphere();group.add(mesh);
  }
- let cardCount=0,geometryMassCount=visual.masses.length,cardTextureBytes=0,cardSourceTriangles=0;
+ let cardCount=0,geometryMassCount=visual.masses.length,cardTextureBytes=0,cardSourceTriangles=0,cardAlphaToCoverageMaterials=0;
  if(visual.masses.length){
   const shape=r.own(new THREE.IcosahedronGeometry(1,0));
   const indexedMasses=visual.masses.map((mass,index)=>({mass,index}));
@@ -105,6 +105,7 @@ export function createOuterForest(r,sample,existing=[],options={}){
    batch.material.userData.forestImpostor=true;
    group.add(batch.mesh);
    const stats=batch.stats();cardCount=stats.instances;cardTextureBytes=stats.textureBytes;cardSourceTriangles=stats.sourceTrianglesPerInstance;
+   cardAlphaToCoverageMaterials=Number(batch.material.alphaToCoverage);
   }
   if(geometryMasses.length){
   const material=r.own(new THREE.MeshStandardMaterial({color:'#ffffff',roughness:1,flatShading:true}));
@@ -129,7 +130,7 @@ export function createOuterForest(r,sample,existing=[],options={}){
   geometryMasses:geometryMassCount,geometryTriangles,requestedMode:requested,effectiveMode:effective,
   impostor:{requested:requested==='impostor',atlasLoaded,atlas:atlas?.manifest.id??null,
     status:requested!=='impostor'?'disabled':!atlasLoaded?'fallback':'ready',cards:cardCount,triangles:cardCount*2,
-    geometryMasses:geometryMassCount,textureBytes:cardTextureBytes,sourceTrianglesPerCard:cardSourceTriangles,
+    geometryMasses:geometryMassCount,textureBytes:cardTextureBytes,sourceTrianglesPerCard:cardSourceTriangles,alphaToCoverageMaterials:cardAlphaToCoverageMaterials,
     replacedProxyTriangles:cardCount*20,minExtent:OUTER_FOREST.impostorMinExtent},
   species:summary,biome:RAINIER_CAMP.id,speciesNames:Object.fromEntries(Object.entries(definitions).map(([key,s])=>[key,s.name])),
   placement:'rendered-terrain',representation:'scenery-only',triangleBudget:OUTER_FOREST.triangleBudget};

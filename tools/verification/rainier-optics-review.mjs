@@ -26,7 +26,7 @@ const report = {
   rendererNote:'Headless Chromium/SwiftShader provides functional WebGL evidence, not physical-device GPU timings.',
   comparisonNote:'Each mode group holds the same world, camera and animation clock. Direct rendering has canvas MSAA; the HDR capture does not. Whole-scene differences therefore include coverage changes. The separate overlook-optics-probe checks exact zero-effect output and focused color transfer.',
   captureNote:'Every PNG is read synchronously from the real game canvas immediately after the held zero-dt review render. UI panels are excluded. The JSON does not substitute for inspecting these images.',
-  flows:[], frames:[], holds:[], errors:[], failedRequests:[], assetResponses:[],
+  flows:[], flowFailures:[], frames:[], holds:[], errors:[], failedRequests:[], assetResponses:[],
 };
 let server, browser, context, page, flow, serverLog = '';
 const readStats = () => page.evaluate(() => JSON.parse(document.querySelector('#runtime-stats').textContent).current);
@@ -113,12 +113,18 @@ async function frame(name, modes, {reference = false, compare = true} = {}) {
     const pixels = new Uint8Array(canvas.width * canvas.height * 4);
     gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
     const previous = window.__HOW_RAINIER_PIXELS__;
-    let changedPixels = 0, absoluteTotal = 0, maximum = 0, opaque = 0;
+    let changedPixels = 0, absoluteTotal = 0, maximum = 0, opaque = 0, minimumAlpha = 255;
     let sum = 0, squareSum = 0, samples = 0;
-    const bins = new Set();
+    const bins = new Set(), alphaHistogram = new Array(256).fill(0), partialAlphaSamples = [];
     const canCompare = compare && previous?.width === canvas.width && previous?.height === canvas.height;
     for (let i = 0; i < pixels.length; i += 4) {
-      if (pixels[i + 3] === 255) opaque++;
+      const alpha = pixels[i + 3];
+      alphaHistogram[alpha]++; minimumAlpha = Math.min(minimumAlpha, alpha);
+      if (alpha === 255) opaque++;
+      else if (partialAlphaSamples.length < 64) partialAlphaSamples.push({
+        x:(i / 4) % canvas.width, y:canvas.height - 1 - Math.floor(i / 4 / canvas.width),
+        rgba:Array.from(pixels.subarray(i, i + 4)),
+      });
       if (canCompare) {
         let changed = false;
         for (let c = 0; c < 3; c++) {
@@ -136,23 +142,53 @@ async function frame(name, modes, {reference = false, compare = true} = {}) {
     if (reference) window.__HOW_RAINIER_PIXELS__ = {width:canvas.width, height:canvas.height, pixels};
     const count = canvas.width * canvas.height;
     return {png, before, canvas:{width:canvas.width, height:canvas.height}, glError:gl.getError(),
+      contextAttributes:gl.getContextAttributes(), framebufferSamples:gl.getParameter(gl.SAMPLES),
       image:{opaqueFraction:opaque / count, colorBins:bins.size, meanLuminance:sum / samples,
-        luminanceDeviation:Math.sqrt(Math.max(0, squareSum / samples - (sum / samples) ** 2))},
+        luminanceDeviation:Math.sqrt(Math.max(0, squareSum / samples - (sum / samples) ** 2)),
+        minimumAlpha, zeroAlphaPixels:alphaHistogram[0], partialAlphaPixels:count - opaque - alphaHistogram[0],
+        alphaHistogram, partialAlphaSamples},
       differenceFromReference:canCompare ? {changedPixels, maximum, meanAbsolute:absoluteTotal / (count * 3)} : null};
   }, {modes, reference, compare});
+  // Persist the actual pixels and raw readback diagnostics before any assertion
+  // or publication wait, so a failed contract still leaves inspectable evidence.
+  const bytes = Buffer.from(result.png.split(',')[1], 'base64');
+  await fs.writeFile(path.join(out, name + '.png'), bytes);
+  const {png:_, ...capture} = result;
+  await fs.writeFile(path.join(out, name + '.json'), JSON.stringify({name, modes, ...capture}, null, 2));
   // publishSnapshot notifies React; wait for that publication rather than
   // mistaking the previous DOM diagnostics for the frame just captured.
   await page.waitForFunction(({before, modes}) => {
     const s = JSON.parse(document.querySelector('#runtime-stats')?.textContent ?? '{}').current;
     return s?.sceneSpace?.outsideFrames > before && s.atmosphere.mode === modes.atmosphere && s.optics.mode === modes.optics;
   }, {before:result.before, modes}, {timeout:30000});
-  const s = await readStats(); checkScene(s, name);
+  const s = await readStats();
+  const coverageAlpha = !s.optics.active && s.horizon.forest.impostor.alphaToCoverageMaterials > 0;
+  const metadata = {name, file:name + '.png', viewport:page.viewportSize(), dpr:1, modes,
+    seed:s.seed, gameTime:s.gameTime, worldSha256:digest(JSON.stringify(s.worldState)), player:s.player,
+    camera:pose(s), overlook:orbit(s), canvas:s.canvas, appearance:s.appearance,
+    drawCalls:s.drawCalls, triangles:s.triangles, shaderErrors:s.shaderErrors, graphicsBackend:s.graphicsBackend,
+    gpu:s.gpu, atmosphere:s.atmosphere, optics:s.optics, horizon:s.horizon,
+    frameWork:s.frameWork, streaming:s.streaming, forestView:s.forestView,
+    contextAttributes:result.contextAttributes, framebufferSamples:result.framebufferSamples,
+    alphaPolicy:coverageAlpha ? 'direct-MSAA-alpha-to-coverage' : 'opaque-output',
+    image:result.image, differenceFromReference:result.differenceFromReference,
+    pngBytes:bytes.length, pngSha256:digest(bytes)};
+  report.frames.push(metadata);
+  checkScene(s, name);
   assert.equal(result.glError, 0, `${name}: no WebGL error after readback`);
-  assert.equal(result.image.opaqueFraction, 1, `${name}: complete opaque RGBA output`);
+  assert.equal(result.image.zeroAlphaPixels, 0, `${name}: no transparent holes in the complete outdoor image`);
+  if (coverageAlpha) {
+    // r186 creates an alpha:true context even when renderer alpha is omitted.
+    // Its ALPHA_TO_COVERAGE shader keeps leaf-edge alpha (OPAQUE excludes A2C),
+    // and MSAA resolves covered/uncovered samples into partial-alpha pixels.
+    // Require the observed material/context path, not an arbitrary pixel ratio.
+    assert.equal(result.contextAttributes.alpha, true);
+    assert.equal(result.contextAttributes.antialias, true);
+    assert.ok(result.framebufferSamples > 0, `${name}: coverage edges use the actual multisampled direct framebuffer`);
+  } else assert.equal(result.image.opaqueFraction, 1, `${name}: the final composite or ordinary opaque path writes alpha one`);
   // A view that lies entirely inside the broad focus band can legitimately
   // produce a black CoC mask. Keep that real mask for visual review.
   if (modes.optics !== 'coc') assert.ok(result.image.colorBins > 8, `${name}: the actual color image is not a blank canvas`);
-  const bytes = Buffer.from(result.png.split(',')[1], 'base64');
   assert.ok(bytes.length > (modes.optics === 'coc' ? 500 : 4000), `${name}: PNG contains scene detail`);
   assert.deepEqual(result.canvas, s.canvas);
   if (s.optics.active) {
@@ -160,18 +196,10 @@ async function frame(name, modes, {reference = false, compare = true} = {}) {
     assert.deepEqual(s.optics.blurResolution, [Math.ceil(s.canvas.width / 2), Math.ceil(s.canvas.height / 2)]);
     assert.equal(s.optics.targets, 2);
   }
-  await fs.writeFile(path.join(out, name + '.png'), bytes);
-  const metadata = {name, file:name + '.png', viewport:page.viewportSize(), dpr:1, modes,
-    seed:s.seed, gameTime:s.gameTime, worldSha256:digest(JSON.stringify(s.worldState)), player:s.player,
-    camera:pose(s), overlook:orbit(s), canvas:s.canvas, appearance:s.appearance,
-    drawCalls:s.drawCalls, triangles:s.triangles, shaderErrors:s.shaderErrors, graphicsBackend:s.graphicsBackend,
-    gpu:s.gpu, atmosphere:s.atmosphere, optics:s.optics, horizon:s.horizon,
-    frameWork:s.frameWork, streaming:s.streaming, forestView:s.forestView,
-    image:result.image, differenceFromReference:result.differenceFromReference,
-    pngBytes:bytes.length, pngSha256:digest(bytes)};
-  report.frames.push(metadata);
   console.log('FRAME', name, JSON.stringify({canvas:s.canvas, amount:s.optics.amount, passes:s.optics.extraFullscreenPasses,
-    pngBytes:bytes.length, image:result.image}));
+    pngBytes:bytes.length, alphaPolicy:metadata.alphaPolicy, image:{colorBins:result.image.colorBins,
+      opaqueFraction:result.image.opaqueFraction, minimumAlpha:result.image.minimumAlpha,
+      zeroAlphaPixels:result.image.zeroAlphaPixels, partialAlphaPixels:result.image.partialAlphaPixels}}));
   return {stats:s, metadata};
 }
 
@@ -378,6 +406,26 @@ async function resizeAndReturn() {
   await context.close(); context = null; page = null;
 }
 
+async function independentFlow(name, run) {
+  try {
+    await run();
+    flow.result = 'passed';
+  } catch (error) {
+    const failure = {flow:name, message:String(error), stack:error.stack};
+    report.flowFailures.push(failure);
+    if (flow) { flow.result = 'failed'; flow.failure = failure; }
+    console.error('FLOW_FAILED', name, error);
+    // One viewport's failed assertion remains a failed job, but it must not
+    // discard the other viewport or the independent geometry-fallback evidence.
+    if (page) {
+      try { flow.failureState = await readStats(); flow.samples = await page.evaluate(() => window.__HOW_RAINIER_REVIEW__?.samples); } catch {}
+      try { await page.screenshot({path:path.join(out, name + '-failure.png'), timeout:15000}); } catch {}
+    }
+  } finally {
+    await context?.close().catch(() => {}); context = null; page = null;
+  }
+}
+
 function gallery() {
   const escape = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
   return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Rainier optics review</title>
@@ -405,15 +453,19 @@ try {
     ...(process.env.CHROMIUM_EXECUTABLE ? {executablePath:process.env.CHROMIUM_EXECUTABLE} : {}),
     args:['--no-sandbox', '--disable-dev-shm-usage', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader']});
   for (const viewport of [{width:1280, height:800}, {width:390, height:844}]) {
-    await installFixture(viewport); await raiseAndPause(); await resizeAndReturn();
+    await independentFlow(viewport.width < 600 ? 'mobile' : 'desktop', async () => {
+      await installFixture(viewport); await raiseAndPause(); await resizeAndReturn();
+    });
   }
   // Missing optional files must still produce the default mass geometry. One
   // additional high view gives that representation its own final/off evidence.
-  await installFixture({width:1280, height:800}, {missingAtlas:true, captureGround:false});
-  await raiseAndPause({captureStages:false, fullModes:false});
-  flow.samples = await page.evaluate(() => window.__HOW_RAINIER_REVIEW__.samples);
+  await independentFlow('mass-fallback', async () => {
+    await installFixture({width:1280, height:800}, {missingAtlas:true, captureGround:false});
+    await raiseAndPause({captureStages:false, fullModes:false});
+    flow.samples = await page.evaluate(() => window.__HOW_RAINIER_REVIEW__.samples);
+  });
   report.fallbackNote = 'The deliberately missing atlas renders the same mass geometry used by default; this flow is explicitly fallback, not a successful impostor load.';
-  await context.close(); context = null; page = null;
+  assert.equal(report.flowFailures.length, 0, 'Every viewport and fallback flow must pass; see flowFailures for independent results');
   assert.deepEqual(report.errors, []); assert.deepEqual(report.failedRequests, []);
   assert.ok(report.assetResponses.some(r => /\.json(\?|$)/i.test(r.url) && r.status === 200), 'An actual atlas manifest was fetched');
   assert.ok(report.assetResponses.filter(r => /\.png(\?|$)/i.test(r.url) && r.status === 200).length >= 2, 'Both atlas textures were fetched');
