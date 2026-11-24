@@ -9,6 +9,7 @@ on:
       - 'src/scene/create-scene.ts'
       - 'src/scene/camp-exteriors.ts'
       - 'src/scene/lighting/interior-lighting.ts'
+      - 'src/scene/lighting/interior-materials.ts'
       - 'src/scene/lighting/building-occlusion.ts'
       - 'src/content/shadows.ts'
       - 'src/world/shadow-field.ts'
@@ -17,6 +18,7 @@ on:
       - 'src/ui/App.tsx'
       - 'src/ui/hud-layout.css'
       - 'tests/tent*.test.ts'
+      - 'tests/interior-materials.test.ts'
       - 'tools/verification/tent*.mjs'
       - 'package*.json'
       - '.github/workflows/tent-review.yml'
@@ -44,7 +46,7 @@ jobs:
           package-manager-cache: false
       - run: npm ci
       - name: Verify tent geometry, portal and shared UI contracts
-        run: node --experimental-strip-types --test tests/tent*.test.ts
+        run: node --experimental-strip-types --test tests/tent*.test.ts tests/interior-materials.test.ts
       - run: npm run verify:ui && npm run build
       - run: npx playwright install --with-deps chromium
       - run: sudo apt-get install -y fonts-noto-cjk

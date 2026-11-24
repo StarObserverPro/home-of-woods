@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { TENT_FURNISHINGS, TENT_SCALE, TENT_SHAPE } from '../../content/tent.ts';
+import { TENT_CLOTH, TENT_FURNISHINGS, TENT_SCALE, TENT_SHAPE } from '../../content/tent.ts';
 import type { TentCanvasVariant, TentDebugMode } from '../../content/tent.ts';
 import { TENT_ROOM } from '../../content/tent-room.ts';
 import { tentFloorPoint } from '../../domain/tent.ts';
@@ -7,6 +7,7 @@ import { floorOccluder } from '../../world/occlusion.ts';
 import type { OcclusionVolume } from '../../world/occlusion.ts';
 import { createAmbientOcclusion } from '../lighting/ambient-occlusion.ts';
 import { createInteriorLighting } from '../lighting/interior-lighting.ts';
+import { createInteriorMaterials } from '../lighting/interior-materials.ts';
 import type { createSkySample } from '../lighting/sky-light.ts';
 import { Resources } from '../resources.ts';
 import { createTentExterior } from './exterior.ts';
@@ -24,6 +25,19 @@ export function createTentRoom() {
   const tent = createTentExterior(resources);
   tent.group.scale.setScalar(TENT_SCALE); scene.add(tent.group);
   tent.group.updateMatrixWorld(true);
+  const frameBounds = new THREE.Box3().setFromObject(tent.group, true);
+  const frameCenter = frameBounds.getCenter(new THREE.Vector3());
+  const framePoints: THREE.Vector3[] = [];
+  // Keep the real A-frame silhouette: fitting its entire rectangular box would
+  // reserve empty upper corners and make the small furnishings unnecessarily tiny.
+  // Capture both curtain states once; neither wind nor cutaways may pump the zoom.
+  tent.group.traverse(object => {
+    if (!(object instanceof THREE.Mesh) || object.userData.tentDoor) return;
+    const positions = object.geometry.getAttribute('position');
+    for (let i = 0; i < positions.count; i++) framePoints.push(new THREE.Vector3()
+      .fromBufferAttribute(positions, i).applyMatrix4(object.matrixWorld).sub(frameCenter));
+  });
+  const framePadding = TENT_CLOTH.maxWindDisplacement * TENT_SCALE * 1.2 + .04;
 
   const envelope = new THREE.Group(); envelope.name = 'tent-interior-shadow-envelope'; scene.add(envelope);
   const casterMaterial = resources.own(new THREE.MeshBasicMaterial({
@@ -40,6 +54,7 @@ export function createTentRoom() {
   });
   const lighting = createInteriorLighting(scene, new THREE.Vector3(0, 3.2, TENT_SHAPE.doorZ * TENT_SCALE - .2));
   const occlusion = createAmbientOcclusion(resources);
+  const actorMaterials = createInteriorMaterials(resources);
   const floorY = TENT_ROOM.floorY;
   const volumes: OcclusionVolume[] = [
     { id: 'tent:enclosure', center: [0, 1.3, -.5], halfSize: [3.1, 1.2, 2.8], yaw: 0,
@@ -52,15 +67,58 @@ export function createTentRoom() {
       width*TENT_SCALE,spec.height*TENT_SCALE,depth*TENT_SCALE));
   }
   occlusion.setVolumes(volumes); occlusion.bind(tent.group);
-  const target = new THREE.Vector3(0, 1.35, .1);
+  const target = frameCenter.clone();
+  const backward = new THREE.Vector3(), right = new THREE.Vector3(), up = new THREE.Vector3();
   const floor = new THREE.Plane(new THREE.Vector3(0, 1, 0), -floorY);
   const hit = new THREE.Vector3();
   let doorOpen = true, frames = 0, disposed = false;
   let cutWalls: string[] = [];
+  let fittedView = '', fitDistance = 0;
+  let safeInsets = { left: .055, right: .055, top: .13, bottom: .19 };
+
+  function updateCamera() {
+    const { yaw, elevation } = view, aspect = camera.aspect;
+    const nextView = `${yaw}:${elevation}:${aspect}:${camera.fov}`;
+    if (nextView !== fittedView) {
+      fittedView = nextView;
+      // Fractional insets also survive an orientation change without depending
+      // on a second viewport owner. The short landscape reserves the touch HUD.
+      safeInsets = { left: .055, right: .055,
+        ...(aspect < .8 ? { top: .15, bottom: .24 }
+          : aspect > 1.8 ? { top: .18, bottom: .28 } : { top: .13, bottom: .19 }) };
+      const tanHalfFov = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+      const horizontal = tanHalfFov * aspect * (1 - safeInsets.left - safeInsets.right);
+      const vertical = tanHalfFov * (1 - safeInsets.top - safeInsets.bottom);
+      backward.set(Math.sin(yaw) * Math.cos(elevation), Math.sin(elevation), Math.cos(yaw) * Math.cos(elevation));
+      right.set(Math.cos(yaw), 0, -Math.sin(yaw)); up.crossVectors(backward, right);
+      let maxX = -Infinity, minX = Infinity, maxY = -Infinity, minY = Infinity, maxDepth = -Infinity;
+      for (const point of framePoints) {
+        const x = point.dot(right), y = point.dot(up), z = point.dot(backward);
+        maxX = Math.max(maxX, x + horizontal * z); minX = Math.min(minX, x - horizontal * z);
+        maxY = Math.max(maxY, y + vertical * z); minY = Math.min(minY, y - vertical * z);
+        maxDepth = Math.max(maxDepth, z);
+      }
+      // For every vertex, |x - targetX| <= tan(fovX) * (distance - z).
+      // Solving both side inequalities gives the distance and transverse target
+      // together, so a low floor target cannot push the ridge outside the frame.
+      fitDistance = Math.max(
+        (maxX - minX + 2 * framePadding * Math.hypot(1, horizontal)) / (2 * horizontal),
+        (maxY - minY + 2 * framePadding * Math.hypot(1, vertical)) / (2 * vertical),
+        maxDepth + framePadding + camera.near,
+      );
+      target.copy(frameCenter).addScaledVector(right, (maxX + minX) / 2).addScaledVector(up, (maxY + minY) / 2);
+      // Move the optical center into the free region between the two HUD rows.
+      camera.setViewOffset(aspect, 1, 0, (safeInsets.bottom - safeInsets.top) / 2, aspect, 1);
+    }
+    camera.position.copy(backward).multiplyScalar(fitDistance / view.zoom).add(target);
+    camera.lookAt(target); camera.updateMatrixWorld(true);
+  }
 
   return {
     scene, camera, view, occlusion,
     get exposure() { return lighting.exposure; },
+    bindActor(root: THREE.Object3D) { actorMaterials.bind(root); occlusion.bind(root); },
+    releaseActor() { actorMaterials.restore(); },
     setDoorOpen(value: boolean) { doorOpen = value; tent.setDoorOpen(value, true); lighting.setOpening(value); },
     setCanvasVariant(value: TentCanvasVariant) { tent.setCanvasVariant(value); },
     setDebugMode(value: TentDebugMode) { tent.setDebugMode(value); occlusion.bind(tent.group); },
@@ -75,12 +133,7 @@ export function createTentRoom() {
     update(time: number, dt: number, reducedMotion: boolean) {
       if (disposed) return;
       tent.update({ time, delta: dt, reducedMotion, windStrength: .25 });
-      const fitHeight = Math.max(10.6, TENT_ROOM.width * 1.16 / camera.aspect);
-      const distance = fitHeight / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * view.zoom);
-      const { yaw, elevation } = view;
-      camera.position.set(Math.sin(yaw) * Math.cos(elevation), Math.sin(elevation), Math.cos(yaw) * Math.cos(elevation))
-        .multiplyScalar(distance).add(target);
-      camera.lookAt(target); camera.updateMatrixWorld(true);
+      updateCamera();
       const cutLeft = camera.position.x < -.4, cutRight = camera.position.x > .4;
       const cutFront = camera.position.z > -.4, cutBack = !cutFront;
       const cuts = { left: cutLeft, right: cutRight, front: cutFront, back: cutBack };
@@ -103,12 +156,13 @@ export function createTentRoom() {
     },
     stats() {
       return { id: TENT_ROOM.id, parentId: TENT_ROOM.parentId, frames, doorOpen, cutWalls,
-        camera: { ...view, fov: camera.fov, aspect: camera.aspect, position: camera.position.toArray(), target: target.toArray() },
-        resources: resources.stats(), occlusion: occlusion.stats(), light: lighting.stats(), tent: tent.stats() };
+        camera: { ...view, fov: camera.fov, aspect: camera.aspect, position: camera.position.toArray(), target: target.toArray(),
+          fitDistance, safeInsets: { ...safeInsets }, frameBounds: [frameBounds.min.toArray(), frameBounds.max.toArray()] },
+        resources: resources.stats(), actorMaterials: actorMaterials.stats(), occlusion: occlusion.stats(), light: lighting.stats(), tent: tent.stats() };
     },
     dispose() {
       if (disposed) return; disposed = true;
-      occlusion.dispose(); lighting.dispose(); scene.clear(); resources.dispose();
+      actorMaterials.restore(); occlusion.dispose(); actorMaterials.dispose(); lighting.dispose(); scene.clear(); resources.dispose();
     },
   };
 }

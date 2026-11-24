@@ -16,18 +16,32 @@ const waitForCurtain = (page, open) => page.waitForFunction(expected => {
   return text && JSON.parse(text).current?.tent?.doorOpen === expected;
 }, open);
 
+const graphicsFailurePatterns = [
+  /\b(?:GL_)?(?:INVALID_OPERATION|INVALID_FRAMEBUFFER_OPERATION|INVALID_ENUM|INVALID_VALUE|OUT_OF_MEMORY)\b/i,
+  /\bCONTEXT_LOST_WEBGL\b|WebGL:\s*too many errors/i,
+  /\b(?:VALIDATE_STATUS|LINK_STATUS|COMPILE_STATUS)\s*[:=]?\s*false\b/i,
+  /\b(?:shader|program)\b.*\b(?:error|failed|failure|not valid|not compiled)\b/i,
+  /\b(?:error|failed|failure)\b.*\b(?:compiling|linking|validating)\b.*\b(?:shader|program)\b/i,
+];
+export const isGraphicsFailure = message => graphicsFailurePatterns.some(pattern => pattern.test(message));
+
 export function observeTentPage(page, origin, report, phase) {
+  const stamp = () => ({ phase: typeof phase === 'function' ? phase() : phase, at: new Date().toISOString() });
   page.setDefaultTimeout(90000);
   page.setDefaultNavigationTimeout(120000);
-  page.on('pageerror', error => report.errors.push({ phase, message: String(error) }));
-  page.on('crash', () => report.errors.push({ phase, message: 'Browser page crashed' }));
+  page.on('pageerror', error => report.errors.push({ ...stamp(), source: 'pageerror', message: String(error) }));
+  page.on('crash', () => report.errors.push({ ...stamp(), source: 'crash', message: 'Browser page crashed' }));
   page.on('console', entry => {
-    if (entry.type() === 'error') report.errors.push({ phase, message: entry.text() });
-    if (entry.type() === 'warning') report.consoleWarnings.push({ phase, message: entry.text() });
+    const record = { ...stamp(), message: entry.text() };
+    const graphicsFailure = isGraphicsFailure(record.message);
+    if (entry.type() === 'error' || graphicsFailure) {
+      report.errors.push({ ...record, source: graphicsFailure ? 'graphics-console' : 'console' });
+    }
+    if (entry.type() === 'warning') report.consoleWarnings.push(record);
   });
   page.on('response', response => {
     if (response.url().startsWith(origin) && response.status() >= 400) {
-      report.networkFailures.push({ phase, url: response.url(), status: response.status() });
+      report.networkFailures.push({ ...stamp(), url: response.url(), status: response.status() });
     }
   });
 }
@@ -40,11 +54,22 @@ export async function tentReady(page) {
 
 export async function captureTentFrame(page, out, report, name) {
   const value = await tentStats(page);
-  assert.equal(value.shaderErrors, 0, `${name}: shader errors`);
-  assert.equal(value.contextLost, false, `${name}: lost WebGL context`);
   assert.ok(value.drawCalls > 0 && value.triangles > 0, `${name}: no rendered geometry`);
-  assert.equal(value.tentExterior.doorOpen, value.tent.doorOpen, `${name}: exterior curtain disagrees with runtime`);
-  if (value.tent.inside) assert.equal(value.sceneSpace.tent.doorOpen, value.tent.doorOpen, `${name}: indoor curtain disagrees with runtime`);
+  const webgl = await page.locator('.scene-host canvas').evaluate(canvas => {
+    // This is the renderer's already-rendered canvas. Asking for its existing
+    // WebGL2 context with no options returns that same context; never create a
+    // replacement canvas/context or try a different context type.
+    const gl = canvas.getContext('webgl2');
+    if (!gl) return { available: false, error: null, errorName: 'NO_WEBGL2_CONTEXT', contextLost: null };
+    const error = gl.getError();
+    const errorName = ['NO_ERROR', 'INVALID_ENUM', 'INVALID_VALUE', 'INVALID_OPERATION',
+      'INVALID_FRAMEBUFFER_OPERATION', 'OUT_OF_MEMORY', 'CONTEXT_LOST_WEBGL'].find(key => gl[key] === error) ?? `UNKNOWN_${error}`;
+    return { available: true, error, errorName, contextLost: gl.isContextLost() };
+  });
+  if (!webgl.available || webgl.error !== 0 || webgl.contextLost) {
+    report.errors.push({ phase: name, at: new Date().toISOString(), source: 'webgl-get-error',
+      message: webgl.errorName, ...webgl });
+  }
   const cdp = await page.context().newCDPSession(page);
   try {
     const shot = await cdp.send('Page.captureScreenshot', { format: 'png', fromSurface: true });
@@ -52,9 +77,18 @@ export async function captureTentFrame(page, out, report, name) {
   } finally { await cdp.detach(); }
   report.frames.push({ name, viewport: page.viewportSize(), seed: value.seed, gameTime: value.gameTime,
     sceneSpace: value.sceneSpace, tentExterior: value.tentExterior, tentVisit: value.tentVisit,
-    tent: value.tent, scenePreset: value.scenePreset, shaderErrors: value.shaderErrors,
+    tent: value.tent, scenePreset: value.scenePreset, shaderErrors: value.shaderErrors, webgl,
     drawCalls: value.drawCalls, triangles: value.triangles, gpu: value.gpu, resources: value.resources,
     frameMsP50: value.frameMsP50, frameMsP95: value.frameMsP95, graphicsBackend: value.graphicsBackend });
+  // Keep the actual image and error metadata even when this frame must fail.
+  assert.equal(value.shaderErrors, 0, `${name}: shader errors`);
+  assert.equal(value.contextLost, false, `${name}: lost WebGL context`);
+  assert.equal(webgl.available, true, `${name}: existing WebGL2 context unavailable`);
+  assert.equal(webgl.contextLost, false, `${name}: existing WebGL2 context is lost`);
+  assert.equal(webgl.error, 0, `${name}: WebGL getError returned ${webgl.errorName}`);
+  assert.equal(value.tentExterior.doorOpen, value.tent.doorOpen, `${name}: exterior curtain disagrees with runtime`);
+  if (value.tent.inside) assert.equal(value.sceneSpace.tent.doorOpen, value.tent.doorOpen, `${name}: indoor curtain disagrees with runtime`);
+  assert.deepEqual(report.errors, [], `${name}: browser or graphics errors`);
   return value;
 }
 
@@ -100,8 +134,8 @@ export async function verifyTentPortal(browser, origin, out, report, platform = 
     const context = await browser.newContext({ viewport, hasTouch: touch, isMobile: touch, deviceScaleFactor: 1,
       reducedMotion: 'no-preference', recordVideo: { dir: join(out, 'videos'), size: { width: 640, height: 480 } } });
     const page = await context.newPage();
-    observeTentPage(page, origin, report, label);
     let phase = 'initial camp';
+    observeTentPage(page, origin, report, () => `${label} / ${phase}`);
     try {
       await page.goto(`${origin}/?inspect=1&hour=${touch ? 1 : 14}`);
       await tentReady(page);
@@ -109,6 +143,7 @@ export async function verifyTentPortal(browser, origin, out, report, platform = 
       phase = 'approach from route menu';
       await selectTent(page, touch);
       await captureTentFrame(page, out, report, `tent-${label}-selected`);
+      phase = 'walking to door and entering';
       await act(button(page, '走到帐篷门前'), touch);
       await page.waitForFunction(() => {
         const current = JSON.parse(document.querySelector('#runtime-stats').textContent).current;
@@ -119,6 +154,7 @@ export async function verifyTentPortal(browser, origin, out, report, platform = 
       console.log(`TENT_PORTAL_APPROACH ${label}`);
       await waitForSpace(page, 'tent', 600000);
       console.log(`TENT_PORTAL_ENTERED ${label}`);
+      phase = 'first interior frame';
       const entered = await captureTentFrame(page, out, report, `tent-${label}-inside`);
       assert.equal(await page.locator('.scene-host canvas').count(), 1);
       assert.equal(entered.tent.inside, true);

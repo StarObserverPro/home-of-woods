@@ -622,7 +622,7 @@ export async function createScene(
     },
     enterTent(pose:TentPlayer,state:GameState){
       if(!tentRoom)return;
-      atmosphere.unbind(player);localOcclusion.unbind(player);outdoorShadows.unbind(player);
+      tentRoom.bindActor(player);
       tentRoom.scene.add(player);
       characters.resetLocomotion();tentPlayer=pose;
       overlook.setBorrower('tent');cameraOwner='tent';followTargetPending=false;
@@ -636,7 +636,7 @@ export async function createScene(
     },
     leaveTent(focusDoor=false){
       if(!tentPlayer||!tentRoom)return;
-      tentRoom.occlusion.unbind(player);
+      tentRoom.releaseActor();
       scene.add(player);outdoorShadows.bind(player);localOcclusion.bind(player);atmosphere.bind(player);
       characters.resetLocomotion();tentPlayer=null;
       overlook.setBorrower(scenePreset?'scene':characters.getInspection()!==null?'character':null);
@@ -766,7 +766,7 @@ export async function createScene(
           lastTentLightAt=state.time;
         }
         characters.updateInCabin(state,tentPlayer,TENT_ROOM.floorY,reducedMotion,tentTime);
-        tentRoom.occlusion.bind(player);
+        tentRoom.bindActor(player);
         tentRoom.update(tentTime,dt,reducedMotion);
         tentRoom.occlusion.updateCamera(tentRoom.camera,host.clientHeight);
         renderer.toneMappingExposure=tentRoom.exposure;

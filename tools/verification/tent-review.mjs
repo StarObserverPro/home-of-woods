@@ -24,6 +24,7 @@ const report = {
     'Software Chromium WebGL and touch emulation are not physical mobile GPU performance.',
     'Portal recordings use live gameplay time; material captures fix only the tent wind phase and sun hour.',
     'Human review of screenshots and recordings is required for silhouette, material feel and temporal shimmer.',
+    'Uniform or black scene images are reviewed visually; a brightness threshold would misclassify the night view.',
     'Reported CPU frame timings are not GPU timings.',
   ],
 };
@@ -53,12 +54,14 @@ async function materialCaptures() {
   for (const mode of ['final', 'clay', 'normals', 'wireframe']) {
     const context = await browser.newContext({ viewport: { width: 1000, height: 740 }, deviceScaleFactor: 1 });
     const page = await context.newPage();
-    observeTentPage(page, origin, report, `material-${mode}`);
+    let materialPhase = 'initial camp';
+    observeTentPage(page, origin, report, () => `material-${mode} / ${materialPhase}`);
     let sideAtZero;
     try {
       await page.goto(`${origin}/?inspect=1&hour=14&optics=off&tentMaterial=${mode}&tentWindTime=0`);
       await tentReady(page);
       for (const preset of mode === 'final' ? ['tentNear', 'tentSide', 'tentFar'] : ['tentSide']) {
+        materialPhase = `${preset} / wind 0`;
         await inspect(page, preset);
         const captured = await captureTentFrame(page, out, report, `tent-${mode}-${preset}`);
         assert.equal(captured.tentExterior.debugMode, mode, 'The material diagnostic must change the actual tent');
@@ -70,10 +73,12 @@ async function materialCaptures() {
       if (mode === 'final') {
         // Same authored camera and material, another fixed fabric phase. The
         // exterior's diagnostic vertex samples also accompany these captures.
+        materialPhase = 'reload for wind 2.5';
         await page.goto(`${origin}/?inspect=1&hour=14&optics=off&tentMaterial=final&tentWindTime=2.5`);
         await tentReady(page);
         const resume = page.locator('.pause-dialog .primary-button');
         if (await resume.isVisible()) await resume.click();
+        materialPhase = 'tentSide / wind 2.5';
         await inspect(page, 'tentSide');
         const later = await captureTentFrame(page, out, report, 'tent-final-tentSide-wind-2_5');
         assert.notEqual(later.tentExterior.windDisplacement, sideAtZero.tentExterior.windDisplacement, 'Fixed wind phases must actually deform the cloth');
@@ -82,7 +87,7 @@ async function materialCaptures() {
           maxLocalDisplacement: later.tentExterior.maxWindDisplacement });
       }
     } catch (error) {
-      report.materialFailure = { mode, state: await tentStats(page).catch(() => null) };
+      report.materialFailure = { mode, phase: materialPhase, state: await tentStats(page).catch(() => null) };
       await captureTentFrame(page, out, report, `tent-material-${mode}-failure`).catch(() => {});
       throw error;
     } finally { await context.close(); }
