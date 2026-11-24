@@ -1,6 +1,6 @@
 # Rainier 山麓营地、远树烘焙与全景镜头
 
-实现与验证更新：2026-11-23（America/New_York）。状态：实现已接入；第五轮独立焦外 probe、完整图集烘焙及缺失图集回退通过，主营地部分模式已通过；新全景镜头的实景构图与剩余组合验收待下一轮。
+实现与验证更新：2026-11-23（America/New_York）。状态：实现已接入；本轮 35 项专项检查、构建、独立焦外 probe、完整图集烘焙及桌面/手机/默认几何回退流程全部通过，共 49 帧主营地证据；未合并或部署。
 
 ## 本轮目标
 
@@ -23,15 +23,19 @@
 
 ## 当前实际结果
 
-已核对第五轮 [CI run 45303052228](https://github.com/StarObserverPro/home-of-woods/actions/runs/45303052228)，代码为 [`f3c200ef81e325aeb2a8027e2fbc5703dbf02e25`](https://github.com/StarObserverPro/home-of-woods/commit/f3c200ef81e325aeb2a8027e2fbc5703dbf02e25)。
+已核对第七轮 [CI run 45309801895](https://github.com/StarObserverPro/home-of-woods/actions/runs/45309801895)，代码为 [`1cce64d63ecc13f50460a3094b951fa9f39a55ce`](https://github.com/StarObserverPro/home-of-woods/commit/1cce64d63ecc13f50460a3094b951fa9f39a55ce)，四个 job 均成功。
 
-- `optics` job：五份定向测试共 **29 项通过、0 失败**，`npm run build` 通过。独立 probe 的零效果输出字节差为 0，5 个色块最大通道差为 1/255，shader/GL 无错误；resize、关闭/恢复、挂起及目标释放检查通过。
-- `valley` 的 baker 步骤：**完整通过**。25 帧确定性烘焙、透明边距、PNG RGBA 字节回读、21 次运行时视角/模式渲染及资源恢复均有报告。释放恢复至预热后的共享 DFG 缓存基线，不将 renderer 自有的一张 LUT 当作资产泄漏。
-- 主营地桌面与手机：ground 的 final/repeat/off、lift 起始与过渡、overlook 的 final/repeat/off、atmosphere-only、optics-only **均已完成检查**；冻结重复帧的变化像素数均为 0。有效的深度图随后被旧 `colorBins > 8` 门槛误判，导致后续 CoC、透射率 T、散射 L、暂停 resize/旋转和返回地面未执行，`valley` 整体仍未通过。
-- 缺失图集的 `mass-fallback` 独立流程：**完整通过**，包括预期 404、实体林片回退与 final/repeat/off；重复帧变化为 0。
-- 第五轮使用的俯视镜头**不构成全景构图证明**。之后的新镜头已有 **4/4 本地视锥测试通过**，用真实 `crown` 网格最高点与营地地标覆盖 1280×800、16:9、844×390 和竖屏；新镜头的实景构图及剩余诊断/操作正准备下一轮验收。
+- `optics` job：**35/35 通过、0 失败**，包含四画幅真实 `crown`/营地几何构图；`npm run build` 通过。独立 probe 的零效果字节差为 0，5 个色块最大通道差为 1/255，shader/GL 无错误；resize、启停、挂起与释放检查通过。[probe artifact 14883005874](https://github.com/StarObserverPro/home-of-woods/actions/runs/45309801895/artifacts/14883005874)。
+- 手机完整流程：**通过，23 帧**。成功加载 impostor 图集；地面、全景、俯视、独立大气/焦外、depth/CoC/T/L、真实暂停下的旋转与横竖屏切换、镜头返回均完成，四组冻结重复帧变化为 0。原图确认竖屏主峰与营地同框、横屏俯视无明显拉伸或空底、返回恢复普通构图。[mobile artifact 14882428224](https://github.com/StarObserverPro/home-of-woods/actions/runs/45309801895/artifacts/14882428224)。
+- 桌面完整流程：**通过，23 帧**。完整模式与操作组完成，四组冻结重复帧变化为 0。[desktop artifact 14883277554](https://github.com/StarObserverPro/home-of-woods/actions/runs/45309801895/artifacts/14883277554)。
+- 默认几何的 `mass-fallback`：**通过，3 帧**。预期 404 后以实体林片呈现峰营同框全景，final/repeat/off 完成，重复帧变化为 0；它是回退证据，不是图集加载成功证据。[fallback artifact 14882582798](https://github.com/StarObserverPro/home-of-woods/actions/runs/45309801895/artifacts/14882582798)。
+- 本轮 baker：**完整通过**。25 帧确定性烘焙、透明边距、PNG RGBA 回读、21 次运行时视角/模式渲染及资源恢复均有报告，见手机 artifact 中的 `baker/report.json`。
 
-25 帧主营地证据及 baker 报告位于 [artifact 14880955839](https://github.com/StarObserverPro/home-of-woods/actions/runs/45303052228/artifacts/14880955839)；正式图集 [artifact 14880945916](https://github.com/StarObserverPro/home-of-woods/actions/runs/45303052228/artifacts/14880945916) 已核对 9/9 源文件 hash，独立 probe 位于同轮 `rainier-optics-probe` artifact。真实 WebGL 后端为 Chromium / ANGLE / Vulkan SwiftShader，未测实体显卡或手机帧时，也尚未完成全气候及室内往返的实机场景矩阵。详细数值、成本和唯一验证表见 [RAINIER_RENDERING](../RAINIER_RENDERING.md#验证状态)。
+主营地共 **49 帧（23 桌面 + 23 手机 + 3 回退）**，不含独立 probe 和 baker 图像；**9 组冻结重复帧均为 0 变化像素**。桌面 resize 为 1280×800 → 960×640 → 原尺寸，手机为 390×844 → 844×390 → 原尺寸；两者返回后均为 `optics.active=false`、额外 pass 为 0。本轮导出图集位于 [artifact 14883342388](https://github.com/StarObserverPro/home-of-woods/actions/runs/45309801895/artifacts/14883342388)。
+
+此前发现的 24 mm 固定半径全景不足、灰度深度图阈值误判、共享河段反射更新顺序，以及暂停脚本与真实镜头面板点击契约不一致，均已分别修正；修复记录和当前验证表见 [RAINIER_RENDERING](../RAINIER_RENDERING.md#验证状态)。
+
+真实 WebGL 后端为 Chromium / ANGLE / Vulkan SwiftShader。尚未测实体显卡或手机 GPU 帧时，当前主营地实景流程固定晴天 12:00，全气候及室内往返矩阵未完整覆盖。成本、正式图集来源及验证适用范围以 [RAINIER_RENDERING](../RAINIER_RENDERING.md)及 [ASSET_REGISTER](../ASSET_REGISTER.md#rainier-地域与远林图集2026-11-23) 为准。
 
 ## 范围边界
 
