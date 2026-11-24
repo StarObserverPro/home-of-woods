@@ -491,6 +491,9 @@ export async function createScene(
       cabinRoom.camera.updateProjectionMatrix();
       if(cabinPlayer&&lastState)view.render(lastState,0);
     }
+    // A paused outdoor loop must repaint the cleared canvas through its normal
+    // presentation scheduler, including the resized HDR/depth buffers.
+    if(!cabinPlayer){river.invalidate();requestPresentation();}
   };
   const observer = new ResizeObserver(resize);
   observer.observe(host);

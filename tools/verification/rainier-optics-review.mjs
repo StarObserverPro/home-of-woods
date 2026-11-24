@@ -320,24 +320,35 @@ async function raiseAndPause({captureStages = true, fullModes = true} = {}) {
 async function resizeAndReturn() {
   const original = flow.viewport;
   const resized = original.width < 600 ? {width:844, height:390} : {width:960, height:640};
-  const before = await readStats();
+  const before = await settledPause();
   await page.evaluate(() => { window.__HOW_RAINIER_REVIEW__.stage = 'resize'; });
+  const naturalResize = async viewport => {
+    const previous = await readStats();
+    // Resize without the inspection hold or a forced review render: the real
+    // paused ResizeObserver must wake the sole presentation owner on its own.
+    await page.setViewportSize(viewport);
+    await page.waitForFunction(({viewport, previousFrame}) => {
+      const s = JSON.parse(document.querySelector('#runtime-stats')?.textContent ?? '{}').current;
+      return s?.canvas.width === viewport.width && s.canvas.height === viewport.height &&
+        s.sceneSpace.outsideFrames > previousFrame;
+    }, {viewport, previousFrame:previous.sceneSpace.outsideFrames}, {timeout:180000, polling:100});
+    const s = await settledPause();
+    assert.deepEqual(s.worldState, previous.worldState, 'Natural paused resize never advances gameplay');
+    assert.deepEqual(orbit(s).current, orbit(before).current, 'Resize preserves the orbit pose');
+    return s;
+  };
+  const resizedNaturally = await naturalResize(resized);
+  flow.resize = {from:before.canvas, to:resizedNaturally.canvas, naturalFrames:resizedNaturally.sceneSpace.outsideFrames - before.sceneSpace.outsideFrames};
   await held(flow.name + '-resize', async () => {
-    await page.setViewportSize(resized);
-    await page.waitForFunction(({width, height}) => {
-      const c = document.querySelector('canvas[aria-label="森林之家可玩山谷"]');
-      return c?.width === width && c?.height === height;
-    }, resized);
     const s = (await frame(flow.name + '-resized-final', {atmosphere:'final', optics:'final'}, {compare:false})).stats;
     assert.deepEqual(orbit(s).current, orbit(before).current, 'Resize preserves the orbit pose');
     assert.deepEqual(s.sceneSpace.outdoorCamera.position, before.sceneSpace.outdoorCamera.position);
     assert.ok(Math.abs(s.sceneSpace.outdoorCamera.aspect - resized.width / resized.height) < 1e-10);
     await frame(flow.name + '-resized-depth', {atmosphere:'off', optics:'depth'}, {compare:false});
-    await page.setViewportSize(original);
-    await page.waitForFunction(({width, height}) => {
-      const c = document.querySelector('canvas[aria-label="森林之家可玩山谷"]');
-      return c?.width === width && c?.height === height;
-    }, original);
+    await page.evaluate(() => window.__HOW_RENDER_REVIEW__.set({atmosphere:'final', optics:'final'}));
+  });
+  await naturalResize(original);
+  await held(flow.name + '-resize-restored', async () => {
     const restored = (await frame(flow.name + '-resize-restored', {atmosphere:'final', optics:'final'}, {compare:false})).stats;
     assert.deepEqual(pose(restored), pose(before), 'Returning the viewport restores the same camera projection');
   });

@@ -9,7 +9,7 @@ IMPOSTOR_FRAME_SIZE=256 node tools/impostors/export.mjs
 
 工具在自己的 Vite 端口 5194 运行并自行退出，不进入游戏 RAF。脚本名后的第一个位置参数可改输出目录。运行验证的图片和报告写入系统临时目录 `how-impostor-review`；`IMPOSTOR_EVIDENCE_DIR`（或 `EVIDENCE_DIR`）可更改该位置，图片不得输出到源码树。
 
-每个资产有 25 个视图：8 方位 × 0°/30°/60° 仰角，再加正顶视。每帧默认 128²，四像素内部边距，图集为 1024×512。分别导出**未受光的线性 RGB + 覆盖 alpha**和**资产坐标空间法线**。MSAA 边缘先还原 straight RGB，再逐图块扩张透明像素的 RGB；alpha 轮廓不膨胀。PNG 中的数值为线性数据，运行时不要套 sRGB 解码。两个 RGBA8 图集占约 4 MiB GPU 纹理，不生成会串格的 mipmap。
+每个资产有 25 个视图：8 方位 × 0°/30°/60° 仰角，再加正顶视。每帧默认 128²，四像素内部边距，图集为 1024×512。分别导出**未受光的线性 RGB + 覆盖 alpha**和**资产坐标空间法线**。MSAA 边缘先还原 straight RGB，再逐图块扩张透明像素的 RGB；alpha 轮廓不膨胀。Node 使用内置 zlib 直接编码 RGBA，并解码最终 PNG 逐字节核对，保留 Canvas 预乘转换会清除的全透明 RGB；浏览器另外读取实际上传的 GPU 纹理，检查扩张色仍然存在。PNG 中的数值为线性数据，运行时不要套 sRGB 解码。两个 RGBA8 图集占约 4 MiB GPU 纹理，不生成会串格的 mipmap。
 
 JSON 保留实际包围盒、构图中心、正交视野宽度、相机方向、源三角形数、图集 hash 和源码 hash。修改源树形后重新运行导出。`bakeImpostor` 也可用于单株：提供普通静态、不透明、单材质且仅用顶点色的 Mesh/Group；不接受蒙皮、morph、贴图或透明材质，防止悄悄烘错资产。
 

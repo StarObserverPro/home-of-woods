@@ -121,10 +121,11 @@ export function bakeImpostor(renderer: THREE.WebGLRenderer, source: THREE.Object
   }
 }
 
-/** PNG carries linear bytes; the manifest and runtime explicitly disable sRGB decoding. */
-export function impostorPng(bytes: Uint8Array, width: number, height: number) {
-  const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
-  const context = canvas.getContext('2d'); if (!context) throw new Error('Canvas export unavailable');
-  context.putImageData(new ImageData(new Uint8ClampedArray(bytes), width, height), 0, 0);
-  return canvas.toDataURL('image/png');
+/** Preserve all raw RGB, including alpha=0 padding, on the trip to Node's PNG encoder. */
+export function impostorRgbaBase64(bytes: Uint8Array) {
+  let binary = '';
+  for (let offset = 0; offset < bytes.length; offset += 16384) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 16384));
+  }
+  return btoa(binary);
 }

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {bakeImpostor, impostorPng} from '../../src/scene/impostors/bake.ts';
+import {bakeImpostor, impostorRgbaBase64} from '../../src/scene/impostors/bake.ts';
 import {createImpostorBatch, loadImpostorAtlas} from '../../src/scene/impostors/runtime.ts';
 import {coniferClusterSource} from './source.ts';
 
@@ -13,6 +13,33 @@ renderer.debug.onShaderError = (gl, program, vertex, fragment) => {
 const debug = renderer.getContext().getExtension('WEBGL_debug_renderer_info');
 const backend = debug ? renderer.getContext().getParameter(debug.UNMASKED_RENDERER_WEBGL) : 'unknown';
 let review: {dispose(): void} | null = null;
+
+function dilatedTexels(bytes: Uint8Array) {
+  let count = 0;
+  for (let i = 0; i < bytes.length; i += 4) if (bytes[i + 3] === 0 && (bytes[i] || bytes[i + 1] || bytes[i + 2])) count++;
+  return count;
+}
+
+/** Read the actual uploaded texture, without canvas or premultiplied blending. */
+function uploadedPadding(texture: THREE.Texture, width: number, height: number) {
+  const target = new THREE.WebGLRenderTarget(width, height, {depthBuffer: false, stencilBuffer: false});
+  const geometry = new THREE.PlaneGeometry(2, 2), material = new THREE.ShaderMaterial({
+    uniforms: {dataMap: {value: texture}}, depthTest: false, depthWrite: false, toneMapped: false,
+    vertexShader: 'varying vec2 dataUv;void main(){dataUv=uv;gl_Position=vec4(position.xy,0.,1.);}',
+    fragmentShader: 'uniform sampler2D dataMap;varying vec2 dataUv;void main(){gl_FragColor=texture2D(dataMap,dataUv);}',
+  });
+  const scene = new THREE.Scene(); scene.add(new THREE.Mesh(geometry, material));
+  const camera = new THREE.OrthographicCamera(), pixels = new Uint8Array(width * height * 4);
+  const prior = renderer.getRenderTarget(), viewport = renderer.getViewport(new THREE.Vector4());
+  try {
+    renderer.setRenderTarget(target); renderer.setViewport(0, 0, width, height);
+    renderer.render(scene, camera); renderer.readRenderTargetPixels(target, 0, 0, width, height, pixels);
+    return dilatedTexels(pixels);
+  } finally {
+    renderer.setRenderTarget(prior); renderer.setViewport(viewport);
+    target.dispose(); geometry.dispose(); material.dispose(); scene.clear();
+  }
+}
 
 const api = {
   bake(frameSize: 128 | 256) {
@@ -37,14 +64,16 @@ const api = {
         return {index: frame.index, opaque, borderAlpha};
       });
       return {manifest: first.manifest,
-        albedo: impostorPng(first.albedo, first.manifest.width, first.manifest.height),
-        normal: impostorPng(first.normal, first.manifest.width, first.manifest.height),
-        checks: {deterministic, restored, coverage, errors: [...errors], backend}};
+        albedo: impostorRgbaBase64(first.albedo), normal: impostorRgbaBase64(first.normal),
+        checks: {deterministic, restored, coverage, errors: [...errors], backend,
+          dilatedTexels: {albedo: dilatedTexels(first.albedo), normal: dilatedTexels(first.normal)}}};
     } finally {source.dispose();}
   },
   async review(manifestUrl: string) {
     review?.dispose();
     const source = coniferClusterSource(), atlas = await loadImpostorAtlas(manifestUrl);
+    const {width, height} = atlas.manifest;
+    const texturePadding = {albedo: uploadedPadding(atlas.albedo, width, height), normal: uploadedPadding(atlas.normal, width, height)};
     const before = {geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures};
     const batch = createImpostorBatch(atlas, [{position: [11, 0, 0]}]);
     const scene = new THREE.Scene(); scene.background = new THREE.Color('#d4dfdc');
@@ -73,7 +102,7 @@ const api = {
     }
     // Restore an ordinary oblique comparison for the evidence image.
     camera.position.set(0, 24, 55); camera.lookAt(0, 4, 0); camera.updateMatrixWorld(true); renderer.render(scene, camera);
-    return {errors: [...errors], backend, rendered, modes, batch: batch.stats(), before,
+    return {errors: [...errors], backend, rendered, modes, texturePadding, batch: batch.stats(), before,
       after: {geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures}};
   },
   disposeReview() {

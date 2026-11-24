@@ -5,6 +5,8 @@ import os from 'node:os';
 import path from 'node:path';
 import * as THREE from 'three';
 import {createExportFileMiddleware, EXPORTED_ASSET_ROUTE} from '../tools/impostors/export-files.mjs';
+import {encodeRgbaPng, decodeRgbaPng} from '../tools/impostors/rgba-png.mjs';
+import {impostorRgbaBase64} from '../src/scene/impostors/bake.ts';
 import {dilateTransparentRgb, impostorFrames, selectImpostorFrames, validateImpostorManifest} from '../src/scene/impostors/atlas-layout.ts';
 import type {ImpostorManifest} from '../src/scene/impostors/atlas-layout.ts';
 import {createImpostorBatch} from '../src/scene/impostors/runtime.ts';
@@ -48,6 +50,19 @@ test('dilation extends RGB a bounded distance while preserving every coverage by
   assert.deepEqual([...expanded.subarray((4 * 9 + 6) * 4, (4 * 9 + 6) * 4 + 4)], [100, 180, 220, 0]);
   assert.deepEqual([...expanded.subarray((4 * 9 + 7) * 4, (4 * 9 + 7) * 4 + 4)], [0, 0, 0, 0]);
   assert.throws(() => dilateTransparentRgb(rgba, 8, 8, 1));
+});
+
+test('the final PNG preserves transparent padding and partial coverage byte for byte', () => {
+  const source = new Uint8Array(9 * 9 * 4); source.set([47, 134, 219, 128], (4 * 9 + 4) * 4);
+  const dilated = dilateTransparentRgb(source, 9, 9, 2);
+  const transferred = Buffer.from(impostorRgbaBase64(dilated), 'base64');
+  assert.deepEqual(transferred, Buffer.from(dilated));
+  const png = encodeRgbaPng(transferred, 9, 9), decoded = decodeRgbaPng(png);
+  assert.equal(decoded.width, 9); assert.equal(decoded.height, 9);
+  assert.deepEqual(decoded.rgba, transferred);
+  assert.deepEqual([...decoded.rgba.subarray((4 * 9 + 5) * 4, (4 * 9 + 5) * 4 + 4)], [47, 134, 219, 0]);
+  const corrupt = Buffer.from(png); corrupt[corrupt.length - 5] ^= 1;
+  assert.throws(() => decodeRgbaPng(corrupt), /CRC/);
 });
 
 test('runtime bounds include the displaced card and disposal leaves a shared atlas alive', () => {
