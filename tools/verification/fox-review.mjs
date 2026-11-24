@@ -283,31 +283,22 @@ async function inspect(page) {
 async function captureSample(page, flow, label, requested, reference = null) {
   const name = `fox-${flow.name}-sampled-${label}`; phase = name;
   return held(page, name, async () => {
-    await page.evaluate(pose => window.__HOW_FOX_REVIEW__.sample(pose), requested);
+    // Read the real main canvas in the same task that renders the sample.
+    // Waiting for a UI fetch adds another draw and can read a cleared buffer;
+    // direct readback also keeps a slow software GPU inside the caught await.
+    const image = await page.evaluate(({ pose, selector }) => {
+      window.__HOW_FOX_REVIEW__.sample(pose);
+      return document.querySelector(selector).toDataURL('image/png');
+    }, { pose: requested, selector: canvasSelector });
     await page.waitForFunction(pose => {
       const expression = JSON.parse(document.querySelector('#runtime-stats').textContent).current.wildlife.expressions.find(value => value.id.includes('inspect:wildlife.fox'));
       return expression && expression.clip === pose.motion && Math.abs(expression.blink - pose.blink) < 1e-6 &&
         expression.gaze.every((value, index) => Math.abs(value - pose.gaze[index]) < 1e-6) &&
         expression.head.every((value, index) => Math.abs(value - pose.head[index]) < 1e-6);
     }, requested, { polling: 100 });
-    let timer, resolveCapture;
-    const captured = new Promise((resolve, reject) => {
-      resolveCapture = resolve; timer = setTimeout(() => reject(Error('Main-game scene capture request did not arrive')), 30000);
-    });
-    const handler = async route => {
-      const payload = route.request().postDataJSON();
-      await route.fulfill({ status: 200, contentType: 'text/plain', body: 'Captured by fox review' });
-      resolveCapture(payload);
-    };
-    await page.route('**/__scene-capture', handler);
-    try {
-      await page.locator('.scene-inspector button').filter({ hasText: /^保存场景画面$/ }).evaluate(button => {
-        if (button.disabled) throw Error('The real scene inspector capture control is disabled'); button.click();
-      });
-      const payload = await captured;
-      assert.equal(payload.stats.scenePreset, 'fox');
-      return await saveFrame(page, flow, name, payload.image, payload.stats, requested, reference);
-    } finally { clearTimeout(timer); await page.unroute('**/__scene-capture', handler); }
+    const state = await stats(page);
+    assert.equal(state.scenePreset, 'fox');
+    return await saveFrame(page, flow, name, image, state, requested, reference);
   });
 }
 
