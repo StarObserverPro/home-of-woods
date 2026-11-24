@@ -10,7 +10,7 @@ type Point3 = [number,number,number];
  * All parts are original, low-poly geometry; the Resources owner releases GPU data.
  * No replacement building, interior scene or independent simulation loop is created.
  */
-export function createCampExteriors(r:Resources,tent:THREE.Group,cabin:THREE.Group,fire:THREE.Group){
+export function createCampExteriors(r:Resources,tent:THREE.Group,cabin:THREE.Group,fire:THREE.Group,setTentCanvas?:(changed:boolean)=>void){
   const groups=new Map<string,THREE.Group>();
   const owners=[tent,cabin,fire].map(root=>{const g=new THREE.Group();g.name='exterior-fittings';root.add(g);return g;});
   const part=(id:string,parent:Parent)=>{
@@ -30,7 +30,7 @@ export function createCampExteriors(r:Resources,tent:THREE.Group,cabin:THREE.Gro
 
   // The canvas is a removable covering on the SAME tent, not a second tent mesh.
   const canvas=part('tent:canvas',owners[0]),baseCanvas:THREE.Mesh[]=[],newCanvas:THREE.Mesh[]=[];
-  tent.traverse(object=>{
+  if(!setTentCanvas)tent.traverse(object=>{
     if(object instanceof THREE.Mesh && /^(canvas_panel|canvas_back)/.test(object.name))baseCanvas.push(object);
   });
   for(const base of baseCanvas){
@@ -38,8 +38,10 @@ export function createCampExteriors(r:Resources,tent:THREE.Group,cabin:THREE.Gro
     overlay.material=material('#829b7a');overlay.visible=false;
     base.parent!.add(overlay);newCanvas.push(overlay);
   }
-  for(const z of [-2.25,2.25])rod(canvas,'canvas-edge-binding',[-2.5,.28,z],[0,3.88,z],.075,'#c6a575');
-  rod(canvas,'canvas-front-seam',[-2.4,.25,2.53],[2.4,.25,2.53],.055,'#d5b783');
+  if(!setTentCanvas){
+    for(const z of [-2.25,2.25])rod(canvas,'canvas-edge-binding',[-2.5,.28,z],[0,3.88,z],.075,'#c6a575');
+    rod(canvas,'canvas-front-seam',[-2.4,.25,2.53],[2.4,.25,2.53],.055,'#d5b783');
+  }
 
   const ropes=part('tent:ropes',owners[0]);
   for(const x of [-1,1])for(const z of [-1,1]){
@@ -52,12 +54,20 @@ export function createCampExteriors(r:Resources,tent:THREE.Group,cabin:THREE.Gro
     rod(poles,'reinforced-side-pole',[2.59,.21,z],[0,3.87,z],.13,'#95734b');
     box(poles,'ridge-binding',[0,3.84,z],[.54,.17,.38],'#c2a079');
   }
-  const ornament=part('tent:ornament',owners[0]);
-  rod(ornament,'chime-loop',[.6,3.83,2.89],[.6,3.27,2.89],.035,'#e0d1aa');
-  for(const [i,x] of [-.15,.15,.45].entries()){
-    rod(ornament,'hanging-wood-chime',[x+.6,3.20,2.91],[x+.6,2.92-(i%2)*.15,2.91],.07,'#a87b4b');
+  const ornament=part('tent:chimes',owners[0]);
+  const entrySocket=tent.getObjectByName('tent:entry-right');
+  if(entrySocket){
+    ornament.position.copy(entrySocket.position);
+    rod(ornament,'chime-loop',[0,-.12,.04],[0,-.34,.04],.024,'#e0d1aa');
+    box(ornament,'chime-crossbar',[0,-.34,.04],[.49,.055,.07],'#c29f6c');
+    for(const [i,x] of [-.16,0,.16].entries())
+      rod(ornament,'hanging-wood-chime',[x,-.37,.04],[x,-.66-(i%2)*.12,.04],.043,'#a87b4b');
+  }else{
+    rod(ornament,'chime-loop',[.6,3.83,2.89],[.6,3.27,2.89],.035,'#e0d1aa');
+    for(const [i,x] of [-.15,.15,.45].entries())
+      rod(ornament,'hanging-wood-chime',[x+.6,3.20,2.91],[x+.6,2.92-(i%2)*.15,2.91],.07,'#a87b4b');
+    box(ornament,'chime-crossbar',[.76,3.23,2.9],[.93,.08,.09],'#c29f6c');
   }
-  box(ornament,'chime-crossbar',[.76,3.23,2.9],[.93,.08,.09],'#c29f6c');
 
   // Existing cabin repair remains the prerequisite for later envelope work.
   const roof=part('cabin:roof',owners[1]);
@@ -123,6 +133,7 @@ export function createCampExteriors(r:Resources,tent:THREE.Group,cabin:THREE.Gro
           : !['camp-fire:hook','camp-fire:grill','camp-fire:smoker'].includes(id)||workshop.mounted?.['camp-fire:top']===id);
       }
       const changed=fitted('tent:canvas');
+      setTentCanvas?.(changed);
       for(const mesh of baseCanvas)mesh.visible=!changed;
       for(const mesh of newCanvas)mesh.visible=changed;
     },

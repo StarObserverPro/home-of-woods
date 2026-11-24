@@ -1,0 +1,63 @@
+name: Tent Appearance and Portal
+on:
+  pull_request:
+    paths:
+      - 'src/content/tent*.ts'
+      - 'src/content/scene-props.ts'
+      - 'src/domain/tent.ts'
+      - 'src/scene/tent/**'
+      - 'src/scene/create-scene.ts'
+      - 'src/scene/camp-exteriors.ts'
+      - 'src/scene/lighting/interior-lighting.ts'
+      - 'src/scene/lighting/interior-materials.ts'
+      - 'src/scene/lighting/building-occlusion.ts'
+      - 'src/content/shadows.ts'
+      - 'src/world/shadow-field.ts'
+      - 'src/world/layout.ts'
+      - 'src/app/runtime.ts'
+      - 'src/ui/App.tsx'
+      - 'src/ui/hud-layout.css'
+      - 'tests/tent*.test.ts'
+      - 'tests/interior-materials.test.ts'
+      - 'tools/verification/tent*.mjs'
+      - 'package*.json'
+      - '.github/workflows/tent-review.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tent-review-platforms-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  tent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [material, desktop, phone]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci
+      - name: Verify tent geometry, portal and shared UI contracts
+        run: node --experimental-strip-types --test tests/tent*.test.ts tests/interior-materials.test.ts
+      - run: npm run verify:ui && npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get install -y fonts-noto-cjk
+      - name: Review the tent in the built game
+        run: node tools/verification/tent-review.mjs
+        env:
+          TENT_REVIEW_SUITE: ${{ matrix.suite }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tent-${{ matrix.suite }}-evidence
+          path: /tmp/how-tent-evidence/
+          if-no-files-found: warn
+          retention-days: 14

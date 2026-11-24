@@ -5,7 +5,7 @@ import {navigationDollyScale} from './overlook-optics-rules.ts';
 export type CameraPoint = {x:number;y:number;z:number};
 export type OrbitPose = {yaw:number;elevation:number;zoom:number;distance:number};
 export type OverlookMode = 'follow' | 'overlook' | 'returning';
-export type CameraBorrower = 'scene' | 'character' | 'cabin' | null;
+export type CameraBorrower = 'scene' | 'character' | 'cabin' | 'tent' | null;
 
 const clamp=(value:number,min:number,max:number)=>Math.max(min,Math.min(max,value));
 const angle=(value:number)=>Math.atan2(Math.sin(value),Math.cos(value));

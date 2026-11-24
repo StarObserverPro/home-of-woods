@@ -119,6 +119,18 @@ R5d 回接：domain/scene-props 从 GameState.time 派生视觉时刻和篝火�
 
 林业完成在同步步骤中结算原木、已用点数、释放预留和补生时间；之后表现倾倒、树桩及倒伏源树短暂停留。倒伏源树不再参与拾取，树桩沿用原 slotId；新个体换代，不因切换表现而改写奖励。云、水和动作表现都借用同一应用循环，减少动态效果不会创建另一时钟。
 
+### 帐篷子空间与布面
+
+`content/tent.ts` 维护外观尺度、布面弧度、织物参数、陈设尺寸和三个稳定挂点；`content/tent-room.ts` 在同一 +Z 门向和 1.6 倍尺度下登记 `tent:interior`。门前停靠点 `(-44, 11.15)` 经右侧肩点 `(-39, 11.15)` 接入营地现有导航网格，避开原有工作台；每段连接都按运行时完整碰撞集合检查。点击门会走近并进入，帐内以独立局部坐标行走，三件陈设的碰撞消费同一尺寸。门帘开合与帐内访问属于会话状态；刷新后回到保存的合法门前，门帘默认掀起。
+
+帐内复用木屋已使用的一个 renderer、一个共享角色、一个主循环和淡切覆层。室外场景在帐内停止绘制，天光仍从主时钟和天气取样。`scene/tent/room.ts` 惰性创建并复用，镜头剖去朝向观察者的布面，完整双层曲面继续作为阴影围护；三件陈设保留位置和接触遮蔽。内景通过共享 `lighting/interior-lighting.ts` 使用 `SHADOW_PROFILES.interior`，并调用同一 `snappedShadowPose` 与世界尺度到 texel 的偏移、柔化换算。只有一张 1024² 方向影图，门口填光不新增点光阴影。
+
+帐内角色使用 `lighting/interior-materials.ts` 缓存的独立材质，保留原户外材质与 canopy/AO/air 的 uniform 所有者；几何、骨骼与贴图仍共享，眨眼贴图在角色更新后同步。这样避免同一材质在两个 `onBeforeCompile` 布局间往返时命中 Three 已缓存的程序，却沿用另一布局的 uniform 表。退出恢复原材质，重入复用帐内材质，最终由各自 Resources 释放。镜头按真实网格顶点、风幅余量及当前宽高比拟合，预留 HUD 空间；用户缩放仍可主动靠近。布内散射和衬里反光用随昼夜与天气变化的半球填光近似；夜间另有一盏无阴影的方向补光，让钵沿、鼓身和角色保留受光层次。门帘关闭减弱门口光，仍保留布面反射近似。
+
+布面使用 Three.js `MeshPhysicalMaterial` 的 sheen、确定性纤维高度/粗糙度图及有 mip 的 512² 几何纹带；材质 API 见 [Three.js 官方说明](https://threejs.org/docs/pages/MeshPhysicalMaterial.html)。粗糙度保持高值，细纹在远处由 mip 平均，花纹保留宽色带。每秒最多更新 24 次局部布面顶点，最大位移 0.035 个模型单位，脊、边与支撑固定，暂停不推进风相位，减少动态效果恢复静态曲布。绷绳不穿门前通道。
+
+`?inspect=1` 的 `tentNear`、`tentSide`、`tentFar` 使用同一主场景；`tentMaterial=clay|normals|wireframe` 检查形体与通道，`tentWindTime=0` 固定布面相位，`optics=off` 可停后处理。`stats.tentExterior`、`sceneSpace.tent` 记录几何/纹理/独立资源及当前门帘状态。实际检查与已知边界见 [本批 scope](scopes/tent-felt-subspace.md)。
+
 ## 时间与生命周期
 
 主循环顺序：输入意图 → domain 固定步长/到期事项 → 快照同步 → 视觉更新 → render。玩法不依赖帧率；大幅休息按到期时间和稳定次序推进，不靠海量渲染帧补算。

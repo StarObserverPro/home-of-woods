@@ -19,7 +19,7 @@ export function normalizeShadowDirection(value:ShadowPoint):[number,number,numbe
 }
 
 /** Light-space grid snapping changes coverage, never the direction illuminating the surface. */
-export function snappedShadowPose(focus:ShadowPoint,direction:ShadowPoint,span=SHADOW_PROFILES.outdoor.span,mapSize=SHADOW_PROFILES.outdoor.mapSize,distance=SHADOW_PROFILES.outdoor.lightDistance){
+export function snappedShadowPose(focus:ShadowPoint,direction:ShadowPoint,span:number=SHADOW_PROFILES.outdoor.span,mapSize:number=SHADOW_PROFILES.outdoor.mapSize,distance:number=SHADOW_PROFILES.outdoor.lightDistance){
   if(!focus.every(Number.isFinite)||span<=0||mapSize<1)throw new Error('Invalid shadow focus/coverage');
   const w=normalizeShadowDirection(direction);
   const right=normalizeShadowDirection(Math.abs(w[1])>.999 ? [1,0,0] : [w[2],0,-w[0]]);

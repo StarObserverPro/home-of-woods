@@ -3,6 +3,7 @@ import { heightAt, pathDistance, riverX, slopeAt } from "./surface.ts";
 import {CAMP_VISITOR} from '../content/characters.ts';
 import {CAMP_PROPS} from '../content/scene-props.ts';
 import {LOG_SHELTER_POSTS} from '../content/weather.ts';
+import {TENT_SCALE,TENT_SHAPE} from '../content/tent.ts';
 import {CREEK_BRIDGE,REGIONS} from '../content/regions.ts';
 import type {RegionId} from '../content/regions.ts';
 import {regionAt} from './regions.ts';
@@ -42,7 +43,10 @@ export function makeRocks() {
       rotation = rng() * 6.283;
     rocks.push({ id: `rock-${i}`, x, z, scale, rotation });
   }
-  return rocks;
+  // Keep the cloth footprint clear without shifting the seeded scatter elsewhere.
+  // Filter after generation so every existing rock retains its sampled transform.
+  return rocks.filter(p=>Math.abs(p.x-TENT.x)>TENT_SHAPE.halfWidth*TENT_SCALE+p.scale ||
+    Math.abs(p.z-TENT.z)>TENT_SHAPE.halfDepth*TENT_SCALE+p.scale);
 }
 export function random(seed: number) {
   let a = seed >>> 0;
