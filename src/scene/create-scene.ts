@@ -47,6 +47,10 @@ import * as THREE from "three";
 import { CABIN, CAMERA, GIANT, HOME, TENT, WORLD } from "../content/world.ts";
 import { CABIN_EXTERIOR, CABIN_PORTAL, CABIN_ROOM } from '../content/cabin.ts';
 import type { CabinPlayer } from '../domain/cabin.ts';
+import { TENT_SCALE, TENT_SHAPE } from '../content/tent.ts';
+import type { TentDebugMode } from '../content/tent.ts';
+import { TENT_PORTAL, TENT_ROOM } from '../content/tent-room.ts';
+import type { TentPlayer } from '../domain/tent.ts';
 import type { GameState } from "../domain/state.ts";
 import {makeColliders} from "../world/layout.ts";
 import type { Collider,Tree } from "../world/layout.ts";
@@ -63,6 +67,8 @@ import {createCampProps} from './camp-props.ts';
 import {createSelectionMarker} from './selection-marker.ts';
 import {createCabinRepair} from './cabin-repair.ts';
 import {createCabinRoom} from './cabin/room.ts';
+import {createTentExterior} from './tent/exterior.ts';
+import {createTentRoom} from './tent/room.ts';
 import {createSkySample,sampleSkyLight} from './lighting/sky-light.ts';
 import {createCampExteriors} from './camp-exteriors.ts';
 import {VIEWS,CAMP_PROPS,DINING_SEAT} from '../content/scene-props.ts';
@@ -83,6 +89,7 @@ export type SceneIntent =
   | { kind: "wood-drop"; x:number; y:number; z:number }
   | { kind: 'cabin-door' }
   | { kind: 'cabin-lamp' }
+  | { kind: 'tent-door' }
   | { kind: "select"; id: string }
   | { kind: "move"; x: number; z: number };
 export async function createScene(
@@ -193,8 +200,13 @@ export async function createScene(
   let appearance=sceneAppearanceAt(0),scenePreset:SceneViewPreset|null=null,sceneOverrides:Partial<SceneAppearance>={};
   let cabinRoom:ReturnType<typeof createCabinRoom>|null=null;
   let cabinPlayer:CabinPlayer|null=null;
+  let tentRoom:ReturnType<typeof createTentRoom>|null=null;
+  let tentPlayer:TentPlayer|null=null;
+  const activeInterior=()=>tentPlayer?tentRoom:cabinPlayer?cabinRoom:null;
+  const inside=()=>!!tentPlayer||!!cabinPlayer;
   let cabinTime=0, lastCabinLightAt=0, outsideFrames=0;
-  let fadeAmount=0, returnDoorView=false, snapOutdoorTarget=false;
+  let tentTime=0, lastTentLightAt=0, tentDoorOpen=true;
+  let fadeAmount=0, returnDoorView=false, returnTentView=false, snapOutdoorTarget=false;
   let schedulePresentation=()=>{};
   let presentationDirty=false;
   const requestPresentation=()=>{presentationDirty=true;schedulePresentation();};
@@ -212,12 +224,19 @@ export async function createScene(
   let forestViewStats:ReturnType<typeof forestViewPlanner.plan>['stats']|null=null;
   let forestViewReady=true,frameViewRepairs=0;
   const props = new Map<string, THREE.Object3D>();
+  const tent=createTentExterior(r);
+  const tentMode=renderParams.get('tentMaterial');
+  const tentDebug=(['clay','wireframe','normals'].includes(tentMode??'')?tentMode:'final') as TentDebugMode;
+  tent.setDebugMode(tentDebug);
+  const fixedTentWind=auditParams.has('inspect')&&auditParams.has('tentWindTime')?Number(auditParams.get('tentWindTime')):NaN;
+  const buildingSources=new Map(models.templates);
+  buildingSources.set('tent',tent.group.clone(true));
   for (const [name, p] of [
     ["cabin", CABIN],
     ["tent", TENT],
   ] as const) {
-    const model = name==='tent'?models.clone(name):models.staticClone(name);
-    model.scale.setScalar(name==='cabin'?CABIN_EXTERIOR.scale:1.6);
+    const model = name==='tent'?tent.group:models.staticClone(name);
+    model.scale.setScalar(name==='cabin'?CABIN_EXTERIOR.scale:TENT_SCALE);
     if(name==='cabin')model.rotation.y=CABIN_EXTERIOR.yaw;
     model.position.set(p.x, heightAt(p.x, p.z), p.z);
     scene.add(model);
@@ -225,7 +244,7 @@ export async function createScene(
   }
   const cabinRepair=createCabinRepair(models);
   props.get('cabin')!.add(cabinRepair.group);
-  const campExteriors=createCampExteriors(r,props.get('tent')! as THREE.Group,props.get('cabin')! as THREE.Group,camp.roots.get(CAMP_PROPS.fire.id)!);
+  const campExteriors=createCampExteriors(r,props.get('tent')! as THREE.Group,props.get('cabin')! as THREE.Group,camp.roots.get(CAMP_PROPS.fire.id)!,changed=>tent.setCanvasVariant(changed?'sage':'warm'));
   const housing=createHousingPresentation(r,props.get('cabin')!);
   scene.add(housing.group);
   const propFades = new Map<
@@ -241,6 +260,9 @@ export async function createScene(
     }
   >();
   props.forEach((root) => {
+    // Cloth, doorway and debug materials are owned by the tent presentation.
+    // A generic material swap would overwrite its door state and surface channels.
+    if(root===tent.group)return;
     const box = new THREE.Box3().setFromObject(root),
       center = box.getCenter(new THREE.Vector3()),
       radius = box.getSize(new THREE.Vector3()).length() / 2,
@@ -346,7 +368,7 @@ export async function createScene(
     mesh.updateWorldMatrix(true,false);
   });
   const screenRay = (clientX: number, clientY: number) => {
-    const activeRoom=cabinPlayer?cabinRoom:null;
+    const activeRoom=activeInterior();
     const activeCamera=activeRoom?.camera??camera;
     (activeRoom?.scene??scene).updateMatrixWorld(true);activeCamera.updateMatrixWorld(true);
     const rect = canvas.getBoundingClientRect();
@@ -366,10 +388,19 @@ export async function createScene(
       if(hit)intent(hit);
       return;
     }
+    if(tentPlayer&&tentRoom){
+      const hit=tentRoom.pick(ray);
+      if(hit)intent(hit);
+      return;
+    }
     const hit = interactionHit(),
       surfaceHit = terrainHit();
     if(woodDropMode){const drop=ray.intersectObjects([...woodcraft.hits.objects(),...walkableObjects()],true)[0];if(drop)intent({kind:'wood-drop',x:drop.point.x,y:drop.point.y,z:drop.point.z});return;}
     if(placementMode){if(surfaceHit)intent({kind:'move',x:surfaceHit.point.x,z:surfaceHit.point.z});return;}
+    const doorwayHit=ray.intersectObjects(tent.doorTargets,true)[0];
+    if(doorwayHit&&(!hit||doorwayHit.distance<=hit.distance+.12)&&(!surfaceHit||doorwayHit.distance<surfaceHit.distance+.2)){
+      intent({kind:'tent-door'});return;
+    }
     if(surfaceHit&&insideWoodcraft(surfaceHit.point,0)&&(!hit||hit.distance>surfaceHit.distance+.2)){intent({kind:'select',id:WOODCRAFT.id});return;}
     if (hit && (!surfaceHit || hit.distance < surfaceHit.distance + 0.2)) {
       const bridgeId=bridge.hits.resolve(hit.object);if(bridgeId){intent({kind:'select',id:bridgeId});return;}
@@ -452,7 +483,8 @@ export async function createScene(
       lastPinch = dist;
       view.rotate(-dx*.003);
     } else if (p.drag) {
-      if(cabinPlayer&&cabinRoom){cabinRoom.orbit(dx*.006,dy*.003);requestPresentation();}
+      const room=activeInterior();
+      if(room){room.orbit(dx*.006,dy*.003);requestPresentation();}
       else {
         view.rotate(-dx*.006);
         view.elevate(dy*.003);
@@ -495,11 +527,12 @@ export async function createScene(
     if(cabinRoom){
       cabinRoom.camera.aspect=aspect;
       cabinRoom.camera.updateProjectionMatrix();
-      if(cabinPlayer&&lastState)view.render(lastState,0);
     }
+    if(tentRoom){tentRoom.camera.aspect=aspect;tentRoom.camera.updateProjectionMatrix();}
+    if(inside()&&lastState)view.render(lastState,0);
     // A paused outdoor loop must repaint the cleared canvas through its normal
     // presentation scheduler, including the resized HDR/depth buffers.
-    if(!cabinPlayer){river.invalidate();requestPresentation();}
+    if(!inside()){river.invalidate();requestPresentation();}
   };
   const observer = new ResizeObserver(resize);
   observer.observe(host);
@@ -508,7 +541,7 @@ export async function createScene(
   outdoorShadows.bind(scene);outdoorShadows.bindMaterial(fadeMat);
   propFades.forEach(({materials})=>materials.forEach(({fade})=>outdoorShadows.bindMaterial(fade)));
   const characterContacts=createCharacterContactShadows(r,{surfaceAt:(x,z)=>lastState?travelHeightAt(x,z,travelAccess(lastState)):heightAt(x,z)});
-  const localOcclusion=createCampOcclusion({resources:r,scene,trees:forest.canopyTrees,props,buildingSources:models.templates,campRoots:camp.roots,interactionRoots:()=>[...housing.hits.objects(),...workshop.hits.objects()],outerSeeds:horizon.canopySeeds,surfaceAt:horizon.surfaceAt});
+  const localOcclusion=createCampOcclusion({resources:r,scene,trees:forest.canopyTrees,props,buildingSources,campRoots:camp.roots,interactionRoots:()=>[...housing.hits.objects(),...workshop.hits.objects()],outerSeeds:horizon.canopySeeds,surfaceAt:horizon.surfaceAt});
   localOcclusion.bind(scene);
   // Prebind variants that are not on a mesh until occlusion first fades a crown or building.
   localOcclusion.bindMaterial(fadeMat);
@@ -518,7 +551,7 @@ export async function createScene(
   let airScannedRevision=-1;
   const dynamicSurfaceRoots=[housing.group,housing.mountedGroup,workshop.group,woodcraft.group,hauling.group,gathering.group,broom.group,wildlife.group];
   const view = {
-    hasPendingPresentation:()=>!cabinPlayer&&frameWork.stats().pending>0||presentationDirty||overlook.pending()||followTargetPending,
+    hasPendingPresentation:()=>!inside()&&(frameWork.stats().pending>0||overlook.pending()||followTargetPending)||presentationDirty,
     setPresentationScheduler(callback:()=>void){schedulePresentation=callback;},
     setCameraAdvanceScale(value:number){overlook.setAdvanceScale(value);},
     prepareForMovement(){
@@ -531,7 +564,7 @@ export async function createScene(
       const plan=overlook.plan();
       // A borrowed view can return between frames, before cameraOwner is
       // reassigned by render. Its resumed high rig still needs a forecast now.
-      const navigation=!cabinPlayer&&!borrowedOutdoorCamera()&&(cameraOwner==='navigation'||!overlook.groundReady());
+      const navigation=!inside()&&!borrowedOutdoorCamera()&&(cameraOwner==='navigation'||!overlook.groundReady());
       const destination=plan.destination??navigationTarget(plan.desired.zoom,forecastTarget);
       const desiredTarget=[destination.x,destination.y,destination.z];
       if(navigation){
@@ -541,12 +574,12 @@ export async function createScene(
           updateNavigationForecast(forecastCameras[index],camera,sample.pose,sample.target,mobile);
         }
       }
-      else forecastCamera.copy(cabinPlayer&&cabinRoom?cabinRoom.camera:camera);
-      return {...plan,owner:cameraOwner,currentCamera:cabinPlayer&&cabinRoom?cabinRoom.camera:camera,
+      else forecastCamera.copy(activeInterior()?.camera??camera);
+      return {...plan,owner:cameraOwner,currentCamera:activeInterior()?.camera??camera,
         desiredCamera:forecastCamera,forecastCameras:navigation?forecastCameras:[],
         currentTarget:target.toArray(),desiredTarget};
     },
-    setAmbientOcclusion:(enabled:boolean)=>(cabinPlayer&&cabinRoom?cabinRoom.occlusion:localOcclusion).setEnabled(enabled),
+    setAmbientOcclusion:(enabled:boolean)=>(activeInterior()?.occlusion??localOcclusion).setEnabled(enabled),
     setCanopyShadows:(enabled:boolean)=>outdoorShadows.setEnabled(enabled),
     setCharacterContacts:(enabled:boolean)=>characterContacts.setEnabled(enabled),
     setAtmosphereMode:(mode:AtmosphereDebug)=>{atmosphere.setDebug(mode);river.invalidate();requestPresentation();},
@@ -565,10 +598,50 @@ export async function createScene(
     canvas,
     camera,
     renderer,
-    getYaw: () => cabinPlayer&&cabinRoom?cabinRoom.view.yaw:yaw,
+    getYaw: () => activeInterior()?.view.yaw??yaw,
     cabinLampOn:()=>cabinRoom?.lampOn??false,
     setCabinLamp:(value:boolean)=>cabinRoom?.setLamp(value),
     cabinFade(value:number){fadeAmount=value;fade.style.opacity=String(value);},
+    tentFade(value:number){fadeAmount=value;fade.style.opacity=String(value);},
+    setTentDoorOpen(value:boolean){
+      tentDoorOpen=value;
+      tent.setDoorOpen(value,true);
+      tentRoom?.setDoorOpen(value);
+      requestPresentation();
+    },
+    prepareTent(){
+      if(tentRoom)return;
+      tentRoom=createTentRoom();
+      tentRoom.camera.aspect=camera.aspect;
+      tentRoom.camera.updateProjectionMatrix();
+      tentRoom.occlusion.setEnabled(auditParams.get('ao')!=='off');
+      tentRoom.setDoorOpen(tentDoorOpen);
+      tentRoom.setDebugMode(tentDebug);
+    },
+    enterTent(pose:TentPlayer,state:GameState){
+      if(!tentRoom)return;
+      atmosphere.unbind(player);localOcclusion.unbind(player);outdoorShadows.unbind(player);
+      tentRoom.scene.add(player);
+      characters.resetLocomotion();tentPlayer=pose;
+      overlook.setBorrower('tent');cameraOwner='tent';followTargetPending=false;
+      tentTime=0;lastTentLightAt=state.time;
+      tentRoom.resetCamera();
+      const conditions=weatherSnapshot(state);
+      const hour=Number.isFinite(auditHour)&&auditHour>=0&&auditHour<=24?auditHour:sceneAppearanceAt(state.time).hour;
+      tentRoom.setLighting(sampleSkyLight(cabinSky,hour,conditions.cloud,conditions.rain),hour);
+      tentRoom.setCanvasVariant((state.workshop.upgrades['tent:canvas']?.level??0)>0?'sage':'warm');
+      canvas.setAttribute('aria-label','帐篷内');
+    },
+    leaveTent(focusDoor=false){
+      if(!tentPlayer||!tentRoom)return;
+      tentRoom.occlusion.unbind(player);
+      scene.add(player);outdoorShadows.bind(player);localOcclusion.bind(player);atmosphere.bind(player);
+      characters.resetLocomotion();tentPlayer=null;
+      overlook.setBorrower(scenePreset?'scene':characters.getInspection()!==null?'character':null);
+      if(focusDoor)overlook.requestFollow();
+      returnTentView=focusDoor;snapOutdoorTarget=focusDoor;
+      canvas.setAttribute('aria-label','森林之家可玩山谷');river.invalidate();
+    },
     prepareCabin(){
       if(cabinRoom)return;
       cabinRoom=createCabinRoom(models.templates.get('cabin')!);
@@ -626,19 +699,21 @@ export async function createScene(
     setWoodcraftDrop(value:boolean){woodDropMode=value;},
     setPlacement(value:PlacementDraft|null){placementMode=!!value;if(value)overlook.requestFollow();workshop.setPreview(value&&lastState?.inventory.instances?.find(i=>i.instanceId===value.instanceId)?.definitionId===SEAT_DEFINITION?value:null);housing.setPreview(value);broom.setPreview(value);},
     resetCamera() {
-      if(cabinPlayer&&cabinRoom){cabinRoom.resetCamera();requestPresentation();return;}
+      const room=activeInterior();
+      if(room){room.resetCamera();requestPresentation();return;}
       if(borrowedOutdoorCamera()){yaw=CAMERA.yaw;elevation=CAMERA.elevation;zoom=CAMERA.zoom;}
       else overlook.reset();
       cameraInputChanged();
     },
     rotate(amount: number) {
-      if(cabinPlayer&&cabinRoom){cabinRoom.orbit(-amount,0);requestPresentation();return;}
+      const room=activeInterior();
+      if(room){room.orbit(-amount,0);requestPresentation();return;}
       manualCamera();
       if(borrowedOutdoorCamera())yaw+=amount;else overlook.rotate(amount);
       cameraInputChanged();
     },
     elevate(amount:number){
-      if(cabinPlayer&&cabinRoom||cameraOwner==='action'||cameraOwner==='placement')return;
+      if(inside()||cameraOwner==='action'||cameraOwner==='placement')return;
       manualCamera();
       if(amount>0)releaseHousingFocus();
       if(borrowedOutdoorCamera())elevation=clamp(elevation+amount,CAMERA.minElevation,OVERLOOK.maxElevation);
@@ -646,7 +721,8 @@ export async function createScene(
       cameraInputChanged();
     },
     zoomBy(amount: number) {
-      if(cabinPlayer&&cabinRoom){cabinRoom.zoomBy(amount);requestPresentation();return;}
+      const room=activeInterior();
+      if(room){room.zoomBy(amount);requestPresentation();return;}
       if(amount<1&&(cameraOwner==='action'||cameraOwner==='placement'))return;
       manualCamera();
       if(amount<1)releaseHousingFocus();
@@ -678,6 +754,24 @@ export async function createScene(
       if (destroyed) return;
       presentationDirty=false;
       lastState=state;
+      if(tentPlayer&&tentRoom){
+        optics.suspend();
+        tentTime+=Math.max(0,Math.min(dt,.1));
+        if(Math.abs(state.time-lastTentLightAt)>=6){
+          const conditions=weatherSnapshot(state);
+          const hour=Number.isFinite(auditHour)&&auditHour>=0&&auditHour<=24?auditHour:sceneAppearanceAt(state.time).hour;
+          tentRoom.setLighting(sampleSkyLight(cabinSky,hour,conditions.cloud,conditions.rain),hour);
+          lastTentLightAt=state.time;
+        }
+        characters.updateInCabin(state,tentPlayer,TENT_ROOM.floorY,reducedMotion,tentTime);
+        tentRoom.occlusion.bind(player);
+        tentRoom.update(tentTime,dt,reducedMotion);
+        tentRoom.occlusion.updateCamera(tentRoom.camera,host.clientHeight);
+        renderer.toneMappingExposure=tentRoom.exposure;
+        renderer.info.reset();renderer.info.autoReset=false;
+        renderer.render(tentRoom.scene,tentRoom.camera);
+        schedulePresentation();return;
+      }
       if(cabinPlayer&&cabinRoom){
         optics.suspend();
         cabinTime+=Math.max(0,Math.min(dt,.1));
@@ -738,6 +832,8 @@ export async function createScene(
       hauling.update(state.inventory,state.player,travelAccess(state));
       cabinRepair.update(state.workshop.upgrades?.cabin?.level??0);
       campExteriors.update(state.workshop);
+      tent.update({time:Number.isFinite(fixedTentWind)?fixedTentWind:ambientTime,delta:dt,reducedMotion,
+        windStrength:.35+weather.profile.rain*.35+weather.profile.snowfall*.15,windDirection:{x:.8,z:.3}});
       const action=state.gathering.action,ritual=state.ritual,craft=state.workshop.job;
       const sweeping=broom.action();
       characters.present(ambientTime,reducedMotion,!!sweeping||life.isMealPlaying());
@@ -779,7 +875,10 @@ export async function createScene(
       const distanceToDoor=Math.hypot(x-CABIN_PORTAL.landing.x,z-CABIN_PORTAL.landing.z);
       if(distanceToDoor>3||state.selected&&state.selected!=='cabin')returnDoorView=false;
       const focusDoor=(state.selected==='cabin'||returnDoorView)&&distanceToDoor<4;
-      const housingPoint=focusDoor?CABIN_PORTAL.threshold:housingItem?.definitionId===HOUSING.doorbell.definitionId&&housingItem.location.kind==='mounted'?HOUSING.doorbell.point:
+      const distanceToTent=Math.hypot(x-TENT_PORTAL.landing.x,z-TENT_PORTAL.landing.z);
+      if(distanceToTent>3||state.selected&&state.selected!=='tent')returnTentView=false;
+      const focusTent=(state.selected==='tent'||returnTentView)&&distanceToTent<4;
+      const housingPoint=focusDoor?CABIN_PORTAL.threshold:focusTent?TENT_PORTAL.threshold:housingItem?.definitionId===HOUSING.doorbell.definitionId&&housingItem.location.kind==='mounted'?HOUSING.doorbell.point:
         state.selected===WORKBENCH.id?WORKBENCH:housingItem&&isHousingFurniture(housingItem.definitionId)&&housingItem.location.kind==='world'?housingItem.location:null;
       if(releasedHousingId!==undefined&&state.selected!==releasedHousingId)releasedHousingId=undefined;
       const requestedHousing=!scenePreset&&!framed&&!inspecting&&releasedHousingId===undefined&&housingPoint&&Math.hypot(state.player.x-housingPoint.x,state.player.z-housingPoint.z)<6?housingPoint:null;
@@ -791,7 +890,7 @@ export async function createScene(
       const framing = Math.min(1, (CAMERA.zoom / zoom) ** 2);
       desired.set(x,y+(inspecting?1.25:1.5),z).lerp(overview,inspecting?0:(mobile ? .12 : .75)*framing*clamp(1-(Math.hypot(x-HOME.x,z-HOME.z)-20)/50,0,1));
       if(focusHousing){
-        const focusHeight=focusDoor?heightAt(CABIN.x,CABIN.z)+CABIN_EXTERIOR.threshold.y*CABIN_EXTERIOR.scale+1.6:
+        const focusHeight=focusDoor?heightAt(CABIN.x,CABIN.z)+CABIN_EXTERIOR.threshold.y*CABIN_EXTERIOR.scale+1.6:focusTent?heightAt(TENT.x,TENT.z)+2.3:
           focusHousing===HOUSING.doorbell.point?props.get('cabin')!.localToWorld(new THREE.Vector3(HOUSING.doorbell.anchor.x,HOUSING.doorbell.anchor.y,HOUSING.doorbell.anchor.z)).y:heightAt(focusHousing.x,focusHousing.z)+1.2;
         desired.set(focusHousing.x,focusHeight,focusHousing.z);
       }
@@ -916,11 +1015,18 @@ export async function createScene(
       schedulePresentation();
     },
     stats() {
+      const doorHitPoint=tent.group.localToWorld(new THREE.Vector3(0,2.25,TENT_SHAPE.doorZ+.03));
+      const doorNdc=doorHitPoint.clone().project(camera);
+      const doorScreenPoint={x:(doorNdc.x+1)*canvas.clientWidth/2,y:(1-doorNdc.y)*canvas.clientHeight/2,
+        visible:!inside()&&Math.abs(doorNdc.x)<1&&Math.abs(doorNdc.y)<1&&doorNdc.z>-1&&doorNdc.z<1};
+      const floorNdc=tentRoom?new THREE.Vector3(0,TENT_ROOM.floorY,.3).project(tentRoom.camera):null;
       return {
         life:life.stats(),broom:broom.stats(),housing:housing.stats(),woodcraft:woodcraft.stats(),workshop:workshop.stats(),understory:understory.stats(),treeShapes:trees.reduce((counts,t)=>{const name=treeVisual(t).name;counts[name]=(counts[name]??0)+1;return counts;},{} as Record<string,number>),appearance:{...appearance},scenePreset,camp:camp.stats(),terrain:ground.geometry.userData,shaderErrors,
         resources: r.stats(),
-        occlusion:cabinPlayer&&cabinRoom?cabinRoom.occlusion.stats():localOcclusion.stats(),
-        sceneSpace:{active:cabinPlayer?'cabin':'outdoor',outsideFrames,fade:fadeAmount,cabin:cabinRoom?.stats()??null,
+        occlusion:(activeInterior()?.occlusion??localOcclusion).stats(),
+        tentExterior:{...tent.stats(),doorHitPoint:doorHitPoint.toArray(),doorScreenPoint},
+        sceneSpace:{active:tentPlayer?'tent':cabinPlayer?'cabin':'outdoor',outsideFrames,fade:fadeAmount,cabin:cabinRoom?.stats()??null,
+          tent:tentRoom?{...tentRoom.stats(),floorTapScreenPoint:floorNdc?{x:(floorNdc.x+1)*canvas.clientWidth/2,y:(1-floorNdc.y)*canvas.clientHeight/2}:null}:null,
           outdoorCamera:{yaw,elevation,zoom,target:target.toArray(),position:camera.position.toArray(),fov:camera.getEffectiveFOV(),aspect:camera.aspect,owner:cameraOwner,overlook:overlook.plan()}},
         shadows:outdoorShadows.stats(),characterContacts:characterContacts.stats(),
         wildlife:wildlife.stats(),
@@ -967,6 +1073,7 @@ export async function createScene(
       canvas.removeEventListener("contextmenu", contextMenu);
       pointers.clear();
       cabinRoom?.dispose();
+      tentRoom?.dispose();
       atmosphere.dispose();
       optics.dispose();
       localOcclusion.dispose();

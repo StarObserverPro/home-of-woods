@@ -6,7 +6,8 @@ export function buildingOcclusionVolumes(id:'cabin'|'tent',source:THREE.Object3D
   source.updateWorldMatrix(true,true);placement.updateWorldMatrix(true,false);
   const parts=new Map<string,THREE.Box3>();
   source.traverse(o=>{if(!(o instanceof THREE.Mesh))return;
-    const name=o.name.replace(/[._]?\d+$/,'');
+    const panel=o.userData.tentPanel;
+    const name=panel==='left'||panel==='right'?'canvas_panel':panel==='back'?'canvas_back':o.name.replace(/[._]?\d+$/,'');
     if(!['wood_floor','stone_foundation','back_log','side_log','front_left','front_right','groundsheet','canvas_panel','canvas_back'].includes(name))return;
     o.geometry.computeBoundingBox();const box=o.geometry.boundingBox!.clone().applyMatrix4(o.matrixWorld);
     const key=name==='side_log'?`${name}:${Math.sign(box.getCenter(new THREE.Vector3()).x)}`:name;

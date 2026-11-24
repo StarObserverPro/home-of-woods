@@ -28,6 +28,9 @@ export const VIEWS = {
 
   homeLighting:{label:'木屋墙根 · 光照检视',target:[CABIN.x,23.5,CABIN.z+2],yaw:-.65,elevation:.38,distance:22,zoom:1},
   tentLighting:{label:'帐篷内外 · 光照检视',target:[TENT.x,23,TENT.z],yaw:-.3,elevation:.25,distance:13,zoom:1},
+  tentNear:{label:'帐门与毡布 · 近景',target:[TENT.x,23.2,TENT.z+1.3],yaw:-.25,elevation:.16,distance:12,zoom:1},
+  tentSide:{label:'帐布弧度 · 侧面',target:[TENT.x,23.4,TENT.z],yaw:-1.0,elevation:.28,distance:17,zoom:1},
+  tentFar:{label:'帐篷纹带 · 中远景',target:[TENT.x,23,TENT.z],yaw:-.45,elevation:.3,distance:32,zoom:1},
   woodcraft:{label:'营地木料堆',target:[-29,22,7],yaw:-.65,elevation:.6,distance:14,zoom:1},
   branches:{label:'树杈与树皮',target:[-20,21.2,27],yaw:2.9,elevation:.16,distance:10,zoom:1},
   understory:{label:'树形与林下',target:[-67,28,10],yaw:-.65,elevation:.36,distance:17,zoom:1},

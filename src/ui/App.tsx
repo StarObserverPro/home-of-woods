@@ -105,6 +105,7 @@ const mapZ=(z:number)=>(z+85)*.9;
 const mapLine=(p:{x:number;z:number}[])=>p.map(v=>`${mapX(v.x)},${mapZ(v.z)}`).join(' ');
 const empty: Snapshot = {
   cabin:{inside:false,atDoor:false,crossing:false,lampOn:false},
+  tent:{inside:false,atDoor:false,crossing:false,doorOpen:true},
   neighbour:emptyNeighbourView(),
   weather:null,
   carrying:{weight:0,bulk:0,effort:0,speed:1,reason:'',weightLimit:30,bulkLimit:10,method:'hands',items:[],ground:[],storageNear:false,visual:null},
@@ -305,11 +306,11 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if(e.code!=='KeyB'||e.repeat||e.target instanceof HTMLElement && e.target.closest('input,textarea,select,[contenteditable]'))return;
-      if(!ready||snapshot.paused||readerOpen||snapshot.cabin.inside||snapshot.cabin.crossing)return;
+      if(!ready||snapshot.paused||readerOpen||snapshot.cabin.inside||snapshot.tent.inside||snapshot.cabin.crossing||snapshot.tent.crossing)return;
       e.preventDefault();e.stopPropagation();setWarehouseOpen(v=>!v);
     };
     document.addEventListener('keydown',key,true);return()=>document.removeEventListener('keydown',key,true);
-  },[ready,snapshot.paused,readerOpen,snapshot.cabin.inside,snapshot.cabin.crossing]);
+  },[ready,snapshot.paused,readerOpen,snapshot.cabin.inside,snapshot.tent.inside,snapshot.cabin.crossing,snapshot.tent.crossing]);
   useEffect(()=>{setCameraOpen(false);},[snapshot.selected]);
   useEffect(()=>{
     if(warehouseOpen){setMapOpen(false);setHelp(false);setCameraOpen(false);}
@@ -362,7 +363,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
             title: "山间帐篷",
             tag: "暂时的家",
             detail:
-              "可更换布面、加固撑杆、拉紧绷绳，也能挂上风铃；这些都是同一顶帐篷的外部改造。帐内空间以后再建。",
+              "可更换布面、加固撑杆、拉紧绷绳，也能挂上风铃；这些都是同一顶帐篷的外部改造。掀开门帘，可以走进帐篷看看睡袋、小鼓和颂钵。",
           }
         : selectedTree
           ? {
@@ -430,16 +431,18 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
     return()=>{window.removeEventListener('blur',stickEnd);document.removeEventListener('visibilitychange',hidden);};
   },[]);
   useEffect(()=>{
-    if(warehouseOpen||readerOpen||mapOpen||help||snapshot.selected||snapshot.paused||snapshot.cabin.crossing)stickEnd();
-  },[warehouseOpen,readerOpen,mapOpen,help,snapshot.selected,snapshot.paused,snapshot.cabin.crossing]);
-  const {inside:inCabin,crossing:cabinCrossing,atDoor,lampOn}=snapshot.cabin;
+    if(warehouseOpen||readerOpen||mapOpen||help||snapshot.selected||snapshot.paused||snapshot.cabin.crossing||snapshot.tent.crossing)stickEnd();
+  },[warehouseOpen,readerOpen,mapOpen,help,snapshot.selected,snapshot.paused,snapshot.cabin.crossing,snapshot.tent.crossing]);
+  const {inside:inCabin,atDoor,lampOn}=snapshot.cabin;
+  const {inside:inTent,atDoor:atTentDoor,doorOpen:tentDoorOpen}=snapshot.tent;
+  const indoors=inCabin||inTent,roomCrossing=snapshot.cabin.crossing||snapshot.tent.crossing;
   return (
     <>
     <main inert={!!forestTrip} style={forestTrip?{visibility:'hidden'}:undefined} data-how-ui="timber" data-ui-grid-root="viewport" className={`game-shell${warehouseOpen?' warehouse-is-open':''}${(warehouseOpen||readerOpen||mapOpen||help||selected)&&!snapshot.placement&&!snapshot.woodcraft.dropping?' menu-is-open':''}`} onPointerDownCapture={event=>{
       swallowedPointer.current=false;
       const target=event.target;
       if(!(target instanceof Element)||snapshot.placement||snapshot.woodcraft.dropping||itemDrag.drag)return;
-      if(target instanceof HTMLCanvasElement&&!readerOpen&&!snapshot.paused&&!inCabin&&!cabinCrossing){
+      if(target instanceof HTMLCanvasElement&&!readerOpen&&!snapshot.paused&&!indoors&&!roomCrossing){
         const item=runtime.current?.worldTransferItem(event.clientX,event.clientY);
         if(item&&item.kind!=='material'){
           itemDrag.start(event,item,()=>runtime.current?.select(item.id));
@@ -476,7 +479,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
           speedReasons={{4:snapshot.neighbour.clockReason,12:snapshot.neighbour.clockReason}}
           disabledReason={!ready?'山谷准备中':readerOpen?'读书时暂停，合上书后恢复':warehouseOpen?'整理物品时暂停，关闭后恢复':snapshot.paused?'游戏已暂停，回到山谷后恢复':undefined}
           onSpeed={s=>runtime.current?.setClockSpeed(s)}/>
-        {!inCabin&&<WeatherControls view={snapshot.weather} disabled={!ready||cabinCrossing}
+        {!indoors&&<WeatherControls view={snapshot.weather} disabled={!ready||roomCrossing}
           onWeather={kind=>runtime.current?.setWeather(kind)}
           onIntensity={value=>runtime.current?.setWeatherIntensity(value)}
           onAutomatic={value=>runtime.current?.setWeatherAutomatic(value)}/>}
@@ -490,7 +493,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
           <Icon name="pause" />
         </button>
       </header>
-      <aside className="minimap-card" aria-label="山谷地图" hidden={inCabin || mapOpen || help || warehouseOpen || readerOpen || !!selected}>
+      <aside className="minimap-card" aria-label="山谷地图" hidden={indoors || mapOpen || help || warehouseOpen || readerOpen || !!selected}>
         <div className="map-heading">
           <span>山谷手记</span>
           <span className="north">N ↑</span>
@@ -548,7 +551,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
         </button>
       </aside>
       <div className="hud-dock">
-      {cameraOpen&&<div className={`camera-tools${inCabin?'':' camera-tools--overlook'}`} aria-label="镜头控制" data-ui-grid="hud">
+      {cameraOpen&&<div className={`camera-tools${indoors?'':' camera-tools--overlook'}`} aria-label="镜头控制" data-ui-grid="hud">
         <button
           aria-label="镜头左转"
           onClick={() => runtime.current?.camera("left")}
@@ -573,7 +576,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
         <button aria-label="放大" onClick={() => runtime.current?.camera("in")}>
           ＋
         </button>
-        {!inCabin&&<>
+        {!indoors&&<>
           <button aria-label="抬高镜头" disabled={cameraExpansionBlocked} title={cameraExpansionBlocked?'近景操作结束后可升降':'抬高镜头，固定观察点'} onClick={()=>runtime.current?.camera('raise')}>↑</button>
           <button aria-label="降低镜头" disabled={cameraExpansionBlocked} title={cameraExpansionBlocked?'近景操作结束后可升降':'降低镜头'} onClick={()=>runtime.current?.camera('lower')}>↓</button>
         </>}
@@ -585,13 +588,17 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
           <Icon name="reset" />
         </button>
       </div>}
-      <nav className="bottom-toolbar" aria-label={inCabin?'屋内操作':'探索工具'} data-ui-grid="hud">
-        {inCabin?<><TimberButton aria-label="出门" disabled={cabinCrossing} onClick={()=>runtime.current?.requestCabinExit()}>
+      <nav className="bottom-toolbar" aria-label={indoors?'屋内操作':'探索工具'} data-ui-grid="hud">
+        {inCabin?<><TimberButton aria-label="出门" disabled={roomCrossing} onClick={()=>runtime.current?.requestCabinExit()}>
           <Icon name="home"/><span>出门</span>
-        </TimberButton><TimberButton aria-label={lampOn?'熄灭壁灯':'点亮壁灯'} aria-pressed={lampOn} disabled={cabinCrossing} onClick={()=>runtime.current?.toggleCabinLamp()}>
+        </TimberButton><TimberButton aria-label={lampOn?'熄灭壁灯':'点亮壁灯'} aria-pressed={lampOn} disabled={roomCrossing} onClick={()=>runtime.current?.toggleCabinLamp()}>
           <GameIcon name="campfire"/><span>{lampOn?'熄灯':'点灯'}</span>
+        </TimberButton></>:inTent?<><TimberButton aria-label="出帐篷" disabled={roomCrossing} onClick={()=>runtime.current?.requestTentExit()}>
+          <GameIcon name="tent"/><span>出帐篷</span>
+        </TimberButton><TimberButton aria-label={tentDoorOpen?'放下门帘':'掀起门帘'} aria-pressed={tentDoorOpen} disabled={roomCrossing} onClick={()=>runtime.current?.toggleTentDoor()}>
+          <GameIcon name="canvas-roll"/><span>{tentDoorOpen?'放下门帘':'掀起门帘'}</span>
         </TimberButton></>:<><button
-          disabled={cabinCrossing}
+          disabled={roomCrossing}
           className={mapOpen ? "active" : ""}
           aria-pressed={mapOpen}
           onClick={() => {
@@ -604,10 +611,10 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
           <Icon name="map" />
           <span>路线</span>
         </button>
-        <button disabled={cabinCrossing} aria-label={warehouseOpen?'收起物品面板':'打开仓库'} aria-pressed={warehouseOpen} onClick={()=>warehouseOpen?closeWarehouse():setWarehouseOpen(true)}><Icon name="warehouse"/><span>物品</span></button></>}
-        <button ref={cameraToggle} disabled={cabinCrossing} aria-label="镜头" aria-expanded={cameraOpen} className={cameraOpen?'active':''} onClick={()=>{closeWarehouse();setMapOpen(false);setHelp(false);setCameraOpen(v=>!v);}}><Icon name="camera"/><span>镜头</span></button>
-        {!inCabin&&<button
-          disabled={cabinCrossing}
+        <button disabled={roomCrossing} aria-label={warehouseOpen?'收起物品面板':'打开仓库'} aria-pressed={warehouseOpen} onClick={()=>warehouseOpen?closeWarehouse():setWarehouseOpen(true)}><Icon name="warehouse"/><span>物品</span></button></>}
+        <button ref={cameraToggle} disabled={roomCrossing} aria-label="镜头" aria-expanded={cameraOpen} className={cameraOpen?'active':''} onClick={()=>{closeWarehouse();setMapOpen(false);setHelp(false);setCameraOpen(v=>!v);}}><Icon name="camera"/><span>镜头</span></button>
+        {!indoors&&<button
+          disabled={roomCrossing}
           className={help ? "active" : ""}
           aria-pressed={help}
           onClick={() => {
@@ -637,7 +644,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
       <PlacementControls draft={snapshot.placement} onRotate={()=>runtime.current?.rotatePlacement()} onConfirm={()=>runtime.current?.confirmPlacement()} onCancel={()=>runtime.current?.cancelPlacement()}/>
 
       <div className="hud-notices" data-ui-grid="hud">
-        {!inCabin&&!cabinCrossing&&snapshot.neighbour.visible&&!snapshot.neighbour.focused&&!snapshot.selected&&!readerOpen&&!warehouseOpen&&<button className="neighbour-notice context-button" disabled={!ready||snapshot.paused} onClick={()=>runtime.current?.select(RIDGE_NEIGHBOUR.id)}>阿榆 · {snapshot.neighbour.status}</button>}
+        {!indoors&&!roomCrossing&&snapshot.neighbour.visible&&!snapshot.neighbour.focused&&!snapshot.selected&&!readerOpen&&!warehouseOpen&&<button className="neighbour-notice context-button" disabled={!ready||snapshot.paused} onClick={()=>runtime.current?.select(RIDGE_NEIGHBOUR.id)}>阿榆 · {snapshot.neighbour.status}</button>}
       {['protected','conflict','failed'].includes(snapshot.save.state) && <aside className="save-warning" role="alert">{snapshot.save.message}</aside>}
       {!selected && !mapOpen && !help && !activeAction && !warehouseOpen && !readerOpen && messageVisible && <div className="message" role="status" aria-live="polite">
         {snapshot.message}
@@ -665,11 +672,20 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
           {targetPage==='info'&&<TextPages text={`${selected.tag}。${selected.detail}`} size={85}/>}
           {targetPage==='use'&&<>
           {snapshot.selected==='cabin'&&<div className="facility-approach" data-ui-grid="row">
-            <TimberButton className="context-button primary-action" disabled={!ready||snapshot.paused||cabinCrossing} onClick={()=>runtime.current?.requestCabinEntry()}>
+            <TimberButton className="context-button primary-action" disabled={!ready||snapshot.paused||roomCrossing} onClick={()=>runtime.current?.requestCabinEntry()}>
               {atDoor?'进屋':snapshot.moving?'正在走近…':'走到木屋门前'}
             </TimberButton>
           </div>}
-          {farFacility?(snapshot.selected!=='cabin'||atDoor)&&<div className="facility-approach">
+          {snapshot.selected==='tent'&&<div className="facility-approach" data-ui-grid="row">
+            <TimberButton className="context-button primary-action" disabled={!ready||snapshot.paused||roomCrossing} onClick={()=>runtime.current?.requestTentEntry()}>
+              {atTentDoor?'进帐篷':snapshot.moving?'正在走近…':'走到帐篷门前'}
+            </TimberButton>
+            <TimberButton className="context-button" aria-label={tentDoorOpen?'放下门帘':'掀起门帘'} aria-pressed={tentDoorOpen}
+              disabled={!ready||snapshot.paused||roomCrossing||!atTentDoor} title={atTentDoor?'帐门开合':'走近帐篷门口后可以开合'} onClick={()=>runtime.current?.toggleTentDoor()}>
+              {tentDoorOpen?'放下门帘':'掀起门帘'}
+            </TimberButton>
+          </div>}
+          {farFacility?(snapshot.selected!=='tent'&&(snapshot.selected!=='cabin'||atDoor))&&<div className="facility-approach">
             <button className="context-button primary-action" disabled={!ready||snapshot.paused||!!snapshot.workshop.job} onClick={approachFacility}>{snapshot.moving?'正在走近…':snapshot.selected==='cabin'?'走近挂件':'走近'}</button>
           </div>:<>
           {['grove-altar','grove-altar:oracle'].includes(snapshot.selected??'') && snapshot.interaction?.near&&<div className="tree-actions"><button className="context-button" onClick={()=>runtime.current?.ritual('prayer')}>合掌祈祷</button></div>}
@@ -752,7 +768,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
             </button>
           </div>
           <ItemBrowser label="路线" categories={[{id:'all',name:'全部',icon:'route'},{id:'camp',name:'营地',icon:'workbench'},{id:'view',name:'风景',icon:'camera'}]} items={[
-            ...[{id:WOODCRAFT.id,name:'木料堆',icon:'log-rack' as const},{id:WORKBENCH.id,name:'工作台',icon:'workbench' as const},{id:CAMP_VISITOR.id,name:'行商',icon:'trade' as const},{id:'grove-altar',name:'祭坛',icon:'altar' as const},{id:'cabin',name:'旧木屋',icon:'repair' as const},{id:CAMP_PROPS.fire.id,name:'火塘',icon:'forest-soup' as const}].map(w=>({...w,category:'camp'})),
+            ...[{id:'tent',name:'帐篷',icon:'tent' as const},{id:WOODCRAFT.id,name:'木料堆',icon:'log-rack' as const},{id:WORKBENCH.id,name:'工作台',icon:'workbench' as const},{id:CAMP_VISITOR.id,name:'行商',icon:'trade' as const},{id:'grove-altar',name:'祭坛',icon:'altar' as const},{id:'cabin',name:'旧木屋',icon:'repair' as const},{id:CAMP_PROPS.fire.id,name:'火塘',icon:'forest-soup' as const}].map(w=>({...w,category:'camp'})),
             {...CAMP_FOREST_TRAIL,icon:'route' as const,category:'view'},
             ...WAYPOINTS.map(w=>({...w,icon:'route' as const,category:'view'}))]} renderDetail={item=><><ItemHeading name={item.name} icon={item.icon}/>{item.id==='east-bank'&&!bridgeBuilt&&<p className="wood-note">先修桥，再去东岸林地。</p>}<MenuAction onClick={async()=>{
               const owner=runtime.current;
@@ -800,7 +816,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
         className="run-toggle"
         aria-label={snapshot.running?'切换为走路':'切换为跑动'}
         aria-pressed={snapshot.running}
-        disabled={!ready||snapshot.paused||cabinCrossing||!!snapshot.placement||snapshot.woodcraft.dropping}
+        disabled={!ready||snapshot.paused||roomCrossing||!!snapshot.placement||snapshot.woodcraft.dropping}
         onClick={()=>runtime.current?.setRunning(!snapshot.running)}
       >
         <Icon name="walk" />
@@ -816,14 +832,14 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
       >
         <IconTabs label="暂停选项" value={pausePage} onChange={setPausePage} tabs={[{id:"main",name:"休息",icon:"rest"},{id:"display",name:"显示",icon:"camera"},{id:"save",name:"存档",icon:"blueprint"}]}/>
         {pausePage==='main'&&<>
-        <h2>{inCabin?'歇一会儿':'山谷会等你'}</h2>
+        <h2>{indoors?'歇一会儿':'山谷会等你'}</h2>
 
         <button
           className="primary-button"
           autoFocus
           onClick={() => runtime.current?.pause(false)}
         >
-          {inCabin?'继续':'回到山谷'}
+          {indoors?'继续':'回到山谷'}
         </button>
         <button
           className="text-button"
