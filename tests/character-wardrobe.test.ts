@@ -3,10 +3,12 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {characterModels} from './glb-fixtures.ts';
 import {createCharacterWardrobe} from '../src/scene/character-wardrobe.ts';
+import {createWardrobeVisual} from '../src/scene/wardrobe-visual.ts';
 import {DEFAULT_WARDROBE,resolveWardrobe,wardrobeForMountedItems,WARDROBE_CAPABILITIES} from '../src/content/wardrobe-preview.ts';
 import {createCharacters} from '../src/scene/characters.ts';
 import {makeTrees} from '../src/world/layout.ts';
 import {createState} from '../src/domain/state.ts';
+import {starterWardrobeItems} from '../src/content/wardrobe.ts';
 
 test('the real KayKit rig accepts independent bone-following hair, outfits, hats and packs',async()=>{
   const {resources,models}=await characterModels();
@@ -80,6 +82,40 @@ test('an actual mounted owned item overrides preview but keeps unique inventory 
   assert.equal(seen.hair,'swept');
   assert.equal(JSON.stringify(instances),frozen,'presentation does not write ownership or traits');
   assert.equal(base.headwear,'beanie');
+});
+
+test('rigid equipment follows the active character when its motion driver is hidden',async()=>{
+  const {resources,models}=await characterModels();
+  const driver=models.clone('ranger'),activeBody=new THREE.Group();
+  driver.visible=false;
+  const pack=new THREE.Group(),scarf=new THREE.Group();
+  const travelPack=new THREE.Group();
+  activeBody.add(pack,scarf,travelPack);
+  const gloveChanges:boolean[]=[];
+  const starter=createWardrobeVisual(resources,driver,{pack,scarf,setGloves:visible=>gloveChanges.push(visible)});
+  const wardrobe=createCharacterWardrobe(resources,driver,travelPack);
+  const inventory=createState(makeTrees()).inventory;
+  inventory.instances=starterWardrobeItems();
+  starter.update(inventory);
+  const starterPack=pack.getObjectByName('starter-small-pack')!;
+  const linenScarf=scarf.getObjectByName('starter-linen-scarf')!;
+  assert.equal(starterPack.visible,true);
+  assert.equal(linenScarf.visible,true);
+  assert.equal(gloveChanges.at(-1),true);
+  const largerPack=travelPack.getObjectByName('wardrobe:back:pack:chest')!;
+  wardrobe.apply(resolveWardrobe({back:'pack'}));
+  starter.update(inventory,true);
+  assert.equal(largerPack.visible,true);
+  assert.equal(starterPack.visible,false);
+  wardrobe.apply(DEFAULT_WARDROBE);
+  inventory.instances=inventory.instances.filter(item=>item.definitionId!=='apparel.starter-work-gloves');
+  starter.update(inventory);
+  assert.equal(largerPack.visible,false);
+  assert.equal(starterPack.visible,true);
+  assert.equal(gloveChanges.at(-1),false);
+  starter.dispose();wardrobe.dispose();
+  assert.ok(activeBody.children.every(mount=>mount.children.length===0));
+  resources.dispose();
 });
 
 test('the live player keeps a single wardrobe look across regular and procedural animations',async()=>{

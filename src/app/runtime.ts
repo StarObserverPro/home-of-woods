@@ -217,7 +217,7 @@ export async function createRuntime(
       state.selected = null;
       navigate(event);
     }
-  }, registry);
+  }, registry,activeColliders);
   view.setRarityVfxMode(initialRarityVfxMode);
   view.setWhimsyMode(initialWhimsyMode);
 

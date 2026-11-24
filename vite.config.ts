@@ -1,13 +1,30 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import {mkdir,writeFile,rename} from 'node:fs/promises';
+import {mkdir,readFile,writeFile,rename} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {sceneEvidencePlugin} from './tools/scene-evidence-plugin.ts';
 import {visitorAiPlugin} from './server/vite-visitor-ai.mjs';
+import {LOCAL_CHARACTER_MODELS,LOCAL_CHARACTER_PREFIX} from './src/content/characters.ts';
 export default defineConfig({
   plugins: [react(),sceneEvidencePlugin(),visitorAiPlugin(),{
     name:'local-development-evidence',
     configureServer(server){
+      const localModels=new Set(LOCAL_CHARACTER_MODELS.map(model=>`${model}.glb`));
+      server.middlewares.use(LOCAL_CHARACTER_PREFIX,async(req,res)=>{
+        const name=(req.url??'').split('?')[0].replace(/^\//,'');
+        if(!localModels.has(name)||req.method!=='GET'||!['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress??'')){
+          res.statusCode=404;res.end();return;
+        }
+        try{
+          const asset=await readFile(resolve(server.config.root,'.cache/j01-player',name));
+          res.setHeader('Content-Type','model/gltf-binary');
+          res.setHeader('Cache-Control','no-store');
+          res.end(asset);
+        }catch(error){
+          res.statusCode=(error as NodeJS.ErrnoException).code==='ENOENT'?204:500;
+          res.end();
+        }
+      });
       server.middlewares.use('/__evidence/',async(req,res)=>{
         const mode=req.url?.split('?')[0].replace(/^\//,'');
         if(mode!=='walkthrough'&&mode!=='forestry'&&mode!=='gathering'){res.statusCode=404;res.end('Unknown evidence capture');return;}

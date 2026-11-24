@@ -7,7 +7,7 @@ import type {WardrobeLook, WardrobeSlot} from '../content/wardrobe-preview.ts';
  * Everything is an optional cover over the reviewed KayKit model; the original remains selectable.
  * This does NOT claim cloth simulation or the skinning fidelity of a fully tailored garment.
  */
-export function createCharacterWardrobe(resources:Resources, actor:THREE.Object3D) {
+export function createCharacterWardrobe(resources:Resources, actor:THREE.Object3D, packMount?:THREE.Object3D) {
   const bones=new Map<string,THREE.Bone>();
   for(const name of ['head','chest','hips','upperarml','upperarmr','lowerarml','lowerarmr',
     'upperlegl','upperlegr','lowerlegl','lowerlegr','footl','footr']) {
@@ -57,7 +57,8 @@ export function createCharacterWardrobe(resources:Resources, actor:THREE.Object3
   function mount(slot:WardrobeSlot,variant:string,to:string) {
     if(!Object.hasOwn(WARDROBE_OPTIONS[slot],variant))throw Error('Unknown wardrobe variant: '+variant);
     const root=new THREE.Group();root.name='wardrobe:'+slot+':'+variant+':'+to;
-    bone(to).add(root);parts.push({root,slot,variant});return root;
+    const parent=slot==='back'&&packMount?packMount:bone(to);
+    parent.add(root);parts.push({root,slot,variant});return root;
   }
   function put(root:THREE.Group,geo:THREE.BufferGeometry,color:string,
       pos:[number,number,number],size?:[number,number,number]){
