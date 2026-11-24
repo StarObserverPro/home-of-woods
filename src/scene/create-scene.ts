@@ -1,7 +1,15 @@
 import {configureForestBark} from './bark-surface.ts';
+import {createAtmosphereLite} from './atmosphere-lite.ts';
+import type {AtmosphereDebug} from './atmosphere-lite.ts';
+import {RAINIER_CAMP} from '../content/rainier-ecology.ts';
+import {createOverlookOptics,applyNavigationOptics,overlookAmount} from './overlook-optics.ts';
+import type {OverlookOpticsMode} from '../content/overlook-optics.ts';
+import {loadImpostorAtlas} from './impostors/runtime.ts';
+import type {ImpostorAtlas} from './impostors/runtime.ts';
 import {createAnchoredOverlook} from './anchored-overlook.ts';
 import {OVERLOOK} from '../content/camera.ts';
-import {updateNavigationForecast} from './camera-forecast.ts';
+import {positionNavigationCamera,updateNavigationForecast} from './camera-forecast.ts';
+import {navigationZoomForProjection} from './overlook-optics-rules.ts';
 import {createCampOcclusion} from './lighting/camp-occlusion.ts';
 import {createCampShadows} from './lighting/camp-shadows.ts';
 import {createCharacterContactShadows} from './lighting/character-contact-shadows.ts';
@@ -101,7 +109,10 @@ export async function createScene(
   }
   renderer.setPixelRatio(1);
   let shaderErrors=0;
-  renderer.debug.onShaderError=(gl,program)=>{shaderErrors++;console.error('Scene shader compilation',gl.getProgramInfoLog(program));};
+  renderer.debug.onShaderError=(gl,program,vertex,fragment)=>{
+    shaderErrors++;
+    console.error('Scene shader compilation',gl.getProgramInfoLog(program),gl.getShaderInfoLog(vertex),gl.getShaderInfoLog(fragment));
+  };
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   const canvas = renderer.domElement;
@@ -116,13 +127,18 @@ export async function createScene(
   fade.setAttribute('aria-hidden', 'true');
   host.appendChild(fade);
   const scene = new THREE.Scene();
-  const environment=createEnvironment(r,{renderer});
+  const renderParams=new URLSearchParams(window.location.search);
+  const airMode=renderParams.get('atmosphere')??'final';
+  const atmosphere=createAtmosphereLite((['off','transmittance','inscatter'].includes(airMode)?airMode:'final') as AtmosphereDebug);
+  const opticsMode=renderParams.get('optics')??'final';
+  const optics=createOverlookOptics(renderer,(['off','depth','coc'].includes(opticsMode)?opticsMode:'final') as OverlookOpticsMode);
+  const environment=createEnvironment(r,{renderer,sharedAtmosphere:true});
   const light=environment.lighting;
   scene.add(environment.group);
   scene.environment=environment.environmentMap;
   scene.environmentIntensity=light.environmentIntensity;
   renderer.toneMappingExposure=light.recommendedExposure;
-  scene.fog = new THREE.Fog(light.haze, 300, 1050);
+  scene.fog = null; // Shared height-integrated air owns surface scattering, including mountains.
   const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 3200);
   const overlook=createAnchoredOverlook(),forecastCamera=camera.clone();
   const forecastCameras=OVERLOOK.forecastSeconds.map(()=>camera.clone());
@@ -156,8 +172,16 @@ export async function createScene(
   scene.add(sun, sun.target);
   const { ground, water } = createTerrain(r);
   // Visual-only forest is replaceable without changing the playable world.
-  const horizon=createHorizon(r,ground.geometry,trees,
-    new URLSearchParams(window.location.search).get('farForest')==='trees'?'trees':'mass');
+  const requestedForest=renderParams.get('farForest');
+  const forestMode=requestedForest==='trees'?'trees':requestedForest==='impostor'?'impostor':'mass';
+  let forestAtlas:ImpostorAtlas|undefined,impostorLoadError:string|null=null;
+  if(forestMode==='impostor'){
+    try{forestAtlas=await loadImpostorAtlas('/assets/forest-impostors/rainier-conifer-cluster.json');}
+    catch(error){impostorLoadError=error instanceof Error?error.message:String(error);}
+  }
+  const horizon=createHorizon(r,ground.geometry,trees,forestMode,forestAtlas);
+  // Batches are registered before their shared atlas, so teardown releases users first.
+  if(forestAtlas)r.own(forestAtlas);
   scene.add(horizon.group);
   const river=createCreek(r,water,horizon.riverExtensions),camp=createCampProps(r);
   const bridge=createCreekBridge(r);
@@ -259,7 +283,7 @@ export async function createScene(
   let placementMode=false;
   let inspectionCamera:{yaw:number;elevation:number;zoom:number;target:THREE.Vector3}|null=null;
   const forestry=createForestryPresentation({models,resources:r,forestGroup:forest.group,trees,selections:forest.selections,
-    bindTreeSurface(root){weather.bind(root,'tree');outdoorShadows.bindTree(root);localOcclusion.bind(root);},
+    bindTreeSurface(root){weather.bind(root,'tree');outdoorShadows.bindTree(root);localOcclusion.bind(root);atmosphere.bind(root);},
   });
   const gathering = createGatheringPresentation(r, models, gatheringRegistry);
   scene.add(gathering.group);
@@ -379,9 +403,10 @@ export async function createScene(
   const releaseHousingFocus=()=>{
     if(cameraOwner!=='housing'||!overlook.groundReady())return;
     const viewOffset=camera.position.clone().sub(target);
+    const releasedElevation=Math.atan2(viewOffset.y,Math.hypot(viewOffset.x,viewOffset.z));
     overlook.releaseFocus({yaw:Math.atan2(viewOffset.x,viewOffset.z),
-      elevation:Math.atan2(viewOffset.y,Math.hypot(viewOffset.x,viewOffset.z)),
-      zoom:camera.zoom/(mobile?1.45:1),distance:viewOffset.length()},target);
+      elevation:releasedElevation,
+      zoom:navigationZoomForProjection(camera.zoom,releasedElevation,camera.aspect,mobile),distance:viewOffset.length()},target);
     releasedHousingId=lastState?.selected??null;
     cameraOwner='navigation';
   };
@@ -468,6 +493,9 @@ export async function createScene(
       cabinRoom.camera.updateProjectionMatrix();
       if(cabinPlayer&&lastState)view.render(lastState,0);
     }
+    // A paused outdoor loop must repaint the cleared canvas through its normal
+    // presentation scheduler, including the resized HDR/depth buffers.
+    if(!cabinPlayer){river.invalidate();requestPresentation();}
   };
   const observer = new ResizeObserver(resize);
   observer.observe(host);
@@ -481,6 +509,10 @@ export async function createScene(
   // Prebind variants that are not on a mesh until occlusion first fades a crown or building.
   localOcclusion.bindMaterial(fadeMat);
   propFades.forEach(({materials})=>materials.forEach(({fade})=>localOcclusion.bindMaterial(fade)));
+  atmosphere.bind(scene);atmosphere.bindMaterial(fadeMat);
+  propFades.forEach(({materials})=>materials.forEach(({fade})=>atmosphere.bindMaterial(fade)));
+  let airScannedRevision=-1;
+  const dynamicSurfaceRoots=[housing.group,housing.mountedGroup,workshop.group,woodcraft.group,hauling.group,gathering.group,broom.group,wildlife.group];
   const view = {
     hasPendingPresentation:()=>!cabinPlayer&&frameWork.stats().pending>0||presentationDirty||overlook.pending()||followTargetPending,
     setPresentationScheduler(callback:()=>void){schedulePresentation=callback;},
@@ -513,6 +545,8 @@ export async function createScene(
     setAmbientOcclusion:(enabled:boolean)=>(cabinPlayer&&cabinRoom?cabinRoom.occlusion:localOcclusion).setEnabled(enabled),
     setCanopyShadows:(enabled:boolean)=>outdoorShadows.setEnabled(enabled),
     setCharacterContacts:(enabled:boolean)=>characterContacts.setEnabled(enabled),
+    setAtmosphereMode:(mode:AtmosphereDebug)=>{atmosphere.setDebug(mode);river.invalidate();requestPresentation();},
+    setOpticsMode:(mode:OverlookOpticsMode)=>{optics.setMode(mode);requestPresentation();},
     getAppearance:()=>({...appearance}),
     wildlifeAvailable:()=>wildlife.available(),
     wildlifeObserved:()=>wildlife.observedIds(),
@@ -540,6 +574,7 @@ export async function createScene(
     },
     enterCabin(pose:CabinPlayer,state:GameState){
       if(!cabinRoom)return;
+      atmosphere.unbind(player);
       localOcclusion.unbind(player);
       outdoorShadows.unbind(player);
       cabinRoom.scene.add(player);
@@ -558,6 +593,7 @@ export async function createScene(
       scene.add(player);
       outdoorShadows.bind(player);
       localOcclusion.bind(player);
+      atmosphere.bind(player);
       characters.resetLocomotion();
       cabinPlayer=null;
       overlook.setBorrower(scenePreset?'scene':characters.getInspection()!==null?'character':null);
@@ -639,6 +675,7 @@ export async function createScene(
       presentationDirty=false;
       lastState=state;
       if(cabinPlayer&&cabinRoom){
+        optics.suspend();
         cabinTime+=Math.max(0,Math.min(dt,.1));
         if(Math.abs(state.time-lastCabinLightAt)>=6){
           const conditions=weatherSnapshot(state);
@@ -668,7 +705,8 @@ export async function createScene(
       const sky=environment.setHour(appearance.hour);
       hemi.color.copy(light.skyColor);hemi.groundColor.copy(light.groundColor);hemi.intensity=light.ambientIntensity;
       sun.color.copy(light.sunColor);sun.intensity=light.sunIntensity;
-      scene.environmentIntensity=light.environmentIntensity;(scene.fog as THREE.Fog).color.copy(light.haze);
+      scene.environmentIntensity=light.environmentIntensity;
+      atmosphere.update(light,weather.profile.cloud,weather.profile.rain);
       if(state.workshop.job?.kind==='offering'&&state.workshop.job.phase==='working')appearance.altar='answering';
       camp.update(ambientTime,appearance,state.inventory,sky.night,reducedMotion,!!state.food.drying,(state.workshop.upgrades[CAMP_PROPS.dryer.id]?.level??0)>0);
       const { x, z, facing, moving } = state.player,
@@ -766,7 +804,8 @@ export async function createScene(
         )
         .multiplyScalar(inspecting?11:scenePreset?VIEWS[scenePreset].distance:focusPlacement?22:focusHousing?21:THREE.MathUtils.lerp(cameraPlan.current.distance,actionDistance,blend));
       camera.position.copy(target).add(offset);
-      if(camera.position.x>WORLD.minX&&camera.position.x<WORLD.maxX&&camera.position.z>WORLD.minZ&&camera.position.z<WORLD.maxZ)camera.position.y=Math.max(camera.position.y,heightAt(camera.position.x,camera.position.z)+THREE.MathUtils.lerp(3,.4,blend));
+      if(cameraOwner==='navigation')positionNavigationCamera(camera,cameraPlan.current,target);
+      else if(camera.position.x>WORLD.minX&&camera.position.x<WORLD.maxX&&camera.position.z>WORLD.minZ&&camera.position.z<WORLD.maxZ)camera.position.y=Math.max(camera.position.y,heightAt(camera.position.x,camera.position.z)+THREE.MathUtils.lerp(3,.4,blend));
       if(scenePreset)for(const tree of trees)if(Math.hypot(camera.position.x-tree.x,camera.position.z-tree.z)<3*tree.scale)camera.position.y=Math.max(camera.position.y,heightAt(tree.x,tree.z)+9*tree.scale);
       camera.lookAt(target);
       workshop.update(state,camera,dt,reducedMotion,sky.night);woodcraft.update(state.woodcraft);
@@ -778,6 +817,8 @@ export async function createScene(
       else if((readingMode||mealFraming||focusHousing||(guidedCraft||sweeping)&&framed)&&mobile&&camera.aspect<1){camera.setViewOffset(host.clientWidth,host.clientHeight,0,host.clientHeight*((readingMode||mealFraming) ? .25 : (guidedCraft||sweeping)&&framed ? .22 : .16),host.clientWidth,host.clientHeight);}
       else camera.clearViewOffset();
       if(['wildlife','stagVista','goatVista'].includes(scenePreset??'')&&camera.aspect<1)camera.zoom*=camera.aspect;
+      camera.fov=40;
+      if(cameraOwner==='navigation')applyNavigationOptics(camera,cameraPlan.current,mobile);
       camera.updateProjectionMatrix();
       environment.update(ambientTime,dt,camera.position,reducedMotion);
       scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);
@@ -852,8 +893,17 @@ export async function createScene(
       localOcclusion.updateCamera(camera,host.clientHeight);
       characterContacts.update(characters.footContacts());
       localOcclusion.setCharacterContacts(characterContacts.contacts());
+      if(airScannedRevision!==streaming.residencyRevision){
+        outdoorShadows.bindTree(forest.group);localOcclusion.bind(forest.group);atmosphere.bind(forest.group);
+        airScannedRevision=streaming.residencyRevision;
+      }
+      // Small dynamic roots may acquire new materials during ordinary gameplay.
+      for(const root of dynamicSurfaceRoots){
+        outdoorShadows.bind(root);localOcclusion.bind(root);atmosphere.bind(root);
+      }
       renderer.info.reset();renderer.info.autoReset=false;
-      renderer.render(scene, camera);
+      optics.render(scene,camera,{amount:cameraOwner==='navigation'?overlookAmount(cameraPlan.current):0,
+        focusDistance:camera.position.distanceTo(target),compact:host.clientWidth<600||host.clientHeight<500});
       weather.renderLens(renderer);
       outsideFrames++;
       schedulePresentation();
@@ -864,7 +914,7 @@ export async function createScene(
         resources: r.stats(),
         occlusion:cabinPlayer&&cabinRoom?cabinRoom.occlusion.stats():localOcclusion.stats(),
         sceneSpace:{active:cabinPlayer?'cabin':'outdoor',outsideFrames,fade:fadeAmount,cabin:cabinRoom?.stats()??null,
-          outdoorCamera:{yaw,elevation,zoom,target:target.toArray(),owner:cameraOwner,overlook:overlook.plan()}},
+          outdoorCamera:{yaw,elevation,zoom,target:target.toArray(),position:camera.position.toArray(),fov:camera.getEffectiveFOV(),aspect:camera.aspect,owner:cameraOwner,overlook:overlook.plan()}},
         shadows:outdoorShadows.stats(),characterContacts:characterContacts.stats(),
         wildlife:wildlife.stats(),
         drawCalls: renderer.info.render.calls,
@@ -887,8 +937,9 @@ export async function createScene(
         neighbour:neighbour.stats(),
         gatheringPresentation: gathering.stats(),
         environment:environment.stats(),
+        atmosphere:atmosphere.stats(),optics:optics.stats(),campRegion:RAINIER_CAMP.id,
         weatherPresentation:weather.stats(),
-        horizon:horizon.stats(),
+        horizon:{...horizon.stats(),impostorLoadError},
         river:river.stats(),
         destroyed,
         contextLost: renderer.getContext().isContextLost(),
@@ -908,6 +959,8 @@ export async function createScene(
       canvas.removeEventListener("contextmenu", contextMenu);
       pointers.clear();
       cabinRoom?.dispose();
+      atmosphere.dispose();
+      optics.dispose();
       localOcclusion.dispose();
       characterContacts.dispose();outdoorShadows.dispose();
       weather.dispose();

@@ -4,6 +4,7 @@ import {CAMERA} from '../src/content/world.ts';
 import {OVERLOOK} from '../src/content/camera.ts';
 import {createAnchoredOverlook} from '../src/scene/anchored-overlook.ts';
 import {updateNavigationForecast} from '../src/scene/camera-forecast.ts';
+import {navigationOpticsProjection} from '../src/scene/overlook-optics-rules.ts';
 import * as THREE from 'three';
 
 const home={x:-12,y:18,z:7};
@@ -138,18 +139,18 @@ test('short forecast follows the same constrained orbit without consuming readin
   assert.deepEqual(sample.target,rig.plan().anchor);
 });
 
-test('forecast projection retains the actual aspect/clip planes and mobile zoom correction',()=>{
+test('forecast projection uses the actual aspect/clip planes and shared navigation lens',()=>{
   const actual=new THREE.PerspectiveCamera(40,390/844,.1,3200);
   actual.setViewOffset(390,844,0,140,390,844);
   const forecast=new THREE.PerspectiveCamera();
   const pose={yaw:.5,elevation:.8,zoom:.5,distance:110};
   updateNavigationForecast(forecast,actual,pose,home,true);
-  close(forecast.aspect,actual.aspect);close(forecast.zoom,.5*1.45);
+  close(forecast.aspect,actual.aspect);close(forecast.zoom,navigationOpticsProjection(pose,actual.aspect,true).zoom);
   assert.equal(forecast.near,actual.near);assert.equal(forecast.far,actual.far);
   assert.equal(forecast.view?.enabled,false,'authored view offsets do not leak into navigation');
   const center=new THREE.Vector3(home.x,home.y,home.z).project(forecast);
   close(center.x,0);close(center.y,0);
   actual.aspect=16/9;actual.updateProjectionMatrix();
   updateNavigationForecast(forecast,actual,pose,home,false);
-  close(forecast.aspect,16/9);close(forecast.zoom,.5);
+  close(forecast.aspect,16/9);close(forecast.zoom,navigationOpticsProjection(pose,16/9,false).zoom);
 });

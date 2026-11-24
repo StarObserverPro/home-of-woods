@@ -1,5 +1,6 @@
 import {CAMERA} from '../content/world.ts';
 import {OVERLOOK} from '../content/camera.ts';
+import {navigationDollyScale} from './overlook-optics-rules.ts';
 
 export type CameraPoint = {x:number;y:number;z:number};
 export type OrbitPose = {yaw:number;elevation:number;zoom:number;distance:number};
@@ -63,7 +64,7 @@ export function createAnchoredOverlook(){
   return {
     releaseFocus(pose:OrbitPose,observedTarget:CameraPoint){
       if(borrower)return;
-      Object.assign(current,pose);Object.assign(desired,pose,{distance:OVERLOOK.distance});
+      Object.assign(current,pose);Object.assign(desired,pose,{distance:OVERLOOK.distance*navigationDollyScale(pose.zoom)});
       anchor=copyPoint(observedTarget);mode='overlook';
     },
     rotate(amount:number){
@@ -78,6 +79,7 @@ export function createAnchoredOverlook(){
     zoomBy(factor:number,observedTarget:CameraPoint){
       if(borrower||!Number.isFinite(factor)||factor<=0)return;
       desired.zoom=clamp(desired.zoom*factor,CAMERA.minZoom,CAMERA.maxZoom);
+      desired.distance=OVERLOOK.distance*navigationDollyScale(desired.zoom);
       beginOverlook(observedTarget);
     },
     requestFollow(){

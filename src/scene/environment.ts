@@ -9,7 +9,7 @@ import {buildMountainGeometry,mountainMaterial} from './mountain-geometry.js';
 export {buildMountainGeometry} from './mountain-geometry.js';
 const smooth=THREE.MathUtils.smoothstep;
 
-export function createEnvironment(resources:Resources,options:{renderer?:THREE.WebGLRenderer}={}){
+export function createEnvironment(resources:Resources,options:{renderer?:THREE.WebGLRenderer;sharedAtmosphere?:boolean}={}){
   const group=new THREE.Group();group.name='pnw-mountain-and-sky';
   const sunDirection=new THREE.Vector3().fromArray(ENVIRONMENT_STYLE.sunDirection).normalize();
   const sunAltitude=Math.asin(sunDirection.y)*180/Math.PI,cloud=ENVIRONMENT_STYLE.cloudCoverage;
@@ -28,7 +28,9 @@ export function createEnvironment(resources:Resources,options:{renderer?:THREE.W
     recommendedExposure:ENVIRONMENT_STYLE.recommendedExposure,
   };
   const mountainAir={value:new THREE.Color(.40,.55,.66)};
-  const mountains=resources.own(mountainMaterial(mountainAir));
+  const mountains=resources.own(options.sharedAtmosphere
+    ? new THREE.MeshStandardMaterial({vertexColors:true,roughness:.96,metalness:0,flatShading:true})
+    : mountainMaterial(mountainAir));
   for(const spec of MOUNTAINS){
     const geometry=resources.geometry(`valley-mountain-${spec.id}-r2`,()=>buildMountainGeometry(spec));
     const mesh=new THREE.Mesh(geometry,mountains);mesh.name=spec.id;mesh.renderOrder=-5;group.add(mesh);
@@ -73,6 +75,8 @@ export function createEnvironment(resources:Resources,options:{renderer?:THREE.W
     setWeather(weather:Pick<WeatherVisualState,'cloud'|'rain'>){
       weatherCloud=THREE.MathUtils.clamp(weather.cloud,0,1);weatherRain=THREE.MathUtils.clamp(weather.rain,0,1);
       u.pnwWeatherCloud.value=weatherCloud;u.pnwWeatherRain.value=weatherRain;
+      // The bounded surface atmosphere consumes the same aerosol weather multiplier.
+      if(options.sharedAtmosphere)u.mieCoefficient.value=ENVIRONMENT_STYLE.mieCoefficient*(1+1.6*weatherCloud+3.5*weatherRain);
       u.cloudCoverage.value=weatherCloud;u.cloudDensity.value=.35+weatherCloud*.4;
       u.showSunDisc.value=1-weatherCloud*.97;
     },

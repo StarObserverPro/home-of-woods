@@ -1,5 +1,21 @@
 # 资产登记与批准记录
 
+## Rainier 地域与远林图集（2026-11-23）
+
+本批采用项目既有程序几何及本轮原创代码。生态资料仅作为汇总事实与形态参考，没有导入第三方树模型、照片、DEM 或逐树样方坐标；来源与数据访问边界见 [生态原型](RAINIER_ECOLOGY.md)。项目原创资产不改标第三方 CC0，Three.js 沿用已登记的 MIT 软件通知。
+
+| 资产 / 状态 | 来源、加工与输出 | 接入与所有权 |
+| --- | --- | --- |
+| Rainier 树型预设 / 本轮实现 | NPS Rainier 群落与树种说明、Wind River 论文汇总统计；`src/content/rainier-ecology.ts` 中原创配色、比例、权重与确定性密度场 | 外围沿用五个 mesh kind，近景沿用既有经营树；不新增资源、碰撞或持久身份 |
+| `rainier-conifer-cluster` / 已交付当前分支，CI 导出及独立 WebGL 校验通过，主营地组合待完成 | `tools/impostors/source.ts` 组合项目自有 `distantTreeGeometry`，源簇 74 三角形；25 视角，默认每帧 128²，输出 1024×512 albedo/alpha 与资产空间 normal 两张 RGBA8 图集。无 mipmap 时合计 4 MiB 是纹理存储估算，非 PNG 下载大小 | 正式文件位于 `public/assets/forest-impostors/`，来自 `rainier-generated-impostor-assets` artifact；JSON 记录尺寸、包围盒、视图、源三角形及源码/图集 hash。`src/scene/impostors/runtime.ts` 加载；默认 `mass`，`farForest=impostor` 比较；批次与图集分别释放 |
+| 空气透视 LUT / 本轮运行时生成 | `src/scene/atmosphere-rules.ts` 根据当前量化天气生成 128×2 RGBA16F 消光表，2 KiB；不下载外部天空纹理或预计算数据 | `src/scene/atmosphere-lite.ts` 独占 LUT，接入共享天光和太阳，销毁控制器时释放；不加入资产下载包 |
+
+2026-11-23（America/New_York）核对 [CI run 45303052228](https://github.com/StarObserverPro/home-of-woods/actions/runs/45303052228)，提交 `f3c200ef81e325aeb2a8027e2fbc5703dbf02e25`：`baker/report.json` 为 `passed`，重复烘焙一致，25 帧边缘 alpha 为 0，PNG 保留透明像素 RGB 和部分覆盖的全部 RGBA 字节；albedo/normal 各 35,557 个扩边 texel 在运行时重新加载后仍存在。21 次视角/模式渲染无 shader 错误，释放后回到 0 geometries / 1 texture 的预热基线，保留的一张 `DFG_LUT` 归 renderer 共享 Standard 缓存所有。此为 Chromium / SwiftShader 的实际 WebGL 校验，不是硬件帧率测量。
+
+正式文件从该轮 artifact `14880945916` 原样纳入当前分支：[albedo PNG](../public/assets/forest-impostors/rainier-conifer-cluster-albedo.png) **30,865 B**、[normal PNG](../public/assets/forest-impostors/rainier-conifer-cluster-normal.png) **69,161 B**、[manifest](../public/assets/forest-impostors/rainier-conifer-cluster.json) **8,020 B**。manifest 的 9 份源文件 SHA-256 与两张 PNG 的 SHA-256 已核对；这些是正式游戏资产，独立于临时验收截图。当前分支交付不代表已合并或部署。
+
+烘焙命令、输入限制、透明边缘与线性数据约定见 [工具说明](../tools/impostors/README.md)。本轮主营地步骤尚未完成，当前登记不表示主游戏画面、全气候、手机性能或发布已验收；组合验证及实际限制统一见 [Rainier 渲染实现](RAINIER_RENDERING.md#验证状态)。
+
 天气回接采用本项目独立沙盒中已审阅的原创程序雨丝、雪花、局部镜头雨滴、水坑涟漪与材质覆雪。新储木架棚顶和立柱为原木纹、共享几何与材质组成的原创模型，既有 GLB 字节与第三方许可沿用原登记。生产入口为 scene/weather-presentation.ts、weather-particle-seeds.js、environment.ts 与 camp-props.ts，资源归原 Resources owner。强度随机样本与空间坐标独立。当前范围和实机检查见 [天气回接记录](scopes/running-selection-weather.md)。
 
 ## 营地邻居资源复用（2026-11-19）

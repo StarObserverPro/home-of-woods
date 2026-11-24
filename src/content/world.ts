@@ -38,8 +38,8 @@ export const RIVER_KNOTS: Point[]=[{z:-150,x:180},{z:-35,x:104},{z:15,x:43},{z:3
 export const WAYPOINTS = [
   {
     id: "home",
-    name: "山间营地",
-    note: "帐篷与旧木屋",
+    name: "Rainier 山麓营地",
+    note: "Nisqually 河谷 · 帐篷与旧木屋",
     x: START.x,
     z: START.z,
   },
