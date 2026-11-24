@@ -5,9 +5,12 @@ import { TENT_SHAPE as S } from '../../content/tent.ts';
 /** Sag is authored in the cloth, while the A-frame feet and ridge ends stay fixed. */
 export function tentRoofPoint(side: -1 | 1, across: number, along: number) {
   const span = Math.sin(Math.PI * along), cross = Math.sin(Math.PI * across);
-  return new THREE.Vector3(side * S.halfWidth * across,
+  // The corner ties hold the hem while its middle pulls gently inward/upward.
+  // Restrict inset to the low outer band, keeping the headroom datum unchanged.
+  const edge = THREE.MathUtils.smoothstep(across, .65, 1);
+  return new THREE.Vector3(side * (S.halfWidth * across - S.eaveInset * span * edge),
     S.hemY + (S.ridgeY - S.hemY) * (1 - across) - S.roofSag * cross * (.45 + .55 * span)
-      - S.ridgeSag * span * (1 - across),
+      - S.ridgeSag * span * (1 - across) + S.eaveLift * span * across ** 3,
     -S.halfDepth + S.halfDepth * 2 * along);
 }
 

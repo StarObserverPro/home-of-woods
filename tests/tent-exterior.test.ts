@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { Resources } from '../src/scene/resources.ts';
 import { createTentExterior } from '../src/scene/tent/exterior.ts';
 import { TENT_CLOTH, TENT_HANGING_SOCKETS } from '../src/content/tent.ts';
+import { tentRoofPoint } from '../src/scene/tent/geometry.ts';
 
 test('the front is a real opening and a closed curtain covers the same doorway', () => {
   const r = new Resources(), tent = createTentExterior(r);
@@ -29,6 +30,9 @@ test('the front is a real opening and a closed curtain covers the same doorway',
 
 test('each curved roof is a closed thick shell with finite outward geometry', () => {
   const r = new Resources(), tent = createTentExterior(r);
+  const corner = tentRoofPoint(1, 1, 0), center = tentRoofPoint(1, 1, .5);
+  assert.ok(corner.x - center.x >= .10, 'the hem has a visible inward curve between its corner ties');
+  assert.ok(center.y - corner.y >= .075, 'the unsupported middle hem rises gently above the groundsheet');
   for (const mesh of [tent.panels.left, tent.panels.right]) {
     const g = mesh.geometry, p = g.getAttribute('position'), n = g.getAttribute('normal'), index = g.index!;
     const edges = new Map<string, number>(); let volume = 0;

@@ -12,6 +12,7 @@ on:
       - 'src/scene/lighting/building-occlusion.ts'
       - 'src/content/shadows.ts'
       - 'src/world/shadow-field.ts'
+      - 'src/world/layout.ts'
       - 'src/app/runtime.ts'
       - 'src/ui/App.tsx'
       - 'src/ui/hud-layout.css'
@@ -23,7 +24,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: tent-review-${{ github.ref }}
+  group: tent-review-platforms-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   tent:
@@ -32,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [material, portal]
+        suite: [material, desktop, phone]
     steps:
       - uses: actions/checkout@v7
         with:

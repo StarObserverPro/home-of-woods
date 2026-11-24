@@ -47,7 +47,7 @@ export function createTentExterior(r: Resources) {
         .add(new THREE.Vector3(0, .012, along ? .014 : -.014)).toArray());
       bindings.push(tentTube(points, .022, 14));
     }
-    bindings.push(tentRod([side * S.halfWidth, S.hemY, -S.halfDepth], [side * S.halfWidth, S.hemY, S.halfDepth], .022));
+    bindings.push(tentTube(Array.from({ length: 17 }, (_, i) => tentRoofPoint(side, 1, i / 16).toArray()), .022, 16));
   }
   const archPoints = tentDoorOutline().getPoints(8).slice(0, -1).map(p => [p.x, p.y, S.doorZ + .007] as const);
   bindings.push(tentTube(archPoints, .024, 32));

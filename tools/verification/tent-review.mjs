@@ -9,7 +9,7 @@ import { captureTentFrame, observeTentPage, tentReady, tentStats, verifyTentPort
 
 const cwd = process.cwd(), out = path.resolve(process.env.TENT_EVIDENCE_DIR ?? '/tmp/how-tent-evidence');
 const suite = process.env.TENT_REVIEW_SUITE ?? 'all';
-assert.ok(['all', 'portal', 'material'].includes(suite), 'Unknown tent review suite');
+assert.ok(['all', 'portal', 'desktop', 'phone', 'material'].includes(suite), 'Unknown tent review suite');
 const origin = process.env.TENT_REVIEW_ORIGIN ?? 'http://127.0.0.1:4189';
 const port = new URL(origin).port;
 await fs.mkdir(out, { recursive: true });
@@ -95,8 +95,8 @@ try {
     ...(process.env.CHROMIUM_EXECUTABLE ? { executablePath: process.env.CHROMIUM_EXECUTABLE } : {}),
     args: ['--no-sandbox', '--disable-dev-shm-usage', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   report.browser = await browser.version();
-  if (suite !== 'portal') { phase = 'material and fixed-view captures'; await materialCaptures(); }
-  if (suite !== 'material') { phase = 'actual tent portal'; await verifyTentPortal(browser, origin, out, report); }
+  if (suite === 'all' || suite === 'material') { phase = 'material and fixed-view captures'; await materialCaptures(); }
+  if (suite !== 'material') { phase = 'actual tent portal'; await verifyTentPortal(browser, origin, out, report, suite); }
   assert.deepEqual(report.errors, [], 'Browser or shader errors');
   assert.deepEqual(report.networkFailures, [], 'Runtime requests failed');
   report.status = 'passed-automated'; console.log('TENT_REVIEW_PASS');

@@ -93,8 +93,8 @@ async function checkControls(page, names) {
 }
 
 /** The real camp UI, one canvas, and genuine pointer/keyboard input own every transition. */
-export async function verifyTentPortal(browser, origin, out, report) {
-  for (const touch of [false, true]) {
+export async function verifyTentPortal(browser, origin, out, report, platform = 'all') {
+  for (const touch of platform === 'desktop' ? [false] : platform === 'phone' ? [true] : [false, true]) {
     const label = touch ? 'phone-night' : 'desktop-day';
     const viewport = touch ? { width: 390, height: 844 } : { width: 1000, height: 740 };
     const context = await browser.newContext({ viewport, hasTouch: touch, isMobile: touch, deviceScaleFactor: 1,

@@ -4,7 +4,8 @@ export const TENT_SCALE = 1.6;
 export const TENT_SHAPE = {
   halfWidth: 2.65, halfDepth: 2.4, ridgeY: 3.9, hemY: .2, floorY: .18,
   doorZ: 2.43, doorHalfWidth: 1.22, doorTopY: 3.05, thickness: .035,
-  roofSag: .14, ridgeSag: .075, widthSegments: 14, lengthSegments: 18,
+  roofSag: .22, ridgeSag: .075, eaveInset: .11, eaveLift: .08,
+  widthSegments: 14, lengthSegments: 18,
 } as const;
 
 export const TENT_FURNISHINGS = {
