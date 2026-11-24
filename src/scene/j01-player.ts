@@ -24,6 +24,55 @@ function bonesOf(root:THREE.Object3D) {
   return bones;
 }
 
+function accessoryMount(bone:THREE.Bone,center:THREE.Vector3,orientation:THREE.Quaternion,worldSize:THREE.Vector3){
+  const mount=new THREE.Group();
+  mount.position.copy(bone.worldToLocal(center));
+  mount.quaternion.copy(bone.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
+  mount.scale.copy(worldSize).divide(bone.getWorldScale(new THREE.Vector3()));
+  bone.add(mount);
+  return mount;
+}
+
+function fitWorkGloves(resources:Resources,skin:THREE.Object3D){
+  const layers:Array<{attribute:THREE.BufferAttribute;bare:Float32Array;worn:Float32Array}>=[];
+  const fabric=new THREE.Color('#a59069');
+  skin.traverse(mesh=>{
+    if(!(mesh instanceof THREE.SkinnedMesh))return;
+    const source=mesh.geometry.getAttribute('color');
+    const joints=mesh.geometry.getAttribute('skinIndex'),weights=mesh.geometry.getAttribute('skinWeight');
+    if(!source||source.itemSize<3||!joints||!weights)return;
+    const handJoints=mesh.skeleton.bones.map(bone=>/^(hand|(?:thumb|index|middle|ring|pinky)_\d+)_[lr]$/.test(bone.name));
+    const bare=new Float32Array(source.count*source.itemSize),worn=new Float32Array(bare.length);
+    for(let vertex=0;vertex<source.count;vertex++){
+      let handWeight=0;
+      for(let channel=0;channel<joints.itemSize;channel++){
+        if(handJoints[joints.getComponent(vertex,channel)])handWeight+=weights.getComponent(vertex,channel);
+      }
+      // Keep fingertip deformation and the existing skin normals at the wrist edge.
+      const coverage=THREE.MathUtils.smoothstep(handWeight,.25,.75);
+      const offset=vertex*source.itemSize;
+      for(let channel=0;channel<source.itemSize;channel++)bare[offset+channel]=source.getComponent(vertex,channel);
+      worn[offset]=bare[offset]*THREE.MathUtils.lerp(1,fabric.r,coverage);
+      worn[offset+1]=bare[offset+1]*THREE.MathUtils.lerp(1,fabric.g,coverage);
+      worn[offset+2]=bare[offset+2]*THREE.MathUtils.lerp(1,fabric.b,coverage);
+      if(source.itemSize===4)worn[offset+3]=bare[offset+3];
+    }
+    const attribute=new THREE.BufferAttribute(bare.slice(),source.itemSize);
+    mesh.geometry=resources.own(mesh.geometry.clone());
+    mesh.geometry.setAttribute('color',attribute);
+    layers.push({attribute,bare,worn});
+  });
+  let equipped=false;
+  return (visible:boolean)=>{
+    if(visible===equipped)return;
+    equipped=visible;
+    for(const {attribute,bare,worn} of layers){
+      attribute.copyArray(visible?worn:bare);
+      attribute.needsUpdate=true;
+    }
+  };
+}
+
 function faceBlink(resources:Resources,face:THREE.Object3D,atlas:THREE.Object3D) {
   const sample=atlas.getObjectByProperty('isMesh',true) as THREE.Mesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>|undefined;
   const closed=sample?.material.map;
@@ -67,7 +116,8 @@ export function createJ01Player(resources:Resources,models:Models,player:THREE.G
     parts.get(key)!.push(object);
   });
   const face=parts.get('face')?.[0],atlas=parts.get('blink-atlas')?.[0],pelvis=bones.get('Pelvis');
-  if(!face||!atlas||!pelvis||!parts.has('shirt-indigo')||!parts.has('trousers')){
+  const chest=bones.get('spine_02');
+  if(!face||!atlas||!pelvis||!chest||!parts.has('shirt-indigo')||!parts.has('trousers')){
     root.removeFromParent();
     console.warn('Local J01 player has an incomplete export');
     return null;
@@ -104,6 +154,21 @@ export function createJ01Player(resources:Resources,models:Models,player:THREE.G
     hand.add(slot);
     contactBones.set('handslot'+side,slot);
   }
+  const playerSize=player.getWorldScale(new THREE.Vector3());
+  const facing=player.getWorldQuaternion(new THREE.Quaternion());
+  const turnBack=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.PI);
+  const chestCenter=player.worldToLocal(chest.getWorldPosition(new THREE.Vector3()));
+  // The existing rigid props have different proportions from the J01 clothing.
+  // Fit their reference frames in the player's bind pose and let the native bones carry them.
+  function chestMount(offset:THREE.Vector3,size:THREE.Vector3,rotation=facing){
+    return accessoryMount(chest!,player.localToWorld(chestCenter.clone().add(offset)),rotation,size.multiply(playerSize));
+  }
+  const accessoryMounts={
+    pack:chestMount(new THREE.Vector3(0,.07,-.02),new THREE.Vector3(.82,.74,.76)),
+    scarf:chestMount(new THREE.Vector3(0,.055,-.013),new THREE.Vector3(.63,.70,.70)),
+    setGloves:fitWorkGloves(resources,face),
+  };
+  const travelPackMount=chestMount(new THREE.Vector3(0,.13,-.024),new THREE.Vector3(.64,.69,.67),facing.clone().multiply(turnBack));
   const pose=[...bones.values()].map(bone=>({bone,position:bone.position.clone(),quaternion:bone.quaternion.clone(),scale:bone.scale.clone()}));
   const hipNeutral=player.worldToLocal(pelvis.getWorldPosition(new THREE.Vector3()));
   const mixer=new THREE.AnimationMixer(actor);
@@ -199,7 +264,7 @@ export function createJ01Player(resources:Resources,models:Models,player:THREE.G
     blink(reducedMotion?0:Math.max(0,1-Math.abs(blinkPhase-.21)/.068));
     root.updateWorldMatrix(true,true);
   }
-  return {root,clothes,present,stats:()=>({nativeWalk:nativePose==='walk',nativePose,shirt,wearingTop,wearingLegs,wearingHat,gripGap}),dispose(){
+  return {root,clothes,present,accessoryMounts,travelPackMount,stats:()=>({nativeWalk:nativePose==='walk',nativePose,shirt,wearingTop,wearingLegs,wearingHat,gripGap}),dispose(){
     mixer.stopAllAction();mixer.uncacheRoot(actor);root.removeFromParent();
   }};
 }

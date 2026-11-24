@@ -64,12 +64,17 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   const localFeet=localPlayer&&createFootContactAnchors(localPlayer.root,{idPrefix:'player',toePrefix:'ball'});
   actions.idle.play();mixer.update(0);
   const actionFeet=createFootContactAnchors(procedural.body,{idPrefix:'player:action'});
-  const standardClothes=createCharacterWardrobe(r,body),actionClothes=createCharacterWardrobe(r,procedural.body);
+  const standardClothes=createCharacterWardrobe(r,body,localPlayer?.travelPackMount);
+  const actionClothes=createCharacterWardrobe(r,procedural.body);
+  const clothing=createWardrobeVisual(r,body,localPlayer?.accessoryMounts);
+  const actionClothing=createWardrobeVisual(r,procedural.body);
   let previewLook:WardrobeLook={...DEFAULT_WARDROBE},lastLookKey='';
   function updateWardrobe(state:GameState,reducedMotion:boolean,moving:boolean){
     const next=wardrobeForMountedItems(previewLook,state.inventory.instances??[]);
     const key=JSON.stringify(next);
     if(key!==lastLookKey){standardClothes.apply(next);actionClothes.apply(next);lastLookKey=key;}
+    clothing.update(state.inventory,localPlayer!==null&&next.back==='pack');
+    actionClothing.update(state.inventory);
     localPlayer?.clothes(state.inventory,next,inspection==='wardrobe');
     standardClothes.update(state.time,moving,reducedMotion);
     actionClothes.update(state.time,moving,reducedMotion);
@@ -82,8 +87,6 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   let movementTime=0,locomotionSpeed=0;
   let localWalkTime:number|null=null;
   let readingSeat:SeatContact|null=null;
-  // Main + procedural action body each have their own cloned skeleton and bone-mounted accessories.
-  const clothing=createWardrobeVisual(r,body),actionClothing=createWardrobeVisual(r,procedural.body);
   const pickedScrap=new THREE.Mesh(r.geometry('held-split-scrap',scrapGeometry),scrapMaterial(r));pickedScrap.scale.setScalar(.68);pickedScrap.rotation.z=Math.PI/2;pickedScrap.visible=false;player.add(pickedScrap);
   const blade=axeHeadSamples(tool),byId=new Map(trees.map(t=>[t.id,t]));
   // Inspector-only solids demonstrate both constraints without inventing a crafting transaction.
@@ -137,7 +140,6 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   function updatePlayerBase(state:GameState,pose:CabinPlayer,height:number,reducedMotion:boolean){
     localWalkTime=null;
     for(const [bone,base] of readingPoseBase){bone.position.copy(base.p);bone.quaternion.copy(base.q);}readingPoseBase.clear();
-    clothing.update(state.inventory);actionClothing.update(state.inventory);
     player.position.set(pose.x,height,pose.z);player.rotation.y=pose.facing;
     body.position.y=bodyY;
     updateWardrobe(state,reducedMotion,pose.moving);
