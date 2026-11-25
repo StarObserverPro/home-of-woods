@@ -1,5 +1,33 @@
 # 工程验证与历史记录
 
+## 日常 CI 与本机专题
+
+`Prototype Check` 在 PR 和 main 推送上检查干净检出的锁定安装、公共资产、生产构建及核心玩法。纯文档改动只检查改动范围与补丁格式。自动检查用 `npm run test:prototype` 覆盖物品取放、时钟与保存、换装、行商食物、住房、移动和跨桥采运。全套源码测试用 `npm test`，木作包可单独执行 `npm --prefix sandbox/woodworking test` 和 `npm --prefix sandbox/woodworking run build`。
+
+本机、Prototype Check 和本节三个专题的运行环境以 [`.nvmrc`](.nvmrc) 为准，使用该 Node 发行版自带的 npm。项目依赖用 `npm ci`，Chromium 用本仓库锁定的 Playwright 安装。Windows PowerShell 将下列命令的 `npm` 写成 `npm.cmd`。
+
+```sh
+npm ci
+npm exec -- playwright install chromium
+npm run verify:browser -- wood-tone lighting
+npm run verify:browser -- timber-desktop timber-mobile
+npm ci --prefix sandbox/woodworking
+npm run verify:browser -- timber-modules
+npm run verify:browser -- timber-baseline
+```
+
+按改动选一个或多个专题。一次命令合并重复的源码测试并共用生产构建。Timber 的桌面、手机、独立模块可分别执行。历史基线对照单独选择，使用已固定的历史提交以及与该提交一致的锁文件。首次运行 Timber 的独立模块时安装上面的木作依赖。Linux 可用 `npm exec -- playwright install --with-deps chromium` 安装系统依赖。
+
+截图、日志与 JSON 报告写到命令打印的系统临时目录。可设置 `HOW_REVIEW_EVIDENCE_DIR` 指定输出根目录，每个选中的专题使用自己的子目录。默认使用 Playwright 配套 Chromium。需要重现某个已知浏览器环境时，可用 `CHROMIUM_EXECUTABLE` 指定可执行文件并记录版本。桌面和模拟手机的功能结果按报告记录，实体设备性能单独测。
+
+[木色](.github/workflows/wood-tone-review.yml)、[光照](.github/workflows/lighting-review.yml)和 [Timber UI](.github/workflows/timber-ui.yml) 在 GitHub Actions 中由 **Run workflow** 手动启动，选择待复跑的分支。Timber 可选单个范围或全部范围。PR 记录实际运行的命令、提交、环境和结果。
+
+### 本机迁移验证（2026-11-24）
+
+基于 `b1173ee` 的独立工作树，使用 Windows、Node 22.23.5、npm 10.9.9、Playwright 1.65.0 和 Chromium 158.0.8127.18。锁定安装、公共资产、生产构建、37 项 Prototype 测试、45 项专题源码测试和 15 项独立木作测试通过。另用临时 Git 仓库核对了纯文档、混合改动和基线缺失的路由，以及 UI 契约对 Git 忽略目录的处理。工作流通过 actionlint。
+
+木色和光照分别通过 10 帧和 37 帧。Timber 手机通过 8 帧和 15 条流程，独立模块通过 23 帧和 25 条流程，历史对照取得 3 张图。Timber 桌面首轮通过 12 组画面及故事阅读操作，最终目标卡清理触发指针超时。改用同一关闭控件的键盘操作后，独立复跑验证了真实故事阅读、翻页、焦点返回和目标卡收起。GitHub 执行结果见所属 PR 的 Actions 记录。
+
 ## OpenAI API 接入草稿（2026-11-19）
 
 基于 main `81a01f8`。新增本机服务端 Responses 接入与原行商窗口的短故事入口；配置、限制与发布边界见 [OpenAI 接入](docs/OPENAI_API.md)。没有密钥入库、存档格式变化、合并或部署。

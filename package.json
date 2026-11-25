@@ -13,9 +13,11 @@
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "test:ai": "node --experimental-strip-types --test tests/visitor-ai.test.ts",
     "verify:assets": "node --experimental-strip-types tools/verify-assets.mjs",
+    "test:prototype": "node --experimental-strip-types --test --test-concurrency=4 tests/item-transfers.test.ts tests/local-clock-resume.test.ts tests/save-checkpoints.test.ts tests/character-wardrobe.test.ts tests/release-integration.test.ts tests/housing.test.ts tests/movement.test.ts tests/east-bank.test.ts",
     "check": "npm run verify:assets && npm test && npm run build",
     "verify:evidence": "node tools/run-archived-evidence-audits.mjs",
     "freeze:runtime": "node tools/freeze-runtime.mjs",
+    "verify:browser": "node tools/verification/run-browser-review.mjs",
     "verify:ui": "node tools/verify-ui-contract.mjs",
     "dev:forest": "vite --open /sandbox/forest-expedition/",
     "test:forest": "node --experimental-strip-types --test tests/forest-expedition*.test.ts"

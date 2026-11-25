@@ -234,6 +234,13 @@ export function landmarkInspectionView(species:'wildlife.stag'|'wildlife.goat',t
     definitionId:species,x:a.x,z:a.z,y:heightAt(a.x,a.z),facing:a.facing??0,
     motionTag:'wildlife.survey',behavior:'survey',speed:0,opacity:1,capabilities:[],revision:Math.floor(time)};
 }
+/** The same admitted fox, held at its real camp anchor for repeatable eye/rig review. */
+export function foxInspectionView():WildlifeView {
+  const a=WILDLIFE_ANCHORS.find(x=>x.definitionId==='wildlife.fox')!,id='wildlife:inspect:wildlife.fox';
+  return {id,targetRef:{kind:'wildlife',encounterId:id},definitionId:'wildlife.fox',
+    x:a.x,z:a.z,y:heightAt(a.x,a.z),facing:0,motionTag:'wildlife.idle',behavior:'idle',
+    speed:0,opacity:1,capabilities:[],revision:0};
+}
 export function wildlifeCapabilities(state: WildlifeState | undefined, encounterId: string) {
   return state?.encounters.some(e=>e.id===encounterId&&e.exitAt===null)?{targetRef:{kind:'wildlife' as const,encounterId},capabilities:[] as string[]}:null;
 }

@@ -1,14 +1,5 @@
 name: Lighting Review
 on:
-  pull_request:
-    paths:
-      - 'src/**'
-      - 'sandbox/cabin-interior/src/**'
-      - 'tests/local-occlusion*.test.ts'
-      - 'tools/verification/lighting-review.mjs'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/lighting-review.yml'
   workflow_dispatch:
 permissions:
   contents: read
@@ -20,23 +11,27 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: '22.14.0'
+          node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: node --experimental-strip-types --test tests/local-occlusion*.test.ts tests/cabin-interior.test.ts
-      - run: npm run verify:cabin-assets && npm run build
-      - run: npx playwright install --with-deps chromium
-      - run: sudo apt-get install -y fonts-noto-cjk
-      - run: node tools/verification/lighting-review.mjs
-      - uses: actions/upload-artifact@v4
+      - name: Install Chromium and Chinese fonts
+        run: |
+          npm exec -- playwright install --with-deps chromium
+          sudo apt-get install -y fonts-noto-cjk
+      - name: Run the same browser review as local
+        env:
+          HOW_REVIEW_EVIDENCE_DIR: ${{ runner.temp }}/how-lighting-review-evidence
+        run: npm run verify:browser -- lighting
+      - name: Upload browser evidence
         if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: lighting-review-evidence
-          path: /tmp/how-lighting-evidence/
+          path: ${{ runner.temp }}/how-lighting-review-evidence/lighting/
           if-no-files-found: warn
           retention-days: 7

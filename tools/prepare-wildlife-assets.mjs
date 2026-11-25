@@ -1,4 +1,4 @@
-/** Rebuild the two admitted CC0 assets; normal builds never fetch the network. */
+/** Rebuild the admitted Gobkit squirrel; fox uses prepare-fox-asset.mjs. Normal builds never fetch the network. */
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import assert from 'node:assert/strict';
@@ -7,7 +7,6 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 const root=new URL('../',import.meta.url),source=new URL('sources/gobkit/animal006/',root);
 const specs=[
   {name:'Squirrel',id:'squirrel',height:1.12,hash:'3ab524a913649fb08cc1fc264173a21ea04363f6f89d0d128eaaaa1ed714676f'},
-  {name:'Hare',id:'hare',height:1.10,hash:'3342949e3b124441d4ac8a7bdffd93835c90752bfe0f3b7785a6cdd8f5b99cfb'},
 ];
 const hash=b=>createHash('sha256').update(b).digest('hex');
 await mkdir(source,{recursive:true});await mkdir(new URL('public/assets/wildlife/',root),{recursive:true});

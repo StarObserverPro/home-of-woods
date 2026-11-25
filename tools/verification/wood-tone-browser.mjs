@@ -1,23 +1,27 @@
 /** In-repository browser review of production factories, not illustrative mockups. */
 import fs from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {spawn,execFileSync} from 'node:child_process';
 const origin=process.env.WOOD_REVIEW_ORIGIN??'http://127.0.0.1:4182';
-const out=process.env.WOOD_EVIDENCE_DIR??'/tmp/how-wood-tone-evidence';
+const out=process.env.WOOD_EVIDENCE_DIR??path.join(tmpdir(),'how-wood-tone-evidence');
 await fs.mkdir(out,{recursive:true});
 const server=process.env.WOOD_REVIEW_ORIGIN?null:spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','4182','--strictPort'],{stdio:['ignore','pipe','pipe']});
 let serverLog='';
 for(const stream of [server?.stdout,server?.stderr])stream?.on('data',b=>serverLog=(serverLog+b).slice(-60000));
 async function ready(){for(let i=0;i<100;i++){try{if((await fetch(origin)).ok)return;}catch{}if(server?.exitCode!=null)throw Error(serverLog);await new Promise(r=>setTimeout(r,200));}throw Error('Wood review server unavailable');}
-await ready();
-const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE||undefined,args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});
+let browser;
 const report={commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),frames:[],errors:[],warnings:[],checks:[],limits:['Software WebGL and mobile viewport simulation; not physical GPU profiling.']};
 async function frame(page,name){
  const result=await page.evaluate(()=>{const a=window.__CABIN_AUDIT__;a.pause();return {image:a.capture(),stats:a.stats(),audit:a.audit()};});
  assert.ok(result.audit.ok);await fs.writeFile(`${out}/${name}.png`,Buffer.from(result.image.split(',')[1],'base64'));report.frames.push({name,stats:result.stats});return result;
 }
 try{
+ await ready();
+ browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE||undefined,args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});
+ report.browser=browser.version();
  for(const mobile of [false,true]){
   const context=await browser.newContext({viewport:mobile?{width:390,height:844}:{width:1280,height:900},deviceScaleFactor:1,isMobile:mobile,hasTouch:mobile});
   const page=await context.newPage();page.on('pageerror',e=>report.errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')report.errors.push(m.text());if(m.type()==='warning')report.warnings.push(m.text());});
@@ -87,4 +91,4 @@ try{
  await fs.writeFile(`${out}/wood-tones.png`,Buffer.from(sample.image.split(',')[1],'base64'));report.frames.push({name:'wood-tones',stats:sample.stats});
  assert.deepEqual(report.errors,[]);report.status='passed';console.log(JSON.stringify({status:report.status,frames:report.frames.map(f=>f.name),warnings:report.warnings}));
 }catch(error){report.status='failed';report.failure=String(error.stack??error);console.error(error);process.exitCode=1;}
-finally{await browser.close();server?.kill('SIGTERM');await fs.writeFile(`${out}/server.log`,serverLog);await fs.writeFile(`${out}/report.json`,JSON.stringify(report,null,2));}
+finally{server?.kill('SIGTERM');await browser?.close().catch(()=>{});await fs.writeFile(`${out}/server.log`,serverLog);await fs.writeFile(`${out}/report.json`,JSON.stringify(report,null,2));}

@@ -23,7 +23,8 @@ import {travelAccess} from '../world/regions.ts';
 import {travelHeightAt} from '../world/traversal.ts';
 import {createHaulPresentation} from './haul-presentation.ts';
 import {createWildlifePresentation} from './wildlife-presentation.ts';
-import {wildlifeViews,landmarkInspectionView} from '../domain/wildlife.ts';
+import {wildlifeViews,landmarkInspectionView,foxInspectionView} from '../domain/wildlife.ts';
+import type {FoxReviewPose} from './fox-expression.ts';
 import type {RarityVfxMode} from '../content/item-vfx.ts';
 import {createWoodcraftPresentation} from './woodcraft-presentation.ts';
 import {WOODCRAFT,insideWoodcraft} from '../content/woodcraft.ts';
@@ -199,6 +200,7 @@ export async function createScene(
   scene.add(river.group,camp.group,bridge.group);
   const auditParams=new URLSearchParams(window.location.search),auditHour=auditParams.has('inspect')&&auditParams.has('hour')?Number(auditParams.get('hour')):NaN;
   let appearance=sceneAppearanceAt(0),scenePreset:SceneViewPreset|null=null,sceneOverrides:Partial<SceneAppearance>={};
+  let foxReview:FoxReviewPose={seconds:0,blink:0,gaze:[0,0]};
   let cabinRoom:ReturnType<typeof createCabinRoom>|null=null;
   let cabinPlayer:CabinPlayer|null=null;
   let tentRoom:ReturnType<typeof createTentRoom>|null=null;
@@ -588,6 +590,10 @@ export async function createScene(
     getAppearance:()=>({...appearance}),
     wildlifeAvailable:()=>wildlife.available(),
     wildlifeObserved:()=>wildlife.observedIds(),
+    sampleFox(pose:FoxReviewPose){
+      if(scenePreset!=='fox')throw Error('Select the fox scene inspector before sampling');
+      foxReview={...pose};
+    },
     inspectScene(preset:SceneViewPreset|null,overrides:Partial<SceneAppearance>={}){
       // Resetting a room camera must keep its borrowed camp rig untouched.
       if(inside())return;
@@ -914,7 +920,7 @@ export async function createScene(
         .multiplyScalar(wardrobeCamera?7.5:inspecting?11:scenePreset?VIEWS[scenePreset].distance:focusPlacement?22:focusHousing?21:THREE.MathUtils.lerp(cameraPlan.current.distance,actionDistance,blend));
       camera.position.copy(target).add(offset);
       if(cameraOwner==='navigation')positionNavigationCamera(camera,cameraPlan.current,target);
-      else if(camera.position.x>WORLD.minX&&camera.position.x<WORLD.maxX&&camera.position.z>WORLD.minZ&&camera.position.z<WORLD.maxZ)camera.position.y=Math.max(camera.position.y,heightAt(camera.position.x,camera.position.z)+(wardrobeCamera?.8:THREE.MathUtils.lerp(3,.4,blend)));
+      else if(camera.position.x>WORLD.minX&&camera.position.x<WORLD.maxX&&camera.position.z>WORLD.minZ&&camera.position.z<WORLD.maxZ)camera.position.y=Math.max(camera.position.y,heightAt(camera.position.x,camera.position.z)+(scenePreset==='fox'?.6:wardrobeCamera?.8:THREE.MathUtils.lerp(3,.4,blend)));
       if(scenePreset)for(const tree of trees)if(Math.hypot(camera.position.x-tree.x,camera.position.z-tree.z)<3*tree.scale)camera.position.y=Math.max(camera.position.y,heightAt(tree.x,tree.z)+9*tree.scale);
       camera.lookAt(target);
       workshop.update(state,camera,dt,reducedMotion,sky.night);woodcraft.update(state.woodcraft);
@@ -981,10 +987,11 @@ export async function createScene(
           mesh.material = overlap ? fade : opaque;
         });
       });
-      const wildlifeSeen=wildlifeViews(state.wildlife,state.time);
+      const wildlifeSeen=wildlifeViews(state.wildlife,state.time).filter(v=>scenePreset!=='fox'||v.definitionId!=='wildlife.fox');
       if(scenePreset==='stagVista')wildlifeSeen.push(landmarkInspectionView('wildlife.stag',state.time));
       if(scenePreset==='goatVista')wildlifeSeen.push(landmarkInspectionView('wildlife.goat',state.time));
-      wildlife.update(wildlifeSeen,state.time,appearance.hour,camera,reducedMotion);
+      if(scenePreset==='fox')wildlifeSeen.push(foxInspectionView());
+      wildlife.update(wildlifeSeen,state.time,appearance.hour,camera,reducedMotion,headWorld,scenePreset==='fox'?foxReview:undefined);
       weather.update(ambientTime,dt,state.player,camera,host.clientWidth<600||host.clientHeight<500,reducedMotion);
       outdoorShadows.update(state,dt,light.sunDirection,sky.night,player.position);
       // Shadow cameras are normally refreshed by Three during the draw. The

@@ -139,6 +139,9 @@ export function createAmbientOcclusion(resources:Resources){
           howAmbient=max(${C.minimumAmbient},howAmbient*(1.-howContact*mix(1.,.72,howAONight)));
           reflectedLight.indirectDiffuse*=howAmbient;
           reflectedLight.indirectSpecular*=sqrt(howAmbient);
+          #ifdef USE_CLEARCOAT
+            clearcoatSpecularIndirect*=sqrt(howAmbient);
+          #endif
         }`);
     };
     material.onBeforeCompile=installed;material.customProgramCacheKey=()=>`${oldKey}:how-ao-v1:projection-contact-v1`;

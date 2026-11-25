@@ -13,7 +13,7 @@ export const RUNTIME_MODELS = [
   { name: 'merchant-wagon', assetId: 'how-merchant-wagon', url: '/assets/merchant/wagon.glb' },
   { name: 'drying-vessels', assetId: 'how-camp-drying-vessels', url: '/assets/camp/drying-vessels.glb' },
   { name: 'squirrel', assetId: 'how-wildlife-squirrel', url: '/assets/wildlife/squirrel.glb', optional: true },
-  { name: 'hare', assetId: 'how-wildlife-hare', url: '/assets/wildlife/hare.glb', optional: true },
+  { name: 'fox', assetId: 'how-wildlife-fox', url: '/assets/wildlife/fox.glb', optional: true },
   { name: 'stag', assetId: 'how-wildlife-stag', url: '/assets/wildlife/stag.glb', optional: true },
   // Original rigged faceted Oreamnos americanus; distinct from rejected Gobkit Goat.
   { name: 'mountain-goat', assetId: 'how-wildlife-mountain-goat', url: '/assets/wildlife/mountain-goat.glb', optional: true },

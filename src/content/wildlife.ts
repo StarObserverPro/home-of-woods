@@ -12,7 +12,7 @@ export const WILDLIFE = {
 export const WILDLIFE_DEFINITIONS = [
   { id: 'wildlife.squirrel', name: '松鼠', model: 'squirrel', assetId: 'how-wildlife-squirrel',
     category: 'common', habitat: 'forest-edge', visualScale: 1, walkSpeed: 1.05, fleeSpeed: 2.8, capabilities: [] },
-  { id: 'wildlife.hare', name: '野兔', model: 'hare', assetId: 'how-wildlife-hare',
+  { id: 'wildlife.fox', name: '小狐狸', model: 'fox', assetId: 'how-wildlife-fox',
     category: 'common', habitat: 'meadow-edge', visualScale: 1, walkSpeed: .9, fleeSpeed: 3.2, capabilities: [] },
   { id: 'wildlife.stag', name: '远坡雄鹿', model: 'stag', assetId: 'how-wildlife-stag',
     category: 'landmark', habitat: 'ridge-meadow', visualScale: .76, walkSpeed: 1.1, fleeSpeed: 1.1, capabilities: [] },

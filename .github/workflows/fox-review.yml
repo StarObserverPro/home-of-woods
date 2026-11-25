@@ -1,0 +1,68 @@
+name: Fox Appearance and Expressions
+on:
+  pull_request:
+    paths:
+      - 'src/content/fox-expression.ts'
+      - 'src/content/wildlife.ts'
+      - 'src/content/assets.ts'
+      - 'src/content/scene-props.ts'
+      - 'src/domain/wildlife.ts'
+      - 'src/world/wildlife-layout.ts'
+      - 'src/scene/fox-expression.ts'
+      - 'src/scene/wildlife-presentation.ts'
+      - 'src/scene/models.ts'
+      - 'src/scene/create-scene.ts'
+      - 'src/app/runtime.ts'
+      - 'src/ui/SceneInspector.tsx'
+      - 'public/assets/manifest.json'
+      - 'public/assets/wildlife/fox.glb'
+      - 'public/assets/licenses/vuena-cute-pets-CC0.txt'
+      - 'sources/vuena/cute-pets/**'
+      - 'tools/prepare-fox-asset.mjs'
+      - 'tools/verification/fox-review.mjs'
+      - 'tools/verification/tent-portal-browser.mjs'
+      - 'tests/fox-expression.test.ts'
+      - 'tests/wildlife*.test.ts'
+      - 'package*.json'
+      - 'vite.config.*'
+      - '.github/workflows/fox-review.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: fox-review-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  fox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci
+      - name: Check fox assets, rig, expressions and wildlife lifecycle
+        run: |
+          node tools/verify-assets.mjs
+          node --experimental-strip-types --test tests/wildlife*.test.ts tests/fox-expression.test.ts
+          node --check tools/verification/fox-review.mjs
+      - run: npm run build
+      - name: Install the single WebGL browser
+        run: npx playwright install --with-deps chromium
+      - name: Capture natural and paused fox expressions in the main game
+        run: node tools/verification/fox-review.mjs
+        env:
+          SOURCE_REVISION: ${{ github.sha }}
+          FOX_EVIDENCE_DIR: /tmp/how-fox-evidence
+      - name: Upload actual canvas frames and runtime findings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fox-review-evidence
+          path: /tmp/how-fox-evidence/
+          if-no-files-found: warn
+          retention-days: 14
