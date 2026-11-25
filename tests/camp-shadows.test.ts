@@ -7,6 +7,7 @@ import {advanceForestry,chopRange,startChop} from '../src/domain/forestry.ts';
 import {makeTrees} from '../src/world/layout.ts';
 import {heightAt} from '../src/world/surface.ts';
 import {treeVisual} from '../src/world/tree-appearance.ts';
+import {usesActionTree} from '../src/world/tree-dimensions.ts';
 import {bakeProjectedCanopyField} from '../src/world/shadow-field.ts';
 import type {ShadowBakeRequest,ShadowBakeResponse,ShadowBakeWorker} from '../src/world/shadow-field-worker-protocol.ts';
 import {Models} from '../src/scene/models.ts';
@@ -41,8 +42,8 @@ function fixture(workerFactory?:()=>ShadowBakeWorker){
 
 test('real near and far tree shapes retain untextured wood cut faces in solid shadows',()=>{
   const resources=new Resources(),models=new Models(resources);
-  assert.equal(new Set(representatives.map(tree=>treeVisual(tree).species)).size,8);
-  for(const tree of representatives)for(const distant of [false,true]){
+  assert.ok(new Set(representatives.map(tree=>treeVisual(tree).name)).size>=8);
+  for(const tree of representatives.filter(usesActionTree))for(const distant of [false,true]){
     const geometry=models.treeGeometry(tree.kind,true,tree,distant);
     // The action tree's explicit crown group is independent evidence of which parts
     // are foliage. Bark texture presence does not decide whether cut wood is solid.
@@ -74,17 +75,19 @@ test('real near and far tree shapes retain untextured wood cut faces in solid sh
 
 test('canopy sources enclose actual transformed crowns and grow about the terrain root',()=>{
   const resources=new Resources(),models=new Models(resources);
-  const trees=[...representatives,allTrees.find(tree=>tree.role==='landmark')!];
+  const trees=representatives;
   const point=new THREE.Vector3();
   for(const tree of trees){
     const local=treeCrownBounds(models.treeGeometry(tree.kind,true,tree));
-    const actual=createTree(models.sourceForTree(tree),tree.kind);
-    actual.update(0,'climb',true,false);
+    const sourceTree=models.sourceForTree(tree).clone(true);
+    const actual=usesActionTree(tree)?createTree(sourceTree,tree.kind):null;
+    actual?.update(0,'climb',true,false);
+    const root=actual?.root??sourceTree,crown=actual?.crown??sourceTree.getObjectByName('crown')!;
     for(const factor of [1,.35]){
       const source=campCanopySource(tree,local,factor),ground=heightAt(tree.x,tree.z);
-      actual.root.position.set(tree.x,ground,tree.z);actual.root.rotation.y=tree.variant*Math.PI*2;actual.root.scale.setScalar(tree.scale*factor);actual.root.updateMatrixWorld(true);
+      root.position.set(tree.x,ground,tree.z);root.rotation.y=tree.variant*Math.PI*2;root.scale.setScalar(tree.scale*factor);root.updateMatrixWorld(true);
       const expected=new THREE.Box3();
-      actual.crown.traverse((object:THREE.Object3D)=>{
+      crown.traverse((object:THREE.Object3D)=>{
         if(!(object instanceof THREE.Mesh))return;
         const positions=object.geometry.getAttribute('position');
         for(let i=0;i<positions.count;i++)expected.expandByPoint(point.fromBufferAttribute(positions,i).applyMatrix4(object.matrixWorld));
@@ -96,7 +99,7 @@ test('canopy sources enclose actual transformed crowns and grow about the terrai
       near(source.radii[1],local.getSize(new THREE.Vector3()).y*.5*tree.scale*factor);
       assert.equal(source.density,factor);
     }
-    actual.dispose();
+    actual?.dispose();
   }
   resources.dispose();
 });

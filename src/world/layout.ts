@@ -9,6 +9,10 @@ import type {RegionId} from '../content/regions.ts';
 import {regionAt} from './regions.ts';
 import fixedSlots from '../content/fixed-tree-slots.json' with {type:'json'};
 import {TREE_SLOT_CORRECTIONS} from '../content/tree-slot-corrections.ts';
+import type {CampTreeForm} from '../content/camp-woodland.ts';
+import {growCampCanopies,matureCampForm} from './camp-woodland.ts';
+import {registerCampRegeneration} from './camp-regeneration.ts';
+import {treeFootRadius} from './tree-dimensions.ts';
 const fixedSlotIds=new Set(fixedSlots);
 export type Tree = {
   regionId?:RegionId;
@@ -21,6 +25,9 @@ export type Tree = {
   scale: number;
   variant: number;
   role: "managed" | "scenery" | "landmark";
+  woodland?: CampTreeForm;
+  regeneration?: string;
+  retained?: boolean;
 };
 export type Collider =
   | { id: string; x: number; z: number; radius: number }
@@ -116,7 +123,13 @@ export function makeTrees(seed = WORLD_SEED): Tree[] {
     role: "landmark",
   });
   if(seed===WORLD_SEED)for(const tree of trees){const corrected=TREE_SLOT_CORRECTIONS[tree.id];if(corrected)Object.assign(tree,corrected);}
-  return trees;
+  for (const tree of trees) {
+    if (tree.role === 'managed') tree.retained = true;
+    const form = matureCampForm(tree);
+    if (form) tree.woodland = form;
+  }
+  trees.push(...growCampCanopies(trees,makeColliders(trees),random(seed ^ 0x4a7b193d)));
+  return registerCampRegeneration(trees,makeColliders(trees),seed,random);
 }
 export function makeColliders(trees: Tree[]): Collider[] {
   return [
@@ -129,12 +142,12 @@ export function makeColliders(trees: Tree[]): Collider[] {
     { id: "tent", ...TENT, halfX: 4.4, halfZ: 4.4 },
     {id:CAMP_VISITOR.id,x:CAMP_VISITOR.x,z:CAMP_VISITOR.z,radius:CAMP_VISITOR.radius},
     ...trees
-      .filter((t) => t.role !== "scenery")
+      .filter((t) => t.role !== "scenery" || t.woodland !== undefined)
       .map((t) => ({
         id: t.id,
         x: t.x,
         z: t.z,
-        radius: (t.role === "landmark" ? 1.2 : t.kind==='pine' ? .43 : .66) * t.scale,
+        radius: treeFootRadius(t),
       })),
     ...makeRocks().map((p) => ({
       id: p.id,

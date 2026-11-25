@@ -44,6 +44,8 @@ import type {PlacementDraft} from '../domain/furniture-placement.ts';
 import {CAMP_VISITOR} from '../content/characters.ts';
 import {createUnderstory} from './understory.js';
 import {treeVisual} from '../world/tree-appearance.ts';
+import {CAMP_REGENERATION_STRIPS} from '../content/camp-woodland.ts';
+import {canFellTree} from '../domain/forestry.ts';
 import * as THREE from "three";
 import { CABIN, CAMERA, GIANT, HOME, TENT, WORLD } from "../content/world.ts";
 import { CABIN_EXTERIOR, CABIN_PORTAL, CABIN_ROOM } from '../content/cabin.ts';
@@ -219,6 +221,12 @@ export async function createScene(
   const scenery = createScenery(r);
   scene.add(scenery.group);
   const forest = models.createForest(trees,true);
+  const smallTrees = trees.filter(tree=>tree.regeneration);
+  const applicationTrees = smallTrees.filter(canFellTree);
+  const regenerationStrips = CAMP_REGENERATION_STRIPS.map(strip=>({
+    id:strip.id,small:smallTrees.filter(tree=>tree.regeneration===strip.id).length,
+    applications:applicationTrees.filter(tree=>tree.regeneration===strip.id).length,
+  }));
   scene.add(forest.group);
   const understory=createUnderstory(r,trees,forest.selections);scene.add(understory.group);
   const frameWork=createFrameWorkQueue();
@@ -1055,6 +1063,8 @@ export async function createScene(
         streaming:streaming.stats(),
         frameWork:frameWork.stats(),
         forestView:{...forestViewStats,ready:forestViewReady,frameRepairs:frameViewRepairs},
+        regeneration:{totalTreeSites:trees.length,small:smallTrees.length,applications:applicationTrees.length,
+          standing:applicationTrees.filter(tree=>lastState?.forestry.slots[tree.id]?.status==='standing').length,strips:regenerationStrips},
         gatheringHits: gathering.hits.size,
         characters:characters.stats(),
         neighbour:neighbour.stats(),

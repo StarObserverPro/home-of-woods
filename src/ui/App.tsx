@@ -33,6 +33,7 @@ import {RIDGE_NEIGHBOUR} from '../content/npcs/ridge-neighbour/profile.ts';
 import {WORKBENCH,findBlueprint} from '../content/workshop.ts';
 import {CAMP_VISITOR} from '../content/characters.ts';
 import {treeVisual} from '../world/tree-appearance.ts';
+import {canFellTree} from '../domain/forestry.ts';
 import { useEffect, useRef, useState, lazy, Suspense } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { createRuntime } from "../app/runtime.ts";
@@ -349,7 +350,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
               tag:
                 selectedTree.role === "landmark"
                   ? "古老地标 · 永久保护"
-                  : `经营林 · ${treeAction?.statusLabel ?? "成熟树"}`,
+                  : treeAction?.statusLabel ?? "成熟树",
               detail:
                 selectedTree.role === "landmark"
                   ? "山路旁的老朋友，树荫下留出了一块安静的空地。它会一直留在山谷。"
@@ -703,11 +704,11 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
                 <span>{treeAction.statusLabel}</span>
                 <span>距你 {treeAction.distance.toFixed(1)}</span>
               </div>
-              {selectedTree?.role === "managed" && treeAction.status === "standing" && (
+              {treeAction.cost > 0 && treeAction.status === "standing" && (
                 <p className="tree-cost">耗 {treeAction.cost} 点额度 · 可得 {treeAction.yield} 份木材<span>可用 {forest.points.available} 点</span></p>
               )}
               {!treeAction.canChop && (treeAction.near||!treeAction.canApproach) && treeAction.reason && <p className="action-reason">{treeAction.reason}</p>}
-              {selectedTree?.role==='managed'&&treeAction.status==='standing'&&!snapshot.food.heavyWork&&<p className="action-reason">现在先采菌拾枝；吃一顿正餐，为下次日出后的重活做准备。</p>}
+              {treeAction.cost>0&&treeAction.status==='standing'&&!snapshot.food.heavyWork&&<p className="action-reason">现在先采菌拾枝；吃一顿正餐，为下次日出后的重活做准备。</p>}
                 {activeAction?.treeId === treeAction.id && (
                 <div className="work-progress" role="progressbar" aria-label={activeAction.phase === "chopping" ? "砍树进度" : "倒树进度"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(activeAction.progress * 100)}>
                   <span style={{width:`${activeAction.progress*100}%`}} />
@@ -715,7 +716,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
               )}
               <div className="tree-actions">
                 {treeAction.canApproach && !treeAction.near && <button className="context-button" onClick={()=>runtime.current?.approachSelected()}><Icon name="walk" />{snapshot.moving?'正在走近…':'走近'}</button>}
-                {selectedTree?.role === "managed" && treeAction.status === "standing" && treeAction.near && <button className="context-button" disabled={!treeAction.canChop||!snapshot.food.heavyWork} onClick={()=>runtime.current?.chopSelected()}><Icon name="axe" />砍树</button>}
+                {treeAction.cost > 0 && treeAction.status === "standing" && treeAction.near && <button className="context-button" disabled={!treeAction.canChop||!snapshot.food.heavyWork} onClick={()=>runtime.current?.chopSelected()}><Icon name="axe" />砍树</button>}
                 {activeAction?.treeId === treeAction.id && activeAction.phase === "chopping" && <button className="context-button" onClick={()=>runtime.current?.cancelChop()}>停止挥斧</button>}
               </div>
             </div>
@@ -880,7 +881,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
               if(!current)return;
               const slots=current.getState().forestry.slots;
               const nearest=trees
-                .filter(t=>t.role==='managed'&&slots[t.id]?.status==='standing')
+                .filter(t=>canFellTree(t)&&slots[t.id]?.status==='standing')
                 .sort((a,b)=>Math.hypot(a.x-snapshot.x,a.z-snapshot.z)-Math.hypot(b.x-snapshot.x,b.z-snapshot.z))[0];
               current.select(nearest?.id??null);
             }}

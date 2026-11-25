@@ -11,7 +11,7 @@ import { inventoryCandidate, inventoryCount } from '../src/domain/inventory.ts';
 import { createGatheringRegistry } from '../src/domain/gathering-registry.ts';
 import { beginGather, synchronizeGatheringHosts } from '../src/domain/gathering.ts';
 import { advancePlayerGather } from '../src/app/player-actions.ts';
-import { startChop, advanceForestry, chopRange } from '../src/domain/forestry.ts';
+import { canFellTree, startChop, advanceForestry, chopRange } from '../src/domain/forestry.ts';
 import { makeTrees, makeColliders } from '../src/world/layout.ts';
 import { RUNTIME_MODELS } from '../src/content/assets.ts';
 import { GATHERABLES } from '../src/content/gatherables.ts';
@@ -30,7 +30,7 @@ async function changed(raw: string, change: (saved: any) => void) {
   return JSON.stringify({ ...core, checksum: await saveDigest(core) });
 }
 function nearTree() {
-  const state = createState(), tree = trees.find(t => t.role === 'managed')!;
+  const state = createState(), tree = trees.find(t=>canFellTree(t)&&t.regionId==='home-woodland')!;
   state.player.x = tree.x + chopRange(tree) - .1; state.player.z = tree.z; state.selected = tree.id;
   return { state, tree };
 }

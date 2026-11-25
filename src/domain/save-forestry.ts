@@ -1,4 +1,5 @@
 import {validateWood} from './inventory.ts';
+import {initialTreeLife} from './forestry.ts';
 import type { ForestryState } from './forestry.ts';
 import type { SaveContext } from './save-context.ts';
 import { actionSequence, fields, finite, id, integer, object, point, requireValue, timestamp, uniqueStrings } from './save-validation.ts';
@@ -14,7 +15,11 @@ export function validateSavedForestry(raw: unknown, context: SaveContext, time: 
   const completed = uniqueStrings(f.completedActions, 'forestry.completedActions');
   const sequences = completed.map(action => actionSequence(action, 'chop', next, 'forestry.completedActions'));
   requireValue(new Set(sequences).size === sequences.length, 'forestry.completedActions', '动作序号重复');
-  const slots = object(f.slots, 'forestry.slots'); fields(slots, [...context.trees.keys()], 'forestry.slots');
+  const savedSlots = object(f.slots, 'forestry.slots');
+  const newTrees = [...context.trees.values()].filter(tree => tree.id.startsWith('camp-regeneration:'));
+  const oldRoster = newTrees.length > 0 && newTrees.every(tree => !Object.hasOwn(savedSlots,tree.id));
+  const slots = oldRoster ? { ...savedSlots, ...Object.fromEntries(newTrees.map(tree => [tree.id,initialTreeLife(tree)])) } : savedSlots;
+  fields(slots, [...context.trees.keys()], 'forestry.slots');
   const working: string[] = [];
   for (const [slotId, tree] of context.trees) {
     const p = `forestry.slots.${slotId}`, life = object(slots[slotId], p);
@@ -67,5 +72,5 @@ export function validateSavedForestry(raw: unknown, context: SaveContext, time: 
       requireValue(a.phase === 'falling' && completed.includes(a.id as string) && reserved === 0 && used >= cost && a.committedAt === life.felledAt, 'forestry.active', '已结算动作不一致');
     }
   }
-  return structuredClone(f) as unknown as ForestryState;
+  return structuredClone({...f,slots}) as unknown as ForestryState;
 }

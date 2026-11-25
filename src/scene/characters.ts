@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import {ramp} from './actions/motion.js';
 import {canStand} from '../domain/navigation.ts';
 import {makeColliders} from '../world/layout.ts';
+import {treeTrunkRadius} from '../world/tree-dimensions.ts';
 import {createActor} from './actions/actor.js';
 import { CHARACTER, CAMP_VISITOR } from '../content/characters.ts';
 import {merchantVisitAt,MERCHANT_SCENE} from '../content/merchant.ts';
@@ -170,7 +171,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
       cut(inspection,target,CHARACTER.strikePhase,'inspection-'+inspection,reducedMotion);
     }else if(state.forestry.active?.phase==='chopping'){
       const a=state.forestry.active,tree=byId.get(a.treeId)!,root=selections.get(a.treeId)!;
-      const dx=state.player.x-tree.x,dz=state.player.z-tree.z,len=Math.hypot(dx,dz)||1,radius=(tree.kind==='pine'?.25:.28)*tree.scale;
+      const dx=state.player.x-tree.x,dz=state.player.z-tree.z,len=Math.hypot(dx,dz)||1,radius=treeTrunkRadius(tree);
       player.position.set(tree.x+dx/len*(radius+1),travelHeightAt(state.player.x,state.player.z,travelAccess(state)),tree.z+dz/len*(radius+1));
       cutHeight=heightAt(tree.x,tree.z)+.88*tree.scale;
       const cycle=FORESTRY.chopSeconds/FORESTRY.hits,phase=((state.time-a.startedAt)/cycle)%1;
@@ -230,7 +231,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
         body.visible=false;procedural.root.visible=true;
         if(action==='climb'){
           const hostId=gather.sourceId.replace(/^gather\./,'').replace(/\.branches$/,'');const tree=byId.get(hostId);
-          if(tree){const radius=(tree.role==='landmark'?1.2:tree.kind==='pine'?.25:.28)*tree.scale,dx=state.player.x-tree.x,dz=state.player.z-tree.z,len=Math.hypot(dx,dz)||1;
+          if(tree){const radius=tree.role==='landmark'?1.2*tree.scale:treeTrunkRadius(tree),dx=state.player.x-tree.x,dz=state.player.z-tree.z,len=Math.hypot(dx,dz)||1;
             const px=THREE.MathUtils.lerp(state.player.x,tree.x+dx/len*(radius+.48),approach),pz=THREE.MathUtils.lerp(state.player.z,tree.z+dz/len*(radius+.48),approach);player.position.set(px,travelHeightAt(px,pz,travelAccess(state)),pz);player.rotation.y=Math.atan2(-dx,-dz);
           }
         }

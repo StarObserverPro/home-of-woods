@@ -8,8 +8,10 @@ import {beveledTimber} from './beveled-timber.ts';
 import {CAMP_PROPS,DINING_SEAT} from '../content/scene-props.ts';
 import {LOG_SHELTER_POSTS} from '../content/weather.ts';
 import type {SceneAppearance} from '../content/scene-props.ts';
-import type {InventoryState} from '../domain/inventory.ts';
+import type {InventoryStack,InventoryState} from '../domain/inventory.ts';
 import {logPresentation} from '../domain/scene-props.ts';
+import {isStored} from '../domain/transport-location.ts';
+import {woodShape} from '../domain/woodcraft.ts';
 import {heightAt} from '../world/surface.ts';
 import type {Resources} from './resources.ts';
 import {createFlames} from './fire.ts';
@@ -123,14 +125,48 @@ export function createCampProps(r:Resources,dryingVessels?:THREE.Group){
   woodMesh(canopy,woodBox(.17,.16,3.75),'#a5855b',0,3.23,0).name='log-store-roof-ridge';
   const logGeo=r.geometry('r5-stock-log',()=>woodCoordinates(new THREE.CylinderGeometry(.31,.33,2.6,9),'raw','y').rotateX(Math.PI/2));
   const capGeo=r.geometry('r5-stock-cap',()=>woodCoordinates(new THREE.CircleGeometry(.274,9),'end','z'));
-  const logs=new THREE.InstancedMesh(logGeo,woodMaterial(r,WOOD_TONES.neutral.bark),18),caps=new THREE.InstancedMesh(capGeo,woodMaterial(r,WOOD_TONES.neutral.end),36);store.add(logs,caps);
-  const dummy=new THREE.Object3D();let index=0;
-  for(let row=0;row<4;row++)for(let col=0;col<6-row&&index<18;col++){
-    const x=(col-(5-row)/2)*.65,y=.52+row*.55;
-    dummy.position.set(x,y,0);dummy.rotation.set(0,0,0);dummy.scale.setScalar(1);dummy.updateMatrix();logs.setMatrixAt(index,dummy.matrix);setWoodInstanceTone(logs,index,`stored-log:${index}`);
-    for(let side=0;side<2;side++){dummy.position.set(x,y,side?1.303:-1.303);dummy.rotation.set(0,side?0:Math.PI,0);dummy.updateMatrix();caps.setMatrixAt(index*2+side,dummy.matrix);setWoodInstanceTone(caps,index*2+side,`stored-log:${index}`);}index++;
+  const logs=new THREE.InstancedMesh(logGeo,woodMaterial(r,WOOD_TONES.neutral.bark),18),caps=new THREE.InstancedMesh(capGeo,woodMaterial(r,WOOD_TONES.neutral.end),36);
+  logs.name='stored-logs';logs.count=caps.count=0;store.add(logs,caps);
+  const dummy=new THREE.Object3D();
+  for(let i=0;i<18;i++){
+    setWoodInstanceTone(logs,i,`stored-log:${i}`);
+    setWoodInstanceTone(caps,i*2,`stored-log:${i}`);setWoodInstanceTone(caps,i*2+1,`stored-log:${i}`);
   }
-  logs.computeBoundingSphere();caps.computeBoundingSphere();
+  function updateStock(inventory:InventoryState){
+    const stock=logPresentation(inventory),radii:number[]=[];
+    for(const stack of inventory.stacks){
+      if(stack.itemId!=='wood'||!isStored(stack))continue;
+      const amount=Math.min(stock.visible-radii.length,stack.quantity);
+      radii.push(...Array<number>(amount).fill(woodShape(stack).radius));
+      if(radii.length===stock.visible)break;
+    }
+    let index=0;
+    const placed:{x:number;y:number;radius:number}[]=[];
+    for(let row=0;row<4&&index<radii.length;row++){
+      const rowRadii=radii.slice(index,index+6-row), supporting=placed.slice();
+      let left=-rowRadii.reduce((sum,radius)=>sum+radius,0);
+      for(const radius of rowRadii){
+        const x=left+radius;
+        left+=2*radius;
+        const y=supporting.reduce((top,log)=>{
+          const height2=(log.radius+radius)**2-(log.x-x)**2;
+          return height2>0?Math.max(top,log.y+Math.sqrt(height2)):top;
+        },.25+radius);
+        placed.push({x,y,radius});
+        dummy.scale.set(radius/.33,radius/.33,1);
+        dummy.position.set(x,y,0);dummy.rotation.set(0,0,0);dummy.updateMatrix();logs.setMatrixAt(index,dummy.matrix);
+        for(let side=0;side<2;side++){
+          dummy.position.set(x,y,side?1.303:-1.303);dummy.rotation.set(0,side?0:Math.PI,0);
+          dummy.updateMatrix();caps.setMatrixAt(index*2+side,dummy.matrix);
+        }
+        index++;
+      }
+    }
+    logs.count=index;caps.count=index*2;
+    logs.instanceMatrix.needsUpdate=caps.instanceMatrix.needsUpdate=true;
+    logs.computeBoundingSphere();caps.computeBoundingSphere();
+    return stock.quantity;
+  }
   // The accepted lower octagonal stonework stays beneath the separate floating crown.
   mesh(altar,new THREE.CylinderGeometry(2.6,2.8,.25,8),'#6f8179',0,.12);
   mesh(altar,new THREE.CylinderGeometry(1.9,2.2,.34,8),'#9baa99',0,.38);
@@ -139,10 +175,10 @@ export function createCampProps(r:Resources,dryingVessels?:THREE.Group){
   const moss:THREE.BufferGeometry[]=[];for(let i=0;i<7;i++)moss.push(new THREE.IcosahedronGeometry(.4,0).scale(1.6,.3,1).translate(Math.cos(i*2)*2.1,.32,Math.sin(i*2)*1.7));merge(altar,moss,'#6e914d');
   const hits:THREE.Object3D[]=[crown.oracleHit];
   for(const [id,root] of roots){const s=Object.values(CAMP_PROPS).find(s=>s.id===id)!,h=id===CAMP_PROPS.altar.id?1.7:3.3,m=new THREE.Mesh(r.own(new THREE.CylinderGeometry(s.radius,s.radius,h,8)),r.own(new THREE.MeshBasicMaterial({visible:false})));m.position.y=h/2;m.userData.propId=id;root.add(m);hits.push(m);}
-  let lastQuantity=-1,disposed=false;
+  let lastStock:InventoryStack[]|undefined,lastQuantity=-1,disposed=false;
   return {group,hits,roots,foundation,update(time:number,state:SceneAppearance,inventory:InventoryState,night:number,reduced:boolean,foodDrying=false,rackBuilt=false){
-    if(disposed)return;const t=reduced?0:time,stock=logPresentation(inventory);
-    if(stock.quantity!==lastQuantity){logs.count=stock.visible;caps.count=stock.visible*2;lastQuantity=stock.quantity;}
+    if(disposed)return;const t=reduced?0:time;
+    if(lastStock!==inventory.stacks){lastStock=inventory.stacks;lastQuantity=updateStock(inventory);}
     dryerSite.visible=!rackBuilt;
     dryerFrame.visible=rackBuilt;
     dryingMushrooms.visible=foodDrying&&rackBuilt;
