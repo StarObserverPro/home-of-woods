@@ -1,11 +1,5 @@
 # 资产登记与批准记录
 
-## 人物统一与待取得候选（2026-11-24）
-
-本轮没有新增第三方人物 GLB，也未覆盖 J01 或原包四位。F/G/E/J/K/L 已完成视觉选择，模型文件、修改和游戏使用依据仍待确认；逐项来源、制作方向和当前状态统一见 [人物标准](CHARACTER_STANDARD.md#5-六位选型与素材状态) 与 [intake 清单](../tools/characters/intake.json)。新程序待机层复用已准入骨架；公共回退实测与本地未测的边界见 [本轮 scope](scopes/character-unification.md)。
-
-
-
 ## 曲面毡布帐篷（2026-11-24）
 
 帐篷本体、重复几何纹带、纤维场与三件陈设均为本轮项目原创程序资产，源文件为 `src/scene/tent/{geometry,material,exterior,props}.ts`，参数位于 `src/content/tent.ts`。运行时替换主营地旧帐篷表现；原 `tent.glb` 保留为历史资产，未修改其字节及来源登记。未增加第三方模型、图案扫描或外部纹理下载。Three.js 几何工具和物理材质沿用原 MIT 软件通知。

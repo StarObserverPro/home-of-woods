@@ -1,6 +1,6 @@
 # 运行时、数据与资源管理
 
-2026-11-24 人物待机：`character-liveliness` 共用当前场景时钟，按撤销旧叠加、原动作/IK、有限上半身微动的顺序接入主角、行商、邻居及本地来客。根与脚底不漂移，持物/工作动作优先，暂停和减少动态效果沿用既有控制。接口、面部能力边界和分档见 [人物标准](CHARACTER_STANDARD.md)，当前验证见 [本轮 scope](scopes/character-unification.md)。
+人物的 `character-liveliness` 在当前场景时钟内运行：撤销上次叠加后采样原动作/IK，最后添加可用的上半身微动。根与脚底不漂移，工作/持物动作优先，J01 复用原眨眼材质；暂停及减少动态效果沿用既有控制。当前实现与实际验证见 [人物待机](scopes/character-unification.md)。
 
 2026-11-23 Rainier 山麓表现接入：地域权重仍消费唯一地表；空气透视消费共享太阳、天光与天气；高位导航镜头加入按画幅适配的广角和克制的前后焦外。默认远林仍为 `mass`，`farForest=impostor` 提供图集 A/B。实现、成本估算、诊断入口及实际 GPU 验证状态统一维护在 [Rainier 渲染实现](RAINIER_RENDERING.md)；生态来源及美术缩尺见 [生态原型](RAINIER_ECOLOGY.md)。本轮不改变经营树 ID、资源和存档所有权。
 

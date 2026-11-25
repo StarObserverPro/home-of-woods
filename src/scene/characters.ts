@@ -148,9 +148,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     player.position.set(pose.x,height,pose.z);player.rotation.y=pose.facing;
     body.position.y=bodyY;
     updateWardrobe(state,reducedMotion,pose.moving);
-    playerHandsBusy=state.inventory.stacks.some(stack=>stack.quantity>0&&isCarried(stack))||
-      (state.inventory.instances??[]).some(item=>item.location.kind==='mounted'&&item.location.hostId==='player'&&
-        /^(player:)?(left-hand|right-hand|hand-left|hand-right)$/.test(item.location.slotId));
+    playerHandsBusy=state.inventory.stacks.some(stack=>stack.quantity>0&&isCarried(stack));
     playerTalking=state.npcs?.['ridge-neighbour']?.visit.active?.phase==='talking';
     impact=null;body.visible=true;pickedScrap.visible=false;cutHeight=null;chest.position.y=chestY;procedural.root.visible=false;
   }

@@ -9,7 +9,6 @@ coverage/
 *.tmp
 .DS_Store
 .cache/
-__pycache__/
 playwright-report/
 test-results/
 

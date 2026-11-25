@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import {CHARACTER_MOTION as M} from '../content/character-motion.ts';
 
 type Gesture='none'|'adjust-collar'|'touch-hair';
-type MorphChannel={values:number[];index:number;base:number;kind:'blink'|'left'|'right'|'up'|'down'};
 type Arm={upper:THREE.Bone;lower:THREE.Bone;hand:THREE.Bone};
 type BlinkAdapter={apply:(amount:number)=>void;kind:'atlas+morph'|'atlas'|'morph'|'none'};
 const canonical=(name:string)=>name.toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -33,7 +32,8 @@ export function characterBlinkAt(seconds:number,seed:number){
  * Additive upper-body layer for admitted rigs. The caller must restore before
  * sampling its mixer/IK, then update after all action/contact owners. No pelvis,
  * feet, root position, scale, geometry, materials or gameplay state are written.
- * Missing face channels stay unsupported: painted eyes never get guessed meshes.
+ * J01 passes its existing atlas/morph blink function. The other current faces
+ * are painted; their eyes stay unchanged while the head makes small glances.
  */
 export function createCharacterLiveliness(body:THREE.Object3D,options:{id:string;frame?:THREE.Object3D;blink?:BlinkAdapter}){
   const frame=options.frame??body,seed=characterMotionSeed(options.id);
@@ -46,31 +46,10 @@ export function createCharacterLiveliness(body:THREE.Object3D,options:{id:string
     return upper&&lower&&hand?{upper,lower,hand}:null;
   }
   const arms={l:arm('l'),r:arm('r')};
-  const eyes=[find('eyel','lefteye'),find('eyer','righteye')].filter((bone):bone is THREE.Bone=>!!bone);
-  const tracked=[...new Set([spine,chest,head,...eyes,
+  const tracked=[...new Set([spine,chest,head,
     ...Object.values(arms).flatMap(value=>value?[value.upper,value.lower,value.hand]:[])])]
     .filter((bone):bone is THREE.Bone=>!!bone).map(bone=>({bone,base:bone.quaternion.clone()}));
-  const channels:MorphChannel[]=[];
-  body.traverse(object=>{
-    if(!(object instanceof THREE.Mesh)||!object.morphTargetInfluences||!object.morphTargetDictionary)return;
-    const names=new Map(Object.entries(object.morphTargetDictionary).map(([name,index])=>[canonical(name),index]));
-    const add=(name:string,kind:MorphChannel['kind'])=>{
-      const index=names.get(name);if(index===undefined)return false;
-      channels.push({values:object.morphTargetInfluences!,index,base:object.morphTargetInfluences![index],kind});return true;
-    };
-    if(!options.blink&&!add('blink','blink')&&!add('eyeblink','blink')){
-      add('eyeblinkleft','blink');add('eyeblinkright','blink');
-    }
-    // ARKit/VRM style directional channels. Prefer an authored combined channel.
-    if(!eyes.length){
-      if(!add('lookleft','left')){add('eyelookoutleft','left');add('eyelookinright','left');}
-      if(!add('lookright','right')){add('eyelookinleft','right');add('eyelookoutright','right');}
-      if(!add('lookup','up')){add('eyelookupleft','up');add('eyelookupright','up');}
-      if(!add('lookdown','down')){add('eyelookdownleft','down');add('eyelookdownright','down');}
-    }
-  });
-  const eyeSupport={blink:options.blink?.kind??(channels.some(c=>c.kind==='blink')?'morph':'none'),
-    gaze:eyes.length?'bones':channels.some(c=>c.kind!=='blink')?'morph':'none'};
+  const eyeSupport={blink:options.blink?.kind??'none',gaze:'none'};
   // Reused scratch storage, including the two-bone gesture solve.
   const orientation=new THREE.Quaternion(),inverse=new THREE.Quaternion(),delta=new THREE.Quaternion(),world=new THREE.Quaternion();
   const up=new THREE.Vector3(),right=new THREE.Vector3(),forward=new THREE.Vector3(),axis=new THREE.Vector3();
@@ -84,7 +63,6 @@ export function createCharacterLiveliness(body:THREE.Object3D,options:{id:string
   function beforeAnimation(){
     if(!applied)return;
     for(const saved of tracked)saved.bone.quaternion.copy(saved.base);
-    for(const channel of channels)channel.values[channel.index]=channel.base;
     options.blink?.apply(0);
     applied=false;
   }
@@ -140,12 +118,11 @@ export function createCharacterLiveliness(body:THREE.Object3D,options:{id:string
     wereHandsFree=handsFree;
     wasIdle=idle;lastSeconds=seconds;
     for(const saved of tracked)saved.base.copy(saved.bone.quaternion);
-    for(const channel of channels)channel.base=channel.values[channel.index];
     applied=true;
     idleWeight=idle&&!reducedMotion?smooth((seconds-idleSince)/M.idleEaseSeconds):0;
     suppressed=reducedMotion?'reduced-motion':!idle?'action-or-locomotion':!handsFree?'hands-busy':null;
     chestPitch=0;swayRoll=0;headYaw=0;headPitch=0;gazeX=0;gazeY=0;gesture='none';gestureWeight=0;
-    blink=reducedMotion?0:characterBlinkAt(seconds,seed);
+    blink=reducedMotion||eyeSupport.blink==='none'?0:characterBlinkAt(seconds,seed);
     frame.getWorldQuaternion(orientation);
     up.set(0,1,0).applyQuaternion(orientation);right.set(1,0,0).applyQuaternion(orientation);forward.set(0,0,1).applyQuaternion(orientation);
     if(idleWeight>0){
@@ -174,19 +151,13 @@ export function createCharacterLiveliness(body:THREE.Object3D,options:{id:string
         }
       }
     }
-    const eyeOpen=1-blink;
-    for(const eye of eyes)turn(eye,-gazeY*M.glance.eyePitch*eyeOpen,gazeX*M.glance.eyeYaw*eyeOpen,0);
-    for(const channel of channels){
-      const amount=channel.kind==='blink'?blink:channel.kind==='left'?Math.max(0,gazeX)*eyeOpen:
-        channel.kind==='right'?Math.max(0,-gazeX)*eyeOpen:channel.kind==='up'?Math.max(0,gazeY)*eyeOpen:Math.max(0,-gazeY)*eyeOpen;
-      channel.values[channel.index]=Math.max(channel.base,amount);
-    }
     options.blink?.apply(blink);
   }
   return {beforeAnimation,update,
     reset(){beforeAnimation();wasIdle=false;wereHandsFree=false;lastSeconds=-Infinity;idleWeight=0;gesture='none';gestureWeight=0;},
+    // gaze is the normalized head-glance target, not a moving pupil.
     stats:()=>({id:options.id,seconds,idleWeight,chestPitch,swayRoll,headYaw,headPitch,blink,gaze:[gazeX,gazeY],
-      gesture,gestureWeight,suppressed,eyeSupport,bones:{upperBody:Number(!!spine)+Number(!!chest)+Number(!!head),arms:Number(!!arms.l)+Number(!!arms.r),eyes:eyes.length},disposed}),
+      gesture,gestureWeight,suppressed,eyeSupport,bones:{upperBody:Number(!!spine)+Number(!!chest)+Number(!!head),arms:Number(!!arms.l)+Number(!!arms.r)},disposed}),
     dispose(){if(disposed)return;beforeAnimation();disposed=true;wasIdle=false;wereHandsFree=false;lastSeconds=-Infinity;},
   };
 }

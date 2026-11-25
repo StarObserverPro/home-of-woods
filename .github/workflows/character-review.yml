@@ -1,4 +1,4 @@
-name: Character Art and Motion
+name: Character Idle Motion
 on:
   pull_request:
     paths:
@@ -8,7 +8,6 @@ on:
       - 'src/scene/neighbour.ts'
       - 'src/scene/villagers.ts'
       - 'tests/character-*.test.ts'
-      - 'tools/characters/**'
       - 'tools/verification/character-browser.mjs'
       - '.github/workflows/character-review.yml'
   workflow_dispatch:
@@ -30,10 +29,10 @@ jobs:
           node-version: '24'
           package-manager-cache: false
       - run: npm ci
-      - name: Check the actual asset state and motion ownership
+      - name: Check existing characters and motion ownership
         run: |
-          npm run verify:characters
-          node --experimental-strip-types --test tests/character-quality.test.ts tests/character-audit.test.ts tests/character-liveliness.test.ts tests/character-contact.test.ts tests/character-wardrobe.test.ts tests/neighbour*.test.ts
+          npm run verify:assets
+          node --experimental-strip-types --test tests/character-liveliness.test.ts tests/character-contact.test.ts tests/character-wardrobe.test.ts tests/neighbour*.test.ts
       - run: npm run build
       - name: Install the WebGL browser
         run: npx playwright install --with-deps chromium
@@ -42,13 +41,11 @@ jobs:
         env:
           SOURCE_REVISION: ${{ github.sha }}
           CHARACTER_EVIDENCE_DIR: /tmp/how-character-evidence
-      - name: Keep actual frames and the asset report
+      - name: Keep actual frames and runtime findings
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: character-review-evidence
-          path: |
-            /tmp/how-character-evidence/
-            .cache/character-audit/intake-report.json
+          path: /tmp/how-character-evidence/
           if-no-files-found: warn
           retention-days: 14

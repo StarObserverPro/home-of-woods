@@ -86,32 +86,13 @@ test('sampling is frame-rate independent and action, hands-busy and reduced-moti
   assert.equal(ma.stats().suppressed,'reduced-motion');ma.dispose();mb.dispose();
 });
 
-test('only real face morphs or eye bones receive gaze/blinks and all channel bases restore',()=>{
-  const rig=simpleRig(),geometry=new THREE.BufferGeometry(),mesh=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial());
-  mesh.morphTargetDictionary={eyeBlinkLeft:0,eyeBlinkRight:1,lookLeft:2,lookRight:3,lookUp:4,lookDown:5};
-  mesh.morphTargetInfluences=[.12,.12,0,0,0,0];rig.head.add(mesh);
-  const motion=createCharacterLiveliness(rig.root,{id:'morph-face'});let shut=false,looked=false;
-  for(let i=0;i<1200;i++){
-    motion.beforeAnimation();assert.deepEqual(mesh.morphTargetInfluences,[.12,.12,0,0,0,0]);motion.update(i/60,false,true);
-    shut||=mesh.morphTargetInfluences[0]===1;looked||=mesh.morphTargetInfluences.slice(2).some(value=>value>.05);
-  }
-  assert.ok(shut&&looked);assert.deepEqual(motion.stats().eyeSupport,{blink:'morph',gaze:'morph'});
-  motion.dispose();assert.deepEqual(mesh.morphTargetInfluences,[.12,.12,0,0,0,0]);geometry.dispose();(mesh.material as THREE.Material).dispose();
-  const empty=new THREE.Group(),none=createCharacterLiveliness(empty,{id:'painted-face'});none.update(0,false,true);none.update(2,false,true);
-  assert.equal(empty.children.length,0);assert.deepEqual(none.stats().eyeSupport,{blink:'none',gaze:'none'});none.dispose();
-  const other=simpleRig(),left=new THREE.Bone(),right=new THREE.Bone();left.name='eye_l';right.name='eye_r';other.head.add(left,right);
-  const eyes=createCharacterLiveliness(other.root,{id:'bone-face'});eyes.update(0,false,true);eyes.beforeAnimation();eyes.update(2,false,true);
-  assert.equal(eyes.stats().eyeSupport.gaze,'bones');assert.ok(left.quaternion.angleTo(new THREE.Quaternion())>1e-5);eyes.dispose();
-  assert.deepEqual(left.quaternion.toArray(),[0,0,0,1]);assert.deepEqual(right.quaternion.toArray(),[0,0,0,1]);
-});
-
 test('real KayKit player shares idle in camp and cabin, freezes paused, yields to tools/carry and keeps skin soles grounded',async()=>{
   const {resources,models}=await characterModels(),characters=createCharacters(resources,models,[],new Map()),state=createState([]);
   const tick=(time:number,reduced=false,holding=false)=>{characters.update(state,reduced,time);characters.present(time,reduced,holding);};
   try{
     tick(0);const soles=characters.footContacts().filter(foot=>foot.id.startsWith('player:')).map(foot=>foot.position.toArray());
     tick(3);const idle=pose(characters.player),info=characters.stats().liveliness.player;
-    assert.ok(info.idleWeight>.9);assert.equal(info.eyeSupport.blink,'none');
+    assert.ok(info.idleWeight>.9);assert.deepEqual(info.eyeSupport,{blink:'none',gaze:'none'});assert.equal(info.blink,0);
     for(let i=0;i<20;i++)tick(3);
     assert.deepEqual(pose(characters.player),idle);assert.deepEqual(characters.stats().liveliness.player,info);
     assert.deepEqual(characters.footContacts().filter(foot=>foot.id.startsWith('player:')).map(foot=>foot.position.toArray()),soles);
