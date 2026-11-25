@@ -127,6 +127,15 @@ function observePage() {
 }
 
 async function capture(name, reviewPose = null) {
+  const viewport = page.viewportSize(), dpr = report.captureInputs.dpr;
+  const expectedPixels = { width: Math.round(viewport.width * dpr), height: Math.round(viewport.height * dpr) };
+  // Resizing schedules the game's own render. Wait for its backing buffer before holding or sampling it.
+  await waitState(({ selector, width, height }) => {
+    const canvas = document.querySelector(selector);
+    const s = JSON.parse(document.querySelector('#runtime-stats').textContent).current;
+    return canvas?.width === width && canvas?.height === height && s.frameWork.pending === 0 &&
+      window.__HOW_CAPTURE_HOLD__.read().loop.mode === 'stopped';
+  }, { selector: canvasSelector, ...expectedPixels }, 90000);
   const hold = await page.evaluate(() => window.__HOW_CAPTURE_HOLD__.begin());
   try {
     const pixels = await page.evaluate(async ({ selector, reviewPose }) => {
@@ -148,6 +157,8 @@ async function capture(name, reviewPose = null) {
     }, { selector: canvasSelector, reviewPose });
     await waitState(() => JSON.parse(document.querySelector('#runtime-stats').textContent).current.loop.mode === 'stopped');
     const s = await state(); checkScene(s, name);
+    assert.equal(pixels.width, expectedPixels.width, name + ': canvas width matches the requested viewport and DPR');
+    assert.equal(pixels.height, expectedPixels.height, name + ': canvas height matches the requested viewport and DPR');
     assert.equal(pixels.webgl.available, true); assert.equal(pixels.webgl.error, 0); assert.equal(pixels.webgl.contextLost, false);
     assert.ok(pixels.nonblackSamples > 1000 && pixels.colorBins > 16, name + ': actual canvas is non-black and non-uniform');
     const cdp = await context.newCDPSession(page);
