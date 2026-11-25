@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -63,9 +64,23 @@ for (const name of registry.inlineStyleSources ?? []) {
     checkCss(`${name}:inline-style-${index+1}`,block[1]);
   }
 }
-for (const directory of await fs.readdir('sandbox',{withFileTypes:true})) {
-  if (!directory.isDirectory()) continue;
-  if (!registry.archivedSandboxes.includes(directory.name) && !registry.active.some(module=>module.root===`sandbox/${directory.name}`)) errors.push(`sandbox/${directory.name}: register a shared-theme active entry or an explicit archive`);
+const sandboxDirectories = await fs.readdir('sandbox', { withFileTypes: true });
+const unregistered = sandboxDirectories.filter(directory =>
+  directory.isDirectory() &&
+  !registry.archivedSandboxes.includes(directory.name) &&
+  !registry.active.some(module => module.root === `sandbox/${directory.name}`),
+);
+if (unregistered.length) {
+  const listing = spawnSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard', '--', 'sandbox'], {
+    encoding: 'utf8',
+  });
+  // Check tracked and non-ignored experiments. An exported source tree has no Git index.
+  const visible = new Set(listing.stdout?.split('\0').map(file => file.split('/')[1]));
+  for (const directory of unregistered) {
+    if (listing.status !== 0 || visible.has(directory.name)) {
+      errors.push(`sandbox/${directory.name}: register a shared-theme active entry or an explicit archive`);
+    }
+  }
 }
 const generator = await fs.readFile('src/ui/timber/surface.ts','utf8');
 if (/Math\.random\s*\(|Date\.now\s*\(/.test(generator)) errors.push('surface.ts: ornament must have deterministic inputs');
