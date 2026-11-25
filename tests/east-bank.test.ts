@@ -17,7 +17,8 @@ import {inventoryTransaction,stackKey,inventoryCount} from '../src/domain/invent
 import {changeCarrying,groundId,carriedStacks} from '../src/domain/carrying.ts';
 import {pendingHarvest,validateHarvest} from '../src/domain/harvest.ts';
 import {isAvailableMaterial,transportLocation} from '../src/domain/transport-location.ts';
-import {chopReason,startChop,chopRange,advanceForestry,volumePoints} from '../src/domain/forestry.ts';
+import {canFellTree,chopReason,startChop,advanceForestry,volumePoints} from '../src/domain/forestry.ts';
+import {fellingSpaceIsClear,fellingStandCandidates} from '../src/world/tree-felling-space.ts';
 import {createSaveContext} from '../src/domain/save-context.ts';
 import {serializeWorldSave,prepareWorldSave} from '../src/domain/world-save.ts';
 import {saveDigest} from '../src/domain/save-digest.ts';
@@ -43,9 +44,9 @@ function buildBridge(){
   assert.match(advanceWorkshop(s)??'',/木桥修好/);return s;
 }
 function standAt(s:GameState,tree:typeof east){
-  for(let i=0;i<48;i++){
-    const r=chopRange(tree)-.08,p={x:tree.x+Math.cos(i*Math.PI/24)*r,z:tree.z+Math.sin(i*Math.PI/24)*r};
-    if(canStand(p,colliders,undefined,travelAccess(s))){s.player={...p,facing:0,moving:false};s.selected=tree.id;return;}
+  const access=travelAccess(s);
+  for(const p of fellingStandCandidates(tree,0)){
+    if(canStand(p,colliders,undefined,access)&&fellingSpaceIsClear(tree,p,colliders,access)){s.player={...p,facing:0,moving:false};s.selected=tree.id;return;}
   }
   throw new Error('No stand for '+tree.id);
 }
@@ -103,7 +104,7 @@ test('uncollected timber blocks only its source forest, including after crossing
   }
   assert.ok(s.inventory.stacks.every(item=>!item.harvest));
   // Both forests can independently owe a batch; settling either must leave the other untouched.
-  const otherEast=byId.get('tree-slot-18-20')!;fell(s,west);standAt(s,otherEast);assert.equal(chopReason(s,otherEast),'');
+  const otherEast=trees.find(tree=>canFellTree(tree)&&tree.regionId==='east-woodland'&&tree!==east)!;fell(s,west);standAt(s,otherEast);assert.equal(chopReason(s,otherEast),'');
   fell(s,otherEast);assert.ok(pendingHarvest(s.inventory,'home-woodland')>0&&pendingHarvest(s.inventory,'east-woodland')>0);
 });
 

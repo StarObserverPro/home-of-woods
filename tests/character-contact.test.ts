@@ -7,7 +7,8 @@ import {createCharacters} from '../src/scene/characters.ts';
 import {createForestryPresentation} from '../src/scene/forestry-presentation.ts';
 import {makeTrees,makeColliders} from '../src/world/layout.ts';
 import {createState} from '../src/domain/state.ts';
-import {startChop,cancelChop,chopRange} from '../src/domain/forestry.ts';
+import {canFellTree,startChop,cancelChop,chopRange} from '../src/domain/forestry.ts';
+import {fellingStandDistance} from '../src/world/tree-felling-space.ts';
 import {heightAt} from '../src/world/surface.ts';
 import {canStand} from '../src/domain/navigation.ts';
 import {FORESTRY} from '../src/content/forestry.ts';
@@ -17,11 +18,11 @@ test('actual skinned character stops at real tree solids, keeps two palms on the
   const {resources,models}=await characterModels(),trees=makeTrees(),forest=models.createForest(trees);
   const presenter=createForestryPresentation({models,resources,forestGroup:forest.group,trees,selections:forest.selections});
   const characters=createCharacters(resources,models,trees,forest.selections),colliders=makeColliders(trees);
-  const cases=['pine','broadleaf'].flatMap(kind=>trees.filter(t=>t.role==='managed'&&t.kind===kind).filter((_,i)=>i%9===0).slice(0,4));
+  const cases=['pine','broadleaf'].flatMap(kind=>trees.filter(t=>canFellTree(t)&&t.kind===kind&&t.regionId!=='east-woodland').filter((_,i)=>i%3===0).slice(0,4));
   assert.equal(new Set(cases.map(t=>t.kind)).size,2,'test both trunk shapes');
   let checked=0;const misses:string[]=[];
   for(const tree of cases)for(const angle of [0,Math.PI/2,Math.PI,Math.PI*1.5])for(const reach of ['preferred','maximum']){
-    const distance=reach==='maximum'?chopRange(tree)-.03:Math.min(chopRange(tree)-.03,(tree.kind==='pine'?.43:.66)*tree.scale+1.1);
+    const distance=reach==='maximum'?chopRange(tree)-.03:Math.min(chopRange(tree)-.03,fellingStandDistance(tree));
     const x=tree.x+Math.sin(angle)*distance,z=tree.z+Math.cos(angle)*distance;
     if(!canStand({x,z},colliders))continue;
     const state=createState(trees);state.player.x=x;state.player.z=z;state.selected=tree.id;

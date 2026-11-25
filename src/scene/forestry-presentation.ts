@@ -10,6 +10,7 @@ import type {GameState} from '../domain/state.ts';
 import {treeScaleFactor} from '../domain/forestry.ts';
 import type {Tree} from '../world/layout.ts';
 import {heightAt} from '../world/surface.ts';
+import {campTreeDimensions,treeFootRadius,treeTrunkRadius,usesActionTree} from '../world/tree-dimensions.ts';
 import type {Resources} from './resources.ts';
 
 type ForestryPresentationOptions={
@@ -19,6 +20,7 @@ type ForestryPresentationOptions={
 };
 // The domain has already settled the tree; this short rest only makes its landing legible.
 const FALLEN_HOLD_SECONDS=1.8;
+const fallingLength = (tree:Tree) => (tree.woodland ? campTreeDimensions(tree.woodland).height : tree.kind==='pine'?6.6:6.4)*tree.scale;
 /** Presentation only: consumes committed world state; no timers, rewards or gameplay writes. */
 export function createForestryPresentation({models,resources:r,forestGroup,trees,selections,bindTreeSurface}:ForestryPresentationOptions){
   let disposed=false;
@@ -36,7 +38,7 @@ export function createForestryPresentation({models,resources:r,forestGroup,trees
     root=new THREE.Group();root.name=tree.id;root.userData.forestryRole='stump';
     const tone=WOOD_TONES.neutral,bark=woodMaterial(r,tone.bark,.72),cutWood=woodMaterial(r,tone.end,.78);
     const trunk=new THREE.Mesh(woodToneGeometry(r,stumpGeometry,tree.id),[bark,cutWood,cutWood]);trunk.position.y=.25;trunk.castShadow=true;trunk.receiveShadow=true;root.add(trunk);
-    root.position.set(tree.x,heightAt(tree.x,tree.z),tree.z);const radius=(tree.kind==='pine'?.43:.66)*tree.scale;root.scale.set(radius,tree.scale,radius);
+    root.position.set(tree.x,heightAt(tree.x,tree.z),tree.z);const radius=treeFootRadius(tree);root.scale.set(radius,tree.scale,radius);
     forestGroup.add(root);stumps.set(tree.id,root);bindTreeSurface?.(root);return root;
   };
   const pickTargets:THREE.Object3D[]=[];
@@ -57,7 +59,7 @@ export function createForestryPresentation({models,resources:r,forestGroup,trees
       object.visible=status!=='stump'||resting;object.userData.forestrySelectable=status!=='falling'&&status!=='stump';
       object.position.set(tree.x,ground,tree.z);object.quaternion.copy(baseRotations.get(id)!);object.scale.setScalar(tree.scale*factor);
       const gather=state.gathering.action,climbing=gather?.phase==='performing'&&gather.motionTag==='gather.climb'&&gather.sourceId===`gather.${id}.branches`;
-      if(tree.role==='managed' && (climbing||status==='chopping'||status==='falling'||status==='stump')){
+      if(tree.role==='managed' && usesActionTree(tree) && (climbing||status==='chopping'||status==='falling'||status==='stump')){
         let parts=dynamic.get(id);
         if(!parts){const yaw=Math.atan2(-life.fallDirection.z,life.fallDirection.x);const source=models.sourceForTree(tree).clone(true);source.rotation.y=tree.variant*Math.PI*2-yaw;parts=createTree(source,tree.kind);dynamic.set(id,parts);forestGroup.add(parts.root);object.userData.actionTree=parts;
           parts.root.name=id;parts.root.position.set(tree.x,ground,tree.z);parts.root.scale.setScalar(tree.scale);
@@ -72,7 +74,7 @@ export function createForestryPresentation({models,resources:r,forestGroup,trees
       }else if(dynamic.has(id)){dynamic.get(id)!.dispose();dynamic.delete(id);delete object.userData.actionTree;}
       if((status==='falling'||resting)&&life?.felledAt!==null&&life?.felledAt!==undefined){
         const p=THREE.MathUtils.clamp((state.time-life.felledAt)/FORESTRY.fallSeconds,0,1),dir=life.fallDirection;
-        const length=(tree.kind==='pine'?6.6:6.4)*tree.scale;
+        const length=fallingLength(tree);
         const targetRise=heightAt(tree.x+dir.x*length,tree.z+dir.z*length)-ground+1.1*tree.scale;
         const finalAngle=THREE.MathUtils.clamp(Math.atan2(length,targetRise),1.05,Math.PI/2+.08);
         const angle=finalAngle*Math.pow(p,reducedMotion?1:1.6),pivot=.42*tree.scale;
@@ -96,8 +98,8 @@ export function createForestryPresentation({models,resources:r,forestGroup,trees
       const elapsed=state.time-action.startedAt,stroke=Math.min(FORESTRY.hits-1,Math.floor(elapsed/cycle-.58));
       const age=elapsed-(stroke+.58)*cycle;
       if(stroke>=0&&age>=0&&age<.48){
-        const dir=life.fallDirection,radius=(tree.kind==='pine'?.43:.66)*tree.scale;
-        const bx=tree.x-dir.x*radius,bz=tree.z-dir.z*radius,by=heightAt(tree.x,tree.z)+1.2;
+        const dir=life.fallDirection,radius=tree.regeneration?treeTrunkRadius(tree):treeFootRadius(tree);
+        const bx=tree.x-dir.x*radius,bz=tree.z-dir.z*radius,by=heightAt(tree.x,tree.z)+(tree.regeneration?CUT.height*tree.scale:1.2);
         chipOrigin.set(bx,by,bz);chipTree=tree.id;
         for(let i=0;i<18;i++){
           const vx=-dir.x*1.8+Math.sin(i*2.4)*2.1,vz=-dir.z*1.8+Math.cos(i*1.8)*2;
@@ -110,7 +112,7 @@ export function createForestryPresentation({models,resources:r,forestGroup,trees
     if(!chips.visible&&impactTree&&!reducedMotion){
       // Reuse the hit pool for a low, short-lived landing scatter; no new particles or clock.
       const tree=impactTree,dir=state.forestry.slots[tree.id].fallDirection;
-      const length=(tree.kind==='pine'?6.6:6.4)*tree.scale;
+      const length=fallingLength(tree);
       const bx=tree.x+dir.x*length*.7,bz=tree.z+dir.z*length*.7;
       for(let i=0;i<18;i++){
         const angle=i*2.4,spread=.25+(i%5)*.16+impactAge*(1.8+(i%3)*.6);

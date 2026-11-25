@@ -18,7 +18,7 @@ import {learnWorkshopPlan,beginGuidedCraft,adjustGuidedPart,submitGuidedPart,fin
 import {serializeWorldSave,prepareWorldSave} from '../src/domain/world-save.ts';
 import {createSaveContext} from '../src/domain/save-context.ts';
 import {saveDigest} from '../src/domain/save-digest.ts';
-import {startChop,advanceForestry,chopRange} from '../src/domain/forestry.ts';
+import {canFellTree,startChop,advanceForestry,chopRange} from '../src/domain/forestry.ts';
 import {makeTrees} from '../src/world/layout.ts';
 import {FORESTRY} from '../src/content/forestry.ts';
 
@@ -89,7 +89,7 @@ test('rain intensity zero leaves new exposed wood dry while harvested green wood
   const state=woodStock();transferWood(state,'one');setWeather(state,'rain');setWeatherIntensity(state,0);hours(state,1);
   assert.ok(readWoodCondition(state.woodcraft.pieces[0].source).moisture<=.2);
   assert.equal(weatherSnapshot(state).rain,0);
-  const trees=makeTrees(),tree=trees.find(item=>item.role==='managed')!,fresh=createState(trees);
+  const trees=makeTrees(),tree=trees.find(t=>canFellTree(t)&&t.regionId==='home-woodland')!,fresh=createState(trees);
   fresh.player={...fresh.player,x:tree.x+chopRange(tree)-.1,z:tree.z};fresh.selected=tree.id;
   assert.equal(startChop(fresh,tree).ok,true);fresh.time=FORESTRY.chopSeconds+.01;
   advanceForestry(fresh,new Map(trees.map(item=>[item.id,item])));

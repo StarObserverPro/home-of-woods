@@ -4,14 +4,13 @@ import * as THREE from 'three';
 import {buildClosedTerrain} from '../src/world/closed-terrain.ts';
 import {heightAt} from '../src/world/surface.ts';
 import {makeTrees} from '../src/world/layout.ts';
-import {treeVisual} from '../src/world/tree-appearance.ts';
 import {buildApron,riverX,riverY,ROUTES,sampleRoute} from '../src/world/horizon.js';
 import {createTerrainSampler} from '../src/world/terrain-sampler.js';
 import {createHorizon} from '../src/scene/horizon.ts';
 import {createTerrain} from '../src/scene/terrain.ts';
 import {createCreek} from '../src/scene/creek.ts';
 import {Resources} from '../src/scene/resources.ts';
-import {makeTree} from '../src/scene/forest-shapes.js';
+import {Models} from '../src/scene/models.ts';
 import {distantTreeGeometry,planOuterForest,OUTER_FOREST} from '../src/scene/outer-forest.js';
 import type {DistantTreeKind} from '../src/scene/outer-forest.js';
 import {TREE_SLOT_CORRECTIONS} from '../src/content/tree-slot-corrections.ts';
@@ -40,18 +39,22 @@ test('rendered valley banks share the near-field height, and the exterior rim an
 });
 
 test('fixed scenery identities and full crowns clear the planned bridge corridor',()=>{
-  const trees=makeTrees();assert.equal(trees.length,580);assert.equal(new Set(trees.map(t=>t.id)).size,580);
+  const trees=makeTrees();
+  const fixed=trees.filter(t=>t.id.startsWith('tree-slot-')||t.id==='landmark-elder');
+  assert.equal(fixed.length,580);assert.equal(new Set(trees.map(t=>t.id)).size,trees.length);
   for(const [id,position] of Object.entries(TREE_SLOT_CORRECTIONS)){
     const tree=trees.find(t=>t.id===id)!;assert.equal(tree.role,'scenery');assert.equal(tree.individualId,`${id}:g0`);
     assert.deepEqual({x:tree.x,z:tree.z},position);
   }
-  for(const tree of trees.filter(t=>t.x>0&&t.x<60&&Math.abs(t.z-38)<14)){
-    const visual=treeVisual(tree),model=makeTree(visual.species,visual.seed,1);
-    model.scale.setScalar(tree.scale);model.rotation.y=tree.variant*6.28;model.position.set(tree.x,heightAt(tree.x,tree.z),tree.z);model.updateMatrixWorld(true);
-    const box=new THREE.Box3().setFromObject(model);
-    assert.ok(!(box.max.x>7&&box.min.x<45&&box.max.z>34.6&&box.min.z<41.4),tree.id);
-    model.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose();}});
-  }
+  const resources=new Resources(),models=new Models(resources);
+  try{
+    for(const tree of trees.filter(t=>t.x>0&&t.x<60&&Math.abs(t.z-38)<14)){
+      const model=new THREE.Mesh(models.treeGeometry(tree.kind,true,tree,tree.role==='scenery'&&!tree.woodland));
+      model.scale.setScalar(tree.scale);model.rotation.y=tree.variant*Math.PI*2;model.position.set(tree.x,heightAt(tree.x,tree.z),tree.z);model.updateMatrixWorld(true);
+      const box=new THREE.Box3().setFromObject(model,true);
+      assert.ok(!(box.max.x>7&&box.min.x<45&&box.max.z>34.6&&box.min.z<41.4),tree.id);
+    }
+  }finally{resources.dispose();}
 });
 
 test('Rainier canopy stays conifer-dominant within budget, with local broadleaf pockets and taller emergents',()=>{

@@ -53,11 +53,11 @@ import { MOVEMENT, WAYPOINTS } from "../content/world.ts";
 import {OVERLOOK} from '../content/camera.ts';
 import { CABIN_PORTAL, CABIN_ROOM } from '../content/cabin.ts';
 import { TENT_ENTRY, TENT_PORTAL, TENT_ROOM } from '../content/tent-room.ts';
-import {FORESTRY} from '../content/forestry.ts';
 import type { Point } from "../content/world.ts";
 import { createStarterState } from "../domain/state.ts";
 import type {GameState} from '../domain/state.ts';
-import {startChop,cancelChop,advanceForestry,forestrySnapshot,forestryColliders} from '../domain/forestry.ts';
+import {canFellTree,startChop,cancelChop,advanceForestry,forestrySnapshot,forestryColliders} from '../domain/forestry.ts';
+import {fellingSpaceIsClear,fellingStandCandidates} from '../world/tree-felling-space.ts';
 import type {ForestrySnapshot} from '../domain/forestry.ts';
 import { findPath, move,canStand } from "../domain/navigation.ts";
 import {movementOffset} from '../domain/movement.ts';
@@ -1055,13 +1055,13 @@ export async function createRuntime(
       if(blocked())return;
       const tree=state.selected?treeById.get(state.selected):undefined;
       const life=tree?state.forestry.slots[tree.id]:undefined;
-      if(!tree||tree.role!=='managed'||life?.status!=='standing'||state.forestry.active||gatheringBusy(state.gathering)){message='当前目标不能走近采伐。';publishSnapshot();return;}
+      if(!canFellTree(tree)||life?.status!=='standing'||state.forestry.active||gatheringBusy(state.gathering)){message='当前目标不能走近采伐。';publishSnapshot();return;}
       // A visible front quarter gives both the ranger and the falling silhouette room.
-      const direction=Math.atan2(Math.cos(view.getYaw()),Math.sin(view.getYaw()))+Math.PI/4,radius=FORESTRY.preferredStandOffset+(tree.kind==='pine'?.43:.66)*tree.scale;
-      const blockers=activeColliders();let route:ReturnType<typeof findPath>=[];
-      for(const offset of [0,.55,-.55,1.1,-1.1,Math.PI/2,-Math.PI/2,Math.PI]){
-        const p={x:tree.x+Math.cos(direction+offset)*radius,z:tree.z+Math.sin(direction+offset)*radius};
-        if(!canStand(p,blockers,undefined,travelAccess(state)))continue;route=findPath(state.player,p,blockers,travelAccess(state));if(route.length)break;
+      const direction=Math.atan2(Math.cos(view.getYaw()),Math.sin(view.getYaw()))+Math.PI/4;
+      const blockers=activeColliders(),access=travelAccess(state);let route:ReturnType<typeof findPath>=[];
+      for(const p of fellingStandCandidates(tree,direction)){
+        if(!canStand(p,blockers,undefined,access)||!fellingSpaceIsClear(tree,p,blockers,access))continue;
+        route=findPath(state.player,p,blockers,access);if(route.length)break;
       }
       state.route=route;message=route.length?'走近树干后，按“砍树”开始挥斧。':'这棵树附近暂时没有可到达的立足点。';publishSnapshot();
     },

@@ -7,7 +7,7 @@ import {gorgeSection} from '../src/world/gorge-profile.ts';
 import {Resources} from '../src/scene/resources.ts';
 import {createCampProps} from '../src/scene/camp-props.ts';
 import {CAMP_PROPS} from '../src/content/scene-props.ts';
-import {createInventory,inventoryTransaction} from '../src/domain/inventory.ts';
+import {createInventory,inventoryTransaction,woodBatch} from '../src/domain/inventory.ts';
 import {logPresentation,daylightAt} from '../src/domain/scene-props.ts';
 import {makeColliders,makeTrees} from '../src/world/layout.ts';
 import {buildMountainGeometry} from '../src/scene/environment.ts';
@@ -85,6 +85,17 @@ test('log pile derives exact counts across quality stacks without mutating inven
       inventory=inventoryTransaction(createInventory(),[{itemId:'wood',qualityId:'ordinary',delta:quantity}]);const before=JSON.stringify(inventory);camp.update(3,state,inventory,1,false);assert.equal(camp.stats().logs,Math.min(18,quantity));assert.equal(camp.stats().logCaps,Math.min(18,quantity)*2);assert.equal(JSON.stringify(inventory),before);
     }
     inventory=inventoryTransaction(inventory,[{itemId:'wood',qualityId:'fine',delta:3}]);assert.equal(logPresentation(inventory).quantity,35);
+    const logMesh=camp.group.getObjectByName('stored-logs') as THREE.InstancedMesh;
+    const diameterProxy=()=>{
+      const transform=new THREE.Matrix4();
+      logMesh.getMatrixAt(0,transform);
+      return new THREE.Vector3().setFromMatrixScale(transform).x;
+    };
+    const stock=(thicknessMm:number)=>inventoryTransaction(createInventory(),[{
+      itemId:'wood',qualityId:'ordinary',delta:2,wood:woodBatch({lengthMm:3000,thicknessMm,straightness:'straight'}),
+    }]);
+    camp.update(3,state,stock(600),1,false);const thick=diameterProxy();
+    camp.update(3,state,stock(260),1,false);assert.equal(camp.stats().logs,2);assert.ok(diameterProxy()<thick*.67);
     for(const altar of ['dormant','ready','answering','resting'] as const){state.altar=altar;camp.update(4,state,inventory,.5,false);}
     camp.dispose();camp.dispose();r.dispose();r.dispose();assert.ok([...releases.values()].every(n=>n===1));assert.equal(r.stats().extras,0);assert.equal(camp.hits.length,0);
   }

@@ -10,7 +10,7 @@ import { createGatheringRegistry } from '../src/domain/gathering-registry.ts';
 import { RUNTIME_MODELS } from '../src/content/assets.ts';
 import { warehouseSnapshot } from '../src/domain/warehouse-view.ts';
 import { createState } from '../src/domain/state.ts';
-import { advanceForestry, chopRange, startChop } from '../src/domain/forestry.ts';
+import { canFellTree, advanceForestry, chopRange, startChop } from '../src/domain/forestry.ts';
 import { makeTrees } from '../src/world/layout.ts';
 import { FORESTRY } from '../src/content/forestry.ts';
 
@@ -101,7 +101,7 @@ test('retired definitions preserve owned stock, allow explicit consumption and c
 });
 
 test('felling awards only ordinary stock once; inventory failure cannot partially spend quota or fell a tree', () => {
-  const trees = makeTrees(), tree = trees.find(item => item.role === 'managed')!, byId = new Map(trees.map(item => [item.id, item]));
+  const trees = makeTrees(), tree = trees.find(t=>canFellTree(t)&&t.regionId==='home-woodland')!, byId = new Map(trees.map(item => [item.id, item]));
   for (const overflow of [false, true]) {
     const state = createState(trees);
     state.player.x = tree.x + chopRange(tree) - .1; state.player.z = tree.z; state.selected = tree.id;

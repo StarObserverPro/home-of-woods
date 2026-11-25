@@ -44,10 +44,19 @@ async function fresh(kind,viewport={width:1280,height:800},url=origin){
           const registry=createGatheringRegistry({assetIds:RUNTIME_MODELS.map(a=>a.assetId)}),source=[...registry.sources.values()].find(source=>source.region==='east-woodland'&&source.definitionId==='forage.mushroom-cluster');
           const route=interactionRoute(s,source,registry,colliders);if(!route.reachable)throw Error('Eastern source unreachable');Object.assign(s.player,route.route.at(-1));s.selected=source.sourceId;
         }else if(kind==='felling'){
-          const {chopRange,startChop}=await import('/src/domain/forestry.ts'),tree=trees.find(t=>t.id==='tree-slot-18-20');
-          for(let i=0;i<48;i++){const r=chopRange(tree)-.08,p={x:tree.x+Math.cos(i*Math.PI/24)*r,z:tree.z+Math.sin(i*Math.PI/24)*r};
-            if(!canStand(p,colliders,undefined,travelAccess(s)))continue;const trial=structuredClone(s);trial.player={...p,facing:0,moving:false};trial.selected=tree.id;if(!startChop(trial,tree,colliders).ok)continue;s.player=trial.player;s.selected=tree.id;break;
-          }
+          const {canFellTree,volumePoints,startChop}=await import('/src/domain/forestry.ts');
+          const {fellingStandCandidates}=await import('/src/world/tree-felling-space.ts');
+          const tree=trees.find(t=>t.regionId==='east-woodland'&&canFellTree(t)&&volumePoints(t)>1);
+          if(!tree)throw Error('No eastern small-diameter tree supports partial delivery');
+          s.selected=tree.id;
+          const stand=fellingStandCandidates(tree,0).find(p=>{
+            if(!canStand(p,colliders,undefined,travelAccess(s)))return false;
+            const trial=structuredClone(s);
+            trial.player={...p,facing:0,moving:false};
+            return startChop(trial,tree,colliders).ok;
+          });
+          if(!stand)throw Error('No valid eastern felling stand');
+          Object.assign(s.player,stand);
         }
       }
       const raw=await serializeWorldSave(s,createSaveContext(),{sequence:1,savedAt:0}),store=createBrowserWorldSaveStore();await store.compareAndSwap(await store.read(),{primary:raw,backup:raw});
@@ -85,8 +94,10 @@ try{
   assert.equal((await stats()).carrying.items.find(s=>s.name.includes('蘑菇'))?.quantity,2);await shot('desktop-east-gathered');report.flows.push('eastern mushrooms collect through the live action and carried inventory');
   }
   if(flow==='all'||flow==='haul'||flow==='haul-mobile'){
-  await fresh('felling');await page.getByRole('button',{name:'砍树',exact:true}).click();
-  await drive(()=>{const s=JSON.parse(document.querySelector('#runtime-stats').textContent).current.worldState;return !s.forestry.active&&s.forestry.slots['tree-slot-18-20'].status==='stump';});
+  await fresh('felling');const treeId=(await world()).selected;
+  await page.getByRole('button',{name:'砍树',exact:true}).click();
+  await drive(()=>{const s=JSON.parse(document.querySelector('#runtime-stats').textContent).current.worldState;return !s.forestry.active&&s.forestry.slots[s.selected]?.status==='stump';});
+  assert.equal((await world()).forestry.slots[treeId].status,'stump');
   const yieldCount=(await world()).inventory.stacks.filter(s=>s.harvest).reduce((n,s)=>n+s.quantity,0);assert.ok(yieldCount>1);
   await page.locator('.target-card').getByRole('button',{name:'关闭目标详情',exact:true}).click();
   await page.locator('.bottom-toolbar').getByRole('button',{name:'打开仓库',exact:true}).click();const carrying=page.locator('.carrying-panel');await carrying.getByRole('button',{name:'地上材料',exact:true}).click();
