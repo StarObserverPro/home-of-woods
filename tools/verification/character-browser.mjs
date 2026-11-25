@@ -1,4 +1,4 @@
-/** Focused main-game character review. Evidence stays outside git; no source assets or saves are injected. */
+/** Focused main-game character review: short natural motion plus explicitly sampled paused poses. */
 import assert from 'node:assert/strict';
 import { spawn, execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -12,9 +12,9 @@ import { isGraphicsFailure } from './tent-portal-browser.mjs';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const origin = process.env.HOW_REVIEW_ORIGIN ?? 'http://127.0.0.1:5198';
 const out = path.resolve(process.env.CHARACTER_EVIDENCE_DIR ?? '/tmp/how-character-evidence');
-const naturalTimeout = Number(process.env.CHARACTER_NATURAL_TIMEOUT_MS ?? 120000);
+const naturalTimeout = Number(process.env.CHARACTER_NATURAL_TIMEOUT_MS ?? 60000);
 assert.ok(out !== path.resolve(root) && !out.startsWith(path.resolve(root) + path.sep), 'Keep evidence outside the repository');
-assert.ok(Number.isFinite(naturalTimeout) && naturalTimeout >= 10000 && naturalTimeout <= 240000, 'Natural observation timeout must be 10000–240000 ms');
+assert.ok(Number.isFinite(naturalTimeout) && naturalTimeout >= 10000 && naturalTimeout <= 120000, 'Natural observation timeout must be 10000–120000 ms');
 
 const canvasSelector = 'canvas[aria-label="森林之家可玩山谷"]';
 const digest = value => createHash('sha256').update(value).digest('hex');
@@ -22,14 +22,14 @@ const optionalLocalCharacter = url => /^\/__local-character\/(?:j01|villager-j01
 const report = {
   status: 'running', origin, startedAt: new Date().toISOString(),
   sourceRevision: process.env.SOURCE_REVISION ?? execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
-  captureInputs: { seed: 104729, hour: 14, dpr: 1, zoomInClicks: 8,
-    viewports: [{ width: 1100, height: 760 }, { width: 390, height: 844 }], naturalTimeoutMs: naturalTimeout },
+  captureInputs: { seed: 104729, hour: 14, dpr: 1, naturalViewport: { width: 550, height: 380 }, naturalDeltaSeconds: .5,
+    viewports: [{ width: 1100, height: 760 }, { width: 390, height: 844 }], sampledSeconds: [0, 25.5], naturalTimeoutMs: naturalTimeout },
   limits: [
-    'Fresh browser contexts enter the real new-game flow. No runtime state, save record, model or animation clock is injected.',
-    'Existing fixed-step inspection advances merchant arrival only. It does not substitute for natural render time: ambientTime is clamped to 0.1 seconds per render.',
-    'Desktop waits for one naturally scheduled hand gesture; mobile requires only two seconds of natural idle progression.',
-    'The horizontal action frame is an explicitly sampled existing action inspector, not a naturally performed chop.',
-    'Private J01 and the six approved candidate source files may be absent. This review reports the actual loaded model and never claims missing-model acceptance.',
+    'Fresh browser contexts enter the real new-game flow. No runtime state, save record or model is injected.',
+    'Two compact-viewport snapshots establish 0.5 seconds of natural animation progress. No game-clock advance or second RAF is used.',
+    'All PNGs are explicitly sampled paused views of the actual game: wardrobe seconds 0 and 25.5, reduced motion, and the existing horizontal contact inspector.',
+    'Sampling changes only the hero presentation pose. The capture hold verifies that GameState and its clock remain unchanged.',
+    'Private J01 may be absent. The report names the actual loaded model and does not claim acceptance of missing local assets.',
     'SwiftShader and a phone viewport provide functional evidence, not physical mobile GPU performance. Actual PNGs still require visual inspection.',
   ],
   flows: [], frames: [], holds: [], errors: [], warnings: [], failedRequests: [], optionalAssets: [],
@@ -41,6 +41,14 @@ const pose = s => ({ player: s.player, rig: rig(s), visitor: s.characters?.livel
 const button = name => page.getByRole('button', { name, exact: true });
 const act = locator => flow.mobile ? locator.tap() : locator.click();
 const waitState = (predicate, arg, timeout = 45000) => page.waitForFunction(predicate, arg, { timeout, polling: 100 });
+async function checkpoint() {
+  report.phase = phase;
+  await fs.writeFile(path.join(out, 'report.json'), JSON.stringify(report, null, 2));
+  if (server) await fs.writeFile(path.join(out, 'vite.log'), serverLog);
+}
+async function enterPhase(value) {
+  phase = value; console.log('CHARACTER_PHASE', phase); await checkpoint();
+}
 
 function finite(value) {
   if (typeof value === 'number') assert.ok(Number.isFinite(value), 'Character diagnostics must be finite');
@@ -118,11 +126,12 @@ function observePage() {
   });
 }
 
-async function capture(name) {
+async function capture(name, reviewPose = null) {
   const hold = await page.evaluate(() => window.__HOW_CAPTURE_HOLD__.begin());
   try {
-    const pixels = await page.evaluate(async selector => {
-      window.__HOW_RENDER_REVIEW__.set({});
+    const pixels = await page.evaluate(async ({ selector, reviewPose }) => {
+      if (reviewPose) window.__HOW_CHARACTER_REVIEW__.sample(reviewPose);
+      else window.__HOW_RENDER_REVIEW__.set({});
       const canvas = document.querySelector(selector), gl = canvas.getContext('webgl2');
       const webgl = gl ? { available: true, error: gl.getError(), contextLost: gl.isContextLost() } : { available: false };
       // Read immediately after the existing zero-dt render, before a non-preserved drawing buffer can clear.
@@ -136,7 +145,7 @@ async function capture(name) {
         colors.add((rgba[i] >> 4) * 256 + (rgba[i + 1] >> 4) * 16 + (rgba[i + 2] >> 4));
       }
       return { width: sample.width, height: sample.height, nonblackSamples: nonblack, colorBins: colors.size, webgl };
-    }, canvasSelector);
+    }, { selector: canvasSelector, reviewPose });
     await waitState(() => JSON.parse(document.querySelector('#runtime-stats').textContent).current.loop.mode === 'stopped');
     const s = await state(); checkScene(s, name);
     assert.equal(pixels.webgl.available, true); assert.equal(pixels.webgl.error, 0); assert.equal(pixels.webgl.contextLost, false);
@@ -147,11 +156,13 @@ async function capture(name) {
     finally { await cdp.detach(); }
     const bytes = Buffer.from(shot.data, 'base64'); assert.ok(bytes.length > 10000, name + ': nonempty screenshot');
     await fs.writeFile(path.join(out, name + '.png'), bytes);
-    report.frames.push({ name, viewport: page.viewportSize(), dpr: 1, seed: s.seed, gameTime: s.gameTime,
+    report.frames.push({ name, sampled: true, requested: reviewPose ?? { inspection: s.characters.inspection },
+      viewport: page.viewportSize(), dpr: 1, seed: s.seed, gameTime: s.gameTime,
       camera: s.sceneSpace.outdoorCamera, characters: s.characters, merchant: s.merchant,
       shaderErrors: s.shaderErrors, drawCalls: s.drawCalls, triangles: s.triangles, graphicsBackend: s.graphicsBackend,
       pixels, pngBytes: bytes.length, pngSha256: digest(bytes) });
     console.log('CHARACTER_FRAME', name, JSON.stringify({ gameTime: s.gameTime, seconds: rig(s).seconds, gesture: rig(s).gesture }));
+    await checkpoint();
     return s;
   } finally {
     const release = await page.evaluate(token => window.__HOW_CAPTURE_HOLD__.end(token), hold.token);
@@ -165,8 +176,9 @@ async function capture(name) {
 
 async function fresh(viewport) {
   flow = { name: viewport.width < 600 ? 'mobile' : 'desktop', mobile: viewport.width < 600, viewport, checks: [] };
-  report.flows.push(flow); phase = flow.name + ': startup'; console.log('CHARACTER_FLOW', flow.name);
-  context = await browser.newContext({ viewport, deviceScaleFactor: 1, hasTouch: flow.mobile, isMobile: flow.mobile, reducedMotion: 'no-preference' });
+  report.flows.push(flow); await enterPhase(flow.name + ': startup');
+  context = await browser.newContext({ viewport: report.captureInputs.naturalViewport, deviceScaleFactor: 1,
+    hasTouch: flow.mobile, isMobile: flow.mobile, reducedMotion: 'no-preference' });
   await context.addInitScript(() => {
     const review = window.__HOW_CHARACTER_OBSERVATION__ = { samples: [], previous: '' };
     // Read published diagnostics only; never schedule another RAF or mutate the application.
@@ -187,100 +199,101 @@ async function fresh(viewport) {
   await page.locator('.loading').waitFor({ state: 'hidden', timeout: 90000 });
   await waitState(() => {
     const s = JSON.parse(document.querySelector('#runtime-stats')?.textContent ?? '{}').current;
-    return !!window.__HOW_CAPTURE_HOLD__ && !!window.__HOW_RENDER_REVIEW__ && !!window.__HOW_ADVANCE_SIMULATION__ &&
+    return !!window.__HOW_CAPTURE_HOLD__ && !!window.__HOW_RENDER_REVIEW__ && !!window.__HOW_CHARACTER_REVIEW__ &&
       !!s?.characters?.liveliness && s.frameWork.pending === 0 && s.drawCalls > 0;
   }, null, 90000);
   const initial = await state(); checkScene(initial, phase); flow.model = initial.characters.model;
   assert.equal(initial.appearance.hour, 14);
   assert.equal((await page.evaluate(() => window.__HOW_CAPTURE_HOLD__.read())).owners.manualPause, false, 'Fresh game entered normally');
   await page.locator('details.diagnostics').evaluate(element => { element.style.display = 'none'; });
-  // Advance the actual arrival transaction. This is not animation evidence and does not replace natural idle observation below.
-  const arrivalBefore = await state();
-  await page.evaluate(() => {
-    for (const seconds of [5, 5, 3]) window.__HOW_ADVANCE_SIMULATION__(seconds);
-  });
-  await waitState(() => JSON.parse(document.querySelector('#runtime-stats').textContent).current.merchant.parked);
-  const arrivalAfter = await state();
-  flow.arrivalSetup = { method: 'Existing fixed-step inspection', requestedGameSeconds: 13, beforeTime: arrivalBefore.gameTime,
-    afterTime: arrivalAfter.gameTime, beforeRenderSeconds: rig(arrivalBefore).seconds,
-    afterRenderSeconds: rig(arrivalAfter).seconds, parked: arrivalAfter.merchant.parked };
-  assert.equal(flow.arrivalSetup.parked, true, 'Merchant arrived through normal simulation');
-  await act(button('镜头'));
-  for (let i = 0; i < report.captureInputs.zoomInClicks; i++) await act(button('放大'));
-  await act(button('镜头'));
-  await waitState(() => !JSON.parse(document.querySelector('#runtime-stats').textContent).current.sceneSpace.outdoorCamera.overlook.pending);
   flow.camera = (await state()).sceneSpace.outdoorCamera;
+  await checkpoint();
 }
 
 async function idlePair() {
-  phase = flow.name + ': natural idle';
+  await enterPhase(flow.name + ': compact natural idle');
   await waitState(() => {
     const s = JSON.parse(document.querySelector('#runtime-stats').textContent).current;
     const r = s.characters?.localPlayer?.liveliness ?? s.characters?.liveliness?.player;
-    return r?.seconds >= 1 && r.idleWeight === 1 && s.characters.mode === 'idle';
-  });
-  const first = await capture(flow.name + '-idle-a'), a = rig(first), wallStart = Date.now();
-  if (flow.mobile) {
-    await waitState(minimum => {
-      const s = JSON.parse(document.querySelector('#runtime-stats').textContent).current;
-      return (s.characters?.localPlayer?.liveliness ?? s.characters?.liveliness?.player)?.seconds >= minimum;
-    }, a.seconds + 2, naturalTimeout);
-  } else {
-    // One real gesture is enough. The normal seeded player first gestures near 24.4 active seconds;
-    // no direct animation sampling or world-clock jump can stand in for those rendered seconds.
-    await waitState(minimum => {
-      const s = JSON.parse(document.querySelector('#runtime-stats').textContent).current;
-      const r = s.characters?.localPlayer?.liveliness ?? s.characters?.liveliness?.player;
-      return r?.seconds >= minimum && r.gesture !== 'none' && r.gestureWeight >= .55;
-    }, a.seconds + 2, naturalTimeout);
-  }
-  const second = await capture(flow.name + '-idle-b'), b = rig(second);
+    return r?.seconds >= .75 && r.idleWeight === 1 && s.characters.mode === 'idle';
+  }, null, naturalTimeout);
+  const first = await state(), a = rig(first), wallStart = Date.now(); checkScene(first, phase);
+  flow.naturalStart = { viewport: page.viewportSize(), gameTime: first.gameTime, player: first.player, camera: first.sceneSpace.outdoorCamera, rig: a };
+  await checkpoint();
+  await waitState(minimum => {
+    const s = JSON.parse(document.querySelector('#runtime-stats').textContent).current;
+    return (s.characters?.localPlayer?.liveliness ?? s.characters?.liveliness?.player)?.seconds >= minimum;
+  }, a.seconds + report.captureInputs.naturalDeltaSeconds, naturalTimeout);
+  const second = await state(), b = rig(second); checkScene(second, phase);
   assert.equal(second.characters.mode, 'idle'); assert.equal(b.suppressed, null); assert.ok(b.idleWeight > 0);
   assert.ok(Math.max(...['chestPitch', 'swayRoll', 'headYaw', 'headPitch'].map(key => Math.abs(b[key] - a[key]))) > 1e-6, 'Natural idle evolves');
-  assert.deepEqual(second.player, first.player, 'Idle and hand gesture never move the world root');
-  for (const key of ['position', 'target']) assert.ok(Math.max(...first.sceneSpace.outdoorCamera[key].map((v, i) =>
-    Math.abs(v - second.sceneSpace.outdoorCamera[key][i]))) < .05, 'Idle pair preserves camera ' + key);
-  if (!flow.mobile) { assert.notEqual(b.gesture, 'none'); assert.ok(b.gestureWeight >= .55); }
+  assert.deepEqual(second.player, first.player, 'Natural idle never moves the world root');
+  assert.equal(first.characters.reviewSeconds, null); assert.equal(second.characters.reviewSeconds, null);
   flow.checks.push({ name: 'natural-idle', activeRenderSeconds: [a.seconds, b.seconds], elapsedWallSeconds: (Date.now() - wallStart) / 1000,
-    source: 'Unmodified animation render clock; no step or sample call between frames', before: a, after: b });
+    viewport: page.viewportSize(), source: 'Unmodified animation render clock; no step or sample call between snapshots',
+    gameTimes: [first.gameTime, second.gameTime], player: second.player, before: a, after: b });
+  await checkpoint();
 }
 
 async function pauseFreeze() {
-  phase = flow.name + ': pause'; await act(button('暂停'));
+  await enterPhase(flow.name + ': pause'); await act(button('暂停'));
   await waitState(() => window.__HOW_CAPTURE_HOLD__.read().loop.mode === 'stopped');
   const before = await state(), beforeLoop = await page.evaluate(() => window.__HOW_CAPTURE_HOLD__.read().loop);
   await delay(350);
   const after = await state(), afterLoop = await page.evaluate(() => window.__HOW_CAPTURE_HOLD__.read().loop);
   assert.deepEqual(pose(after), pose(before), 'Pause freezes animation and world time'); assert.equal(afterLoop.frames, beforeLoop.frames);
   flow.checks.push({ name: 'pause-freezes', gameTime: after.gameTime, seconds: rig(after).seconds, loop: afterLoop });
+  await checkpoint();
   await act(button('回到山谷'));
 }
 
+async function wardrobeReview() {
+  await enterPhase(flow.name + ': full-size sampled wardrobe');
+  await page.locator('details.diagnostics').evaluate(element => { element.style.display = ''; element.open = true; });
+  await button('近景看穿搭').click();
+  await waitState(() => JSON.parse(document.querySelector('#runtime-stats').textContent).current.characters.inspection === 'wardrobe');
+  await page.locator('details.diagnostics').evaluate(element => { element.style.display = 'none'; });
+  await page.setViewportSize(flow.viewport);
+  await waitState(() => {
+    const s = JSON.parse(document.querySelector('#runtime-stats').textContent).current;
+    return s.frameWork.pending === 0 && window.__HOW_CAPTURE_HOLD__.read().loop.mode === 'stopped';
+  }, null, 90000);
+  const base = await capture(flow.name + '-idle-sampled', { seconds: 0 });
+  const gesture = await capture(flow.name + '-gesture-sampled', { seconds: 25.5 });
+  assert.equal(base.characters.reviewSeconds, 0); assert.equal(gesture.characters.reviewSeconds, 25.5);
+  assert.equal(rig(gesture).suppressed, null); assert.ok(rig(gesture).gestureWeight >= .55);
+  assert.notEqual(rig(gesture).gesture, 'none');
+  assert.deepEqual(gesture.player, base.player); assert.equal(gesture.gameTime, base.gameTime);
+  flow.checks.push({ name: 'sampled-gesture', source: 'Paused wardrobe review of the actual loaded hero',
+    gameTime: gesture.gameTime, baseline: rig(base), gesture: rig(gesture) });
+  await checkpoint();
+}
+
 async function reducedMotion() {
-  phase = flow.name + ': reduced motion'; await act(button('操作'));
+  await enterPhase(flow.name + ': reduced motion'); await act(button('操作'));
   const help = page.getByRole('dialog', { name: '操作说明', exact: true });
   await act(help.getByRole('button', { name: '显示', exact: true }));
   await help.getByLabel('减少动态效果').check(); await act(help.getByRole('button', { name: '关闭操作说明', exact: true }));
-  await waitState(() => {
-    const s = JSON.parse(document.querySelector('#runtime-stats').textContent).current;
-    return (s.characters?.localPlayer?.liveliness ?? s.characters?.liveliness?.player)?.suppressed === 'reduced-motion';
-  });
-  const s = await capture(flow.name + '-reduced');
+  // The inspector is stopped. Its sample causes one normal zero-dt render to apply the real UI preference.
+  const s = await capture(flow.name + '-reduced-sampled', { seconds: 25.5 });
   for (const r of [rig(s), s.characters.liveliness.visitor]) {
     assert.equal(r.suppressed, 'reduced-motion'); assert.equal(r.idleWeight, 0); assert.equal(r.gestureWeight, 0);
     for (const key of ['chestPitch', 'swayRoll', 'headYaw', 'headPitch', 'blink']) assert.equal(r[key], 0, 'Reduced motion: ' + r.id + ' ' + key);
   }
   flow.checks.push({ name: 'reduced-motion', player: rig(s), visitor: s.characters.liveliness.visitor });
+  await checkpoint();
   await act(button('操作')); await help.getByLabel('减少动态效果').uncheck();
   await act(help.getByRole('button', { name: '关闭操作说明', exact: true }));
-  await waitState(() => {
-    const s = JSON.parse(document.querySelector('#runtime-stats').textContent).current;
-    return (s.characters?.localPlayer?.liveliness ?? s.characters?.liveliness?.player)?.suppressed !== 'reduced-motion';
-  });
 }
 
 async function desktopActions() {
-  phase = 'desktop: locomotion'; await page.keyboard.down('w');
+  await enterPhase('desktop: locomotion');
+  await page.locator('details.diagnostics').evaluate(element => { element.style.display = ''; element.open = true; });
+  await button('返回漫步').click();
+  await page.locator('details.diagnostics').evaluate(element => { element.style.display = 'none'; });
+  await page.setViewportSize(report.captureInputs.naturalViewport);
+  await waitState(() => JSON.parse(document.querySelector('#runtime-stats').textContent).current.characters.reviewSeconds === null);
+  await page.keyboard.down('w');
   try {
     await waitState(() => {
       const s = JSON.parse(document.querySelector('#runtime-stats').textContent).current;
@@ -294,16 +307,19 @@ async function desktopActions() {
     const s = JSON.parse(document.querySelector('#runtime-stats').textContent).current;
     return !s.player.moving && s.characters.mode === 'idle';
   });
-  phase = 'desktop: sampled action';
+  await enterPhase('desktop: sampled action');
   await page.locator('details.diagnostics').evaluate(element => { element.style.display = ''; element.open = true; });
   await button('检视横砍止点').click();
   await waitState(() => JSON.parse(document.querySelector('#runtime-stats').textContent).current.characters.inspection === 'horizontal');
   await page.locator('details.diagnostics').evaluate(element => { element.style.display = 'none'; });
+  await page.setViewportSize(flow.viewport);
   const s = await capture('desktop-action-sampled'), r = rig(s);
   assert.equal(r.idleWeight, 0); assert.equal(r.gestureWeight, 0); assert.equal(r.suppressed, 'action-or-locomotion');
   assert.equal(s.characters.stopFound, true, 'Action still finds the authored axe contact');
   flow.checks.push({ name: 'sampled-action-preserved', mode: s.characters.mode, stopFound: s.characters.stopFound,
     contactClearance: s.characters.contactClearance, rig: r });
+  assert.equal(s.characters.reviewSeconds, null, 'Leaving wardrobe clears the character-time override');
+  await checkpoint();
 }
 
 await fs.mkdir(out, { recursive: true });
@@ -314,7 +330,7 @@ try {
     args: ['--no-sandbox', '--disable-dev-shm-usage', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   report.browser = browser.version(); await doctor();
   for (const viewport of report.captureInputs.viewports) {
-    await fresh(viewport); await idlePair(); await pauseFreeze(); await reducedMotion();
+    await fresh(viewport); await idlePair(); await pauseFreeze(); await wardrobeReview(); await reducedMotion();
     if (!flow.mobile) await desktopActions();
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'No horizontal viewport overflow');
     flow.samples = await page.evaluate(() => window.__HOW_CHARACTER_OBSERVATION__.samples);

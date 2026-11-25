@@ -110,6 +110,32 @@ test('real KayKit player shares idle in camp and cabin, freezes paused, yields t
   }finally{characters.dispose();resources.dispose();}
 });
 
+test('paused wardrobe samples the real actor deterministically without advancing either scene or game time',async()=>{
+  const {resources,models}=await characterModels(),characters=createCharacters(resources,models,[],new Map()),state=createStarterState([]);
+  const ambient=3.88,draw=()=>{characters.update(state,false,ambient);characters.present(ambient,false,false);};
+  try{
+    draw();const world=JSON.stringify(state),position=characters.player.position.toArray();
+    assert.throws(()=>characters.sampleIdle(0),/wardrobe inspection/);
+    characters.setInspection('wardrobe');characters.sampleIdle(0);draw();
+    const soles=characters.footContacts().filter(foot=>foot.id.startsWith('player:')).map(foot=>foot.position.toArray());
+    const visitor=characters.stats().liveliness.visitor;
+    characters.sampleIdle(25.5);draw();
+    const sampled=pose(characters.player),info=characters.stats().liveliness.player;
+    assert.equal(characters.stats().reviewSeconds,25.5);assert.equal(info.seconds,25.5);assert.ok(info.gestureWeight>.55);
+    characters.sampleIdle(2);draw();characters.sampleIdle(25.5);draw();
+    assert.deepEqual(pose(characters.player),sampled);assert.deepEqual(characters.stats().liveliness.player,info);
+    assert.deepEqual(characters.stats().liveliness.visitor,visitor,'NPC time does not follow the hero review sample');
+    assert.deepEqual(characters.player.position.toArray(),position);
+    assert.deepEqual(characters.footContacts().filter(foot=>foot.id.startsWith('player:')).map(foot=>foot.position.toArray()),soles);
+    assert.equal(JSON.stringify(state),world,'sampling cannot change the game clock or world state');
+    for(const invalid of [-1,60.01,Infinity,NaN])assert.throws(()=>characters.sampleIdle(invalid),/0\.\.60/);
+    assert.equal(characters.stats().reviewSeconds,25.5);
+    characters.setInspection('horizontal');assert.equal(characters.stats().reviewSeconds,null);assert.throws(()=>characters.sampleIdle(2),/wardrobe inspection/);
+    characters.setInspection(null);draw();assert.equal(characters.stats().reviewSeconds,null);
+    assert.equal(characters.stats().liveliness.player.seconds,ambient,'normal presentation resumes on the unchanged scene clock');
+  }finally{characters.dispose();resources.dispose();}
+});
+
 test('native J01 bone names and existing blink atlas are wired through the shared layer (synthetic export fixture)',async()=>{
   const {resources,models}=await characterModels(),rig=simpleRig(true);
   const open=resources.own(new THREE.Texture()),closed=resources.own(new THREE.Texture());

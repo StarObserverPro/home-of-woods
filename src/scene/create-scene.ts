@@ -593,6 +593,7 @@ export async function createScene(
       if(scenePreset!=='fox')throw Error('Select the fox scene inspector before sampling');
       foxReview={...pose};
     },
+    sampleCharacter(seconds:number){characters.sampleIdle(seconds);},
     inspectScene(preset:SceneViewPreset|null,overrides:Partial<SceneAppearance>={}){
       // Resetting a room camera must keep its borrowed camp rig untouched.
       if(inside())return;

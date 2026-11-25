@@ -52,6 +52,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   const sourceClips={idle:need('Idle_A'),walk:need('Walking_A'),run:need('Running_A'),gather:need('PickUp'),horizontal:need('Melee_2H_Attack_Slice'),vertical:need('Melee_2H_Attack_Chop')};
   const actions=Object.fromEntries(Object.entries(sourceClips).map(([key,c])=>[key,mixer.clipAction(c)])) as Record<Mode,THREE.AnimationAction>;
   let mode:Mode='idle',disposed=false,inspection:CharacterInspection=null,cutKey='',stop:AxeStop|null=null;
+  let reviewSeconds:number|null=null;
   let lastContact=Infinity,planMs=0,grip:ReturnType<typeof syncTwoHandedAxe>|null=null,impact:CharacterImpact|null=null;
   npcMixer.clipAction(sourceClips.idle).play();npcMixer.setTime(.01);
   const basePose:{bone:THREE.Bone;p:THREE.Vector3;q:THREE.Quaternion;s:THREE.Vector3}[]=[];
@@ -257,7 +258,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     npcMixer.update(0);
     visitorLiveliness.update(ambientTime,reducedMotion,visit.active&&visit.parked&&!waving,!waving&&state.selected!==CAMP_VISITOR.id);
   }
-  function present(ambientTime:number,reducedMotion:boolean,holding:boolean){
+  function presentAt(ambientTime:number,reducedMotion:boolean,holding:boolean){
     const action=procedural.root.visible;
     const special=action||reading||holding||tool.visible;
     const idle=!special&&mode==='idle';
@@ -266,8 +267,21 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
       ambientTime,reducedMotion,reading,special,!playerHandsBusy&&!playerTalking);
     body.visible=false;procedural.root.visible=false;
   }
+  function present(ambientTime:number,reducedMotion:boolean,holding:boolean){
+    if(reviewSeconds!==null){
+      // A paused inspection samples the same adapter from its idle origin;
+      // this does not advance either the game clock or the scene clock.
+      presentAt(0,reducedMotion,holding);
+      presentAt(reviewSeconds,reducedMotion,holding);
+    }else presentAt(ambientTime,reducedMotion,holding);
+  }
   return {
     player,visitor,update,present,
+    sampleIdle(seconds:number){
+      if(disposed||inspection!=='wardrobe'||!Number.isFinite(seconds)||seconds<0||seconds>60)
+        throw Error('Character sample requires wardrobe inspection and 0..60 seconds');
+      reviewSeconds=seconds;
+    },
     resetLocomotion(){lastMoveSample=null;movementTime=0;locomotionSpeed=0;},
     updateInCabin(state:GameState,pose:CabinPlayer,height:number,reducedMotion:boolean,ambientTime:number){
       const running=sampleLocomotion(pose,ambientTime);
@@ -281,7 +295,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
       present(ambientTime,reducedMotion,false);
     },
     setReading(value:boolean,seat?:SeatContact){reading=value;readingSeat=value&&seat?seat:null;},
-    setInspection(value:CharacterInspection){inspection=value;cutKey='';stop=null;},
+    setInspection(value:CharacterInspection){inspection=value;reviewSeconds=null;cutKey='';stop=null;},
     setWardrobe(value:Partial<WardrobeLook>){previewLook=resolveWardrobe(value,previewLook);lastLookKey='';},
     getInspection:()=>inspection,
     getImpact:()=>impact,
@@ -290,7 +304,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
       ...(player.visible?(localFeet?localFeet.update():procedural.root.visible?actionFeet.update():body.visible?walkingFeet.update():[]):[]),
       ...(visitor.visible?visitorFeet.update():[]),
     ],
-    stats:()=>({model:localPlayer?'J01 林工':'KayKit R3',mode,inspection,localPlayer:localPlayer?.stats()??null,liveliness:{player:localPlayer?.stats().liveliness??playerLiveliness.stats(),visitor:visitorLiveliness.stats()},footAnchors:{walking:walkingFeet.stats(),action:actionFeet.stats(),visitor:visitorFeet.stats(),local:localFeet?.stats()??null},wardrobe:{standard:standardClothes.stats(),action:actionClothes.stats()},stopFound:stop?.found??null,stopFraction:stop?.fraction??null,contactClearance:Number.isFinite(lastContact)?lastContact:null,grip,planMs,disposed}),
+    stats:()=>({model:localPlayer?'J01 林工':'KayKit R3',mode,inspection,reviewSeconds,localPlayer:localPlayer?.stats()??null,liveliness:{player:localPlayer?.stats().liveliness??playerLiveliness.stats(),visitor:visitorLiveliness.stats()},footAnchors:{walking:walkingFeet.stats(),action:actionFeet.stats(),visitor:visitorFeet.stats(),local:localFeet?.stats()??null},wardrobe:{standard:standardClothes.stats(),action:actionClothes.stats()},stopFound:stop?.found??null,stopFraction:stop?.fraction??null,contactClearance:Number.isFinite(lastContact)?lastContact:null,grip,planMs,disposed}),
     dispose(){
       if(disposed)return;disposed=true;
       playerLiveliness.dispose();visitorLiveliness.dispose();
