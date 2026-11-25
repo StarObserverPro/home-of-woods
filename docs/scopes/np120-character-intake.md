@@ -2,7 +2,7 @@
 
 本轮以已认可的本地 J01 制版、两档工衫、工裤、贝雷帽和接地步态回接玩家，覆盖营地和木屋。原压缩包的四套整模成为低频村民。原版 J01 只调整发色和少量肤色。
 
-验收包括人物走路、穿脱、室内外切换、村民进出和素材缺失运行。来访消费现有世界时钟、导航和地表，阿榆保留自己的交谈与来访流程。提供本地素材导入工具，人物包和生成数据在忽略目录中，正式构建使用已登记资源。开 PR 交给主线审阅。
+验收包括人物走路、穿脱、室内外切换、村民进出和素材缺失运行。来访消费现有世界时钟、导航和地表，阿榆保留自己的交谈与来访流程。正式构建使用已登记资源。
 
 ## 可见行为
 
@@ -13,7 +13,14 @@
 
 ## 本地素材入口
 
-`.cache/j01-player/j01.glb` 为已认可的林工运行文件。四位村民用 [Blender 导出脚本](../../tools/np120/prepare_villagers.py) 从用户提供的 NP120 ZIP 生成。可以在后台 Blender 执行 `blender --background --python tools/np120/prepare_villagers.py -- <NP120.zip>`。输出和原包都留在本地。
+`.cache/j01-player/j01.glb` 为已认可的林工运行文件。四位村民用 [Blender 导出脚本](../../tools/np120/prepare_villagers.py) 从用户提供的 NP120 ZIP 生成。可以在后台 Blender 执行 `blender --background --python tools/np120/prepare_villagers.py -- <NP120.zip>`。
+
+四个已导出的 GLB 位于 [村民模型目录](../../sources/np120/villagers/)。其中 `villager-j01-02.glb` 为补色版。从仓库根目录运行以下 PowerShell 命令，即可用现有开发服务器加载这四个模型。
+
+```powershell
+New-Item -ItemType Directory -Force .cache/j01-player | Out-Null
+Copy-Item sources/np120/villagers/*.glb -Destination .cache/j01-player
+```
 
 开发服务器同源回环地址读取五个固定角色文件。有林工文件时自动启用，缺少文件时使用已登记的 KayKit。有村民文件时匹配该日来访外观。回退时可移走该本地文件或者还原该 PR 的代码。正式构建使用原资产清单。
 
