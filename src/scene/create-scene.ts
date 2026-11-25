@@ -829,7 +829,7 @@ export async function createScene(
       broom.restorePose();
       characters.update(state,reducedMotion,ambientTime);
       neighbour.update(state,reducedMotion,ambientTime);
-      villagers.update(state,reducedMotion);
+      villagers.update(state,reducedMotion,ambientTime);
       life.update(state,dt,reducedMotion);
       broom.update(state,dt,reducedMotion,sky.night);
       if(mealFraming&&!life.isMealPlaying())view.cancelMeal();

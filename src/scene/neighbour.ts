@@ -10,6 +10,7 @@ import type {GameState} from '../domain/state.ts';
 import {travelAccess} from '../world/regions.ts';
 import {travelHeightAt} from '../world/traversal.ts';
 import {createCharacterWardrobe} from './character-wardrobe.ts';
+import {createCharacterLiveliness} from './character-liveliness.ts';
 import type {Models} from './models.ts';
 import type {Resources} from './resources.ts';
 
@@ -21,6 +22,7 @@ export function createNeighbourPresentation(resources:Resources,models:Models){
   const group=new THREE.Group();group.name=RIDGE_NEIGHBOUR.id;group.visible=false;
   group.scale.setScalar(CHARACTER.worldScale);
   const body=models.clone(RIDGE_NEIGHBOUR.appearance.model);group.add(body);
+  const liveliness=createCharacterLiveliness(body,{id:RIDGE_NEIGHBOUR.id,frame:group});
   const wardrobe=createCharacterWardrobe(resources,body);wardrobe.apply(LOOK);
   // Replace this clone's accessory material references, never tint the shared model/material itself.
   body.getObjectByName('wardrobe:headwear:cap:head')?.traverse(object=>{
@@ -46,10 +48,12 @@ export function createNeighbourPresentation(resources:Resources,models:Models){
   }
   function update(state:GameState,reducedMotion:boolean,seconds:number){
     if(disposed)return;
+    liveliness.beforeAnimation();
     const visit=state.npcs?.['ridge-neighbour']?.visit.active;
     group.visible=!!visit;phase=visit?.phase??null;
-    if(!visit){visitId=null;previous=null;waveStartedAt=null;waved=false;physicalSpeed=0;return;}
+    if(!visit){liveliness.reset();visitId=null;previous=null;waveStartedAt=null;waved=false;physicalSpeed=0;return;}
     if(visitId!==visit.id){
+      liveliness.reset();
       visitId=visit.id;previous=null;movementSeconds=0;waveStartedAt=null;waved=false;
     }
     const elapsed=previous?Math.max(0,seconds-previous.seconds):0;
@@ -78,15 +82,17 @@ export function createNeighbourPresentation(resources:Resources,models:Models){
     }
     if(lookAt)group.rotation.y=Math.atan2(lookAt.x-visit.position.x,lookAt.z-visit.position.z);
     setMode(reducedMotion?'idle':moving?'walk':waving?'wave':'idle');
-    actions[mode].time=reducedMotion?.01:mode==='walk'?movementSeconds%source.walk.duration:mode==='wave'?waveTime:seconds%source.idle.duration;
+    actions[mode].time=reducedMotion?.01:mode==='walk'?movementSeconds%source.walk.duration:mode==='wave'?waveTime:.01;
     mixer.update(0);wardrobe.update(seconds,moving,reducedMotion);
+    liveliness.update(seconds,reducedMotion,mode==='idle',visit.phase!=='talking'&&visit.phase!=='activity');
   }
   return {
     group,update,
     point:():Point|null=>!disposed&&group.visible?{x:group.position.x,z:group.position.z}:null,
-    stats:()=>({npcId:RIDGE_NEIGHBOUR.id,name:RIDGE_NEIGHBOUR.name,model:RIDGE_NEIGHBOUR.appearance.model,visible:group.visible,visitId,phase,mode,physicalSpeed,wardrobe:wardrobe.stats(),disposed}),
+    stats:()=>({npcId:RIDGE_NEIGHBOUR.id,name:RIDGE_NEIGHBOUR.name,model:RIDGE_NEIGHBOUR.appearance.model,visible:group.visible,visitId,phase,mode,physicalSpeed,liveliness:liveliness.stats(),wardrobe:wardrobe.stats(),disposed}),
     dispose(){
       if(disposed)return;disposed=true;
+      liveliness.dispose();
       mixer.stopAllAction();mixer.uncacheRoot(body);wardrobe.dispose();
       group.removeFromParent();group.clear();group.visible=false;previous=null;
       // Models/Resources own the cloned skeleton and cached geometry/materials.

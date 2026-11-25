@@ -5,6 +5,7 @@ import type { InventoryState } from '../domain/inventory.ts';
 import type { Models } from './models.ts';
 import type { Resources } from './resources.ts';
 import { poseHandAt,poseLimbAt } from './seated-pose.ts';
+import {createCharacterLiveliness} from './character-liveliness.ts';
 
 const BONE_MAP = [
   ['Pelvis','hips'], ['spine_01','spine'], ['spine_02','chest'], ['head','head'],
@@ -88,10 +89,11 @@ function faceBlink(resources:Resources,face:THREE.Object3D,atlas:THREE.Object3D)
     object.material=material;
   });
   atlas.visible=false;
-  return (amount:number)=>{
+  const kind=materials.length?(channels.length?'atlas+morph':'atlas'):(channels.length?'morph':'none');
+  return {kind,apply(amount:number){
     for(const {material,open,closed} of materials)material.map=amount>=.5?closed:open;
     for(const {values,index} of channels)values[index]=amount;
-  };
+  }} as const;
 }
 
 /** Native J01 walk and shared, scene-only retargeting for existing game actions. */
@@ -126,6 +128,7 @@ export function createJ01Player(resources:Resources,models:Models,player:THREE.G
   const walkDuration=Number(actor.userData.j01WalkDuration)||walk.duration;
   const idleTime=Number(actor.userData.j01IdleTime);
   const blink=faceBlink(resources,face,atlas);
+  const liveliness=createCharacterLiveliness(actor,{id:'player',frame:player,blink});
   const calibrations=new Map(drivers.map(driver=>{
     const source=bonesOf(driver),hips=source.get('hips')!;
     const hipOrigin=player.worldToLocal(hips.getWorldPosition(new THREE.Vector3()));
@@ -236,7 +239,8 @@ export function createJ01Player(resources:Resources,models:Models,player:THREE.G
   }
 
   function present(driver:THREE.Object3D,walkTime:number|null,idle:boolean,time:number,reducedMotion:boolean,
-      seated:boolean,pinHands:boolean){
+      seated:boolean,pinHands:boolean,handsFree=true){
+    liveliness.beforeAnimation();
     gripGap=null;
     if(walkTime!==null||(idle&&Number.isFinite(idleTime))){
       if(!nativePose)walking.reset().play();
@@ -260,11 +264,11 @@ export function createJ01Player(resources:Resources,models:Models,player:THREE.G
       }
       if(pinHands)hold(source,seated);
     }
-    const blinkPhase=time%4.37;
-    blink(reducedMotion?0:Math.max(0,1-Math.abs(blinkPhase-.21)/.068));
+    liveliness.update(time,reducedMotion,idle&&!seated&&!pinHands,handsFree&&!pinHands);
     root.updateWorldMatrix(true,true);
   }
-  return {root,clothes,present,accessoryMounts,travelPackMount,stats:()=>({nativeWalk:nativePose==='walk',nativePose,shirt,wearingTop,wearingLegs,wearingHat,gripGap}),dispose(){
+  return {root,clothes,present,accessoryMounts,travelPackMount,stats:()=>({nativeWalk:nativePose==='walk',nativePose,shirt,wearingTop,wearingLegs,wearingHat,gripGap,liveliness:liveliness.stats()}),dispose(){
+    liveliness.dispose();
     mixer.stopAllAction();mixer.uncacheRoot(actor);root.removeFromParent();
   }};
 }

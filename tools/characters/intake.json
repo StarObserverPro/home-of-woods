@@ -1,0 +1,264 @@
+{
+  "contractVersion": "HOW-CHARACTER-1",
+  "assets": [
+    {
+      "id": "public-player-fallback",
+      "tier": "hero",
+      "file": "public/assets/characters/player.glb",
+      "status": "legacy",
+      "visibility": "public",
+      "source": {
+        "modification": true,
+        "gameUse": true,
+        "redistribution": true,
+        "evidence": "docs/ASSET_REGISTER.md; public/assets/manifest.json: how-character-player; KayKit CC0"
+      },
+      "review": {
+        "proportions": "pending",
+        "wardrobe": "pending",
+        "deformation": "pending"
+      }
+    },
+    {
+      "id": "public-trader-fallback",
+      "tier": "trader",
+      "file": "public/assets/characters/visitor.glb",
+      "status": "legacy",
+      "visibility": "public",
+      "source": {
+        "modification": true,
+        "gameUse": true,
+        "redistribution": true,
+        "evidence": "docs/ASSET_REGISTER.md; public/assets/manifest.json: how-character-visitor; KayKit CC0"
+      },
+      "review": {
+        "proportions": "pending",
+        "wardrobe": "pending",
+        "deformation": "pending"
+      }
+    },
+    {
+      "id": "local-np120-j01",
+      "tier": "hero",
+      "file": ".cache/j01-player/j01.glb",
+      "status": "pending",
+      "visibility": "local-only",
+      "expected": {
+        "bones": 50
+      },
+      "review": {
+        "proportions": "pending",
+        "wardrobe": "pending",
+        "deformation": "pending"
+      }
+    },
+    {
+      "id": "villager-j01",
+      "tier": "visitor",
+      "file": ".cache/j01-player/villager-j01.glb",
+      "status": "pending",
+      "visibility": "local-only",
+      "owner": "user-local-submission",
+      "expected": {
+        "bones": 50
+      },
+      "review": {
+        "proportions": "pending",
+        "wardrobe": "pending",
+        "deformation": "pending"
+      }
+    },
+    {
+      "id": "villager-j01-02",
+      "tier": "visitor",
+      "file": ".cache/j01-player/villager-j01-02.glb",
+      "status": "pending",
+      "visibility": "local-only",
+      "owner": "user-local-submission",
+      "expected": {
+        "bones": 50
+      },
+      "review": {
+        "proportions": "pending",
+        "wardrobe": "pending",
+        "deformation": "pending"
+      }
+    },
+    {
+      "id": "villager-j02",
+      "tier": "visitor",
+      "file": ".cache/j01-player/villager-j02.glb",
+      "status": "pending",
+      "visibility": "local-only",
+      "owner": "user-local-submission",
+      "expected": {
+        "bones": 50
+      },
+      "review": {
+        "proportions": "pending",
+        "wardrobe": "pending",
+        "deformation": "pending"
+      }
+    },
+    {
+      "id": "villager-j02-02",
+      "tier": "visitor",
+      "file": ".cache/j01-player/villager-j02-02.glb",
+      "status": "pending",
+      "visibility": "local-only",
+      "owner": "user-local-submission",
+      "expected": {
+        "bones": 50
+      },
+      "review": {
+        "proportions": "pending",
+        "wardrobe": "pending",
+        "deformation": "pending"
+      }
+    },
+    {
+      "id": "frontier-trader-f",
+      "reference": "F",
+      "tier": "trader",
+      "file": ".cache/character-intake/frontier-trader-f/character.glb",
+      "status": "pending",
+      "visibility": "local-only",
+      "source": {
+        "modification": false,
+        "gameUse": false,
+        "redistribution": false,
+        "evidence": "https://5883d.com/thread-2361-1-1.html — visual reference accepted; source file and usage permissions not yet obtained"
+      },
+      "plannedVariants": [
+        "moss-canvas",
+        "indigo-workwear",
+        "rust-travel"
+      ],
+      "review": {
+        "proportions": "pending",
+        "wardrobe": "pending",
+        "deformation": "pending"
+      }
+    },
+    {
+      "id": "frontier-visitor-g",
+      "reference": "G",
+      "tier": "visitor",
+      "file": ".cache/character-intake/frontier-visitor-g/character.glb",
+      "status": "pending",
+      "visibility": "local-only",
+      "source": {
+        "modification": false,
+        "gameUse": false,
+        "redistribution": false,
+        "evidence": "https://www.cgmol.com/model/3/17139.html — visual reference accepted; source file and usage permissions not yet obtained"
+      },
+      "plannedVariants": [
+        "moss-canvas",
+        "indigo-workwear",
+        "rust-travel"
+      ],
+      "review": {
+        "proportions": "pending",
+        "wardrobe": "pending",
+        "deformation": "pending"
+      }
+    },
+    {
+      "id": "legendary-trader-e",
+      "reference": "E",
+      "tier": "visitor",
+      "file": ".cache/character-intake/legendary-trader-e/character.glb",
+      "status": "pending",
+      "visibility": "local-only",
+      "source": {
+        "modification": false,
+        "gameUse": false,
+        "redistribution": false,
+        "evidence": "https://www.5883d.com/thread-4509-1-1.html — visual reference accepted; source file and usage permissions not yet obtained"
+      },
+      "plannedVariants": [
+        "moss-canvas",
+        "indigo-workwear",
+        "rust-travel"
+      ],
+      "review": {
+        "proportions": "pending",
+        "wardrobe": "pending",
+        "deformation": "pending"
+      }
+    },
+    {
+      "id": "frontier-neighbor-j",
+      "reference": "J",
+      "tier": "neighbor",
+      "file": ".cache/character-intake/frontier-neighbor-j/character.glb",
+      "status": "pending",
+      "visibility": "local-only",
+      "source": {
+        "modification": false,
+        "gameUse": false,
+        "redistribution": false,
+        "evidence": "https://dragonnest.fandom.com/wiki/May — visual reference accepted; source file and usage permissions not yet obtained"
+      },
+      "plannedVariants": [
+        "moss-canvas",
+        "indigo-workwear",
+        "rust-travel"
+      ],
+      "review": {
+        "proportions": "pending",
+        "wardrobe": "pending",
+        "deformation": "pending"
+      }
+    },
+    {
+      "id": "frontier-elder-k",
+      "reference": "K",
+      "tier": "visitor",
+      "file": ".cache/character-intake/frontier-elder-k/character.glb",
+      "status": "pending",
+      "visibility": "local-only",
+      "source": {
+        "modification": false,
+        "gameUse": false,
+        "redistribution": false,
+        "evidence": "https://dnest.wikidot.com/prairie-village — visual reference accepted; source file and usage permissions not yet obtained"
+      },
+      "plannedVariants": [
+        "moss-canvas",
+        "indigo-workwear",
+        "rust-travel"
+      ],
+      "review": {
+        "proportions": "pending",
+        "wardrobe": "pending",
+        "deformation": "pending"
+      }
+    },
+    {
+      "id": "frontier-smith-l",
+      "reference": "L",
+      "tier": "visitor",
+      "file": ".cache/character-intake/frontier-smith-l/character.glb",
+      "status": "pending",
+      "visibility": "local-only",
+      "source": {
+        "modification": false,
+        "gameUse": false,
+        "redistribution": false,
+        "evidence": "https://www.cgmol.com/model/3/17133.html — visual reference accepted; source file and usage permissions not yet obtained"
+      },
+      "plannedVariants": [
+        "moss-canvas",
+        "indigo-workwear",
+        "rust-travel"
+      ],
+      "review": {
+        "proportions": "pending",
+        "wardrobe": "pending",
+        "deformation": "pending"
+      }
+    }
+  ]
+}
