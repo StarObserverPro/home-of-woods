@@ -12,7 +12,7 @@
     "preview": "vite preview --host 127.0.0.1",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "test:ai": "node --experimental-strip-types --test tests/visitor-ai.test.ts",
-    "verify:assets": "node tools/verify-assets.mjs",
+    "verify:assets": "node --experimental-strip-types tools/verify-assets.mjs",
     "test:prototype": "node --experimental-strip-types --test --test-concurrency=4 tests/item-transfers.test.ts tests/local-clock-resume.test.ts tests/save-checkpoints.test.ts tests/character-wardrobe.test.ts tests/release-integration.test.ts tests/housing.test.ts tests/movement.test.ts tests/east-bank.test.ts",
     "check": "npm run verify:assets && npm test && npm run build",
     "verify:evidence": "node tools/run-archived-evidence-audits.mjs",

@@ -77,7 +77,8 @@
   .expedition-stock-row,.expedition-source-row {display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:center; min-height:52px;}
   .expedition-row-copy {display:grid; gap:2px; min-width:0; overflow-wrap:anywhere;}
   .expedition-row-copy > strong {font-size:13px; line-height:1.45;}
-  .expedition-row-copy > strong span {white-space:nowrap; font-variant-numeric:tabular-nums;}
+  .expedition-produce-name {display:flex; align-items:center; gap:4px; min-width:0; font-variant-numeric:tabular-nums;}
+  .expedition-produce-name > img {flex:none; object-fit:contain;}
   .expedition-row-copy > :is(span,small) {font-size:12px; color:var(--how-muted);}
   .expedition-row-actions {display:flex; align-items:stretch; gap:8px;}
   .expedition-row-actions > button {white-space:nowrap;}

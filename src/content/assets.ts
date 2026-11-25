@@ -10,6 +10,8 @@ export const RUNTIME_MODELS = [
   { name: 'broadleaf', assetId: 'how-m0-broadleaf', url: '/assets/m0/broadleaf.glb' },
   { name: 'branches', assetId: 'how-gathering-branches', url: '/assets/gathering/branches.glb' },
   { name: 'mushrooms', assetId: 'how-gathering-mushrooms', url: '/assets/gathering/mushrooms.glb' },
+  { name: 'merchant-wagon', assetId: 'how-merchant-wagon', url: '/assets/merchant/wagon.glb' },
+  { name: 'drying-vessels', assetId: 'how-camp-drying-vessels', url: '/assets/camp/drying-vessels.glb' },
   { name: 'squirrel', assetId: 'how-wildlife-squirrel', url: '/assets/wildlife/squirrel.glb', optional: true },
   { name: 'fox', assetId: 'how-wildlife-fox', url: '/assets/wildlife/fox.glb', optional: true },
   { name: 'stag', assetId: 'how-wildlife-stag', url: '/assets/wildlife/stag.glb', optional: true },

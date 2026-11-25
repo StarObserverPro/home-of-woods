@@ -648,6 +648,65 @@
         "images": 0
       },
       "limitations": "Decorative encounters only; no hunting, feeding or inventory reward. Physical mobile GPU performance remains unverified."
+    },
+    {
+      "assetId": "how-merchant-wagon",
+      "batchId": "HOW-MERCHANT-WAGON-1",
+      "file": "public/assets/merchant/wagon.glb",
+      "bytes": 174744,
+      "sha256": "992ce7081d2919cc7cbc353034a28532c17c7bfe871c2e0b23e43aab089e2902",
+      "source": {
+        "title": "Covered Wagon v1",
+        "author": "Codels",
+        "url": "https://codels.download/models/wagon",
+        "files": [
+          {
+            "file": "sources/codels/wagon-v1.glb",
+            "bytes": 157472,
+            "sha256": "8fe31bc62e0f0bff1d4bf984b23bbeb170773e109170f444a4a7cedec1d6599c"
+          }
+        ]
+      },
+      "license": {
+        "id": "CC0-1.0",
+        "evidence": "public/assets/licenses/Camp-Props-CC0-1.0.txt"
+      },
+      "adaptation": "Merged static geometry by material within body and each of four wheel pivots, deduplicated vertices, removed unused UVs and recolored to the camp palette."
+    },
+    {
+      "assetId": "how-camp-drying-vessels",
+      "batchId": "HOW-CAMP-PROPS-ART-1",
+      "file": "public/assets/camp/drying-vessels.glb",
+      "bytes": 63404,
+      "sha256": "327a38e108a92549662ad83c870b1d8a0fbd4db63c9fa44405c98799d2b4a7ba",
+      "source": {
+        "title": "Codels Potion Bottle and Teapot v1; Quaternius Pickup Jar",
+        "files": [
+          {
+            "file": "sources/codels/potion-v1.glb",
+            "bytes": 37012,
+            "sha256": "7cdecca97b1a1d2e160da8d2b75427b7dc6af932bd125d34fd9711c77354abcf",
+            "url": "https://codels.download/models/potion"
+          },
+          {
+            "file": "sources/codels/tea-pot-v1.glb",
+            "bytes": 75688,
+            "sha256": "1e6ee582bf5aedffb23d9753fe65832f11bb63af41123ffb97d63221d9e92e9f",
+            "url": "https://codels.download/models/tea-pot"
+          },
+          {
+            "file": "sources/quaternius/pickup-jar/pickup-jar.glb",
+            "bytes": 21396,
+            "sha256": "47905eda591a2aa5a636d9a8a3a66d27995842edaa4c56264d00bee7a9be5b63",
+            "url": "https://poly.pizza/m/jhvntkgHU3"
+          }
+        ]
+      },
+      "license": {
+        "id": "CC0-1.0",
+        "evidence": "public/assets/licenses/Camp-Props-CC0-1.0.txt"
+      },
+      "adaptation": "Removed emissive liquid, loose tags and polka-dot accessories; simplified to matte shared palette without texture atlas, merged surfaces by material and normalized size, pivot and shelf clearance."
     }
   ],
   "worldSource": {

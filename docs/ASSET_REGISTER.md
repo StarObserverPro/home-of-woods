@@ -8,6 +8,18 @@
 
 室外 Resources 和惰性创建的帐内 Resources 分别拥有各自的一套资产，反复进出复用已创建的室内。睡袋、鼓、钵共用同一尺寸与摆放配置，不创建库存物品。三处 `tent:entry-*` 挂点是稳定的局部坐标，可供后续装饰安装。具体检查及限制见 [帐篷 scope](scopes/tent-felt-subspace.md)。
 
+## 林地产物与 HUD 图标 R3
+
+使用内置 ImageGen，以项目已登记的 R1 图标为风格参考生成四张透明母版。由 [裁切工具](../tools/prepare-ui-art-r3.py) 按分格截取、清理浅色半透明边缘、留边并输出 31 个语义图标的 64／128 px PNG。逐文件来源、尺寸、字节和 SHA-256 见 [R3 清单](../public/assets/ui-r3/manifest.json)。R3 为本项目生成式美术，沿用 R1 的工具与显示组件。地图路线、摇杆和原有 Timber UI 的适应性材质继续由其各自逻辑绘制。[范围与制作记录](scopes/ui-art-r3.md)
+
+## 营地近景资产
+
+- 行商车厢使用 [Codels Covered Wagon v1](https://codels.download/models/wagon) 的 CC0 GLB，运行件经 [加工脚本](../tools/prepare-merchant-wagon.mjs) 去除闲置 UV，按原车身和四个独立轮轴合批、焊接重复顶点并调整哑光配色。四轮维持原车轴和接地位置。驴和牵具为项目原创几何，随现有行商事件移动。
+- 晾菌架下层摆放 [Codels 瓶子](https://codels.download/models/potion)、[Quaternius 陶罐](https://poly.pizza/m/jhvntkgHU3) 和 [Codels 茶壶](https://codels.download/models/tea-pot) 三件 CC0 陈设。由 [加工脚本](../tools/prepare-camp-vessels.mjs) 去掉发光液、标签、圆点与贴图，合并表面并按架面尺寸和范围校验，共 2,128 三角形、63,404 字节。三件货品只作陈设，随建成晾菌架出现。
+- 桥、路牌、储木架与晾菌架的网格为项目原创。桥面同一高程，路牌共用板、木钉和字面，储木架与晾菌架沿用原有锚点、交互与木材湿度规则。
+
+源文件及运行件 SHA-256、许可文件和修改说明统一写入 [运行时资产清单](../public/assets/manifest.json)。模型随场景 Models 加载，重复出现复用模板及共享 GPU 资源。行商继续采用原角色模型，后续风格参照见 [本批记录](scopes/ui-art-r3.md#行商角色)。
+
 ## Rainier 地域与远林图集（2026-11-23）
 
 本批采用项目既有程序几何及本轮原创代码。生态资料仅作为汇总事实与形态参考，没有导入第三方树模型、照片、DEM 或逐树样方坐标；来源与数据访问边界见 [生态原型](RAINIER_ECOLOGY.md)。项目原创资产不改标第三方 CC0，Three.js 沿用已登记的 MIT 软件通知。
