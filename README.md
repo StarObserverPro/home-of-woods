@@ -50,7 +50,7 @@ HUD 当前约定见 [HUD 与操作路径](docs/HUD_INTERACTION.md)，本轮整�
 - 本基线 PR 之前的初步试稿、原型、截图、模型、参数和验收结论均不计入新版交付。旧 PR #1 属于被取代的试稿，不能作为 M0–M2 已完成的依据。
 - 历史内容仅供有选择地重新审查；复用的代码或资产必须符合本基线并重新验证。历史记录保留，不重写提交历史。
 - PR #2 已合并为 `d22ac56`。2026-10-30 获准将已审查的 R4 候选接入实现分支，准备实现 PR；本分支包含可行走山谷与有限采伐。代码接入、验证、PR 合并和部署分别记录，尚未部署。
-- 当前锁定 TypeScript 5.9.3、Three.js 0.186.1、React 19.3.1、Vite 8.3.5，使用 Node.js 22.14 或更新兼容版本。
+- 当前锁定 TypeScript 5.9.3、Three.js 0.186.1、React 19.3.1、Vite 8.3.5。Node.js 兼容下限为 22.14，日常验证版本见 [`.nvmrc`](.nvmrc)。
 
 ## 运行与检查
 
@@ -67,7 +67,7 @@ npm run verify:assets
 npm run build
 ```
 
-Windows PowerShell 请用 `npm.cmd` 代替 `npm`。开发入口固定为 http://127.0.0.1:5286/（strictPort）；生产预览先 `npm run build`，再 `npm run preview`。
+Windows PowerShell 请用 `npm.cmd` 代替 `npm`。开发入口固定为 http://127.0.0.1:5286/（strictPort）；生产预览先 `npm run build`，再 `npm run preview`。木色、光照和 Timber UI 按改动选择本机浏览器检查，入口见 [日常 CI 与本机专题](VERIFICATION.md#日常-ci-与本机专题)。
 
 WASD/方向键或点地面移动，拖动旋转、滚轮/按钮缩放，R/按钮复位；手机尺寸提供摇杆与镜头按钮。镜头工具的 ↑/↓ 可抬高、降低观察角度；升高或缩远后固定观察点，走动会先收回镜头，原点击路线随后继续。点击目标只选择；经营树走近后明确挥斧，巨木受保护。Esc 暂停，操作面板可减少动态效果。相机约束见[固定观察点](docs/RENDERING.md#固定观察点与受控回收)。
 

@@ -9,7 +9,7 @@ import {fileURLToPath} from 'node:url';
 
 const root=fileURLToPath(new URL('../../',import.meta.url));
 const sourceRevision='14992fb7da4152af3b9c5a554c853dbf6a1e365c';
-const out=path.join(path.resolve(process.env.TIMBER_EVIDENCE_DIR??'/tmp/how-timber-evidence'),'baseline');
+const out=path.join(path.resolve(process.env.TIMBER_EVIDENCE_DIR??path.join(os.tmpdir(),'how-timber-evidence')),'baseline');
 const origin='http://127.0.0.1:5194',fixturePath='/__timber-review';
 const fixtureRelative='tools/verification/timber-ui-fixture.ts';
 const viewport={width:1280,height:800};
@@ -126,7 +126,7 @@ try{
   report.dependencyLocks={candidate:hash(candidateLock),baseline:hash(baselineLock)};
   assert.equal(report.dependencyLocks.candidate,report.dependencyLocks.baseline,'Shared dependencies require the same lockfile; baseline capture was skipped');
   await fs.access(path.join(root,'node_modules'));
-  await fs.symlink(path.join(root,'node_modules'),path.join(checkout,'node_modules'),'dir');
+  await fs.symlink(path.join(root,'node_modules'),path.join(checkout,'node_modules'),process.platform==='win32'?'junction':'dir');
   await fs.mkdir(path.dirname(path.join(checkout,fixtureRelative)),{recursive:true});
   await fs.writeFile(path.join(checkout,fixtureRelative),fixture);
 

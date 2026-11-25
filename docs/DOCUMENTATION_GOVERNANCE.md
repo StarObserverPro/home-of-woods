@@ -41,6 +41,6 @@
 
 ## 工程检查与本轮分工
 
-既有 workflow 继续承担资产、构建和当前功能的实际回归；精确命令以 [.github/workflows/verify.yml](../.github/workflows/verify.yml) 为准。只在已实现的行为需要保护时加入有意义的现存专项，避免把无关历史回放或发布级兼容工程搬回日常门禁。CI 改动的代码、实际运行与结果分别记录，文档中的建议不视为已经执行。
+[Prototype Check](../.github/workflows/verify.yml) 承担干净检出的锁定安装、资产、构建和核心玩法回归。木色、光照和 Timber UI 的浏览器检查按改动在本机执行，GitHub Actions 提供手动复跑。命令与适用范围见根 [VERIFICATION](../VERIFICATION.md#日常-ci-与本机专题)。CI 代码、实际运行与结果分别记录。
 
 沙漏实现及其 scope、CI/PR 模板、完整规划和推进映射随本合批实现共同交付；开工核对与本地验收截面保留日期，实际检查结果集中维护在根 [VERIFICATION](../VERIFICATION.md)，GitHub 交付状态见[推进记录](CAMP_LIFE_PROGRESS.md#规划来源与交付状态)及所属 PR / main。后续各模块按文件职责更新，通过状态只引用已经发生的检查。主体、历史沙盒和临时 fixture 的数据库/来源与验证范围继续分别标明。

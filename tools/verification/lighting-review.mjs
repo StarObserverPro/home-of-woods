@@ -1,10 +1,11 @@
 /** Fixed-camera A/B, instance lifecycles and real camera-triggered canopy fade on the built game. */
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {spawn,execFileSync} from 'node:child_process';
 import {chromium} from 'playwright';
-const cwd=process.cwd(),out=process.env.LIGHTING_EVIDENCE_DIR??'/tmp/how-lighting-evidence';
+const cwd=process.cwd(),out=process.env.LIGHTING_EVIDENCE_DIR??path.join(tmpdir(),'how-lighting-evidence');
 const origin='http://127.0.0.1:4181';
 await fs.mkdir(out,{recursive:true});
 const report={commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),status:'running',frames:[],pairs:[],mainCheckpoints:[],flows:[],errors:[],warnings:[],limits:['Software Chromium WebGL is not physical mobile GPU performance.','This is authored ambient attenuation, not ray-traced AO or GI.','Forest detailed near-field occlusion remains deferred.']};
@@ -133,7 +134,7 @@ async function mainCrownFade(name){
  report.flows.push({name,passed:true,rotations,expectedYaw,beforePlayer:before.player,afterPlayer:captured.player,fadedTreeIds:captured.fadedTreeIds,shaderErrors:captured.shaderErrors});
 }
 try{
- await ready();browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});report.browser=await browser.version();
+ await ready();browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE||undefined,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});report.browser=await browser.version();
  let context=await newPage({width:1440,height:960});
  phase='cabin load';await page.goto(`${origin}/sandbox/cabin-interior/`);await page.waitForFunction(()=>window.__VISUAL_READY__===true,null,{timeout:120000});
  await page.evaluate(()=>{window.__CABIN_AUDIT__.preset('full');window.__CABIN_AUDIT__.pause();});
