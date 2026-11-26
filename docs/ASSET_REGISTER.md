@@ -38,7 +38,7 @@
 
 ## NP120 林工与村民本地外观（2026-11-22）
 
-林工来自用户提供的 NP120 J01、经审阅的 50 骨净体与版型、两档工衫及新步态。村民为原包四套整模，J01 按独立材料分区调整发色和肤色，J01_02 按 UV 遮罩为露出的皮肤补色。用户自备包和运行模型位于 Git 忽略目录，正式资产清单继续用已登记资源。 [入场、导出与验证](scopes/np120-character-intake.md)
+林工来自用户提供的 NP120 J01、经审阅的 50 骨净体与版型、两档工衫及新步态。村民为原包四套整模，J01 按独立材料分区调整发色和肤色，J01_02 按 UV 遮罩为露出的皮肤补色。四个村民的 GLB 收录在 `sources/np120/villagers/`，用于开发审阅。爱给网条目 A125449800 标记「原创」，公开分发许可未核实。正式构建沿用已有资产清单。 [来源条目](https://www.aigei.com/item/han_you_gransag_22.html) [入场、导出与验证](scopes/np120-character-intake.md)
 
 天气回接采用本项目独立沙盒中已审阅的原创程序雨丝、雪花、局部镜头雨滴、水坑涟漪与材质覆雪。新储木架棚顶和立柱为原木纹、共享几何与材质组成的原创模型，既有 GLB 字节与第三方许可沿用原登记。生产入口为 scene/weather-presentation.ts、weather-particle-seeds.js、environment.ts 与 camp-props.ts，资源归原 Resources owner。强度随机样本与空间坐标独立。当前范围和实机检查见 [天气回接记录](scopes/running-selection-weather.md)。
 
