@@ -27,6 +27,8 @@ import { DEFAULT_WARDROBE, resolveWardrobe, wardrobeForMountedItems } from '../c
 import type { WardrobeLook } from '../content/wardrobe-preview.ts';
 import { createWardrobeVisual } from './wardrobe-visual.ts';
 import { createJ01Player } from './j01-player.ts';
+import {createCharacterLiveliness} from './character-liveliness.ts';
+import {isCarried} from '../domain/transport-location.ts';
 import { createFootContactAnchors } from './lighting/foot-contact-anchors.ts';
 import { axeHeadSamples, geometryContactTarget, contactClearance, findAxeStop, stoppedStrokeFraction } from './axe-contact.ts';
 import type { AxeTarget, AxeStop } from './axe-contact.ts';
@@ -51,6 +53,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   const sourceClips={idle:need('Idle_A'),walk:need('Walking_A'),run:need('Running_A'),gather:need('PickUp'),horizontal:need('Melee_2H_Attack_Slice'),vertical:need('Melee_2H_Attack_Chop')};
   const actions=Object.fromEntries(Object.entries(sourceClips).map(([key,c])=>[key,mixer.clipAction(c)])) as Record<Mode,THREE.AnimationAction>;
   let mode:Mode='idle',disposed=false,inspection:CharacterInspection=null,cutKey='',stop:AxeStop|null=null;
+  let reviewSeconds:number|null=null;
   let lastContact=Infinity,planMs=0,grip:ReturnType<typeof syncTwoHandedAxe>|null=null,impact:CharacterImpact|null=null;
   npcMixer.clipAction(sourceClips.idle).play();npcMixer.setTime(.01);
   const basePose:{bone:THREE.Bone;p:THREE.Vector3;q:THREE.Quaternion;s:THREE.Vector3}[]=[];
@@ -62,6 +65,8 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   const npcWalk=npcMixer.clipAction(sourceClips.walk);npcWalk.play();
   const procedural=createActor(models.templates.get('ranger')!,models.animations.get('motions')!);procedural.root.scale.setScalar(1);player.add(procedural.root);procedural.root.visible=false;
   const localPlayer=createJ01Player(r,models,player,[body,procedural.body]);
+  const playerLiveliness=createCharacterLiveliness(body,{id:'player',frame:player});
+  const visitorLiveliness=createCharacterLiveliness(npc,{id:CAMP_VISITOR.id,frame:visitor});
   const localFeet=localPlayer&&createFootContactAnchors(localPlayer.root,{idPrefix:'player',toePrefix:'ball'});
   actions.idle.play();mixer.update(0);
   const actionFeet=createFootContactAnchors(procedural.body,{idPrefix:'player:action'});
@@ -83,7 +88,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   const seatBones=new Map<string,THREE.Bone>();body.traverse(o=>{if(o instanceof THREE.Bone)seatBones.set(o.name.replaceAll('.',''),o);});
   const readingPoseBase=new Map<THREE.Bone,{p:THREE.Vector3;q:THREE.Quaternion}>();
   const bodyY=body.position.y;
-  let reading=false;
+  let reading=false,playerHandsBusy=false,playerTalking=false;
   let lastMoveSample:{x:number;z:number;time:number}|null=null;
   let movementTime=0,locomotionSpeed=0;
   let localWalkTime:number|null=null;
@@ -139,11 +144,14 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     return running;
   }
   function updatePlayerBase(state:GameState,pose:CabinPlayer,height:number,reducedMotion:boolean){
+    playerLiveliness.beforeAnimation();
     localWalkTime=null;
     for(const [bone,base] of readingPoseBase){bone.position.copy(base.p);bone.quaternion.copy(base.q);}readingPoseBase.clear();
     player.position.set(pose.x,height,pose.z);player.rotation.y=pose.facing;
     body.position.y=bodyY;
     updateWardrobe(state,reducedMotion,pose.moving);
+    playerHandsBusy=state.inventory.stacks.some(stack=>stack.quantity>0&&isCarried(stack));
+    playerTalking=state.npcs?.['ridge-neighbour']?.visit.active?.phase==='talking';
     impact=null;body.visible=true;pickedScrap.visible=false;cutHeight=null;chest.position.y=chestY;procedural.root.visible=false;
   }
   function update(state:GameState,reducedMotion=false,ambientTime=state.time){
@@ -186,7 +194,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
       const clip=sourceClips[mode];
       const animationTime=mode==='walk'||mode==='run'?emerging?ambientTime*1.6:movementTime:ambientTime;
       if(mode==='walk')localWalkTime=animationTime;
-      actions[mode].time=mode==='gather'?Math.min(.999,gather!.progress)*clip.duration:reducedMotion?.01:animationTime%clip.duration;
+      actions[mode].time=mode==='gather'?Math.min(.999,gather!.progress)*clip.duration:reducedMotion||mode==='idle'?.01:animationTime%clip.duration;
       mixer.update(0);
       // Render-only doorway emergence after sleep. Gameplay position is already at the tent exit.
       if(emerging){
@@ -244,20 +252,37 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     }
     const near=visit.parked&&Math.hypot(state.player.x-CAMP_VISITOR.x,state.player.z-CAMP_VISITOR.z)<CAMP_VISITOR.waveRange;
     const localTime=ambientTime%CAMP_VISITOR.waveInterval;
-    wave.enabled=true;wave.setEffectiveWeight(near&&!reducedMotion&&localTime<partial.duration?1:0);wave.time=Math.min(localTime,partial.duration*.999);
+    const waving=near&&!reducedMotion&&localTime<partial.duration;
+    visitorLiveliness.beforeAnimation();
+    wave.enabled=true;wave.setEffectiveWeight(waving?1:0);wave.time=Math.min(localTime,partial.duration*.999);
     npcWalk.setEffectiveWeight(visit.active&&!visit.parked&&!reducedMotion?1:0);npcWalk.time=state.time%sourceClips.walk.duration;
     npcMixer.update(0);
+    visitorLiveliness.update(ambientTime,reducedMotion,visit.active&&visit.parked&&!waving,!waving&&state.selected!==CAMP_VISITOR.id);
   }
-  function present(ambientTime:number,reducedMotion:boolean,holding:boolean){
-    if(!localPlayer)return;
+  function presentAt(ambientTime:number,reducedMotion:boolean,holding:boolean){
     const action=procedural.root.visible;
     const special=action||reading||holding||tool.visible;
-    localPlayer.present(action?procedural.body:body,special?null:localWalkTime,!special&&mode==='idle',
-      ambientTime,reducedMotion,reading,special);
+    const idle=!special&&mode==='idle';
+    if(!localPlayer){playerLiveliness.update(ambientTime,reducedMotion,idle,!playerHandsBusy&&!playerTalking);return;}
+    localPlayer.present(action?procedural.body:body,special?null:localWalkTime,idle,
+      ambientTime,reducedMotion,reading,special,!playerHandsBusy&&!playerTalking);
     body.visible=false;procedural.root.visible=false;
+  }
+  function present(ambientTime:number,reducedMotion:boolean,holding:boolean){
+    if(reviewSeconds!==null){
+      // A paused inspection samples the same adapter from its idle origin;
+      // this does not advance either the game clock or the scene clock.
+      presentAt(0,reducedMotion,holding);
+      presentAt(reviewSeconds,reducedMotion,holding);
+    }else presentAt(ambientTime,reducedMotion,holding);
   }
   return {
     player,visitor,update,present,
+    sampleIdle(seconds:number){
+      if(disposed||inspection!=='wardrobe'||!Number.isFinite(seconds)||seconds<0||seconds>60)
+        throw Error('Character sample requires wardrobe inspection and 0..60 seconds');
+      reviewSeconds=seconds;
+    },
     resetLocomotion(){lastMoveSample=null;movementTime=0;locomotionSpeed=0;},
     updateInCabin(state:GameState,pose:CabinPlayer,height:number,reducedMotion:boolean,ambientTime:number){
       const running=sampleLocomotion(pose,ambientTime);
@@ -265,13 +290,13 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
       inspectionProps.visible=false;tool.visible=false;
       setMode(pose.moving&&!reducedMotion?(running?'run':'walk'):'idle');
       const time=mode==='idle'?ambientTime:movementTime;
-      actions[mode].time=reducedMotion?.01:time%sourceClips[mode].duration;
+      actions[mode].time=reducedMotion||mode==='idle'?.01:time%sourceClips[mode].duration;
       mixer.update(0);
       if(mode==='walk')localWalkTime=time;
       present(ambientTime,reducedMotion,false);
     },
     setReading(value:boolean,seat?:SeatContact){reading=value;readingSeat=value&&seat?seat:null;},
-    setInspection(value:CharacterInspection){inspection=value;cutKey='';stop=null;},
+    setInspection(value:CharacterInspection){inspection=value;reviewSeconds=null;cutKey='';stop=null;},
     setWardrobe(value:Partial<WardrobeLook>){previewLook=resolveWardrobe(value,previewLook);lastLookKey='';},
     getInspection:()=>inspection,
     getImpact:()=>impact,
@@ -280,9 +305,10 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
       ...(player.visible?(localFeet?localFeet.update():procedural.root.visible?actionFeet.update():body.visible?walkingFeet.update():[]):[]),
       ...(visitor.visible?visitorFeet.update():[]),
     ],
-    stats:()=>({model:localPlayer?'J01 林工':'KayKit R3',mode,inspection,localPlayer:localPlayer?.stats()??null,footAnchors:{walking:walkingFeet.stats(),action:actionFeet.stats(),visitor:visitorFeet.stats(),local:localFeet?.stats()??null},wardrobe:{standard:standardClothes.stats(),action:actionClothes.stats()},stopFound:stop?.found??null,stopFraction:stop?.fraction??null,contactClearance:Number.isFinite(lastContact)?lastContact:null,grip,planMs,disposed}),
+    stats:()=>({model:localPlayer?'J01 林工':'KayKit R3',mode,inspection,reviewSeconds,localPlayer:localPlayer?.stats()??null,liveliness:{player:localPlayer?.stats().liveliness??playerLiveliness.stats(),visitor:visitorLiveliness.stats()},footAnchors:{walking:walkingFeet.stats(),action:actionFeet.stats(),visitor:visitorFeet.stats(),local:localFeet?.stats()??null},wardrobe:{standard:standardClothes.stats(),action:actionClothes.stats()},stopFound:stop?.found??null,stopFraction:stop?.fraction??null,contactClearance:Number.isFinite(lastContact)?lastContact:null,grip,planMs,disposed}),
     dispose(){
       if(disposed)return;disposed=true;
+      playerLiveliness.dispose();visitorLiveliness.dispose();
       for(const m of [mixer,npcMixer]){m.stopAllAction();m.uncacheRoot(m.getRoot());}
       standardClothes.dispose();actionClothes.dispose();
       clothing.dispose();actionClothing.dispose();

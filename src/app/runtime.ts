@@ -831,13 +831,22 @@ export async function createRuntime(
     __HOW_CAPTURE_HOLD__?:ReturnType<typeof createCaptureHoldInspection>;
     __HOW_RENDER_REVIEW__?:{set:(modes:{atmosphere?:AtmosphereDebug;optics?:OverlookOpticsMode})=>void};
     __HOW_FOX_REVIEW__?:{sample:(pose:FoxReviewPose)=>void};
+    __HOW_CHARACTER_REVIEW__?:{sample:(pose:{seconds:number})=>void};
   };
   const inspectionWindow=window as InspectionWindow;
   let advanceInspection:((seconds:number)=>void)|undefined;
   let captureInspection:ReturnType<typeof createCaptureHoldInspection>|undefined;
   let renderInspection:InspectionWindow['__HOW_RENDER_REVIEW__'];
   let foxInspection:InspectionWindow['__HOW_FOX_REVIEW__'];
+  let characterInspection:InspectionWindow['__HOW_CHARACTER_REVIEW__'];
   if(import.meta.env.DEV&&new URLSearchParams(window.location.search).has('inspect')){
+    characterInspection={sample(pose){
+      const seconds=pose?.seconds;
+      if(destroyed||contextLost||!inspectionOpen||captureHoldToken===null||!Number.isFinite(seconds)||seconds<0||seconds>60)
+        throw Error('Character sample requires a capture hold, wardrobe inspection and 0..60 seconds');
+      view.sampleCharacter(seconds);view.render(state,0);publishSnapshot();
+    }};
+    inspectionWindow.__HOW_CHARACTER_REVIEW__=characterInspection;
     foxInspection={sample(pose){
       const values=[pose.seconds,pose.blink??0,pose.eyeWetness??1,...(pose.gaze??[0,0]),...(pose.head??[0,0])];
       if(destroyed||contextLost||!inspectionOpen||!values.every(Number.isFinite)||pose.seconds<0||pose.seconds>600||
@@ -1248,6 +1257,7 @@ export async function createRuntime(
       if(import.meta.env.DEV&&inspectionWindow.__HOW_ADVANCE_SIMULATION__===advanceInspection)delete inspectionWindow.__HOW_ADVANCE_SIMULATION__;
       if(import.meta.env.DEV&&inspectionWindow.__HOW_CAPTURE_HOLD__===captureInspection)delete inspectionWindow.__HOW_CAPTURE_HOLD__;
       if(import.meta.env.DEV&&inspectionWindow.__HOW_FOX_REVIEW__===foxInspection)delete inspectionWindow.__HOW_FOX_REVIEW__;
+      if(import.meta.env.DEV&&inspectionWindow.__HOW_CHARACTER_REVIEW__===characterInspection)delete inspectionWindow.__HOW_CHARACTER_REVIEW__;
       if(import.meta.env.DEV&&inspectionWindow.__HOW_RENDER_REVIEW__===renderInspection)delete inspectionWindow.__HOW_RENDER_REVIEW__;
       captureHoldToken=null;
       unsubscribeSave();

@@ -602,6 +602,7 @@ export async function createScene(
       if(scenePreset!=='fox')throw Error('Select the fox scene inspector before sampling');
       foxReview={...pose};
     },
+    sampleCharacter(seconds:number){characters.sampleIdle(seconds);},
     inspectScene(preset:SceneViewPreset|null,overrides:Partial<SceneAppearance>={}){
       // Resetting a room camera must keep its borrowed camp rig untouched.
       if(inside())return;
@@ -838,7 +839,7 @@ export async function createScene(
       broom.restorePose();
       characters.update(state,reducedMotion,ambientTime);
       neighbour.update(state,reducedMotion,ambientTime);
-      villagers.update(state,reducedMotion);
+      villagers.update(state,reducedMotion,ambientTime);
       life.update(state,dt,reducedMotion);
       broom.update(state,dt,reducedMotion,sky.night);
       if(mealFraming&&!life.isMealPlaying())view.cancelMeal();

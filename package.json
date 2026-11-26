@@ -20,7 +20,8 @@
     "verify:browser": "node tools/verification/run-browser-review.mjs",
     "verify:ui": "node tools/verify-ui-contract.mjs",
     "dev:forest": "vite --open /sandbox/forest-expedition/",
-    "test:forest": "node --experimental-strip-types --test tests/forest-expedition*.test.ts"
+    "test:forest": "node --experimental-strip-types --test tests/forest-expedition*.test.ts",
+    "verify:character-browser": "node tools/verification/character-browser.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "0.21.0",
