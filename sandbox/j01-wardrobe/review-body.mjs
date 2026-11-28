@@ -86,7 +86,10 @@ try {
     'hipsWidthMm', 'neckBaseToPelvisMm', 'extremities']) assert.deepEqual(a[key], b[key], key);
   assert.ok(b.sideCutsMm['778'].front < a.sideCutsMm['778'].front - 12);
   assert.ok(Math.abs(b.sideCutsMm['715'].depth - a.sideCutsMm['715'].depth) < 2);
-  assert.ok(b.shoulderDropMm.every((drop, side) => drop > a.shoulderDropMm[side] + 5));
+  assert.ok([...a.shoulderDropMm, ...b.shoulderDropMm].every(Number.isFinite),
+    'Both shoulder contours must intersect the torso in the current stance');
+  assert.ok(b.shoulderDropMm.every((drop, side) => drop > a.shoulderDropMm[side] + 5),
+    'The fitted cap must increase the contour drop by more than 5 mm on each side');
   assert.ok(b.extremities.every(side => side.bootCuffWidthMm > 0 && side.footLengthMm > side.footWidthMm && side.handLengthMm > 0));
   report.comparison = { upperChestBeforeMm: a.sideCutsMm['778'], upperChestAfterMm: b.sideCutsMm['778'],
     shoulderDropBeforeMm: a.shoulderDropMm, shoulderDropAfterMm: b.shoulderDropMm,

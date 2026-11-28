@@ -98,8 +98,19 @@ export function measureFittingBody(avatar: THREE.Group, bones: ReadonlyMap<strin
   const hair = measure('hair'), shell = measure('shell');
   const shoeSurface = [...shoes.points, ...face.points.filter(point => point.y < .16)];
   const ground = Math.min(...shoeSurface.map(p => p.y));
-  const shoulderDrop = [-1, 1].map(sign => mm(
-    Math.max(...section(torso, 'z', .037 * sign).map(p => p.y)) - Math.max(...section(torso, 'z', .112 * sign).map(p => p.y))));
+  const leftShoulder = position('upperarm_l'), rightShoulder = position('upperarm_r');
+  const shoulderCenter = leftShoulder.clone().lerp(rightShoulder, .5);
+  const across = rightShoulder.clone().sub(leftShoulder).normalize();
+  const up = position('neck_01').sub(position('spine_02'));
+  up.addScaledVector(across, -up.dot(across)).normalize();
+  // Keep the contour slices attached to the shoulders as the standing pose turns or leans.
+  const shoulderFrame = new THREE.Matrix4().makeBasis(up.clone().cross(across), up, across)
+    .setPosition(shoulderCenter).invert().multiply(fromWorld);
+  const shoulderSurface = fittedSurface(parts.torso, shoulderFrame);
+  const shoulderDrop = [-1, 1].map(sign => {
+    const inner = section(shoulderSurface, 'z', .037 * sign), outer = section(shoulderSurface, 'z', .112 * sign);
+    return inner.length && outer.length ? mm(Math.max(...inner.map(p => p.y)) - Math.max(...outer.map(p => p.y))) : null;
+  });
   const heightRange = (surface: Surface, height: number, maxFromCenter: number) =>
     section(surface, 'y', height).filter(point => Math.abs(point.z) <= maxFromCenter);
   const shinSections = (['l', 'r'] as const).map(side => {
@@ -121,7 +132,7 @@ export function measureFittingBody(avatar: THREE.Group, bones: ReadonlyMap<strin
   return {
     heightMm: mm(Math.max(...hair.points.map(p => p.y)) - ground),
     eyePlaneWidthMm: span(heightRange(face, .912, .135), 'z'),
-    shoulderJointSpanMm: mm(position('upperarm_l').distanceTo(position('upperarm_r'))),
+    shoulderJointSpanMm: mm(leftShoulder.distanceTo(rightShoulder)),
     shoulderDropMm: shoulderDrop,
     pelvisJointSpanMm: mm(position('thigh_l').distanceTo(position('thigh_r'))),
     waistWidthMm: waistWidth(torso, .585),
