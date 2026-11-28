@@ -8,7 +8,8 @@ import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import {geometryContactTarget} from './axe-contact.ts';
 import {heightAt} from '../world/surface.ts';
 import { ENABLED_RUNTIME_MODELS } from '../content/assets.ts';
-import { LOCAL_CHARACTER_MODELS,LOCAL_CHARACTER_PREFIX } from '../content/characters.ts';
+import { LOCAL_CHARACTER_MODELS } from '../content/characters.ts';
+import {loadLocalCharacter} from './local-character-model.ts';
 import type { Tree } from "../world/layout.ts";
 import type { Resources } from "./resources.ts";
 import {makeTree} from './forest-shapes.js';
@@ -76,10 +77,8 @@ export class Models {
       });
       if(import.meta.env?.DEV)loading.push(...LOCAL_CHARACTER_MODELS.map(async name=>{
         try{
-          const response=await fetch(`${LOCAL_CHARACTER_PREFIX}${name}.glb`);
-          if(response.status===204)return;
-          if(!response.ok)throw new Error(`HTTP ${response.status}`);
-          register(name,await loader.parseAsync(await response.arrayBuffer(),''));
+          const model=await loadLocalCharacter(loader,name);
+          if(model)register(name,model);
         }catch(error){console.warn(`Local character unavailable: ${name}`,error);}
       }));
       await Promise.all(loading);

@@ -3,18 +3,21 @@ import {travelAccess} from '../world/regions.ts';
 import {travelHeightAt} from '../world/traversal.ts';
 import * as THREE from 'three';
 import {ramp} from './actions/motion.js';
-import {canStand} from '../domain/navigation.ts';
+import {canStand,move} from '../domain/navigation.ts';
 import {makeColliders} from '../world/layout.ts';
 import {treeTrunkRadius} from '../world/tree-dimensions.ts';
 import {createActor} from './actions/actor.js';
 import { CHARACTER, CAMP_VISITOR } from '../content/characters.ts';
 import {merchantVisitAt,MERCHANT_SCENE} from '../content/merchant.ts';
 import {TENT,MOVEMENT} from '../content/world.ts';
+import {TENT_PORTAL} from '../content/tent-room.ts';
 import {diningReadingSpot} from '../domain/housing.ts';
 import {applySeatedLegPose,SEATED_SKIN_CLEARANCE} from './seated-pose.ts';
 import type {SeatContact} from './seated-pose.ts';
 import {calendarAt} from '../domain/local-clock.ts';
 import { FORESTRY } from '../content/forestry.ts';
+import {WORKBENCH} from '../content/workshop.ts';
+import {findUpgradeProfile} from '../content/upgrades.ts';
 import type { GameState } from '../domain/state.ts';
 import type { CabinPlayer } from '../domain/cabin.ts';
 import type { Tree } from '../world/layout.ts';
@@ -27,6 +30,9 @@ import { DEFAULT_WARDROBE, resolveWardrobe, wardrobeForMountedItems } from '../c
 import type { WardrobeLook } from '../content/wardrobe-preview.ts';
 import { createWardrobeVisual } from './wardrobe-visual.ts';
 import { createJ01Player } from './j01-player.ts';
+import {createRangerFooting} from './ranger-footing.ts';
+import type {StrideSample} from './j01-stride.ts';
+import type {ActionFooting,ActionStep} from './j01-action-feet.ts';
 import {createCharacterLiveliness} from './character-liveliness.ts';
 import {isCarried} from '../domain/transport-location.ts';
 import { createFootContactAnchors } from './lighting/foot-contact-anchors.ts';
@@ -65,6 +71,7 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   const npcWalk=npcMixer.clipAction(sourceClips.walk);npcWalk.play();
   const procedural=createActor(models.templates.get('ranger')!,models.animations.get('motions')!);procedural.root.scale.setScalar(1);player.add(procedural.root);procedural.root.visible=false;
   const localPlayer=createJ01Player(r,models,player,[body,procedural.body]);
+  const rangerFooting=localPlayer?null:createRangerFooting(player,body);
   const playerLiveliness=createCharacterLiveliness(body,{id:'player',frame:player});
   const visitorLiveliness=createCharacterLiveliness(npc,{id:CAMP_VISITOR.id,frame:visitor});
   const localFeet=localPlayer&&createFootContactAnchors(localPlayer.root,{idPrefix:'player',toePrefix:'ball'});
@@ -92,8 +99,16 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   let lastMoveSample:{x:number;z:number;time:number}|null=null;
   let movementTime=0,locomotionSpeed=0;
   let localWalkTime:number|null=null;
+  let strideSample:StrideSample={mode:'idle',distance:0,seconds:0};
   let readingSeat:SeatContact|null=null;
-  const pickedScrap=new THREE.Mesh(r.geometry('held-split-scrap',scrapGeometry),scrapMaterial(r));pickedScrap.scale.setScalar(.68);pickedScrap.rotation.z=Math.PI/2;pickedScrap.visible=false;player.add(pickedScrap);
+  let seatPhase=0,seatWeight=0;
+  let seatStep:ActionFooting['seat'];
+  let workStep:ActionStep|undefined;
+  let retreatPhase=0,retreatX=0,retreatZ=0;
+  const rangerStopSeconds=.18;
+  let rangerStoppedAt:number|null=null;
+  let climbLift:number|null=null,groundCrouch=false;
+  const pickedScrap=new THREE.Mesh(r.geometry('held-split-scrap',scrapGeometry),scrapMaterial(r));pickedScrap.name='held-split-scrap';pickedScrap.scale.setScalar(.68);pickedScrap.rotation.z=Math.PI/2;pickedScrap.visible=false;player.add(pickedScrap);
   const blade=axeHeadSamples(tool),byId=new Map(trees.map(t=>[t.id,t]));
   // Inspector-only solids demonstrate both constraints without inventing a crafting transaction.
   const inspectionProps=new THREE.Group();inspectionProps.name='character-inspection-solids';inspectionProps.visible=false;player.add(inspectionProps);
@@ -103,9 +118,22 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   stump.position.set(0,.175,.85);stump.castShadow=true;inspectionProps.add(stump);
   const block=new THREE.Mesh(r.geometry('character-inspect-block',()=>new THREE.CylinderGeometry(.14,.16,.37,10)),r.material('#c8a774',.9));
   block.position.set(0,.54,.85);block.castShadow=true;inspectionProps.add(block);
-  function setMode(next:Mode){
+  function setMode(next:Mode,stopTime?:number){
     if(mode===next)return;
-    mixer.stopAllAction();mode=next;actions[mode].reset().play();
+    const action=actions[next];
+    if(rangerFooting&&stopTime!==undefined&&next==='idle'&&(mode==='walk'||mode==='run')){
+      const previous=actions[mode];
+      previous.paused=true;
+      action.reset().play().crossFadeFrom(previous,rangerStopSeconds,false).paused=true;
+      rangerStoppedAt=stopTime;
+    }else{
+      mixer.stopAllAction();action.reset().play();rangerStoppedAt=null;
+    }
+    mode=next;
+  }
+  function sampleBasePose(ambientTime:number){
+    mixer.update(rangerStoppedAt===null?0:strideSample.seconds);
+    if(rangerStoppedAt!==null&&ambientTime>=rangerStoppedAt+rangerStopSeconds)rangerStoppedAt=null;
   }
   let cutHeight:number|null=null;const chest=body.getObjectByName('chest')!,chestY=chest.position.y;
   function sample(fraction:number){
@@ -136,16 +164,20 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   function sampleLocomotion(pose:CabinPlayer,ambientTime:number){
     const distance=lastMoveSample?Math.hypot(pose.x-lastMoveSample.x,pose.z-lastMoveSample.z):0;
     const sampleSeconds=lastMoveSample?Math.max(0,ambientTime-lastMoveSample.time):0;
-    const moveSpeed=sampleSeconds>0&&pose.moving?Math.min(MOVEMENT.speed*MOVEMENT.runMultiplier,distance/sampleSeconds):0;
+    const walkSpeed=localPlayer?.walkSpeed??MOVEMENT.speed;
+    const runSpeed=localPlayer?.runSpeed??walkSpeed*MOVEMENT.runMultiplier;
+    const moveSpeed=sampleSeconds>0&&pose.moving?Math.min(runSpeed,distance/sampleSeconds):0;
+    strideSample={mode:'idle',distance:Math.min(distance,runSpeed*(sampleSeconds+MOVEMENT.fixedStep)),seconds:sampleSeconds,reset:lastMoveSample===null};
     lastMoveSample={x:pose.x,z:pose.z,time:ambientTime};
     locomotionSpeed=pose.moving?THREE.MathUtils.lerp(locomotionSpeed,moveSpeed,Math.min(1,sampleSeconds*14)):0;
-    const running=locomotionSpeed>MOVEMENT.speed*1.12;
+    const running=locomotionSpeed>walkSpeed*1.12;
     movementTime+=distance*(running?1.15/(MOVEMENT.speed*MOVEMENT.runMultiplier):1.6/MOVEMENT.speed);
     return running;
   }
   function updatePlayerBase(state:GameState,pose:CabinPlayer,height:number,reducedMotion:boolean){
     playerLiveliness.beforeAnimation();
-    localWalkTime=null;
+    rangerFooting?.restore();
+    localWalkTime=null;climbLift=null;groundCrouch=false;workStep=undefined;
     for(const [bone,base] of readingPoseBase){bone.position.copy(base.p);bone.quaternion.copy(base.q);}readingPoseBase.clear();
     player.position.set(pose.x,height,pose.z);player.rotation.y=pose.facing;
     body.position.y=bodyY;
@@ -157,6 +189,8 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   function update(state:GameState,reducedMotion=false,ambientTime=state.time){
     if(disposed)return;
     const running=sampleLocomotion(state.player,ambientTime);
+    const access=travelAccess(state);
+    strideSample.groundAt=(x,z)=>travelHeightAt(x,z,access);
     updatePlayerBase(state,state.player,travelHeightAt(state.player.x,state.player.z,travelAccess(state)),reducedMotion);
     const visit=merchantVisitAt(state.time);
     visitor.visible=visit.active;
@@ -180,7 +214,8 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     }else if(state.forestry.active?.phase==='chopping'){
       const a=state.forestry.active,tree=byId.get(a.treeId)!,root=selections.get(a.treeId)!;
       const dx=state.player.x-tree.x,dz=state.player.z-tree.z,len=Math.hypot(dx,dz)||1,radius=treeTrunkRadius(tree);
-      player.position.set(tree.x+dx/len*(radius+1),travelHeightAt(state.player.x,state.player.z,travelAccess(state)),tree.z+dz/len*(radius+1));
+      const px=tree.x+dx/len*(radius+1),pz=tree.z+dz/len*(radius+1);
+      player.position.set(px,travelHeightAt(px,pz,access),pz);
       cutHeight=heightAt(tree.x,tree.z)+.88*tree.scale;
       const cycle=FORESTRY.chopSeconds/FORESTRY.hits,phase=((state.time-a.startedAt)/cycle)%1;
       cut('horizontal',models.trunkContact(tree,root),phase,a.id,reducedMotion);
@@ -189,38 +224,77 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
       cutKey='';stop=null;lastContact=Infinity;grip=null;tool.visible=false;
       const gather=state.gathering.action;
       const secondsFromDawn=state.dayCycle.wokeAt===null?Infinity:state.time-state.dayCycle.wokeAt;
-      const emerging=!reading&&!state.player.moving&&!reducedMotion&&secondsFromDawn>=0&&secondsFromDawn<2.25;
-      const next:Mode=gather?.phase==='performing'?'gather':(state.player.moving||emerging)&&!reducedMotion?(running?'run':'walk'):'idle';setMode(next);
+      // The saved wake position is already beyond the canvas and its raised
+      // groundsheet. Any visible step must stay on that exterior path.
+      const wakeDuration=.92;
+      const waking=!reading&&!reducedMotion&&secondsFromDawn>=0&&secondsFromDawn<wakeDuration&&
+        !state.workshop.job&&!gather&&Math.hypot(state.player.x-TENT.x,state.player.z-TENT.z)<9;
+      const {outward}=TENT_PORTAL;
+      const approach=waking?move(state.player,-.68*outward.x,-.68*outward.z,blockers,access):null;
+      const wakeDistance=approach?Math.hypot(approach.x-state.player.x,approach.z-state.player.z):0;
+      const emerging=wakeDistance>.025;
+      const next:Mode=gather?.phase==='performing'?'gather':(state.player.moving||emerging)&&!reducedMotion?(running?'run':'walk'):'idle';
+      setMode(next,reducedMotion||strideSample.reset?undefined:ambientTime);
       const clip=sourceClips[mode];
       const animationTime=mode==='walk'||mode==='run'?emerging?ambientTime*1.6:movementTime:ambientTime;
       if(mode==='walk')localWalkTime=animationTime;
       actions[mode].time=mode==='gather'?Math.min(.999,gather!.progress)*clip.duration:reducedMotion||mode==='idle'?.01:animationTime%clip.duration;
-      mixer.update(0);
-      // Render-only doorway emergence after sleep. Gameplay position is already at the tent exit.
-      if(emerging){
-        const t=THREE.MathUtils.smoothstep(secondsFromDawn,0,2.25);
-        const fromX=TENT.x+2.1,fromZ=TENT.z+3.3;
-        const wx=THREE.MathUtils.lerp(fromX,state.player.x,t),wz=THREE.MathUtils.lerp(fromZ,state.player.z,t);
-        player.position.set(wx,heightAt(wx,wz),wz);
-        player.rotation.y=Math.atan2(state.player.x-fromX,state.player.z-fromZ);
+      sampleBasePose(ambientTime);
+      if(approach&&emerging){
+        const t=ramp(secondsFromDawn,0,wakeDuration);
+        const wx=THREE.MathUtils.lerp(approach.x,state.player.x,t),wz=THREE.MathUtils.lerp(approach.z,state.player.z,t);
+        player.position.set(wx,travelHeightAt(wx,wz,access),wz);
+        const previous=ramp(secondsFromDawn-strideSample.seconds,0,wakeDuration);
+        strideSample.distance+=(t-previous)*wakeDistance;
       }
       // A local, render-only sitting pose; the world player remains at the camp interaction point.
-      if(reading){
+      if(reading||seatPhase>0){
+        const goal=reading?1:0;
+        seatPhase=reducedMotion||strideSample.reset?goal:THREE.MathUtils.clamp(
+          seatPhase+(reading?1:-1)*strideSample.seconds/(reading?1.12:.88),0,1);
+        seatWeight=ramp(seatPhase,.17,1);
+        const slide=ramp(seatPhase,.02,.91);
         for(const bone of seatBones.values())readingPoseBase.set(bone,{p:bone.position.clone(),q:bone.quaternion.clone()});
         const seat=readingSeat??diningReadingSpot().seat;
         const surfaceY=seat.surfaceY??heightAt(seat.x,seat.z)+(seat.height??0);
-        player.position.set(seat.x,surfaceY+SEATED_SKIN_CLEARANCE,seat.z);
-        player.rotation.y=seat.facing;body.position.y=bodyY-.19;
+        const dx=seat.x-state.player.x,dz=seat.z-state.player.z;
+        seatStep={phase:seatPhase,slide,dx,dz,rising:!reading};
+        const px=state.player.x+dx*slide,pz=state.player.z+dz*slide;
+        const floor=travelHeightAt(px,pz,access),seatFloor=travelHeightAt(seat.x,seat.z,access);
+        player.position.set(px,floor+(surfaceY+SEATED_SKIN_CLEARANCE-seatFloor)*seatWeight,pz);
+        const yaw=seat.facing-state.player.facing;
+        player.rotation.y=state.player.facing+Math.atan2(Math.sin(yaw),Math.cos(yaw))*slide;
+        body.position.y=bodyY-.19*seatWeight;
         const turn=(id:string,axis:'x'|'y'|'z',angle:number)=>{const bone=seatBones.get(id);if(bone)bone.rotation[axis]+=angle;};
-        const hips=seatBones.get('hips');if(hips)hips.position.y-=.12;
+        const hips=seatBones.get('hips');if(hips)hips.position.y-=.12*seatWeight;
         for(const side of ['l','r']){
           turn('upperarm'+side,'x',-.42);turn('lowerarm'+side,'x',-.39);
         }
         applySeatedLegPose(player,seatBones);
         turn('head','x',.10);
+        turn('chest','x',.19*Math.sin(Math.PI*seatWeight));
+        if(seatWeight<1)for(const [bone,base] of readingPoseBase)bone.quaternion.slerp(base.q,1-seatWeight);
+        if(seatPhase===0){readingSeat=null;seatStep=undefined;}
       }
       if(state.workshop.job?.phase==='working'){
-        const job=state.workshop.job;procedural.update(job.kind==='offering'?'pray':'pickup',job.kind==='offering'?(state.time-job.startedAt!)*2:1.35);procedural.root.position.set(0,0,0);procedural.root.rotation.set(0,0,0);body.visible=false;procedural.root.visible=true;
+        const job=state.workshop.job,elapsed=state.time-job.startedAt!;
+        if(job.kind==='offering')procedural.update('pray',4.8*elapsed/job.durationSeconds);
+        else{
+          const target=job.kind==='upgrade'?findUpgradeProfile(job.targetId??''):null;
+          let surface:THREE.Vector3|undefined;
+          if(job.kind==='craft'||target?.id===WORKBENCH.id||target?.hostId===WORKBENCH.id){
+            const edge=Math.min(.65,job.durationSeconds*.28);
+            const approach=ramp(elapsed,0,edge)*(1-ramp(elapsed,job.durationSeconds-edge,job.durationSeconds));
+            workStep={phase:approach,slide:approach,dx:WORKBENCH.x-state.player.x,dz:WORKBENCH.z+1.16-state.player.z};
+            const px=THREE.MathUtils.lerp(state.player.x,WORKBENCH.x,approach);
+            const pz=THREE.MathUtils.lerp(state.player.z,WORKBENCH.z+1.16,approach);
+            player.position.set(px,travelHeightAt(px,pz,access),pz);
+            surface=player.worldToLocal(new THREE.Vector3(WORKBENCH.x,heightAt(WORKBENCH.x,WORKBENCH.z)+1.19,WORKBENCH.z+.51));
+          }
+          procedural.update(job.kind,elapsed,{duration:job.durationSeconds,surface});
+        }
+        procedural.root.position.set(0,0,0);procedural.root.rotation.set(0,0,0);
+        body.visible=false;procedural.root.visible=true;
       }else if(state.ritual?.phase==='performing'){
         procedural.update('pray',state.time-state.ritual.startedAt!);procedural.root.position.set(0,0,0);procedural.root.rotation.set(0,0,0);body.visible=false;procedural.root.visible=true;
       }
@@ -234,21 +308,35 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
           if(canStand({x:px,z:pz},blockers,undefined,travelAccess(state)))player.position.set(px,travelHeightAt(px,pz,travelAccess(state)),pz);
         }
         procedural.update(action,t,{radius:.3});const lift=procedural.root.position.y;
+        if(action==='climb')climbLift=lift;
+        else groundCrouch=true;
         procedural.root.position.set(0,lift/CHARACTER.worldScale,0);procedural.root.rotation.set(0,0,0);
         if(action==='pickup'&&t>=1.15&&t<2.85){player.updateMatrixWorld(true);pickedScrap.position.copy(player.worldToLocal(procedural.bones.handslotr.getWorldPosition(new THREE.Vector3())));pickedScrap.visible=true;}
         body.visible=false;procedural.root.visible=true;
         if(action==='climb'){
           const hostId=gather.sourceId.replace(/^gather\./,'').replace(/\.branches$/,'');const tree=byId.get(hostId);
           if(tree){const radius=tree.role==='landmark'?1.2*tree.scale:treeTrunkRadius(tree),dx=state.player.x-tree.x,dz=state.player.z-tree.z,len=Math.hypot(dx,dz)||1;
-            const px=THREE.MathUtils.lerp(state.player.x,tree.x+dx/len*(radius+.48),approach),pz=THREE.MathUtils.lerp(state.player.z,tree.z+dz/len*(radius+.48),approach);player.position.set(px,travelHeightAt(px,pz,travelAccess(state)),pz);player.rotation.y=Math.atan2(-dx,-dz);
+            const px=THREE.MathUtils.lerp(state.player.x,tree.x+dx/len*(radius+.48),approach),pz=THREE.MathUtils.lerp(state.player.z,tree.z+dz/len*(radius+.48),approach);player.position.set(px,travelHeightAt(px,pz,access),pz);
+            const turn=Math.atan2(-dx,-dz)-state.player.facing;
+            player.rotation.y=state.player.facing+Math.atan2(Math.sin(turn),Math.cos(turn))*approach;
           }
         }
       }
     }
-    if(state.forestry.active?.phase==='falling'){
-      const a=state.forestry.active,dir=state.forestry.slots[a.treeId].fallDirection,step=.7*ramp(state.time-a.committedAt!,0,.75);
-      const x=state.player.x-dir.x*step,z=state.player.z-dir.z*step;
-      if(canStand({x,z},blockers,undefined,travelAccess(state)))player.position.set(x,travelHeightAt(x,z,travelAccess(state)),z);
+    const falling=state.forestry.active?.phase==='falling'?state.forestry.active:null;
+    if(falling){
+      const elapsed=state.time-falling.committedAt!,dir=state.forestry.slots[falling.treeId].fallDirection;
+      retreatX=-dir.x*.7;retreatZ=-dir.z*.7;
+      retreatPhase=ramp(elapsed,0,.64)*(1-ramp(elapsed,.89,FORESTRY.fallSeconds));
+    }else retreatPhase=Math.max(0,retreatPhase-strideSample.seconds/.46);
+    if(retreatPhase>0&&!procedural.root.visible&&!tool.visible&&!reading){
+      const x=state.player.x+retreatX*retreatPhase,z=state.player.z+retreatZ*retreatPhase;
+      if(canStand({x,z},blockers,undefined,access)){
+        player.position.set(x,travelHeightAt(x,z,access),z);
+        workStep={phase:retreatPhase,slide:retreatPhase,dx:retreatX,dz:retreatZ};
+        procedural.update('retreat',retreatPhase);
+        body.visible=false;procedural.root.visible=true;
+      }
     }
     const near=visit.parked&&Math.hypot(state.player.x-CAMP_VISITOR.x,state.player.z-CAMP_VISITOR.z)<CAMP_VISITOR.waveRange;
     const localTime=ambientTime%CAMP_VISITOR.waveInterval;
@@ -261,11 +349,27 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
   }
   function presentAt(ambientTime:number,reducedMotion:boolean,holding:boolean){
     const action=procedural.root.visible;
-    const special=action||reading||holding||tool.visible;
+    const seated=seatPhase>0&&!action&&!tool.visible;
+    const sweeping=holding&&!reading&&!seated;
+    const special=action||seated||sweeping||tool.visible;
     const idle=!special&&mode==='idle';
-    if(!localPlayer){playerLiveliness.update(ambientTime,reducedMotion,idle,!playerHandsBusy&&!playerTalking);return;}
+    if(!localPlayer){
+      if(!special&&inspection!=='wardrobe'&&strideSample.groundAt&&(mode==='idle'||mode==='walk'||mode==='run')){
+        const lift=rangerStoppedAt===null?0:1-ramp(ambientTime,rangerStoppedAt,rangerStoppedAt+rangerStopSeconds);
+        rangerFooting?.place(strideSample.groundAt,mode==='idle'?lift:1);
+      }
+      playerLiveliness.update(ambientTime,reducedMotion,idle,!playerHandsBusy&&!playerTalking);
+      return;
+    }
+    const stride:StrideSample|undefined=!special&&(mode==='idle'||mode==='walk'||mode==='run')?{...strideSample,mode}:undefined;
+    if(stride&&inspection==='wardrobe'){stride.seconds=0;stride.reset=true;stride.groundAt=undefined;}
+    const footing:ActionFooting|undefined=special&&strideSample.groundAt?{
+      kind:seated?'seated':climbLift!==null?'climb':tool.visible?'cut':sweeping?'sweep':groundCrouch?'crouch':'ground',
+      groundAt:strideSample.groundAt,lift:climbLift??0,seat:seated?seatStep:undefined,step:workStep,inspection:inspection!==null,
+    }:undefined;
     localPlayer.present(action?procedural.body:body,special?null:localWalkTime,idle,
-      ambientTime,reducedMotion,reading,special,!playerHandsBusy&&!playerTalking);
+      ambientTime,reducedMotion,seated,special,!playerHandsBusy&&!playerTalking,stride,footing,seatWeight);
+    if(pickedScrap.visible)pickedScrap.position.copy(player.worldToLocal(localPlayer.handContact('r',new THREE.Vector3())));
     body.visible=false;procedural.root.visible=false;
   }
   function present(ambientTime:number,reducedMotion:boolean,holding:boolean){
@@ -277,25 +381,32 @@ export function createCharacters(r:Resources,models:Models,trees:Tree[],selectio
     }else presentAt(ambientTime,reducedMotion,holding);
   }
   return {
-    player,visitor,update,present,
+    player,visitor,update,present,walkSpeed:localPlayer?.walkSpeed??MOVEMENT.speed,runSpeed:localPlayer?.runSpeed??MOVEMENT.speed*MOVEMENT.runMultiplier,
     sampleIdle(seconds:number){
       if(disposed||inspection!=='wardrobe'||!Number.isFinite(seconds)||seconds<0||seconds>60)
         throw Error('Character sample requires wardrobe inspection and 0..60 seconds');
       reviewSeconds=seconds;
     },
-    resetLocomotion(){lastMoveSample=null;movementTime=0;locomotionSpeed=0;},
+    resetLocomotion(){
+      lastMoveSample=null;movementTime=locomotionSpeed=0;
+      seatPhase=seatWeight=retreatPhase=0;seatStep=undefined;
+      if(rangerStoppedAt!==null){mixer.stopAllAction();actions[mode].reset().play();rangerStoppedAt=null;}
+      localPlayer?.resetMotion();
+    },
     updateInCabin(state:GameState,pose:CabinPlayer,height:number,reducedMotion:boolean,ambientTime:number){
       const running=sampleLocomotion(pose,ambientTime);
+      strideSample.groundAt=()=>height;
       updatePlayerBase(state,pose,height,reducedMotion);
       inspectionProps.visible=false;tool.visible=false;
-      setMode(pose.moving&&!reducedMotion?(running?'run':'walk'):'idle');
+      setMode(pose.moving&&!reducedMotion?(running?'run':'walk'):'idle',reducedMotion||strideSample.reset?undefined:ambientTime);
       const time=mode==='idle'?ambientTime:movementTime;
       actions[mode].time=reducedMotion||mode==='idle'?.01:time%sourceClips[mode].duration;
-      mixer.update(0);
+      sampleBasePose(ambientTime);
       if(mode==='walk')localWalkTime=time;
       present(ambientTime,reducedMotion,false);
     },
-    setReading(value:boolean,seat?:SeatContact){reading=value;readingSeat=value&&seat?seat:null;},
+    seatAmount:()=>seatWeight,
+    setReading(value:boolean,seat?:SeatContact){reading=value;if(value)readingSeat=seat??diningReadingSpot().seat;},
     setInspection(value:CharacterInspection){inspection=value;reviewSeconds=null;cutKey='';stop=null;},
     setWardrobe(value:Partial<WardrobeLook>){previewLook=resolveWardrobe(value,previewLook);lastLookKey='';},
     getInspection:()=>inspection,

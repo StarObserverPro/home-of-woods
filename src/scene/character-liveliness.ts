@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import {CHARACTER_MOTION as M} from '../content/character-motion.ts';
+import {poseLimbAt} from './seated-pose.ts';
 
 type Gesture='none'|'adjust-collar'|'touch-hair';
-type Arm={upper:THREE.Bone;lower:THREE.Bone;hand:THREE.Bone};
+type Arm={upper:THREE.Bone;lower:THREE.Bone;hand:THREE.Bone;clavicle?:THREE.Bone};
 type BlinkAdapter={apply:(amount:number)=>void;kind:'atlas+morph'|'atlas'|'morph'|'none'};
 const canonical=(name:string)=>name.toLowerCase().replace(/[^a-z0-9]/g,'');
 const smooth=(value:number)=>{const t=THREE.MathUtils.clamp(value,0,1);return t*t*(3-2*t);};
@@ -35,7 +36,7 @@ export function characterBlinkAt(seconds:number,seed:number){
  * J01 passes its existing atlas/morph blink function. The other current faces
  * are painted; their eyes stay unchanged while the head makes small glances.
  */
-export function createCharacterLiveliness(body:THREE.Object3D,options:{id:string;frame?:THREE.Object3D;blink?:BlinkAdapter}){
+export function createCharacterLiveliness(body:THREE.Object3D,options:{id:string;frame?:THREE.Object3D;blink?:BlinkAdapter;assistClavicle?:boolean}){
   const frame=options.frame??body,seed=characterMotionSeed(options.id);
   const bones=new Map<string,THREE.Bone>();
   body.traverse(object=>{if(object instanceof THREE.Bone)bones.set(canonical(object.name),object);});
@@ -43,11 +44,12 @@ export function createCharacterLiveliness(body:THREE.Object3D,options:{id:string
   const spine=find('spine','spine01'),chest=find('chest','spine02'),head=find('head');
   function arm(side:'l'|'r'):Arm|null{
     const upper=find('upperarm'+side),lower=find('lowerarm'+side),hand=find('hand'+side);
-    return upper&&lower&&hand?{upper,lower,hand}:null;
+    const clavicle=options.assistClavicle?find('clavicle'+side):undefined;
+    return upper&&lower&&hand?{upper,lower,hand,clavicle}:null;
   }
   const arms={l:arm('l'),r:arm('r')};
   const tracked=[...new Set([spine,chest,head,
-    ...Object.values(arms).flatMap(value=>value?[value.upper,value.lower,value.hand]:[])])]
+    ...Object.values(arms).flatMap(value=>value?[value.upper,value.lower,value.hand,value.clavicle]:[])])]
     .filter((bone):bone is THREE.Bone=>!!bone).map(bone=>({bone,base:bone.quaternion.clone()}));
   const eyeSupport={blink:options.blink?.kind??'none',gaze:'none'};
   // Reused scratch storage, including the two-bone gesture solve.
@@ -58,6 +60,7 @@ export function createCharacterLiveliness(body:THREE.Object3D,options:{id:string
   const aimStart=new THREE.Vector3(),aimCurrent=new THREE.Vector3(),aimWanted=new THREE.Vector3();
   let applied=false,disposed=false,wasIdle=false,wereHandsFree=false,idleSince=0,handsFreeSince=0,lastSeconds=-Infinity;
   let seconds=0,idleWeight=0,chestPitch=0,swayRoll=0,headYaw=0,headPitch=0,blink=0,gazeX=0,gazeY=0;
+  let clavicleLift=0;
   let gesture:Gesture='none',gestureWeight=0,suppressed:'reduced-motion'|'action-or-locomotion'|'hands-busy'|null=null;
 
   function beforeAnimation(){
@@ -84,6 +87,23 @@ export function createCharacterLiveliness(body:THREE.Object3D,options:{id:string
     bone.getWorldQuaternion(world);world.premultiply(delta);
     bone.parent!.getWorldQuaternion(inverse).invert();bone.quaternion.copy(inverse.multiply(world));
   }
+  function assistHairReach(limb:Arm,side:number,amount:number){
+    if(!limb.clavicle)return;
+    limb.upper.getWorldPosition(start);
+    limb.lower.getWorldPosition(joint);
+    limb.hand.getWorldPosition(tip);
+    direction.copy(tip).sub(start).normalize();
+    pole.copy(joint).sub(start);
+    const elevation=Math.acos(THREE.MathUtils.clamp(-up.dot(axis.copy(pole).normalize()),-1,1));
+    clavicleLift=THREE.MathUtils.degToRad(8)*amount*smooth((elevation-1.0)/.95);
+    if(clavicleLift<.0001)return;
+    pole.addScaledVector(direction,-direction.dot(pole));
+    if(pole.lengthSq()<1e-8)pole.copy(right).multiplyScalar(side);
+    const handRotation=limb.hand.getWorldQuaternion(new THREE.Quaternion());
+    turn(limb.clavicle,0,0,side*clavicleLift);
+    poseLimbAt(frame,limb.upper,limb.lower,limb.hand,tip,pole);
+    limb.hand.quaternion.copy(limb.hand.parent!.getWorldQuaternion(inverse).invert().multiply(handRotation));
+  }
   function reach(limb:Arm,side:number,amount:number,kind:Gesture){
     limb.upper.getWorldPosition(start);limb.lower.getWorldPosition(joint);limb.hand.getWorldPosition(tip);
     const a=start.distanceTo(joint),b=joint.distanceTo(tip),length=a+b;
@@ -108,6 +128,7 @@ export function createCharacterLiveliness(body:THREE.Object3D,options:{id:string
     jointTarget.copy(start).addScaledVector(direction,along).addScaledVector(pole,height);
     aim(limb.upper,limb.lower,jointTarget);aim(limb.lower,limb.hand,target);
     turn(limb.hand,-.12*amount,0,side*.12*amount);
+    if(kind==='touch-hair')assistHairReach(limb,side,amount);
   }
   function update(time:number,reducedMotion:boolean,idle:boolean,handsFree=true){
     if(disposed)return;
@@ -121,7 +142,7 @@ export function createCharacterLiveliness(body:THREE.Object3D,options:{id:string
     applied=true;
     idleWeight=idle&&!reducedMotion?smooth((seconds-idleSince)/M.idleEaseSeconds):0;
     suppressed=reducedMotion?'reduced-motion':!idle?'action-or-locomotion':!handsFree?'hands-busy':null;
-    chestPitch=0;swayRoll=0;headYaw=0;headPitch=0;gazeX=0;gazeY=0;gesture='none';gestureWeight=0;
+    chestPitch=0;swayRoll=0;headYaw=0;headPitch=0;gazeX=0;gazeY=0;gesture='none';gestureWeight=0;clavicleLift=0;
     blink=reducedMotion||eyeSupport.blink==='none'?0:characterBlinkAt(seconds,seed);
     frame.getWorldQuaternion(orientation);
     up.set(0,1,0).applyQuaternion(orientation);right.set(1,0,0).applyQuaternion(orientation);forward.set(0,0,1).applyQuaternion(orientation);
@@ -157,7 +178,7 @@ export function createCharacterLiveliness(body:THREE.Object3D,options:{id:string
     reset(){beforeAnimation();wasIdle=false;wereHandsFree=false;lastSeconds=-Infinity;idleWeight=0;gesture='none';gestureWeight=0;},
     // gaze is the normalized head-glance target, not a moving pupil.
     stats:()=>({id:options.id,seconds,idleWeight,chestPitch,swayRoll,headYaw,headPitch,blink,gaze:[gazeX,gazeY],
-      gesture,gestureWeight,suppressed,eyeSupport,bones:{upperBody:Number(!!spine)+Number(!!chest)+Number(!!head),arms:Number(!!arms.l)+Number(!!arms.r)},disposed}),
+      gesture,gestureWeight,clavicleLift,suppressed,eyeSupport,bones:{upperBody:Number(!!spine)+Number(!!chest)+Number(!!head),arms:Number(!!arms.l)+Number(!!arms.r)},disposed}),
     dispose(){if(disposed)return;beforeAnimation();disposed=true;wasIdle=false;wereHandsFree=false;lastSeconds=-Infinity;},
   };
 }

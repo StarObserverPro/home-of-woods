@@ -30,7 +30,8 @@ test('actual skinned body and starter garments clear seat, backrest and every su
     const wear=state.inventory.instances!.filter(item=>item.definitionId!=='furniture.guest-bench');
     state.inventory.instances=[...wear,{instanceId:'skin-bench',definitionId:'furniture.guest-bench',blueprintId:'blueprint.bench-guided',createdAt:0,geometry,location:{kind:'world',...anchor,rotation}}];
     const spot=benchReadingSpot(state,'skin-bench')!;state.player={...spot.stand,facing:spot.seat.facing,moving:false};
-    life.restorePose();actors.setReading(true,spot.seat);actors.update(state,index%2===0,index*.71);life.setReading(true);life.update(state,0,index%2===0);actors.player.updateMatrixWorld(true);
+    const sampleTime=checked*3;
+    life.restorePose();actors.setReading(true,spot.seat);actors.update(state,index%2===0,sampleTime+1.2);life.setReading(true);life.update(state,0,index%2===0);actors.player.updateMatrixWorld(true);
     const modelMatrix=new THREE.Matrix4().makeRotationY(rotation).setPosition(anchor.x,heightAt(anchor.x,anchor.z)+BENCH_SEATING.baseOffset,anchor.z),frame=modelMatrix.clone().invert();
     const reports=penetrationReport(body,furnitureInnerVolumes(geometry),frame);
     assert.deepEqual(reports.filter(report=>report.vertices||report.triangles),[],JSON.stringify({length,width,height,supportCount,rotation,reports}));
@@ -47,8 +48,8 @@ test('actual skinned body and starter garments clear seat, backrest and every su
     }
     const beforeStanding=structuredClone(state);
     life.setReading(false);life.cancelMeal();life.restorePose();actors.setReading(false);
-    actors.update(state,index%2===0,index*.71);life.update(state,0,index%2===0);
-    assert.deepEqual(actors.player.position.toArray(),[spot.stand.x,heightAt(spot.stand.x,spot.stand.z),spot.stand.z],'closing the book restores the same safe front standing position even at the identical animation sample');
+    actors.update(state,index%2===0,sampleTime+2.2);life.update(state,0,index%2===0);
+    assert.deepEqual(actors.player.position.toArray(),[spot.stand.x,heightAt(spot.stand.x,spot.stand.z),spot.stand.z],'after rising the actor reaches the same safe front standing position');
     const standingReports=penetrationReport(body,furnitureInnerVolumes(geometry),frame);
     assert.deepEqual(standingReports.filter(report=>report.vertices||report.triangles),[],`standing skin and garments clear the same real seat, backrest and supports: ${JSON.stringify({length,width,height,supportCount,rotation,standingReports})}`);
     assert.equal(life.group.getObjectByName('forest-storybook')!.visible,false);assert.equal(life.group.getObjectByName('meal-wooden-bowl')!.visible,false);

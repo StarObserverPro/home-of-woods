@@ -53,6 +53,7 @@ export function createLifePresentation(r:Resources,player:THREE.Group,options:{c
   const leaf=new THREE.Group();leaf.position.y=.05;turningPage.position.x=.105;leaf.add(turningPage);book.add(leaf);
   // Find the standard animation body, before the hidden procedural-action body.
   const body=player.children.find(child=>child!==group&&!!child.getObjectByName('hips'));
+  const fittedJ01=!!player.getObjectByName('J01 林工')?.children[0]?.userData.j01Gait;
   const bones=new Map<string,THREE.Bone>();
   body?.traverse(node=>{if(node instanceof THREE.Bone)bones.set(node.name.replaceAll('.',''),node);});
   const overlay=new Map<THREE.Bone,THREE.Quaternion>();
@@ -63,13 +64,16 @@ export function createLifePresentation(r:Resources,player:THREE.Group,options:{c
     if(!overlay.has(b))overlay.set(b,b.quaternion.clone());
     b.rotation[axis]+=angle;
   };
-  function handsTo(halfWidth:number,y:number,z:number,gripX:number,gripY:number,gripZ:number){
+  function handsTo(halfWidth:number,y:number,z:number,gripX:number,gripY:number,gripZ:number,weight:number){
     for(const side of ['l','r'] as const){
       for(const name of ['upperarm','lowerarm','hand']){
         const bone=bones.get(name+side);if(bone&&!overlay.has(bone))overlay.set(bone,bone.quaternion.clone());
       }
       const sign=side==='l'?1:-1;
       poseHandAt(player,bones,side,new THREE.Vector3(sign*halfWidth,y,z),new THREE.Vector3(sign*gripX,gripY,gripZ));
+      if(weight<1)for(const name of ['upperarm','lowerarm','hand']){
+        const bone=bones.get(name+side);if(bone)bone.quaternion.slerp(overlay.get(bone)!,1-weight);
+      }
     }
   }
   function restorePose(){
@@ -85,7 +89,7 @@ export function createLifePresentation(r:Resources,player:THREE.Group,options:{c
     else handCenter.set(0,.55,.29);
     return handCenter;
   }
-  function update(state:GameState,dt:number,reducedMotion:boolean,paused=false){
+  function update(state:GameState,dt:number,reducedMotion:boolean,paused=false,seatAmount=1){
     if(disposed)return;
     restorePose();
     const step=paused?0:Math.max(0,Math.min(.1,dt));
@@ -99,17 +103,28 @@ export function createLifePresentation(r:Resources,player:THREE.Group,options:{c
     curtainPlaying=!!meal&&elapsed>=MEAL_PRESENTATION_SECONDS&&canCurtain&&elapsed<MEAL_PRESENTATION_SECONDS+curtainSeconds;
     const pose=mealPresentationAt(elapsed,reducedMotion);if(curtainPlaying)pose.lift=0;
     if(meal&&pose.done&&!curtainPlaying){meal=null;mealEvent=null;surfaces.release(bowl);}
-    bowl.visible=meal==='soup';bread.visible=meal==='bread';book.visible=reading&&meal===null;
+    const reach=THREE.MathUtils.smoothstep(seatAmount,.12,.65);
+    const inHand=reach>.98&&(!fittedJ01||seatAmount>=.84);
+    bowl.visible=meal==='soup'&&inHand;bread.visible=meal==='bread'&&inHand;book.visible=reading&&meal===null&&inHand;
     if(bowl.visible){bowl.userData.instanceId=owner?.instanceId??null;if(owner)surfaces.apply(bowl,owner);else surfaces.release(bowl);}
     // The pre-existing reading bowl is replaced by the book; food is only held
     // while the explicit, successful meal command is being presented.
     const oldBowl=player.getObjectByName('reading-bowl');if(oldBowl)oldBowl.visible=false;
     if(meal){
       const held=meal==='soup'?bowl:bread;
-      handsTo(.28,.49+.08*pose.lift,.395+.02*pose.lift,.20,.47+.08*pose.lift,.50+.02*pose.lift);
-      turn('head','x',-.04*pose.lift);
-      held.position.copy(hands());held.position.y-=.025;held.position.z=Math.max(.55,held.position.z+(meal==='soup'?.155:.12));
-      held.rotation.set(-.10*pose.lift,0,meal==='bread'?.12:0);
+      if(fittedJ01){
+        const sip=THREE.MathUtils.smoothstep(pose.lift,.07,.90),soup=meal==='soup';
+        const y=THREE.MathUtils.lerp(.41,soup?.722:.707,sip),z=THREE.MathUtils.lerp(.37,soup?.247:.197,sip);
+        const gripX=soup?.166:.156;
+        held.position.set(0,y,z);held.rotation.set(soup?-.36*sip:-.13*sip,0,soup?0:.10);
+        handsTo(gripX+.055,y-.022,z-.07,gripX,y-.006,z-.015,reach);
+        turn('head','x',.10*sip);
+      }else{
+        handsTo(.28,.49+.08*pose.lift,.395+.02*pose.lift,.20,.47+.08*pose.lift,.50+.02*pose.lift,reach);
+        turn('head','x',-.04*pose.lift);
+        held.position.copy(hands());held.position.y-=.025;held.position.z=Math.max(.55,held.position.z+(meal==='soup'?.155:.12));
+        held.rotation.set(-.10*pose.lift,0,meal==='bread'?.12:0);
+      }
       if(curtainPlaying&&mealEvent){
         const progress=(elapsed-MEAL_PRESENTATION_SECONDS)/curtainSeconds,wave=Math.sin(Math.PI*progress),strength=whimsy==='simple'?.45:1;
         bowl.rotation.x+=wave*.10*strength;
@@ -118,9 +133,15 @@ export function createLifePresentation(r:Resources,player:THREE.Group,options:{c
         if(targets?.spoon){remember(targets.spoon);targets.spoon.position.y+=wave*.06*strength;}
       }
     }
-    if(book.visible){
-      handsTo(.31,.43,.38,.24,.405,.46);
-      book.position.set(0,.41,.47);book.rotation.set(.25,0,0);
+    if(reading&&meal===null){
+      if(fittedJ01){
+        handsTo(.27,.39,.23,.209,.382,.305,reach);
+        book.position.set(0,.38,.32);book.rotation.set(-.38,0,0);
+        turn('head','x',.14*reach);
+      }else{
+        handsTo(.31,.43,.38,.24,.405,.46,reach);
+        book.position.set(0,.41,.47);book.rotation.set(.25,0,0);
+      }
       // Infrequent page movement is purely ambient, including at a stopped hourglass.
       const page=reducedMotion?0:Math.max(0,Math.sin(readingTime*.42));
       leaf.rotation.z=page>.985?Math.PI*(page-.985)/.015:0;

@@ -5,6 +5,8 @@ import {Models} from '../src/scene/models.ts';
 import {Resources} from '../src/scene/resources.ts';
 import {createStreamedForest} from '../src/scene/streamed-forest.ts';
 import {createForestryPresentation} from '../src/scene/forestry-presentation.ts';
+import {buildBridgeDeck} from '../src/scene/creek-bridge.ts';
+import {createTerrainSampler} from '../src/world/terrain-sampler.js';
 import {CREEK_BRIDGE,WORLD_STREAMING} from '../src/content/regions.ts';
 import {FORESTRY} from '../src/content/forestry.ts';
 import {START,HOME,WORLD} from '../src/content/world.ts';
@@ -76,6 +78,22 @@ test('construction consumes the blueprint materials once and opens one real bidi
     assert.ok(Math.hypot(position.x-to.x,position.z-to.z)<.03);
   }
   const side=move(waterPoint,0,6,colliders,access);assert.ok(Math.abs(side.z-38)<CREEK_BRIDGE.width/2,'railings block sideways movement');
+});
+
+test('rendered planks follow the walking surface all the way to both banks and railings',()=>{
+  const deck=buildBridgeDeck();
+  try{
+    const surface=createTerrainSampler([deck],4);
+    const access={openLinks:[CREEK_BRIDGE.id]};
+    const {west,east}=CREEK_BRIDGE;
+    for(let i=0;i<48;i++){
+      const x=west.x+(i+.5)*(east.x-west.x)/48;
+      for(const z of [36.34,37.65,38,38.56,39.66]){
+        const actual=surface(x,z),walkable=travelHeightAt(x,z,access);
+        assert.ok(Math.abs(actual-walkable)<.035,JSON.stringify({x,z,actual,walkable}));
+      }
+    }
+  }finally{deck.dispose();}
 });
 
 test('uncollected timber blocks only its source forest, including after crossing, partial delivery and ordinary warehouse withdrawals',()=>{

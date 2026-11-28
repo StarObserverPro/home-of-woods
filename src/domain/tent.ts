@@ -77,7 +77,7 @@ export function setTentDestination(visit: TentVisit, destination: Point, action:
 export function nearTentExit(point: Point) {
   return Math.hypot(point.x - TENT_ENTRY.x, point.z - TENT_ENTRY.z) <= TENT_USE_REACH;
 }
-export function stepTentVisit(visit: TentVisit, input: Point, dt: number, loadSpeed: number, run: boolean) {
+export function stepTentVisit(visit: TentVisit, input: Point, dt: number, loadSpeed: number, run: boolean, walkSpeed?:number,runSpeed?:number) {
   if (input.x || input.z) { visit.destination = null; visit.route = []; visit.action = null; }
   let distance = Infinity;
   const target = visit.route[0];
@@ -87,7 +87,7 @@ export function stepTentVisit(visit: TentVisit, input: Point, dt: number, loadSp
     input = distance > .015 ? { x: x / distance, z: z / distance } : { x: 0, z: 0 };
     if (distance <= .015) { visit.route.shift(); if (!visit.route.length) visit.destination = null; }
   }
-  const offset = movementOffset(input, loadSpeed, run, dt, distance), old = { ...visit.player };
+  const offset = movementOffset(input, loadSpeed, run, dt, distance, walkSpeed, runSpeed), old = { ...visit.player };
   // Substeps prevent a run or a coarse review tick from tunnelling through props.
   const steps = Math.max(1, Math.ceil(Math.hypot(offset.x, offset.z) / .1));
   for (let i = 0; i < steps; i++) {
