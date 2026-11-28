@@ -5,6 +5,7 @@ import {createRoot} from 'react-dom/client';
 import {App} from '../../src/ui/App.tsx';
 import {createStarterState} from '../../src/domain/state.ts';
 import {inventoryTransaction} from '../../src/domain/inventory.ts';
+import {MERCHANT_VISIT} from '../../src/content/merchant.ts';
 import type {SaveRecords,WorldSaveStore} from '../../src/app/world-save-store.ts';
 import '../../src/ui/style.css';
 import '../../src/ui/hud-layout.css';
@@ -13,7 +14,8 @@ import '../../src/ui/rustic-ui.css';
 
 export function mountTimberReview(host:HTMLElement){
   const state=createStarterState();
-  state.time=0; // Production calendar starts at 14:00.
+  const review=new URLSearchParams(location.search);
+  state.time=review.has('parkedMerchant')?MERCHANT_VISIT.arrivalSeconds:0;
   state.clock.speed=0;
   state.selected=null;
   state.inventory=inventoryTransaction(state.inventory,[
@@ -21,7 +23,7 @@ export function mountTimberReview(host:HTMLElement){
     'canvas-roll','hardware-kit','food-rice','food-oats','food-black-bread',
   ].map((itemId,index)=>({itemId,qualityId:'ordinary',delta:3+index})));
   let records:SaveRecords={primary:null,backup:null};
-  const noticeReview=new URLSearchParams(location.search).get('gridNotice')==='1';
+  const noticeReview=review.get('gridNotice')==='1';
   const store:WorldSaveStore={
     async read(){
       // A stable, production-owned alert for cross-layer layout review. No real save is read.

@@ -217,7 +217,7 @@ export function ForestExpeditionApp({runtime,onReturn}: {runtime: ForestExpediti
     </>;
   }
 
-  return <div className="expedition-ui" data-how-ui="timber" data-ui-grid-root="viewport" data-expedition-map={domain.activeMapId} data-expedition-panel={panel ?? 'none'}>
+  return <div className="expedition-ui" data-expedition-map={domain.activeMapId} data-expedition-panel={panel ?? 'none'}>
     <div className="expedition-top" data-ui-grid="hud" aria-hidden={panel ? true : undefined}>
       <header className="expedition-topbar" data-ui-grid="row">
         <div className="expedition-location"><span>森林之家 · 林间漫步</span><strong>{view.habitat}</strong></div>

@@ -43,8 +43,8 @@
   #load-state { position: absolute; inset: 42% 12px auto; margin: 0 auto; width: fit-content; padding: 8px 12px; background: #1a2a22; border-radius: 5px; }
   .stage-controls { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--how-gap); }
   .stage-controls:has([data-command="detail"][hidden]) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .wardrobe-panel { min-width: 0; }
-  .controls-inner { display: flex; flex-direction: column; gap: 16px; }
+  .wardrobe-panel { min-width: 0; align-self: start; }
+  .controls-inner { display: flex; flex-direction: column; gap: var(--how-section-gap); }
   .controls-inner[hidden] { display: none; }
   fieldset { min-width: 0; padding: 0; margin: 0; border: 0; }
   legend { padding: 0; margin-bottom: var(--how-gap); color: var(--how-muted); font-size: 13px; font-weight: 700; }
@@ -66,7 +66,7 @@
   .wardrobe-trims button { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 58px; }
   .wardrobe-trims small { color: var(--how-muted); font-size: 11px; line-height: 16px; }
   .wardrobe-layout button { width: 100%; white-space: normal; overflow-wrap: anywhere; }
-  .wardrobe-pages { margin-bottom: 16px; }
+  .wardrobe-pages { margin-bottom: var(--how-gap); }
   .affix-panel, .affix-panel #affix-lab { display: grid; gap: 12px; }
   .affix-panel[hidden], .affix-panel #affix-lab[hidden], .affix-field[hidden], .affix-replay-row[hidden] { display: none; }
   .affix-field-row, .affix-replay-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--how-gap); align-items: end; }
@@ -78,11 +78,8 @@
   .affix-chip i { display: block; width: 20px; height: 14px; border-radius: 3px; box-shadow: inset 0 1px #ffffff50; }
   .affix-copy { margin: 8px 0 0; color: var(--how-muted); font-size: 13px; line-height: 1.6; }
 
-  @media (min-width: 900px) {
-    .wardrobe-panel { align-self: stretch; }
-  }
   @media (max-width: 790px) {
-    #wardrobe { --how-frame-inset: 12px; --how-panel-inset: 12px; --how-panel-bottom: 20px; }
+    #wardrobe { --how-frame-inset: 12px; --how-panel-inset: 12px; }
     .wardrobe-layout { grid-template-columns: minmax(0, 1fr); }
     .wardrobe-canvas { flex: none; height: clamp(266px, 43dvh, 460px); min-height: 0; }
     .wardrobe-title > span { font-size: 12px; }

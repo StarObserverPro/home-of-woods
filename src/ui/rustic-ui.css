@@ -8,9 +8,9 @@
 .browser-slots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-content:start}
 .wood-slot{position:relative;min-width:0;min-height:60px;aspect-ratio:1;border:0;border-radius:10px;background:linear-gradient(135deg,#132c20,#294534);box-shadow:inset 0 3px 5px #071b14,0 2px #7d744c;color:inherit;padding:5px}
 .wood-slot .game-icon{max-width:100%;max-height:100%}.wood-slot[aria-pressed=true]{outline:2px solid #edc77e;outline-offset:1px;background:#42573b}
-.slot-mark{position:absolute;top:2px;left:5px;color:#f5d58c;font-size:11px}.slot-quantity{position:absolute;bottom:3px;right:6px;text-shadow:0 1px 3px #000}.slot-badge{position:absolute;top:3px;right:4px;font-size:10px;background:#253f2c}
-.wood-detail{position:relative;min-width:0;padding:10px;border-radius:10px;background:#10271faa;display:flex;flex-direction:column;gap:8px}
-.wood-item-heading{display:flex;align-items:center;gap:8px;padding-right:24px}.wood-item-heading h3{font-size:16px;margin:0}.wood-item-heading small{display:flex;align-items:center;gap:4px;color:#ded4b0}
+.slot-quantity{position:absolute;bottom:3px;right:6px;text-shadow:0 1px 3px #000}.slot-badge{position:absolute;top:3px;right:4px;font-size:10px;background:#253f2c}
+.wood-detail{position:relative;min-width:0;display:flex;flex-direction:column;gap:8px}
+.wood-item-heading{display:flex;align-items:center;gap:8px}.wood-item-heading h3{font-size:16px;margin:0}.wood-item-heading small{display:flex;align-items:center;gap:4px;color:#ded4b0}
 .wood-actions,.wood-materials,.wood-adjust{display:flex;flex-wrap:wrap;gap:8px}.wood-materials>span{display:flex;align-items:center;gap:3px;white-space:nowrap}.wood-materials .is-missing{color:#edb89d}
 .wood-action,.wood-pager button,.wood-quantity button,.wood-adjust button{min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:5px 12px;background:#926339;color:#fff1cf;border:0;border-radius:8px;box-shadow:inset 0 2px #c69a59,inset 0 -3px #4d331f;font:inherit}
 .wood-action.secondary{background:#344b32}.wood-pager,.wood-quantity{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:8px}.wood-info{position:absolute;right:4px;top:4px;min-width:32px;min-height:32px;background:transparent;color:#edc77e;border:0;font-size:20px}
@@ -50,7 +50,7 @@
 @media(max-height:500px) and (min-width:541px){.game-shell .wood-shop .wood-detail{min-height:0}.game-shell .wood-shop .wood-detail .wood-note{line-height:1.3}.game-shell .wood-shop .wood-item-heading{padding-right:22px}.wood-shop .browser-body{align-items:start}.wood-shop .wood-detail .wood-quantity{gap:10px}.game-shell .wood-shop .wood-detail{padding:5px;gap:4px}.wood-shop .wood-checkout{font-size:11px}.wood-shop .wood-checkout .wood-action{min-height:36px}}
 .game-shell .wood-detail p{margin:0;font-size:12px;line-height:1.45}.game-shell .wood-detail h3{margin:0}.game-shell .item-browser .wood-note{margin:0}.game-shell .wood-item-heading{min-height:0}.game-shell .wood-shop .wood-reason{font-size:11px;margin:3px 0;line-height:1.3}
 @media(max-height:500px) and (min-width:541px){
- .game-shell .help-sheet:has(.rarity-vfx-controls),.pause-dialog:has(.rarity-vfx-controls){display:grid;grid-template-columns:1fr 1fr;gap:6px}
+ .game-shell .help-sheet:has(.rarity-vfx-controls),.pause-dialog[open]:has(.rarity-vfx-controls){display:grid;grid-template-columns:1fr 1fr;gap:6px}
  .help-sheet:has(.rarity-vfx-controls)>.panel-heading,.help-sheet:has(.rarity-vfx-controls)>.wood-tabs,.help-sheet:has(.rarity-vfx-controls)>.reduced,.pause-dialog:has(.rarity-vfx-controls)>.wood-tabs{grid-column:1/-1}
  .game-shell .help-sheet .reduced{margin:3px 0;padding:4px 0}.game-shell .help-sheet .rarity-vfx-controls{min-width:0;margin:3px 0}.pause-dialog .rarity-vfx-controls{min-width:0}
 }

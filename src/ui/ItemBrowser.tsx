@@ -15,7 +15,16 @@ import type {ArtIconName} from './art-icons.ts';
 export type MenuItem={id:string;name:string;icon:ArtIconName|null;category?:string;quantity?:number;badge?:string;muted?:boolean};
 export type MenuTab={id:string;name:string;icon?:ArtIconName};
 export function IconTabs({tabs,value,onChange,label}:{tabs:readonly MenuTab[];value:string;onChange:(id:string)=>void;label:string}){
-  return <nav className="wood-tabs" aria-label={label}>{tabs.map(tab=><button type="button" key={tab.id} aria-label={tab.name} aria-pressed={value===tab.id} onClick={()=>onChange(tab.id)}>{tab.icon&&<GameIcon name={tab.icon} size={27}/>}<span>{tab.name}</span></button>)}</nav>;
+  return <nav className="wood-tabs" aria-label={label}>
+    {tabs.map(tab => (
+      <button key={tab.id} type="button" data-timber-surface="button" data-timber-tab=""
+        data-timber-selection="leaf" aria-label={tab.name} aria-pressed={value===tab.id}
+        onClick={()=>onChange(tab.id)}>
+        {tab.icon&&<GameIcon name={tab.icon} size={27}/>}
+        <span>{tab.name}</span>
+      </button>
+    ))}
+  </nav>;
 }
 export function WoodHeading({title,icon,onClose,closeLabel='关闭窗口',children}:{title:string;icon?:ArtIconName;onClose?:()=>void;closeLabel?:string;children?:ReactNode}){
   return <TimberHeading className="wood-heading">{icon&&<GameIcon name={icon} size={32}/>}<h2>{title}</h2>{children}{onClose&&<button type="button" className="wood-close" aria-label={closeLabel} onClick={onClose}>×</button>}</TimberHeading>;
@@ -46,8 +55,8 @@ export function ItemBrowser<T extends MenuItem>({items,categories,renderDetail,l
       <div className="browser-catalog"><div className="browser-slots" role="group" aria-label={`${label}图标`}>
         {shown.map((item,offset)=>{
           const draggable=!!onItemPointerDown&&(!canDragItem||canDragItem(item));
-          return <button type="button" className={'wood-slot'+(item.muted?' is-muted':'')+(draggable?' is-draggable':'')} key={item.id} data-timber-seed={item.id} aria-pressed={selected?.id===item.id} aria-label={item.name+(item.quantity!==undefined?`，${item.quantity}份`:'')+(item.badge?`，${item.badge}`:'')} title={draggable?'按住图标拖到场景，松手放下':undefined} onPointerDown={event=>{if(draggable)onItemPointerDown?.(event,item);}} onClick={()=>setSelection({id:item.id,index:current*pageSize+offset})}>
-          <GameIcon name={item.icon} size={60}/>{selected?.id===item.id&&<span className="slot-mark" aria-hidden="true">◆</span>}{item.quantity!==undefined&&<strong className="slot-quantity">{item.quantity}</strong>}{item.badge&&<span className="slot-badge">{item.badge}</span>}
+          return <button type="button" className={'wood-slot'+(item.muted?' is-muted':'')+(draggable?' is-draggable':'')} key={item.id} data-timber-surface="slot" data-timber-seed={item.id} data-timber-selection="leaf" aria-pressed={selected?.id===item.id} aria-label={item.name+(item.quantity!==undefined?`，${item.quantity}份`:'')+(item.badge?`，${item.badge}`:'')} title={draggable?'按住图标拖到场景，松手放下':undefined} onPointerDown={event=>{if(draggable)onItemPointerDown?.(event,item);}} onClick={()=>setSelection({id:item.id,index:current*pageSize+offset})}>
+          <GameIcon name={item.icon} size={60}/>{item.quantity!==undefined&&<strong className="slot-quantity">{item.quantity}</strong>}{item.badge&&<span className="slot-badge">{item.badge}</span>}
         </button>;
         })}
         {shown.length>0&&Array.from({length:pageSize-shown.length},(_,i)=><div className="wood-slot empty-slot" key={`empty-${i}`} aria-hidden="true"/>)}

@@ -12,7 +12,7 @@ const app = document.querySelector<HTMLElement>('#wardrobe')!;
 app.dataset.howUi = 'timber';
 app.dataset.uiGridRoot = 'viewport';
 const makeButton = (command: string, value: string, content: string, seed = command) =>
-  `<button type="button" data-command="${command}" data-value="${value}" data-timber-surface="button" data-timber-seed="${seed}" data-timber-tone="dark" aria-pressed="false">${content}</button>`;
+  `<button type="button" data-command="${command}" data-value="${value}" data-timber-surface="button" data-timber-seed="${seed}" data-timber-tone="dark" aria-pressed="false"${command === 'pose' ? ' data-timber-density="compact"' : ''}>${content}</button>`;
 
 app.innerHTML = `
   <header class="wardrobe-title" data-ui-grid="hud">

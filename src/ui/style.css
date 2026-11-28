@@ -121,7 +121,6 @@ button:not(:disabled):hover { color: #fff3bd; }
   gap: 4px;
 }
 .bottom-toolbar button span { font-size: 10px; letter-spacing: .08em; }
-.bottom-toolbar button.active::after { content: ""; position: absolute; width: 17px; height: 2px; bottom: 0; border-radius: 2px; background: #fff1b7; box-shadow: 0 1px 4px #07190f; }
 .camera-tools { order: 2; display: flex; align-items: center; }
 .camera-tools button { width: 44px; height: 48px; padding: 0; display: grid; place-items: center; font-size: 27px; }
 .camera-tools > span { display: none; }

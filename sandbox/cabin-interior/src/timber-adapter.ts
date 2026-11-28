@@ -24,8 +24,7 @@ export function mountCabinTimber(root:HTMLElement){
     const panels:readonly [string,Surface,Material,Tone][]=[
       ['.masthead','heading','plank','dark'],
       ['.collection','panel','bark','dark'],
-      ['.collection-title','heading','plank','warm'],
-      ['.inspector','slot','recess','dark'],
+      ['.collection-title','heading','recess','warm'],
       ['.view-dock','slot','recess','dark'],
       ['.placement-panel','panel','bark','dark'],
       ['.stage-caption','badge','recess','dark'],
@@ -46,6 +45,8 @@ export function mountCabinTimber(root:HTMLElement){
       if(element instanceof HTMLButtonElement)element.type='button';
     });
   }
+  const dock=root.querySelector<HTMLElement>('.view-dock');
+  if(dock)dock.dataset.timberVariant='dock';
   refresh();
   const dispose=mountTimberTheme(root);
   return {refresh,dispose};

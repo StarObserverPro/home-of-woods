@@ -1,4 +1,4 @@
-import {timberSurface} from './surface.ts';
+import {timberShape,timberSurface} from './surface.ts';
 import {mountGridGuides} from './grid-guides.ts';
 import type {TimberMaterial,TimberRole,TimberSurface,TimberTone} from './surface.ts';
 
@@ -37,6 +37,15 @@ export function mountTimberTheme(root: HTMLElement | ShadowRoot, options: Timber
     const seed = node.dataset.timberSeed ?? `how:${role}:${material}`;
     const key = `${width}:${height}:${role}:${material}:${tone}:${seed}`;
     if (painted.get(node) === key) return;
+    node.dataset.timberShape = timberShape(width,height,role);
+    const carved = role === 'badge' && (material === 'shaving' || material === 'endgrain')
+      || role === 'heading' && material === 'bark';
+    if (!carved) {
+      if (node.dataset.timberPaint === 'ornament') node.style.removeProperty('--how-surface-image');
+      node.dataset.timberPaint = 'ready';
+      painted.set(node,key);
+      return;
+    }
     try {
       let surface = cache.get(key);
       if (surface) { cacheHits++; cache.delete(key); cache.set(key,surface); }
@@ -46,8 +55,7 @@ export function mountTimberTheme(root: HTMLElement | ShadowRoot, options: Timber
         if (cache.size > CACHE_LIMIT) cache.delete(cache.keys().next().value!);
       }
       node.style.setProperty('--how-surface-image',`url("${surface.dataUri}")`);
-      node.dataset.timberShape = surface.shape;
-      node.dataset.timberPaint = 'ready';
+      node.dataset.timberPaint = 'ornament';
       painted.set(node,key);
     } catch {
       // A failed ornament never removes the CSS fallback, label, focus or hit target.
