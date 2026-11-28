@@ -5,7 +5,8 @@
     {"name":"cabin-interior","root":"sandbox/cabin-interior","entry":"sandbox/cabin-interior/src/timber-adapter.ts","themeOwner":"mountTimberTheme"},
     {"name":"woodworking","root":"sandbox/woodworking","entry":"sandbox/woodworking/src/timber-adapter.ts","themeOwner":"mountTimberTheme"},
     {"name":"timber-ui","root":"sandbox/timber-ui","entry":"sandbox/timber-ui/main.ts","themeOwner":"mountTimberTheme"},
-    {"name":"forest-expedition","root":"sandbox/forest-expedition","entry":"sandbox/forest-expedition/main.tsx","themeOwner":"mountTimberTheme"}
+    {"name":"forest-expedition","root":"sandbox/forest-expedition","entry":"sandbox/forest-expedition/main.tsx","themeOwner":"mountTimberTheme"},
+    {"name":"j01-wardrobe","root":"sandbox/j01-wardrobe","entry":"sandbox/j01-wardrobe/main.ts","themeOwner":"mountTimberTheme"}
   ],
   "inlineStyleSources": [
     "sandbox/timber-ui/main.ts",
