@@ -83,12 +83,13 @@ export function buildApron(originalGeometry){
   }
  }
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setIndex(indices);g.computeVertexNormals();
- const normals=g.getAttribute('normal'),green=new THREE.Color('#7f985e'),forest=new THREE.Color('#526e59'),rock=new THREE.Color('#87918a'),bankColor=new THREE.Color('#a2a889'),air=new THREE.Color('#97b4c5'),c=new THREE.Color();
+ const normals=g.getAttribute('normal'),green=new THREE.Color('#7f985e'),forest=new THREE.Color('#526e59'),rock=new THREE.Color('#87918a'),bankColor=new THREE.Color('#a2a889'),c=new THREE.Color();
  for(let i=0;i<positions.length/3;i++){
-  const x=positions[i*3],y=positions[i*3+1],z=positions[i*3+2],dist=Math.hypot(x,z),river=Math.abs(x-riverX(z));
+  const x=positions[i*3],y=positions[i*3+1],z=positions[i*3+2],river=Math.abs(x-riverX(z));
   c.copy(green).lerp(forest,smooth(45,180,y)*.7).lerp(rock,(1-smooth(.55,.83,normals.getY(i)))*.7);
   c.lerp(bankColor,(1-smooth(5,20,river))*.75).multiplyScalar(.96+.04*Math.sin(x*.12+z*.09));
-  c.lerp(air,smooth(260,1100,dist)*.6);c.toArray(colors,i*3);
+  // Atmospheric transmission is applied once by the shared scene material patch.
+  c.toArray(colors,i*3);
  }
  g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));g.computeBoundingSphere();g.userData={seamVertices:first.length,rings:rings.length};return g;
 }

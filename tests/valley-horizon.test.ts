@@ -4,14 +4,13 @@ import * as THREE from 'three';
 import {buildClosedTerrain} from '../src/world/closed-terrain.ts';
 import {heightAt} from '../src/world/surface.ts';
 import {makeTrees} from '../src/world/layout.ts';
-import {treeVisual} from '../src/world/tree-appearance.ts';
 import {buildApron,riverX,riverY,ROUTES,sampleRoute} from '../src/world/horizon.js';
 import {createTerrainSampler} from '../src/world/terrain-sampler.js';
 import {createHorizon} from '../src/scene/horizon.ts';
 import {createTerrain} from '../src/scene/terrain.ts';
 import {createCreek} from '../src/scene/creek.ts';
 import {Resources} from '../src/scene/resources.ts';
-import {makeTree} from '../src/scene/forest-shapes.js';
+import {Models} from '../src/scene/models.ts';
 import {distantTreeGeometry,planOuterForest,OUTER_FOREST} from '../src/scene/outer-forest.js';
 import type {DistantTreeKind} from '../src/scene/outer-forest.js';
 import {TREE_SLOT_CORRECTIONS} from '../src/content/tree-slot-corrections.ts';
@@ -40,21 +39,25 @@ test('rendered valley banks share the near-field height, and the exterior rim an
 });
 
 test('fixed scenery identities and full crowns clear the planned bridge corridor',()=>{
-  const trees=makeTrees();assert.equal(trees.length,580);assert.equal(new Set(trees.map(t=>t.id)).size,580);
+  const trees=makeTrees();
+  const fixed=trees.filter(t=>t.id.startsWith('tree-slot-')||t.id==='landmark-elder');
+  assert.equal(fixed.length,580);assert.equal(new Set(trees.map(t=>t.id)).size,trees.length);
   for(const [id,position] of Object.entries(TREE_SLOT_CORRECTIONS)){
     const tree=trees.find(t=>t.id===id)!;assert.equal(tree.role,'scenery');assert.equal(tree.individualId,`${id}:g0`);
     assert.deepEqual({x:tree.x,z:tree.z},position);
   }
-  for(const tree of trees.filter(t=>t.x>0&&t.x<60&&Math.abs(t.z-38)<14)){
-    const visual=treeVisual(tree),model=makeTree(visual.species,visual.seed,1);
-    model.scale.setScalar(tree.scale);model.rotation.y=tree.variant*6.28;model.position.set(tree.x,heightAt(tree.x,tree.z),tree.z);model.updateMatrixWorld(true);
-    const box=new THREE.Box3().setFromObject(model);
-    assert.ok(!(box.max.x>7&&box.min.x<45&&box.max.z>34.6&&box.min.z<41.4),tree.id);
-    model.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose();}});
-  }
+  const resources=new Resources(),models=new Models(resources);
+  try{
+    for(const tree of trees.filter(t=>t.x>0&&t.x<60&&Math.abs(t.z-38)<14)){
+      const model=new THREE.Mesh(models.treeGeometry(tree.kind,true,tree,tree.role==='scenery'&&!tree.woodland));
+      model.scale.setScalar(tree.scale);model.rotation.y=tree.variant*Math.PI*2;model.position.set(tree.x,heightAt(tree.x,tree.z),tree.z);model.updateMatrixWorld(true);
+      const box=new THREE.Box3().setFromObject(model,true);
+      assert.ok(!(box.max.x>7&&box.min.x<45&&box.max.z>34.6&&box.min.z<41.4),tree.id);
+    }
+  }finally{resources.dispose();}
 });
 
-test('five forest silhouettes stay within budget and transition from broadleaf valley to conifer high slopes',()=>{
+test('Rainier canopy stays conifer-dominant within budget, with local broadleaf pockets and taller emergents',()=>{
   const ground=buildClosedTerrain(),apron=buildApron(ground),sample=createTerrainSampler([ground,apron]);
   const kinds:DistantTreeKind[]=['oak','poplar','pine','spruce','fir'];
   const geometries=kinds.map(kind=>distantTreeGeometry(kind));
@@ -63,7 +66,10 @@ test('five forest silhouettes stay within budget and transition from broadleaf v
   assert.deepEqual(plan,planOuterForest(sample,counts,trees));assert.ok(plan.triangles<=OUTER_FOREST.triangleBudget);
   assert.equal(new Set(plan.placements.map(t=>t.kind)).size,5);
   const low=plan.placements.filter(t=>t.y<55),high=plan.placements.filter(t=>t.y>100),broad=(t:{kind:string})=>['oak','poplar'].includes(t.kind);
-  assert.ok(low.filter(broad).length/low.length>.45);assert.ok(high.filter(broad).length/high.length<.1);
+  assert.ok(low.filter(broad).length/low.length<.25);assert.ok(high.filter(broad).length/high.length<.1);
+  const meanHeight=(kind:string)=>{const p=plan.placements.filter(t=>t.kind===kind);return p.reduce((sum,t)=>sum+t.height,0)/p.length;};
+  assert.ok(meanHeight('pine')>meanHeight('spruce'));
+  assert.ok(meanHeight('oak')<meanHeight('spruce'));
   for(const tree of plan.placements)assert.equal(tree.y,sample(tree.x,tree.z));
   geometries.forEach(g=>g.dispose());ground.dispose();apron.dispose();
 });
@@ -76,7 +82,13 @@ test('mainline horizon and creek share water presentation and release every adde
   try{
     const {ground,water}=createTerrain(r),horizon=createHorizon(r,ground.geometry,makeTrees()),river=createCreek(r,water,horizon.riverExtensions);
     assert.equal(ground.material[0].userData.sceneryTrails.independentRoadMeshes,0);
-    assert.ok(horizon.stats().triangles<100000);assert.equal(horizon.stats().forest.trees,2389);
+    assert.ok(horizon.stats().triangles<100000);
+    const visual=horizon.stats().forest;
+    assert.ok(visual.trees>1500&&visual.trees<=OUTER_FOREST.maxTrees);
+    assert.equal(visual.biome,'rainier-southwest-foothills');
+    assert.ok(visual.visualMasses>0,'distant decorative forest actually uses aggregated crowns');
+    assert.equal(visual.renderedSingles+visual.mergedTreeAnchors,visual.trees);
+    assert.ok(visual.triangles<visual.sourceTriangles,'the replacement lowers submitted triangles');
     const reflection=river.group.getObjectByName('bounded-planar-river-reflection') as THREE.Mesh;
     for(const name of ['upstream-continuation','downstream-continuation']){
       const extension=river.group.getObjectByName(name) as THREE.Mesh;

@@ -8,7 +8,9 @@ import {WEATHER_RULES} from '../content/weather.ts';
 import {heavyLaborAllowed} from './food.ts';
 import type {FoodState} from './food.ts';
 import {LOG_HARVEST_LENGTH_MM} from '../content/wood-uses.ts';
-import {canStand} from './navigation.ts';
+import {CAMP_WOODLAND_DIMENSIONS} from '../content/camp-woodland.ts';
+import {campTreeDimensions,treeFootRadius,treeTrunkRadius} from '../world/tree-dimensions.ts';
+import {fellingSpaceIsClear} from '../world/tree-felling-space.ts';
 import {FORESTRY} from '../content/forestry.ts';
 import type {Point} from '../content/world.ts';
 import type {Tree,Collider} from '../world/layout.ts';
@@ -35,12 +37,24 @@ export type ForestrySnapshot={
   selectedTree:{id:string;individualId:string;status:TreeStatus;statusLabel:string;distance:number;near:boolean;canChop:boolean;canApproach:boolean;cost:number;yield:number;reason:string;progress:number}|null;
 };
 const clamp=(v:number)=>Math.max(0,Math.min(1,v));
-export const volumePoints=(tree:Tree)=>Math.max(1,Math.ceil(tree.scale*tree.scale*1.6));
+export const canFellTree = (tree: Tree|undefined): tree is Tree => tree?.role === 'managed' && !tree.retained;
+export function volumePoints(tree: Tree) {
+  if (tree.regeneration && tree.woodland) {
+    const h = campTreeDimensions(tree.woodland).height * tree.scale;
+    const usableLengthMm = h * .72 * 1000 / CAMP_WOODLAND_DIMENSIONS.worldUnitsPerMetre;
+    return Math.max(1, Math.floor(usableLengthMm / LOG_HARVEST_LENGTH_MM));
+  }
+  return Math.max(1, Math.ceil(tree.scale * tree.scale * 1.6));
+}
 export const availablePoints=(state:ForestryState)=>state.ledger.base-state.ledger.used-state.ledger.reserved;
-export const chopRange=(tree:Tree)=>Math.min(FORESTRY.interactRange,(tree.kind==='pine'?.43:.66)*tree.scale+FORESTRY.reachBeyondTrunk);
+export const chopRange=(tree:Tree)=>Math.min(FORESTRY.interactRange,(tree.regeneration?treeTrunkRadius(tree):treeFootRadius(tree))+FORESTRY.reachBeyondTrunk);
+export const initialTreeLife = (t: Tree): TreeLife => ({
+  slotId:t.id,individualId:t.individualId,generation:t.generation,status:'standing',felledAt:null,regrowAt:null,
+  bornAt:null,maturesAt:null,fallDirection:{x:0,z:1},actionId:null,
+});
 export function createForestry(trees:Tree[]):ForestryState{
   const slots:Record<string,TreeLife>={};
-  for(const t of trees)if(t.role!=='scenery')slots[t.id]={slotId:t.id,individualId:t.individualId,generation:t.generation,status:'standing',felledAt:null,regrowAt:null,bornAt:null,maturesAt:null,fallDirection:{x:0,z:1},actionId:null};
+  for(const t of trees)if(t.role!=='scenery')slots[t.id]=initialTreeLife(t);
   return {ledger:{year:1,base:FORESTRY.basePoints,used:0,reserved:0},slots,active:null,nextAction:1,completedActions:[]};
 }
 export function treeScaleFactor(life:TreeLife|undefined,now:number){
@@ -50,6 +64,7 @@ export function treeScaleFactor(life:TreeLife|undefined,now:number){
 export function chopReason(host:ForestryHost,tree:Tree|undefined):string{
   if(!tree)return '请先选一棵经营树。';
   if(tree.role==='landmark')return '巨木是永久保护的地标，不能砍伐。';
+  if(tree.retained)return tree.regeneration?'这株更新树留在林地里继续长。':'这株树是保留木，供林地生长和采集。';
   if(tree.role!=='managed')return '远景林木暂不开放经营。';
   const life=host.forestry.slots[tree.id];
   if(!life)return '这棵树没有有效的个体记录。';
@@ -68,16 +83,13 @@ export function chopReason(host:ForestryHost,tree:Tree|undefined):string{
 export function startChop(host:ForestryHost,tree:Tree|undefined,blockers?:Collider[]):{ok:boolean;message:string}{
   const reason=chopReason(host,tree);if(reason||!tree)return{ok:false,message:reason};
   const state=host.forestry,life=state.slots[tree.id],cost=volumePoints(tree);
+  if(blockers&&!fellingSpaceIsClear(tree,host.player,blockers,travelAccess(host)))
+    return {ok:false,message:'这个倒向靠近障碍或水岸，请换一侧站稳再砍。'};
   const id=`chop-${state.nextAction++}-${life.individualId}`;
   const dx=tree.x-host.player.x,dz=tree.z-host.player.z,length=Math.hypot(dx,dz)||1;
-  if(blockers){
-    const others=blockers.filter(c=>c.id!==tree.id),width=.65*tree.scale;
-    for(let distance=.6;distance<=5.5*tree.scale;distance+=.4)for(const side of [-width,0,width]){
-      const point={x:tree.x+dx/length*distance-dz/length*side,z:tree.z+dz/length*distance+dx/length*side};
-      if(!canStand(point,others,undefined,travelAccess(host))){state.nextAction--;return {ok:false,message:'这个倒向靠近障碍或水岸，请换一侧站稳再砍。'};}
-    }
-  }
-  state.active={id,treeId:tree.id,individualId:life.individualId,year:state.ledger.year,cost,yield:cost,reward:{itemId:FORESTRY.harvestItemId,qualityId:FORESTRY.harvestQualityId,wood:woodBatch({lengthMm:LOG_HARVEST_LENGTH_MM,thicknessMm:Math.round((tree.kind==='pine'?500:560)*tree.scale),straightness:'straight'})},startedAt:host.time,committedAt:null,phase:'chopping'};
+  const diameter = tree.regeneration ? 2 * treeTrunkRadius(tree) * 1000 / CAMP_WOODLAND_DIMENSIONS.worldUnitsPerMetre
+    : (tree.kind==='pine'?500:560)*tree.scale;
+  state.active={id,treeId:tree.id,individualId:life.individualId,year:state.ledger.year,cost,yield:cost,reward:{itemId:FORESTRY.harvestItemId,qualityId:FORESTRY.harvestQualityId,wood:woodBatch({lengthMm:LOG_HARVEST_LENGTH_MM,thicknessMm:Math.round(diameter),straightness:'straight'})},startedAt:host.time,committedAt:null,phase:'chopping'};
   state.ledger.reserved+=cost;life.status='chopping';life.actionId=id;life.fallDirection={x:dx/length,z:dz/length};
   host.route=[];host.player.moving=false;host.player.facing=Math.atan2(dx,dz);
   return{ok:true,message:'握稳斧头，沿着同一处切口挥斧。'};
@@ -95,7 +107,7 @@ export function advanceForestry(host:ForestryHost,trees:ReadonlyMap<string,Tree>
   let message:string|null=null;
   if(a?.phase==='chopping'&&host.time>=a.startedAt+FORESTRY.chopSeconds){
     const tree=trees.get(a.treeId),life=state.slots[a.treeId];
-    const valid=tree?.role==='managed'&&life?.status==='chopping'&&life.individualId===a.individualId&&life.actionId===a.id&&state.ledger.year===a.year&&state.ledger.reserved>=a.cost&&Math.hypot(host.player.x-tree.x,host.player.z-tree.z)<=chopRange(tree);
+    const valid=canFellTree(tree)&&life?.status==='chopping'&&life.individualId===a.individualId&&life.actionId===a.id&&state.ledger.year===a.year&&state.ledger.reserved>=a.cost&&Math.hypot(host.player.x-tree.x,host.player.z-tree.z)<=chopRange(tree);
     if(!valid)return cancelChop(host,'目标或距离已经变化，采伐已取消并释放预留。').message;
     if(!state.completedActions.includes(a.id)){
       // Validate inventory first. No point/tree changes survive a failed award.
@@ -126,8 +138,11 @@ export function forestrySnapshot(host:ForestryHost,trees:ReadonlyMap<string,Tree
   const progress=a?clamp((host.time-(a.phase==='chopping'?a.startedAt:a.committedAt??host.time))/(a.phase==='chopping'?FORESTRY.chopSeconds:FORESTRY.fallSeconds)):0;
   const statusLabel:Record<TreeStatus,string>={standing:'成熟树',chopping:'正在挥斧',falling:'正在倒下',stump:'树桩 · 等待补生',sapling:'幼树 · 生长中'};
   const reason=chopReason(host,t);
+  const cost=canFellTree(t)?volumePoints(t):0;
+  const label=!t||!life?'':t.role==='landmark'?'永久保护地标':
+    life.status==='standing'?(t.retained?'保留木 · 采集林':t.regeneration?'小径木 · 可申请采伐':statusLabel.standing):statusLabel[life.status];
   return{wood:inventoryTypeCount(host.inventory,'wood.log',catalog),points:{year:s.ledger.year,available:availablePoints(s),used:s.ledger.used,reserved:s.ledger.reserved},active:a?{treeId:a.treeId,phase:a.phase,progress,hits:a.phase==='falling'?FORESTRY.hits:Math.min(FORESTRY.hits,Math.floor(progress*FORESTRY.hits+.42)),totalHits:FORESTRY.hits}:null,
-    selectedTree:t&&life?{id:t.id,individualId:life.individualId,status:life.status,statusLabel:t.role==='landmark'?'永久保护地标':statusLabel[life.status],distance:Math.hypot(host.player.x-t.x,host.player.z-t.z),near:Math.hypot(host.player.x-t.x,host.player.z-t.z)<=chopRange(t),canChop:!reason,canApproach:!a&&t.role==='managed'&&life.status==='standing',cost:volumePoints(t),yield:volumePoints(t),reason,progress:a?.treeId===t.id?progress:0}:null};
+    selectedTree:t&&life?{id:t.id,individualId:life.individualId,status:life.status,statusLabel:label,distance:Math.hypot(host.player.x-t.x,host.player.z-t.z),near:Math.hypot(host.player.x-t.x,host.player.z-t.z)<=chopRange(t),canChop:!reason,canApproach:!a&&canFellTree(t)&&life.status==='standing',cost,yield:cost,reason,progress:a?.treeId===t.id?progress:0}:null};
 }
 export function forestryColliders(base:Collider[],trees:ReadonlyMap<string,Tree>,state:ForestryState,now:number):Collider[]{
   return base.map(c=>{

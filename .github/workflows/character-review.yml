@@ -1,0 +1,51 @@
+name: Character Idle Motion
+on:
+  pull_request:
+    paths:
+      - 'src/content/character-*.ts'
+      - 'src/scene/character*.ts'
+      - 'src/scene/j01-player.ts'
+      - 'src/scene/neighbour.ts'
+      - 'src/scene/villagers.ts'
+      - 'tests/character-*.test.ts'
+      - 'tools/verification/character-browser.mjs'
+      - '.github/workflows/character-review.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: character-review-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  characters:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci
+      - name: Check existing characters and motion ownership
+        run: |
+          npm run verify:assets
+          node --experimental-strip-types --test tests/character-liveliness.test.ts tests/character-contact.test.ts tests/character-wardrobe.test.ts tests/neighbour*.test.ts
+      - run: npm run build
+      - name: Install the WebGL browser
+        run: npx playwright install --with-deps chromium
+      - name: Review desktop and mobile idle in the main game
+        run: npm run verify:character-browser
+        env:
+          SOURCE_REVISION: ${{ github.sha }}
+          CHARACTER_EVIDENCE_DIR: /tmp/how-character-evidence
+      - name: Keep actual frames and runtime findings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: character-review-evidence
+          path: /tmp/how-character-evidence/
+          if-no-files-found: warn
+          retention-days: 14

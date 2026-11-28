@@ -272,6 +272,7 @@ export function createExpeditionVegetation(owner?: Resources,options:ExpeditionV
   const resources=owner??new Resources(),ownsResources=!owner;
   let disposed=false;
   const templates=new Map<string,TreeTemplate>(),featureTemplates=new Map<string,ReturnType<typeof compileExpeditionFeature>>();
+  const crownIndices=new Map<THREE.Group,Map<string,{batch:CrownBatch;index:number}>>();
   const allocated=new Set<{dispose():void}>();
   const own=<T extends {dispose():void}>(value:T):T=>{allocated.add(value);return resources.own(value);};
   const bark=createBarkSurface(resources);
@@ -364,6 +365,9 @@ export function createExpeditionVegetation(owner?: Resources,options:ExpeditionV
     group.userData.bounds={min:bounds.min.toArray(),max:bounds.max.toArray()};
     group.userData.triangleEstimate=triangles;
     group.userData.crownBatches=crowns;
+    const crownIndex=new Map<string,{batch:CrownBatch;index:number}>();
+    for(const batch of crowns)for(let index=0;index<batch.ids.length;index++)crownIndex.set(batch.ids[index],{batch,index});
+    crownIndices.set(group,crownIndex);
     const crownVolumes:ExpeditionCrownVolume[]=[];
     for(const batch of crowns)for(let i=0;i<batch.ids.length;i++){
       const instance=new THREE.Matrix4();batch.mesh.getMatrixAt(i,instance);
@@ -423,11 +427,11 @@ export function createExpeditionVegetation(owner?: Resources,options:ExpeditionV
 
   /** Occlusion is a visual weight, with no effect on entity identity, ground collision or resource state. */
   function setCrownOpacity(group:THREE.Group,id:string,opacity:number) {
-    const value=THREE.MathUtils.clamp(opacity,0,1);
-    for(const batch of (group.userData.crownBatches??[]) as CrownBatch[]){
-      const index=batch.ids.indexOf(id);if(index<0)continue;
-      if(batch.opacity.getX(index)!==value){batch.opacity.setX(index,value);batch.opacity.needsUpdate=true;}
-    }
+    const slot=crownIndices.get(group)?.get(id);if(!slot)return;
+    // Compare in the storage precision so a stable decimal weight does not
+    // dirty the same Float32 attribute on every frame.
+    const value=Math.fround(THREE.MathUtils.clamp(opacity,0,1)),{batch,index}=slot;
+    if(batch.opacity.getX(index)!==value){batch.opacity.setX(index,value);batch.opacity.needsUpdate=true;}
   }
 
   function createFeature(spec:ExpeditionVegetationFeature,quality:VegetationQuality='near') {
@@ -467,6 +471,7 @@ export function createExpeditionVegetation(owner?: Resources,options:ExpeditionV
 
   /** Release only per-batch instances/opacity buffers. Cached shared shapes survive a chunk switch. */
   function releaseGroup(group:THREE.Group) {
+    crownIndices.delete(group);
     group.removeFromParent();
     group.traverse(object=>{
       if(object instanceof THREE.Mesh&&object.userData.ownsVegetationGeometry){resources.releaseOwned(object.geometry);allocated.delete(object.geometry);}
@@ -478,7 +483,7 @@ export function createExpeditionVegetation(owner?: Resources,options:ExpeditionV
   }
 
   function dispose(){
-    if(disposed)return;disposed=true;templates.clear();featureTemplates.clear();
+    if(disposed)return;disposed=true;templates.clear();featureTemplates.clear();crownIndices.clear();
     if(ownsResources)resources.dispose();else for(const resource of allocated)resources.releaseOwned(resource);
     allocated.clear();
   }

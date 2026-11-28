@@ -60,23 +60,23 @@
 
 ## 验证入口与证据
 
-本地已经运行根构建、共享契约检查和四个材质生成测试；木作独立包也完成单独安装、构建、打包及独立消费者的类型检查与 ESM 导入。浏览器在 GitHub Actions 的实际 Chromium/SwiftShader 环境运行。不得把本地构建当成浏览器验收。
+本地已经运行根构建、共享契约检查和四个材质生成测试；木作独立包也完成单独安装、构建、打包及独立消费者的类型检查与 ESM 导入。本轮原始浏览器证据来自 GitHub Actions 的 Chromium/SwiftShader。现行本机安装和运行方式见 [日常 CI 与本机专题](../../VERIFICATION.md#日常-ci-与本机专题)。
 
 | 检查 | 入口与判准 |
 | --- | --- |
 | 根构建 | `npm ci`、`npm run build`；原有 Prototype Check 继续独立执行 |
 | 共享契约与生成边界 | `npm run verify:ui`；`node --experimental-strip-types --test tests/timber-surface.test.ts` 检查确定性、异常尺寸、语义优先、绘面预算与 SVG 内容 |
-| 主游戏桌面 | `TIMBER_REVIEW_SCOPE=desktop node tools/verification/timber-ui-browser.mjs`：仓库、翻页、路线、外点不穿透、天气、暂停、显示设置，以及选择后缩窄、拖动物品时 Tab、阅读翻页和返回焦点 |
-| 主游戏触控仿真 | 同一脚本的 `mobile`：390×844、320×720、844×390，实际点击仓库/设置与关闭，检查目标尺寸、窗口及内容边界 |
-| 活跃模块 | 同一脚本的 `modules`：样板真实操作与长文字；木屋四种视口的挪动取消、取回；木作内置单 HTML 离线加载、Shadow DOM、工具状态及响应布局 |
+| 主游戏桌面 | `npm run verify:browser -- timber-desktop`：仓库、翻页、路线、外点不穿透、天气、暂停、显示设置，以及选择后缩窄、拖动物品时 Tab、阅读翻页和返回焦点 |
+| 主游戏触控仿真 | `npm run verify:browser -- timber-mobile`：390×844、320×720、844×390，实际点击仓库/设置与关闭，检查目标尺寸、窗口及内容边界 |
+| 活跃模块 | `npm run verify:browser -- timber-modules`：样板真实操作与长文字；木屋四种视口的挪动取消、取回；木作内置单 HTML 离线加载、Shadow DOM、工具状态及响应布局 |
 | 木屋既有交互 | `tools/verification/cabin-interior-browser.mjs` 保留已有放置、使用、坐卧、镜头等验证，并检查新横屏控制区 |
-| 原版对照 | `tools/verification/timber-ui-baseline.mjs` 从固定 `14992fb` 临时 worktree 使用同一 fixture、依赖锁文件与桌面尺寸，记录 HUD、仓库和设置；对照截图不作为新版本交互通过的替代 |
+| 原版对照 | `npm run verify:browser -- timber-baseline` 从固定 `14992fb` 临时 worktree 使用同一 fixture、依赖锁文件与桌面尺寸，记录 HUD、仓库和设置；对照截图不作为新版本交互通过的替代 |
 
-完整工作流为 [Timber UI Review](../../.github/workflows/timber-ui.yml)，按 desktop、mobile、modules、baseline 四个任务并行。每份 `report.json` 记录源码版本、构建入口哈希、浏览器版本、视口、逐项操作、焦点、矩形和错误；失败先保存截图与 DOM，再恢复界面。旧版对照失败会单独记为 unavailable，不伪装成新版本失败或通过。
+GitHub 的 [Timber UI Review](../../.github/workflows/timber-ui.yml) 可手动选择 desktop、mobile、modules 或 baseline。选择 all 时四项并行。每份 `report.json` 记录源码版本、构建入口哈希、浏览器版本、视口、逐项操作、焦点、矩形和错误；失败先保存截图与 DOM，再恢复界面。旧版对照失败会单独记为 unavailable，不伪装成新版本失败或通过。
 
 主游戏证据使用真实 App/runtime、正常内容与事务，只隔离存档并固定 seed `104729`、时间及检视用库存。仓库/路线/故事通过正常界面进入；阅读途中由实际“走近”动作生成路径后，沿项目既有 `__HOW_ADVANCE_SIMULATION__` 检视入口分段推进同一个固定步长所有者，避免软件渲染每帧数秒与 0.1 秒 dt 上限使行走等待失真。报告单独记录该推进，未直接改写人物位置、选择或阅读状态，不能由此推断实体设备帧率或操作耗时。
 
-主游戏与旧版对照使用 Chromium CDP 合成视口截图，避开 Playwright 截图准备阶段的 RAF 稳定等待。Timber 工作流显式设置现有 `PLAYWRIGHT_LEGACY_SCREENSHOT=1` 开关，采用等待重绘的截图路径，并在两份报告记录该模式；[Chromium 对应特性定义](https://chromium.googlesource.com/chromium/src/+/refs/heads/main/content/common/features.cc)说明了两条路径的差异。分辨率、场景和布局保持原样，截图超时不放宽。
+主游戏与旧版对照使用 Chromium CDP 合成视口截图，避开 Playwright 截图准备阶段的 RAF 稳定等待。需要对照等待重绘的截图路径时，可以设置 `PLAYWRIGHT_LEGACY_SCREENSHOT=1`，报告会记录所用模式；[Chromium 对应特性定义](https://chromium.googlesource.com/chromium/src/+/refs/heads/main/content/common/features.cc)说明了两条路径的差异。分辨率、场景和布局保持原样，截图超时不放宽。
 
 针对软件渲染环境中反复出现的截图超时，主游戏在 `DEV + inspect` 条件下提供受控取图接口 `__HOW_CAPTURE_HOLD__`。取图瞬间通过既有唯一主循环暂挂渲染，读取浏览器已经呈现的真实画面；`finally` 按当前暂停所有者恢复循环。它不发布游戏暂停状态，捕获期间保留实际世界状态、输入与固定步长余量。报告须确认持有期间帧数和世界状态不变、焦点与窗口矩形不变，恢复后运行中的循环继续推进，原本暂停的循环继续暂停。正常操作及交互断言在释放后执行；这些截图不能用于判断实体设备帧率或真实操作耗时。
 

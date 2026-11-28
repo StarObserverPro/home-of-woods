@@ -26,9 +26,22 @@ export function createCreek(r:Resources,surface:THREE.Mesh,extensions:THREE.Buff
     const mesh=new THREE.Mesh(r.own(extension.clone().rotateX(Math.PI/2)),material);
     mesh.rotation.x=-Math.PI/2;mesh.position.copy(surface.position);mesh.name=i===0?'upstream-continuation':'downstream-continuation';group.add(mesh);extensionMeshes.push(mesh);
   }
-  const original=reflector.onBeforeRender;let frame=0,passes=0,enabled=true,reduced=false,disposed=false,mobile=false,visualTime=0,invalidated=true,lastDay=1;
-  // Cache the mirrored scene. Do not render shadows a second time for water.
-  reflector.onBeforeRender=function(renderer,scene,camera,geometry,mat,group){if(disposed)return;frame++;if(!enabled||(!invalidated&&(reduced||frame%(mobile?4:3)!==0)))return;invalidated=false;const auto=renderer.shadowMap.autoUpdate;renderer.shadowMap.autoUpdate=false;try{for(const mesh of extensionMeshes)mesh.visible=false;original.call(reflector,renderer,scene,camera,geometry,mat,group);passes++;}finally{for(const mesh of extensionMeshes)mesh.visible=true;renderer.shadowMap.autoUpdate=auto;}};
+  const original=reflector.onBeforeRender;let frame=0,passes=0,enabled=true,reduced=false,disposed=false,mobile=false,visualTime=0,invalidated=true,lastDay=1,reflectionPending=true;
+  // Opaque sorting can draw a continuation before the central reflector. Refresh
+  // their shared texture/matrix at the first visible water draw, once per update.
+  // Keep the mirrored scene cached and do not render shadows a second time.
+  const beforeWater:THREE.Object3D['onBeforeRender']=function(renderer,scene,camera,geometry,mat,group){
+    if(disposed||!reflectionPending)return;reflectionPending=false;frame++;
+    if(!enabled||(!invalidated&&(reduced||frame%(mobile?4:3)!==0)))return;
+    invalidated=false;const auto=renderer.shadowMap.autoUpdate;renderer.shadowMap.autoUpdate=false;
+    try{
+      for(const mesh of extensionMeshes)mesh.visible=false;
+      original.call(reflector,renderer,scene,camera,geometry,mat,group);
+      material.uniformsNeedUpdate=true;passes++;
+    }finally{for(const mesh of extensionMeshes)mesh.visible=true;renderer.shadowMap.autoUpdate=auto;}
+  };
+  reflector.onBeforeRender=beforeWater;
+  for(const mesh of extensionMeshes)mesh.onBeforeRender=beforeWater;
   const rockGeo=r.geometry('r5-stream-rock',()=>new THREE.IcosahedronGeometry(1,0)),rockMat=r.material('#647b79',.86);
   const rocks=new THREE.InstancedMesh(rockGeo,rockMat,WATER_BUDGET.rapidRocks),dummy=new THREE.Object3D();
   const centers=[{z:36,offset:-1.1},{z:54,offset:.7},{z:77,offset:-.8}];
@@ -37,7 +50,7 @@ export function createCreek(r:Resources,surface:THREE.Mesh,extensions:THREE.Buff
   const foam=new THREE.InstancedMesh(r.geometry('r5-rapid-foam',()=>new THREE.PlaneGeometry(1,1)),foamMat,36);group.add(foam);
   const spray=new THREE.InstancedMesh(r.geometry('r5-water-drops',()=>new THREE.IcosahedronGeometry(1,0)),r.material('#d3eee8',.28),48);group.add(spray);
   return {group,update(time:number,day:number,reduce:boolean,reflect:boolean,isMobile:boolean){
-    if(disposed)return;if(!reduce)visualTime=time;reduced=reduce;
+    if(disposed)return;reflectionPending=true;if(!reduce)visualTime=time;reduced=reduce;
     if(enabled!==reflect||Math.abs(lastDay-day)>.04){invalidated=true;lastDay=day;}enabled=reflect;
     if(mobile!==isMobile){mobile=isMobile;reflector.getRenderTarget().setSize(mobile?256:512,mobile?256:512);invalidated=true;}
     material.uniforms.time.value=visualTime;material.uniforms.day.value=day;material.uniforms.hasReflection.value=enabled?1:0;foamMat.color.setRGB(.38+.48*day,.53+.4*day,.55+.34*day);

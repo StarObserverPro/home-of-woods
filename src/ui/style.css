@@ -79,7 +79,7 @@ button:not(:disabled):hover { color: #fff3bd; }
 }
 .topbar > * { pointer-events: auto; }
 .brand { display: flex; gap: 12px; align-items: flex-start; }
-.brand > svg { margin-top: 5px; flex-shrink: 0; }
+.brand > .game-icon { margin-top: 5px; flex-shrink: 0; }
 .brand-name { font-size: 12px; letter-spacing: .22em; }
 .journey-summary h1 { font-size: 27px; letter-spacing: .12em; font-weight: 500; margin: 5px 0 8px; }
 .journey-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0 15px; font-size: 11px; margin: 0; line-height: 1.8; }
@@ -182,7 +182,7 @@ button:not(:disabled):hover { color: #fff3bd; }
 .reduced input { width: 20px; height: 20px; accent-color: #e1eabb; }
 .pause-dialog { color: #fcfaed; width: 340px; max-width: calc(100vw - 40px); padding: 30px 30px 20px; border: 0; border-radius: 20px; text-align: center; text-shadow: var(--hud-shadow); background: #102b1f66; backdrop-filter: blur(5px); }
 .pause-dialog::backdrop { background: #0d211b55; backdrop-filter: blur(2px); }
-.pause-dialog > svg { display: block; margin: 0 auto 16px; }
+.pause-dialog > .game-icon { display: block; margin: 0 auto 16px; }
 .pause-dialog h2 { font-size: 25px; letter-spacing: .1em; font-weight: 500; margin: 16px 0 12px; }
 .pause-dialog p { font-size: 12px; line-height: 1.8; margin: 0 0 22px; }
 .primary-button { min-height: 48px; padding: 10px 22px; border: 0; border-radius: 10px; background: #d6e9c41a; font-size: 13px; }
@@ -208,7 +208,7 @@ button:not(:disabled):hover { color: #fff3bd; }
 @media (max-width: 700px) {
   .topbar { top: max(18px, env(safe-area-inset-top)); left: max(18px, env(safe-area-inset-left)); right: max(14px, env(safe-area-inset-right)); }
   .brand { gap: 9px; max-width: calc(100% - 58px); }
-  .brand > svg { width: 24px; height: 24px; margin-top: 3px; }
+  .brand > .game-icon { width: 24px; height: 24px; margin-top: 3px; }
   .brand-name { font-size: 11px; }
   .journey-summary h1 { font-size: 22px; margin: 5px 0 7px; }
   .journey-meta { font-size: 10px; gap: 0 11px; }
@@ -240,7 +240,7 @@ button:not(:disabled):hover { color: #fff3bd; }
 @media (max-height: 500px) {
   .topbar { top: 12px; left: max(20px, env(safe-area-inset-left)); right: max(16px, env(safe-area-inset-right)); }
   .brand { gap: 9px; }
-  .brand > svg { width: 24px; height: 24px; }
+  .brand > .game-icon { width: 24px; height: 24px; }
   .brand-name { font-size: 10px; }
   .journey-summary h1 { font-size: 19px; margin: 3px 0 5px; }
   .journey-meta { font-size: 9px; }

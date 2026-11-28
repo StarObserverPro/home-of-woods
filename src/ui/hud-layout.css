@@ -4,7 +4,7 @@
 .topbar .brand { margin-right:auto; min-width:0; max-width:none; }
 .journey-summary h1 { margin:0 0 3px; font-size:21px; letter-spacing:.04em; }
 .journey-meta { font-size:12px; }
-.brand > svg { width:25px; height:25px; margin-top:2px; }
+.brand > .game-icon { width:25px; height:25px; margin-top:2px; }
 .clock-menu { position:relative; }
 .clock-menu > summary { min-width:64px; min-height:44px; display:flex; align-items:center; justify-content:center; gap:5px; cursor:pointer; font-size:13px; list-style:none; }
 .clock-menu > summary::-webkit-details-marker { display:none; }
@@ -18,6 +18,8 @@
 .bottom-toolbar button { width:56px; min-height:48px; }
 .camera-tools { position:absolute; right:0; bottom:64px; display:flex; padding:8px; border: 0; border-radius:12px; background:#18392ee8; }
 .camera-tools button { width:44px; height:44px; }
+.camera-tools.camera-tools--overlook { display:grid; grid-template-columns:repeat(4,44px); gap:4px; width:max-content; }
+.camera-tools--overlook button:last-child { grid-column:3 / 5; grid-row:auto; width:auto; height:44px; }
 .target-card, .panel { background:linear-gradient(120deg,#18382edb,#18382eb8); border: 0; border-radius:14px; backdrop-filter:blur(4px); }
 .target-card { width:340px; padding:14px 16px; max-height:55dvh; bottom:94px; }
 .target-card:has(.upgrade-controls), .target-card:has(.workshop-controls), .target-card:has(.upgrade-module-list) { max-height:55dvh; }
@@ -58,7 +60,7 @@ summary:focus-visible, select:focus-visible { outline:2px solid #fff8cf; outline
 @media(max-width:700px) {
   .topbar { display:flex; top:max(12px,env(safe-area-inset-top)); left:14px; right:10px; gap:4px; }
   .brand { gap:7px; }
-  .brand > svg { display:none; }
+  .brand > .game-icon { display:none; }
   .journey-summary h1 { font-size:18px; }
   .journey-meta { font-size:10px; }
   .topbar .pause { width:44px; }

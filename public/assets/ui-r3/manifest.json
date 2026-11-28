@@ -1,0 +1,503 @@
+{
+  "batch": "HOW-UI-ART-R3",
+  "source": "Built-in ImageGen sheets, with project R1 icon artwork as style reference.",
+  "rights": "AI-generated artwork. Not CC0.",
+  "files": [
+    {
+      "id": "weather-sun",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/weather-sun-64.png",
+      "bytes": 5226,
+      "sha256": "56ed3ac6c90a1603bc1c498f7490e4619374bf21ebf35b9747dbb9bfaa0fd390",
+      "sourceBatch": "controls"
+    },
+    {
+      "id": "weather-sun",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/weather-sun-128.png",
+      "bytes": 14454,
+      "sha256": "bb25e31b2063d28c10dbd4d8662205b75d31ca06384c020d69ad909d8ffc0652",
+      "sourceBatch": "controls"
+    },
+    {
+      "id": "weather-cloud",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/weather-cloud-64.png",
+      "bytes": 3187,
+      "sha256": "69715a0ff6ab47e24e2b3d086af701618f8617de3922c088ae4b1c9aa30f9b02",
+      "sourceBatch": "controls"
+    },
+    {
+      "id": "weather-cloud",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/weather-cloud-128.png",
+      "bytes": 9222,
+      "sha256": "f6d7a8785c9ea1f7849ac00cb63e33394101771f614d9f0432b99a60833222e2",
+      "sourceBatch": "controls"
+    },
+    {
+      "id": "weather-rain",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/weather-rain-64.png",
+      "bytes": 5249,
+      "sha256": "c1fd9831ceabcc1236189bc65030484c9a74418cfa94e3e628b9699bab1164d8",
+      "sourceBatch": "controls"
+    },
+    {
+      "id": "weather-rain",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/weather-rain-128.png",
+      "bytes": 14210,
+      "sha256": "17db1dcb0a068c652d34fd23fb0e78a69956a86b597aa7fc300cce9fc09abd51",
+      "sourceBatch": "controls"
+    },
+    {
+      "id": "weather-snow",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/weather-snow-64.png",
+      "bytes": 5862,
+      "sha256": "8d3614cfc15cb12951df1dfa13cc534139677e08816302e971faae46b0fead08",
+      "sourceBatch": "controls"
+    },
+    {
+      "id": "weather-snow",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/weather-snow-128.png",
+      "bytes": 16179,
+      "sha256": "ff10b72bd0681876ba7e5572689f8753af7232b09ada2ec0304a2d08a2119c71",
+      "sourceBatch": "controls"
+    },
+    {
+      "id": "approach",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/approach-64.png",
+      "bytes": 4547,
+      "sha256": "8332d33817ed63ca869240d75d211d3ed85e3bb09c11ab73b81f525eea2b951d",
+      "sourceBatch": "controls"
+    },
+    {
+      "id": "approach",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/approach-128.png",
+      "bytes": 12780,
+      "sha256": "03cb3daaad6c5d03277bc036ea2f5878138828467261f6401c9ee34f8284e262",
+      "sourceBatch": "controls"
+    },
+    {
+      "id": "camera-reset",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/camera-reset-64.png",
+      "bytes": 5415,
+      "sha256": "267bca0313d1e0c9933860ce891e9343bdb860eddde64b6b95b0e9b890e18790",
+      "sourceBatch": "controls"
+    },
+    {
+      "id": "camera-reset",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/camera-reset-128.png",
+      "bytes": 14883,
+      "sha256": "0da8a369031caf9bf7d9e1adf9d79602297e9403daa108af799e677c603a71e8",
+      "sourceBatch": "controls"
+    },
+    {
+      "id": "wood-mushroom",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/wood-mushroom-64.png",
+      "bytes": 6164,
+      "sha256": "6e9f81570f072bcf33336a74f61916a64331559baa0810488a6e63d0405f69bf",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "wood-mushroom",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/wood-mushroom-128.png",
+      "bytes": 18459,
+      "sha256": "a5eb8d63b34b450738a21504eec9ac6daf03a2a1cefd0e71031a45df114468f1",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "shelf-mushroom",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/shelf-mushroom-64.png",
+      "bytes": 5672,
+      "sha256": "b04a409c5ab6af0a89849d749ac0f493a7e8fbb497d7003f5205ea0fda8a3c70",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "shelf-mushroom",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/shelf-mushroom-128.png",
+      "bytes": 18065,
+      "sha256": "4ebb907660ebbd2bd1b11e8cf35328c29c10593bb93d3b5a01b5712cae80543d",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "wood-ear",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/wood-ear-64.png",
+      "bytes": 5358,
+      "sha256": "03a5d0b90e021d3f723daea2f05d4a03556c4e82d712f3d84f6a7683a7962721",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "wood-ear",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/wood-ear-128.png",
+      "bytes": 16476,
+      "sha256": "78ccc30f98eb4c526b587aae336ccc0abed75d3ad7a728c392b2d76a7f716f69",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "serviceberry",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/serviceberry-64.png",
+      "bytes": 6388,
+      "sha256": "4470308e0bb70de9d1176edbda66881c65e571960ac017a94e14781b7ecccb8b",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "serviceberry",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/serviceberry-128.png",
+      "bytes": 19587,
+      "sha256": "ebed6e1ebe79f45d0468d5574882caa4d17eeead330b87deeddb7704ed3b8573",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "forest-berry",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/forest-berry-64.png",
+      "bytes": 6453,
+      "sha256": "5d12e6899645f3829dcd3af2bc45660eda2c852439d5128d2b67be9bb69c1518",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "forest-berry",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/forest-berry-128.png",
+      "bytes": 19689,
+      "sha256": "b466aeccddd0cc7e16a527e932f83ecf99477f781c53ffb355d1d684e174e489",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "blue-forest-berry",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/blue-forest-berry-64.png",
+      "bytes": 6674,
+      "sha256": "9ab4f795147f6d47b6c35ff9257719b07387a0fd153ee5b9bc51ae27fa6e6e48",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "blue-forest-berry",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/blue-forest-berry-128.png",
+      "bytes": 20910,
+      "sha256": "c512045e2e595d9844e2ebe39d9086c1cefa4b00307b7c930a5e6af99a3ad259",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "red-forest-berry",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/red-forest-berry-64.png",
+      "bytes": 6177,
+      "sha256": "718d39c5052eedf8981031a92e1d3591d3429ea2447b243c8bdebc69cf324357",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "red-forest-berry",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/red-forest-berry-128.png",
+      "bytes": 18629,
+      "sha256": "a0af04fcdcfa24c0a6102344bd50177b47e0b3b858384c3b9c3c85b25b52c479",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "forest-nut",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/forest-nut-64.png",
+      "bytes": 6052,
+      "sha256": "11aa54f8ba2451a8ace877bce9b74fb1762d74d54a88ee943e8f8ba81939ca8b",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "forest-nut",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/forest-nut-128.png",
+      "bytes": 18505,
+      "sha256": "c4080b146edd2361f8709c906a00c05d32802694de9deafee985f082313ed773",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "tree-resin",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/tree-resin-64.png",
+      "bytes": 5889,
+      "sha256": "33eff832df42c5f6d96d6e8f0fe4e6073dcdd80e85b4f57ef626046d07f7b412",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "tree-resin",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/tree-resin-128.png",
+      "bytes": 19033,
+      "sha256": "c4ab3e33854610f5fb7a9c286b04773d99ef01367789f12e0eac6689bcc602df",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "forest-seed",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/forest-seed-64.png",
+      "bytes": 5552,
+      "sha256": "a68d99a29dbd8a40c8b9f908086f8167f81e033988f7121594db8891d58dd1fa",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "forest-seed",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/forest-seed-128.png",
+      "bytes": 16899,
+      "sha256": "c969d6612715ea845796454d6b2b8e7cf6ea34ef3af0913dfb53d09e8e66f0bf",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "dried-forest-fruit",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/dried-forest-fruit-64.png",
+      "bytes": 5684,
+      "sha256": "9d31a17f64252389410e8a17172e6c2e5e824e33de3cf2a8e95ac86d980b64c3",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "dried-forest-fruit",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/dried-forest-fruit-128.png",
+      "bytes": 18871,
+      "sha256": "0239fd4ffcb939ebe576550ba5d4fe49515d8888419b4b7772d7df320abb2d6b",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "nut-rations",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/nut-rations-64.png",
+      "bytes": 6539,
+      "sha256": "a1cef6b69174c41ec1acbfdd2ea7af2b2f658138a775eebd29c4e5e4123bf7e0",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "nut-rations",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/nut-rations-128.png",
+      "bytes": 21456,
+      "sha256": "e7f205b1852ae863ad4f9ba72694eb16686a4aa5a484d4e77af3d86a5c72abed",
+      "sourceBatch": "fruit"
+    },
+    {
+      "id": "sap-can",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/sap-can-64.png",
+      "bytes": 6152,
+      "sha256": "d3e006e1e420bf2c52c9ffd16c3cf694508b0c461e6468c7c4618e1af3dc7f56",
+      "sourceBatch": "supplies"
+    },
+    {
+      "id": "sap-can",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/sap-can-128.png",
+      "bytes": 19270,
+      "sha256": "d4e9236f31ce16f55bdfeaf35bb7e68fd1b5733fccaa89fc3416ec332b58cc42",
+      "sourceBatch": "supplies"
+    },
+    {
+      "id": "sap-filled-can",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/sap-filled-can-64.png",
+      "bytes": 6552,
+      "sha256": "55ce006b0f72bb86c2f698436e70ad8ada5403f4212146f8602fe5355bb82222",
+      "sourceBatch": "supplies"
+    },
+    {
+      "id": "sap-filled-can",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/sap-filled-can-128.png",
+      "bytes": 20877,
+      "sha256": "c9c88b8b9dd5715ae57d9131899767001bdccb5590bc70e95adea401b337076a",
+      "sourceBatch": "supplies"
+    },
+    {
+      "id": "forest-syrup",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/forest-syrup-64.png",
+      "bytes": 4824,
+      "sha256": "85a5d12499df70e732667ed4c5a08c2512fb8dedd51396e258dfa44a3a077b17",
+      "sourceBatch": "supplies"
+    },
+    {
+      "id": "forest-syrup",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/forest-syrup-128.png",
+      "bytes": 15563,
+      "sha256": "6455f4996bcce9eb95666231f16c89987a5aebae1d73aee6a51c6f8daf708eaf",
+      "sourceBatch": "supplies"
+    },
+    {
+      "id": "conifer-mushroom",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/conifer-mushroom-64.png",
+      "bytes": 5708,
+      "sha256": "7ae2bf9df7a7323beb9f5a341db777f70d472cb6d5df3982c17963a362ec5a1c",
+      "sourceBatch": "supplies"
+    },
+    {
+      "id": "conifer-mushroom",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/conifer-mushroom-128.png",
+      "bytes": 17861,
+      "sha256": "7510b2782b46bcad446e0157d53ff5d28136fd0c688e9037f03c28fd4112ed07",
+      "sourceBatch": "supplies"
+    },
+    {
+      "id": "hardwood-mushroom",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/hardwood-mushroom-64.png",
+      "bytes": 4878,
+      "sha256": "fb359361ee6225a2d5101160f70d520e1da05de63f46ea30cf25954cb4406036",
+      "sourceBatch": "supplies"
+    },
+    {
+      "id": "hardwood-mushroom",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/hardwood-mushroom-128.png",
+      "bytes": 15076,
+      "sha256": "d5a40dca585867c2a06c8a4c4b21fdc966648f551e012eaf7c01c2669a25e267",
+      "sourceBatch": "supplies"
+    },
+    {
+      "id": "festival-spark",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/festival-spark-64.png",
+      "bytes": 4622,
+      "sha256": "6c3639c7ff6db32960020f4c638caea163d763c5ca941a5a7d7700be4ae8fc80",
+      "sourceBatch": "supplies"
+    },
+    {
+      "id": "festival-spark",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/festival-spark-128.png",
+      "bytes": 14420,
+      "sha256": "48fc3f6a013f7e1332e149d224cf6d7bda4bf332800e7fa29d4a8b0c842f8011",
+      "sourceBatch": "supplies"
+    },
+    {
+      "id": "forest-leaf",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/forest-leaf-64.png",
+      "bytes": 5298,
+      "sha256": "da5c260f0dac9b835021a50965e975f6e6ffeb78803ed8d09062226d9b161121",
+      "sourceBatch": "extra"
+    },
+    {
+      "id": "forest-leaf",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/forest-leaf-128.png",
+      "bytes": 15525,
+      "sha256": "3b147d6695f0ee4dc66d793b7e1fe14b218f8bd07ed227c4f32b949678d127f3",
+      "sourceBatch": "extra"
+    },
+    {
+      "id": "camera-left",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/camera-left-64.png",
+      "bytes": 4559,
+      "sha256": "cdabcad6de92346dbcfb01cef60569ab524e7e997d94298c41330bb2ca542d8f",
+      "sourceBatch": "extra"
+    },
+    {
+      "id": "camera-left",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/camera-left-128.png",
+      "bytes": 12700,
+      "sha256": "6929e27198b5abf957493f56d57785e13b1fba7a477f7b334248c47f24516da7",
+      "sourceBatch": "extra"
+    },
+    {
+      "id": "camera-right",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/camera-right-64.png",
+      "bytes": 4397,
+      "sha256": "21a9ec0808907ffd4173a32806dc459f75a80371c2536943d6b0ad8403667d1f",
+      "sourceBatch": "extra"
+    },
+    {
+      "id": "camera-right",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/camera-right-128.png",
+      "bytes": 12302,
+      "sha256": "5e60c50bd9574bfd59c9d0f21fd702a9785d9c4355856cd4c425f01a87edac25",
+      "sourceBatch": "extra"
+    },
+    {
+      "id": "camera-raise",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/camera-raise-64.png",
+      "bytes": 3362,
+      "sha256": "6fa484f82d723124d6d0cc57600d1e3161cdfddfd024495e8997285cce0e0694",
+      "sourceBatch": "extra"
+    },
+    {
+      "id": "camera-raise",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/camera-raise-128.png",
+      "bytes": 9537,
+      "sha256": "8e73c39ebdc82af4fefffc432dea9a89db2232d4843e292242e3792a9a515c0a",
+      "sourceBatch": "extra"
+    },
+    {
+      "id": "camera-lower",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/camera-lower-64.png",
+      "bytes": 3346,
+      "sha256": "525a829ee03b778ce93dd659cd5698c074db90c7df74027a0e8693130cf78c25",
+      "sourceBatch": "extra"
+    },
+    {
+      "id": "camera-lower",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/camera-lower-128.png",
+      "bytes": 9619,
+      "sha256": "d7f667aa8d71145e8ab8e90a4f5b64433ac7b0d1c20f82198a9871df6c6dccbf",
+      "sourceBatch": "extra"
+    },
+    {
+      "id": "camera-zoom-in",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/camera-zoom-in-64.png",
+      "bytes": 5245,
+      "sha256": "a5983426443d06cd7ff404f677cfc957d6dffc5a32304329042f0f4846a6bbb5",
+      "sourceBatch": "extra"
+    },
+    {
+      "id": "camera-zoom-in",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/camera-zoom-in-128.png",
+      "bytes": 14984,
+      "sha256": "27c7249ea0c8738f6c855f4fb415a7a7b4a032c68934dfe40e11ceafb1582aee",
+      "sourceBatch": "extra"
+    },
+    {
+      "id": "camera-zoom-out",
+      "size": 64,
+      "file": "public/assets/ui-r3/icons/camera-zoom-out-64.png",
+      "bytes": 5031,
+      "sha256": "30d8a36fc793f8f0894c563c199ee4b09be9b94f3d0a1aaa87c45c4cae5aa4d0",
+      "sourceBatch": "extra"
+    },
+    {
+      "id": "camera-zoom-out",
+      "size": 128,
+      "file": "public/assets/ui-r3/icons/camera-zoom-out-128.png",
+      "bytes": 14559,
+      "sha256": "ea2b798fec4b205e3d0f3c39dc6f0eb192fa78f3255cbcb79813428466107917",
+      "sourceBatch": "extra"
+    }
+  ]
+}

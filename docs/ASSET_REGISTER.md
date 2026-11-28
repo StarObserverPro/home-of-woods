@@ -1,5 +1,47 @@
 # 资产登记与批准记录
 
+## 曲面毡布帐篷（2026-11-24）
+
+帐篷本体、重复几何纹带、纤维场与三件陈设均为本轮项目原创程序资产，源文件为 `src/scene/tent/{geometry,material,exterior,props}.ts`，参数位于 `src/content/tent.ts`。运行时替换主营地旧帐篷表现；原 `tent.glb` 保留为历史资产，未修改其字节及来源登记。未增加第三方模型、图案扫描或外部纹理下载。Three.js 几何工具和物理材质沿用原 MIT 软件通知。
+
+纹带采用赭红、靛蓝、暖白、赭黄的阶梯菱形二方连续构成；这是原创纺织品设计，不对应特定部族的传统图案。纹带两种配色各一张 512² RGBA8；纤维高度与粗糙度各一张 256² RGBA8，共 2.5 MiB 原始像素、约 3.33 MiB 含完整 mip 链。两张配色图切换不复制几何。单套外观 8,075 三角形、21 个 Mesh（包含透明门命中面）；两片双层曲布共更新 1,140 个顶点。下沿固定角之间局部内收 0.11、上提 0.08，包边与布面共用曲线；主面下垂参数为局部 0.22，仍保留原支点和入口尺寸。正式渲染还会有已有阴影与室内围护投影的绘制，不能把 Mesh 数当成整帧 draw call。
+
+室外 Resources 和惰性创建的帐内 Resources 分别拥有各自的一套资产，反复进出复用已创建的室内。睡袋、鼓、钵共用同一尺寸与摆放配置，不创建库存物品。三处 `tent:entry-*` 挂点是稳定的局部坐标，可供后续装饰安装。具体检查及限制见 [帐篷 scope](scopes/tent-felt-subspace.md)。
+
+## 林地产物与 HUD 图标 R3
+
+使用内置 ImageGen，以项目已登记的 R1 图标为风格参考生成四张透明母版。由 [裁切工具](../tools/prepare-ui-art-r3.py) 按分格截取、清理浅色半透明边缘、留边并输出 31 个语义图标的 64／128 px PNG。逐文件来源、尺寸、字节和 SHA-256 见 [R3 清单](../public/assets/ui-r3/manifest.json)。R3 为本项目生成式美术，沿用 R1 的工具与显示组件。地图路线、摇杆和原有 Timber UI 的适应性材质继续由其各自逻辑绘制。[范围与制作记录](scopes/ui-art-r3.md)
+
+## 营地近景资产
+
+- 行商车厢使用 [Codels Covered Wagon v1](https://codels.download/models/wagon) 的 CC0 GLB，运行件经 [加工脚本](../tools/prepare-merchant-wagon.mjs) 去除闲置 UV，按原车身和四个独立轮轴合批、焊接重复顶点并调整哑光配色。四轮维持原车轴和接地位置。驴和牵具为项目原创几何，随现有行商事件移动。
+- 晾菌架下层摆放 [Codels 瓶子](https://codels.download/models/potion)、[Quaternius 陶罐](https://poly.pizza/m/jhvntkgHU3) 和 [Codels 茶壶](https://codels.download/models/tea-pot) 三件 CC0 陈设。由 [加工脚本](../tools/prepare-camp-vessels.mjs) 去掉发光液、标签、圆点与贴图，合并表面并按架面尺寸和范围校验，共 2,128 三角形、63,404 字节。三件货品只作陈设，随建成晾菌架出现。
+- 桥、路牌、储木架与晾菌架的网格为项目原创。桥面同一高程，路牌共用板、木钉和字面，储木架与晾菌架沿用原有锚点、交互与木材湿度规则。
+
+源文件及运行件 SHA-256、许可文件和修改说明统一写入 [运行时资产清单](../public/assets/manifest.json)。模型随场景 Models 加载，重复出现复用模板及共享 GPU 资源。行商继续采用原角色模型，后续风格参照见 [本批记录](scopes/ui-art-r3.md#行商角色)。
+
+## Rainier 地域与远林图集（2026-11-23）
+
+本批采用项目既有程序几何及本轮原创代码。生态资料仅作为汇总事实与形态参考，没有导入第三方树模型、照片、DEM 或逐树样方坐标；来源与数据访问边界见 [生态原型](RAINIER_ECOLOGY.md)。项目原创资产不改标第三方 CC0，Three.js 沿用已登记的 MIT 软件通知。
+
+| 资产 / 状态 | 来源、加工与输出 | 接入与所有权 |
+| --- | --- | --- |
+| Rainier 树型预设 / 本轮实现 | NPS Rainier 群落与树种说明、Wind River 论文汇总统计；`src/content/rainier-ecology.ts` 中原创配色、比例、权重与确定性密度场 | 外围沿用五个 mesh kind，近景沿用既有经营树；不新增资源、碰撞或持久身份 |
+| `rainier-conifer-cluster` / 已交付当前分支，CI 导出及独立 WebGL 校验通过，主营地组合待完成 | `tools/impostors/source.ts` 组合项目自有 `distantTreeGeometry`，源簇 74 三角形；25 视角，默认每帧 128²，输出 1024×512 albedo/alpha 与资产空间 normal 两张 RGBA8 图集。无 mipmap 时合计 4 MiB 是纹理存储估算，非 PNG 下载大小 | 正式文件位于 `public/assets/forest-impostors/`，来自 `rainier-generated-impostor-assets` artifact；JSON 记录尺寸、包围盒、视图、源三角形及源码/图集 hash。`src/scene/impostors/runtime.ts` 加载；默认 `mass`，`farForest=impostor` 比较；批次与图集分别释放 |
+| 空气透视 LUT / 本轮运行时生成 | `src/scene/atmosphere-rules.ts` 根据当前量化天气生成 128×2 RGBA16F 消光表，2 KiB；不下载外部天空纹理或预计算数据 | `src/scene/atmosphere-lite.ts` 独占 LUT，接入共享天光和太阳，销毁控制器时释放；不加入资产下载包 |
+
+2026-11-23（America/New_York）核对 [CI run 45303052228](https://github.com/StarObserverPro/home-of-woods/actions/runs/45303052228)，提交 `f3c200ef81e325aeb2a8027e2fbc5703dbf02e25`：`baker/report.json` 为 `passed`，重复烘焙一致，25 帧边缘 alpha 为 0，PNG 保留透明像素 RGB 和部分覆盖的全部 RGBA 字节；albedo/normal 各 35,557 个扩边 texel 在运行时重新加载后仍存在。21 次视角/模式渲染无 shader 错误，释放后回到 0 geometries / 1 texture 的预热基线，保留的一张 `DFG_LUT` 归 renderer 共享 Standard 缓存所有。此为 Chromium / SwiftShader 的实际 WebGL 校验，不是硬件帧率测量。
+
+正式文件从该轮 artifact `14880945916` 原样纳入当前分支：[albedo PNG](../public/assets/forest-impostors/rainier-conifer-cluster-albedo.png) **30,865 B**、[normal PNG](../public/assets/forest-impostors/rainier-conifer-cluster-normal.png) **69,161 B**、[manifest](../public/assets/forest-impostors/rainier-conifer-cluster.json) **8,020 B**。manifest 的 9 份源文件 SHA-256 与两张 PNG 的 SHA-256 已核对；这些是正式游戏资产，独立于临时验收截图。当前分支交付不代表已合并或部署。
+
+烘焙命令、输入限制、透明边缘与线性数据约定见 [工具说明](../tools/impostors/README.md)。本轮主营地步骤尚未完成，当前登记不表示主游戏画面、全气候、手机性能或发布已验收；组合验证及实际限制统一见 [Rainier 渲染实现](RAINIER_RENDERING.md#验证状态)。
+
+## NP120 林工与村民本地外观（2026-11-22）
+
+本地林工的动作包 `sources/np120/j01-locomotion.glb` 收录适配 J01 的站立、步行与跑步，仅包含关节轨道及鞋底接触参数。走、跑分别改编自 Carnegie Mellon University Graphics Lab Motion Capture Database 的 02_02 和 09_01 记录，由 NSF EIA-0196217 支持。库方允许在商业产品中使用，禁止直接转售动捕数据或其转换件。开发入口按绑定签名装配动作与本机模型。[CMU 数据库与使用条件](https://mocap.cs.cmu.edu/) · [动作采样、改编与验收](scopes/j01-locomotion-review.md)
+
+林工来自用户提供的 NP120 J01、经审阅的 50 骨净体与版型、两档工衫及新步态。村民为原包四套整模，J01 按独立材料分区调整发色和肤色，J01_02 按 UV 遮罩为露出的皮肤补色。四个村民的 GLB 收录在 `sources/np120/villagers/`，用于开发审阅。爱给网条目 A125449800 标记「原创」，公开分发许可未核实。正式构建沿用已有资产清单。 [来源条目](https://www.aigei.com/item/han_you_gransag_22.html) [入场、导出与验证](scopes/np120-character-intake.md)
+
 天气回接采用本项目独立沙盒中已审阅的原创程序雨丝、雪花、局部镜头雨滴、水坑涟漪与材质覆雪。新储木架棚顶和立柱为原木纹、共享几何与材质组成的原创模型，既有 GLB 字节与第三方许可沿用原登记。生产入口为 scene/weather-presentation.ts、weather-particle-seeds.js、environment.ts 与 camp-props.ts，资源归原 Resources owner。强度随机样本与空间坐标独立。当前范围和实机检查见 [天气回接记录](scopes/running-selection-weather.md)。
 
 ## 营地邻居资源复用（2026-11-19）
@@ -153,7 +195,7 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 
 ## 最终动物素材
 
-四种运行模型及来源统一见 [最终动物接入](WILDLIFE_GUIDE.md) 与 `public/assets/manifest.json`：Gobkit CC0 松鼠／野兔、Quaternius CC0 雄鹿、项目原创 1908 三角形／21 关节北美山羊。来源原件、许可证、重建脚本保留，旧 Gobkit 羊和候选素材不进入当前树。四个最终 GLB 使用交付版本原始字节；仅将野兔营地锚点移出 Woodcraft 碰撞区。
+四种运行模型及来源统一见 [最终动物接入](WILDLIFE_GUIDE.md) 与 `public/assets/manifest.json`：Gobkit CC0 松鼠、Vuena / Popyca CC0 小狐狸、Quaternius CC0 雄鹿、项目原创 1908 三角形／21 关节北美山羊。小狐狸在 2026-11-24 替换原 Gobkit 野兔，继续使用已避开 Woodcraft 碰撞区的营地和步道锚点；松鼠、雄鹿与山羊的运行 GLB 字节不变。旧野兔的来源原件与许可保留供追溯，`public/assets/wildlife/hare.glb` 不再分发；Gobkit 重建脚本只生成松鼠。
 
 
 2026-11-03「家宅平安」第一批外部装配件由 `src/scene/camp-exteriors.ts` 使用本仓库原创低多边形几何生成（帐篷布面局部复用已登记 `tent.glb` 网格）；不接入外部资产、下载或贴图，不冒标 CC0。新建几何和材质均由 `Resources` 释放，只有顶层 12 个部件状态属于既有营地设施，来源/装配范围见 [家宅平安](CAMP_EXTERIORS.md)。
@@ -250,6 +292,23 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 
 巨木根盘、横枝老枫及育苗倒木的替换尺寸、分件、材质和碰撞要求见 [Blender 精修备忘](FOREST_BLENDER_NOTES.md)。本批构建与几何/行为定向测试通过；当前环境未提供可用 WebGL，尚无真实 3D 画面、着色器或实体手机性能验收结论，最终记录归本轮 scope。
 
-## 木作台近景（独立施工分支）
+## HOW-WILDLIFE-FOX（2026-11-24）
 
-采用 Poly Haven 的 CC0 Handsaw Wood（Konrad Szałankiewicz，2,548 三角面）与 Wood Table（Dimitrios Savva）1k 输入。原始模型、贴图、CC0 全文、作者和修改说明保留在 `sources/polyhaven/woodworking/`；规范化脚本为 `sandbox/woodworking/tools/prepare-stage-assets.py`。运行时模型和贴图随木作单文件/ESM 打包，不请求第三方网络。木料仍按实际加工几何命中，连续端纹/侧纹为本项目着色器；贴图和视觉处理不改切削尺寸或材料账。可见效果与预算以本分支实际截图验收为准。
+采用 [Vuena / Popyca 免费 Cute Pets & Wildlife 样本](https://vuena.itch.io/blocky-pets-free)中的狐狸，原件来自[作者公开仓库的锁定提交](https://github.com/Vuena/free-low-poly-animals-cc0/tree/a3944e5e54eb7e1ab2c24744b88a1ae6617e4534)。`sources/vuena/cute-pets/animal_fox.glb`、`LICENSE` 和 `LICENSE.txt` 保留未经修改的源文件与许可；作者的 CC0 范围声明涵盖该免费样本的模型、动画、贴图及修改与再分发，未引入付费完整版。许可原文随 `public/assets/licenses/vuena-cute-pets-CC0.txt` 分发，具体来源和加工契约见[源文件说明](../sources/vuena/cute-pets/README.md)。
+
+| 运行资产 | 规格 |
+| --- | --- |
+| ID / 文件 | `how-wildlife-fox` / `public/assets/wildlife/fox.glb` |
+| 大小 / SHA-256 | 641,856 bytes / `b6e924d63eed35b972720bbd1919c767745ed91205d66ffd7bda6333bc8aaf9d` |
+| 几何 / 骨架 | 1 mesh、1 primitive、1 material；4,286 顶点、7,300 三角形、19 关节 |
+| 动画 | `idle`、`walk`、`run`，各 56 通道；均无 `Lids.translation` |
+| 尺度 / 方向 | `idle` 首帧总高 1.10；共同根居中落地；`+Y` 向上、`+Z` 朝前；场景 `visualScale` 为 1 |
+| 离线重建 | `node tools/prepare-fox-asset.mjs`，只使用本地已校验源文件 |
+
+加工只保留原始 LOD0 并移除 LOD1 及不再引用的数据，保留原始蒙皮、粗糙度、两张嵌入纹理和三段所需动作；仅显式设置材质 `metallicFactor=0`，与源 ORM 贴图蓝通道全零时的原非金属外观等效。在共同根节点归一尺度与落地位置。`Lids` 负责原作眼皮覆盖片，三段动画中的位置通道已移除以交由项目表情控制器驱动，其余骨骼通道保留。眼部本身是头部贴图，没有独立眼球或眼球骨骼；视线变化属于项目表现层加工，不作为原作者模型自带功能登记。
+
+内容身份为 `wildlife.fox`／小狐狸，沿用原普通动物的数量上限、草地边缘栖息点、行走和逃离速度，不新增狩猎、喂食或物品产出。加载、表现与回收仍经 `src/scene/models.ts`、`src/scene/wildlife-presentation.ts` 和 `src/scene/resources.ts`。`verify:assets` 独立验证本批文件哈希、来源、嵌入资源、19 关节、单一 mesh、7,300 三角形、三段动画及眼皮位置通道所有权；实际眼部表现、游戏内画面与性能范围见[本轮 scope](scopes/expressive-camp-fox.md)。
+
+## 木作台近景
+
+独立木作台采用 Poly Haven 的 CC0 Handsaw Wood（Konrad Szałankiewicz，2,548 三角面）和 Wood Table（Dimitrios Savva）1k 素材。原始输入、CC0 全文、作者及修改说明见[木作素材来源](../sources/polyhaven/woodworking/README.md)。[规范化脚本](../sandbox/woodworking/tools/prepare-stage-assets.py)生成单文件试玩和 ESM 使用的模型与贴图。木料沿用实际切削几何和项目的木纹着色器，素材处理仅应用到呈现层。

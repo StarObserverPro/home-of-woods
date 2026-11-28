@@ -3,11 +3,16 @@ import { heightAt, pathDistance, riverX, slopeAt } from "./surface.ts";
 import {CAMP_VISITOR} from '../content/characters.ts';
 import {CAMP_PROPS} from '../content/scene-props.ts';
 import {LOG_SHELTER_POSTS} from '../content/weather.ts';
+import {TENT_SCALE,TENT_SHAPE} from '../content/tent.ts';
 import {CREEK_BRIDGE,REGIONS} from '../content/regions.ts';
 import type {RegionId} from '../content/regions.ts';
 import {regionAt} from './regions.ts';
 import fixedSlots from '../content/fixed-tree-slots.json' with {type:'json'};
 import {TREE_SLOT_CORRECTIONS} from '../content/tree-slot-corrections.ts';
+import type {CampTreeForm} from '../content/camp-woodland.ts';
+import {growCampCanopies,matureCampForm} from './camp-woodland.ts';
+import {registerCampRegeneration} from './camp-regeneration.ts';
+import {treeFootRadius} from './tree-dimensions.ts';
 const fixedSlotIds=new Set(fixedSlots);
 export type Tree = {
   regionId?:RegionId;
@@ -20,6 +25,9 @@ export type Tree = {
   scale: number;
   variant: number;
   role: "managed" | "scenery" | "landmark";
+  woodland?: CampTreeForm;
+  regeneration?: string;
+  retained?: boolean;
 };
 export type Collider =
   | { id: string; x: number; z: number; radius: number }
@@ -42,7 +50,10 @@ export function makeRocks() {
       rotation = rng() * 6.283;
     rocks.push({ id: `rock-${i}`, x, z, scale, rotation });
   }
-  return rocks;
+  // Keep the cloth footprint clear without shifting the seeded scatter elsewhere.
+  // Filter after generation so every existing rock retains its sampled transform.
+  return rocks.filter(p=>Math.abs(p.x-TENT.x)>TENT_SHAPE.halfWidth*TENT_SCALE+p.scale ||
+    Math.abs(p.z-TENT.z)>TENT_SHAPE.halfDepth*TENT_SCALE+p.scale);
 }
 export function random(seed: number) {
   let a = seed >>> 0;
@@ -112,7 +123,13 @@ export function makeTrees(seed = WORLD_SEED): Tree[] {
     role: "landmark",
   });
   if(seed===WORLD_SEED)for(const tree of trees){const corrected=TREE_SLOT_CORRECTIONS[tree.id];if(corrected)Object.assign(tree,corrected);}
-  return trees;
+  for (const tree of trees) {
+    if (tree.role === 'managed') tree.retained = true;
+    const form = matureCampForm(tree);
+    if (form) tree.woodland = form;
+  }
+  trees.push(...growCampCanopies(trees,makeColliders(trees),random(seed ^ 0x4a7b193d)));
+  return registerCampRegeneration(trees,makeColliders(trees),seed,random);
 }
 export function makeColliders(trees: Tree[]): Collider[] {
   return [
@@ -125,12 +142,12 @@ export function makeColliders(trees: Tree[]): Collider[] {
     { id: "tent", ...TENT, halfX: 4.4, halfZ: 4.4 },
     {id:CAMP_VISITOR.id,x:CAMP_VISITOR.x,z:CAMP_VISITOR.z,radius:CAMP_VISITOR.radius},
     ...trees
-      .filter((t) => t.role !== "scenery")
+      .filter((t) => t.role !== "scenery" || t.woodland !== undefined)
       .map((t) => ({
         id: t.id,
         x: t.x,
         z: t.z,
-        radius: (t.role === "landmark" ? 1.2 : t.kind==='pine' ? .43 : .66) * t.scale,
+        radius: treeFootRadius(t),
       })),
     ...makeRocks().map((p) => ({
       id: p.id,

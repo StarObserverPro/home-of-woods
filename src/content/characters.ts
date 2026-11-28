@@ -10,3 +10,9 @@ export const CHARACTER = {
   releasePhase: .69,
 } as const;
 export const CAMP_VISITOR = { id: 'camp-visitor', x: -40, z: -1, radius: .56, waveRange: 12, waveInterval: 9 } as const;
+
+export const LOCAL_PLAYER = {model:'j01'} as const;
+export const VILLAGER_MODELS = ['villager-j01','villager-j01-02','villager-j02','villager-j02-02'] as const;
+export type VillagerModel = typeof VILLAGER_MODELS[number];
+export const LOCAL_CHARACTER_MODELS = [LOCAL_PLAYER.model,...VILLAGER_MODELS] as const;
+export const LOCAL_CHARACTER_PREFIX = '/__local-character/';

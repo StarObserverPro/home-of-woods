@@ -1,0 +1,121 @@
+name: Rainier Forest and Optics Review
+on:
+  pull_request:
+    paths:
+      - 'src/app/runtime.ts'
+      - 'src/content/atmosphere.ts'
+      - 'src/content/overlook-optics.ts'
+      - 'src/content/rainier-ecology.ts'
+      - 'src/content/world.ts'
+      - 'src/scene/atmosphere*'
+      - 'src/scene/overlook-optics*'
+      - 'src/scene/impostors/**'
+      - 'src/scene/create-scene.ts'
+      - 'src/scene/creek.ts'
+      - 'src/scene/anchored-overlook.ts'
+      - 'src/scene/camera-forecast.ts'
+      - 'src/scene/environment.ts'
+      - 'src/scene/horizon.ts'
+      - 'src/scene/outer-forest*'
+      - 'src/scene/weather-presentation.ts'
+      - 'src/world/tree-appearance.ts'
+      - 'src/world/horizon.js'
+      - 'tests/atmosphere-lite.test.ts'
+      - 'tests/impostor-atlas.test.ts'
+      - 'tests/overlook-optics.test.ts'
+      - 'tests/anchored-overlook.test.ts'
+      - 'tests/panorama-framing.test.ts'
+      - 'tests/valley-horizon.test.ts'
+      - 'tools/impostors/**'
+      - 'tools/verification/overlook-optics-probe.mjs'
+      - 'tools/verification/rainier-optics-review.mjs'
+      - 'public/assets/forest-impostors/**'
+      - 'package*.json'
+      - '.github/workflows/rainier-optics-review.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: rainier-optics-review-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  optics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci
+      - name: Verify camera, atmosphere, ecology and atlas rules
+        run: >-
+          node --experimental-strip-types --test
+          tests/atmosphere-lite.test.ts tests/overlook-optics.test.ts
+          tests/anchored-overlook.test.ts tests/impostor-atlas.test.ts
+          tests/valley-horizon.test.ts tests/panorama-framing.test.ts
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Exercise actual HDR, depth, color transfer and lifecycle
+        env:
+          EVIDENCE_DIR: /tmp/how-overlook-optics-probe
+        run: node tools/verification/overlook-optics-probe.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rainier-optics-probe
+          path: /tmp/how-overlook-optics-probe/
+          if-no-files-found: warn
+          retention-days: 14
+  valley:
+    name: valley (${{ matrix.review-flow }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        review-flow: [desktop, mobile, mass-fallback]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci
+      - name: Install WebGL browser and CJK fonts
+        run: |
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y fonts-noto-cjk
+      - name: Bake and render the deterministic 25-view tree cluster
+        id: bake
+        env:
+          IMPOSTOR_EVIDENCE_DIR: /tmp/how-rainier-review/baker
+        run: node tools/impostors/export.mjs
+      - name: Review the actual camp at desktop and mobile sizes
+        # Keep a failed bake review red, but collect independent integration
+        # evidence when its asset files were successfully written.
+        if: ${{ !cancelled() && steps.bake.outcome != 'skipped' && hashFiles('public/assets/forest-impostors/rainier-conifer-cluster.json') != '' }}
+        env:
+          EVIDENCE_DIR: /tmp/how-rainier-review/game
+          SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+          REVIEW_FLOW: ${{ matrix.review-flow }}
+        run: node tools/verification/rainier-optics-review.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rainier-game-and-baker-evidence-${{ matrix.review-flow }}
+          path: /tmp/how-rainier-review/
+          if-no-files-found: warn
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() && matrix.review-flow == 'desktop' }}
+        with:
+          name: rainier-generated-impostor-assets
+          path: public/assets/forest-impostors/
+          if-no-files-found: warn
+          retention-days: 14

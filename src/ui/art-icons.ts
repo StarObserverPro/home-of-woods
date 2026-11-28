@@ -13,7 +13,19 @@ export const ART_ICONS = {
   'blueprint-common':true,'blueprint-uncommon':true,'blueprint-rare':true,'blueprint-epic':true,'blueprint-legendary':true,
   'stump-common':true,'stump-uncommon':true,'stump-rare':true,'stump-epic':true,'stump-legendary':true,
 } as const;
-export type ArtIconName=keyof typeof ART_ICONS;
+export const NEW_ART_ICONS = {
+  'weather-sun':true,'weather-cloud':true,'weather-rain':true,'weather-snow':true,
+  approach:true,'camera-reset':true,'forest-leaf':true,'camera-left':true,'camera-right':true,
+  'camera-raise':true,'camera-lower':true,'camera-zoom-in':true,'camera-zoom-out':true,
+  'wood-mushroom':true,'shelf-mushroom':true,'wood-ear':true,serviceberry:true,
+  'forest-berry':true,'blue-forest-berry':true,'red-forest-berry':true,'forest-nut':true,
+  'tree-resin':true,'forest-seed':true,'dried-forest-fruit':true,'nut-rations':true,
+  'sap-can':true,'sap-filled-can':true,'forest-syrup':true,'conifer-mushroom':true,'hardwood-mushroom':true,'festival-spark':true,
+} as const;
+export type ArtIconName=keyof typeof ART_ICONS | keyof typeof NEW_ART_ICONS;
+export function artIconFolder(name:ArtIconName) {
+  return Object.hasOwn(NEW_ART_ICONS,name)?'ui-r3':'ui-r1';
+}
 const ITEM_ICONS:Record<string,ArtIconName>={
   'scrap-fuel':'scrap-fuel',branch:'branch',wood:'wood-log','small-wood':'small-wood',mushroom:'mushroom','dried-mushroom':'dried-mushroom',
   'canvas-roll':'canvas-roll','hardware-kit':'hardware-kit','trail-rations':'trail-rations','merchant-soap':'merchant-soap','bath-salt':'bath-salt','paper-ink':'paper-ink',
@@ -25,8 +37,10 @@ const ITEM_ICONS:Record<string,ArtIconName>={
   'furniture.stump-seat':'stump-seat','furniture.guest-bench':'guest-bench','furniture.prep-side-table':'prep-table','accessory.pinecone-doorbell':'pinecone-doorbell','accessory.note-box':'note-box','tool.branch-broom':'branch-broom','vessel.wooden-bowl':'wooden-bowl','vessel.copper-kettle':'copper-kettle',
 };
 const KNOWN_STACK_IDS=new Set([...ITEMS,...EXPEDITION_ITEMS].map(item=>item.itemId));
-const woodlandIcons = new Map(EXPEDITION_ITEMS.filter(item=>item.symbol==='mushroom').map(item=>[item.itemId,'mushroom' as const]));
-export function itemIcon(id:string):ArtIconName|null{return ITEM_ICONS[id]??woodlandIcons.get(id)??(KNOWN_STACK_IDS.has(id)?'inventory':null);}
+export function itemIcon(id:string):ArtIconName|null {
+  if(Object.hasOwn(NEW_ART_ICONS,id)&&KNOWN_STACK_IDS.has(id))return id as keyof typeof NEW_ART_ICONS;
+  return ITEM_ICONS[id]??(KNOWN_STACK_IDS.has(id)?'inventory':null);
+}
 const RARITY_IDS=new Set(['common','uncommon','rare','epic','legendary']);
 export function rarityIcon(family:'stump'|'blueprint',rarity:string):ArtIconName {
   return `${family}-${RARITY_IDS.has(rarity)?rarity:'common'}` as ArtIconName;

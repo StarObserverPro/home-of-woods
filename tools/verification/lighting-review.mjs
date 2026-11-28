@@ -1,10 +1,11 @@
 /** Fixed-camera A/B, instance lifecycles and real camera-triggered canopy fade on the built game. */
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {spawn,execFileSync} from 'node:child_process';
 import {chromium} from 'playwright';
-const cwd=process.cwd(),out=process.env.LIGHTING_EVIDENCE_DIR??'/tmp/how-lighting-evidence';
+const cwd=process.cwd(),out=process.env.LIGHTING_EVIDENCE_DIR??path.join(tmpdir(),'how-lighting-evidence');
 const origin='http://127.0.0.1:4181';
 await fs.mkdir(out,{recursive:true});
 const report={commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),status:'running',frames:[],pairs:[],mainCheckpoints:[],flows:[],errors:[],warnings:[],limits:['Software Chromium WebGL is not physical mobile GPU performance.','This is authored ambient attenuation, not ray-traced AO or GI.','Forest detailed near-field occlusion remains deferred.']};
@@ -49,6 +50,19 @@ async function cabinPair(name,camera='room',light='day',cut='stage'){
  report.pairs.push({name,...diff,cameraDelta,extraDrawCalls:on.stats.drawCalls-off.stats.drawCalls});
 }
 async function mainStats(){return JSON.parse(await page.locator('#runtime-stats').textContent()).current;}
+const wrapYaw=yaw=>Math.atan2(Math.sin(yaw),Math.cos(yaw));
+async function waitForMainCamera(expectedYaw=null){
+ // A three-click group needs at most 1.05 / .65 seconds of camera time.
+ // Allow software WebGL to present those bounded steps without assuming 60 fps.
+ await page.waitForFunction(expectedYaw=>{
+   const s=JSON.parse(document.querySelector('#runtime-stats').textContent).current;
+   const rig=s.sceneSpace?.outdoorCamera?.overlook;
+   if(!rig||rig.pending||!rig.groundReady||s.scenePreset!==null||!s.loop.running)return false;
+   const delta=s.yaw-(expectedYaw??rig.desired.yaw);
+   return Math.abs(Math.atan2(Math.sin(delta),Math.cos(delta)))<1e-8&&
+     Math.abs(s.elevation-rig.desired.elevation)<1e-8&&Math.abs(s.zoom-rig.desired.zoom)<1e-8;
+ },expectedYaw,{timeout:180000});
+}
 async function renderedViewport(){
  const session=await page.context().newCDPSession(page);
  try{const frame=await session.send('Page.captureScreenshot',{format:'png',fromSurface:true});return Buffer.from(frame.data,'base64');}
@@ -85,12 +99,21 @@ async function mainCrownFade(name){
  await diag.locator('summary').click();
  await page.getByRole('button',{name:'镜头',exact:true}).click();
  await page.getByRole('button',{name:'复位镜头',exact:true}).click();
+ await waitForMainCamera();
  const before=await mainStats();report.mainCheckpoints.push({name:`${name}-before`,stats:before});
  assert.equal(before.scenePreset,null);assert.equal(before.shaderErrors,0);assert.equal(before.routeNodes,0);
  assert.ok(Array.isArray(before.fadedTreeIds),`${name}: missing read-only material fade diagnostics`);
- const rotations=10,expectedYaw=before.yaw+rotations*.35;
- for(let index=0;index<rotations;index++)await page.getByRole('button',{name:'镜头右转',exact:true}).click();
- await page.waitForFunction(yaw=>Math.abs(JSON.parse(document.querySelector('#runtime-stats').textContent).current.yaw-yaw)<1e-8,expectedYaw);
+ const rotations=10;
+ let expectedYaw=before.yaw;
+ // The navigation rig bounds queued yaw to pi/2. Settle each <=1.05-radian
+ // group so the same ten-click path is traversed without dropping input.
+ for(let index=0;index<rotations;){
+   const group=Math.min(3,rotations-index);
+   expectedYaw=wrapYaw(expectedYaw+group*.35);
+   for(let turn=0;turn<group;turn++)await page.getByRole('button',{name:'镜头右转',exact:true}).click();
+   await waitForMainCamera(expectedYaw);
+   index+=group;
+ }
  const rotated=await mainStats();
  // Observe the real material transition across normal rendered frames. A wall-clock wait for
  // arbitrary simulation time is unreliable when a software GPU renders only a few frames a minute.
@@ -99,7 +122,7 @@ async function mainCrownFade(name){
  assert.equal(settled.shaderErrors,0);assert.equal(settled.occlusion.enabled,true);
  assert.ok(settled.fadedTreeIds.length>0,`${name}: the real camera path did not fade any tree crown`);
  assert.deepEqual({x:settled.player.x,z:settled.player.z},{x:before.player.x,z:before.player.z},`${name}: camera controls moved the player`);
- assert.equal(settled.routeNodes,0);assert.ok(Math.abs(settled.yaw-expectedYaw)<1e-8);
+ assert.equal(settled.routeNodes,0);assert.ok(Math.abs(wrapYaw(settled.yaw-expectedYaw))<1e-8);
  await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));
  await page.evaluate(()=>document.querySelector('.game-shell').classList.add('lighting-capture'));
  let buffer;
@@ -111,7 +134,7 @@ async function mainCrownFade(name){
  report.flows.push({name,passed:true,rotations,expectedYaw,beforePlayer:before.player,afterPlayer:captured.player,fadedTreeIds:captured.fadedTreeIds,shaderErrors:captured.shaderErrors});
 }
 try{
- await ready();browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});report.browser=await browser.version();
+ await ready();browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE||undefined,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});report.browser=await browser.version();
  let context=await newPage({width:1440,height:960});
  phase='cabin load';await page.goto(`${origin}/sandbox/cabin-interior/`);await page.waitForFunction(()=>window.__VISUAL_READY__===true,null,{timeout:120000});
  await page.evaluate(()=>{window.__CABIN_AUDIT__.preset('full');window.__CABIN_AUDIT__.pause();});

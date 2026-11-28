@@ -1,14 +1,16 @@
 import type {weatherSnapshot} from '../domain/weather.ts';
 import {moistureName,fineWorkMultiplier} from '../domain/weather.ts';
+import {GameIcon} from './GameIcon.tsx';
+import type {ArtIconName} from './art-icons.ts';
 import './weather-controls.css';
 
 type WeatherView=ReturnType<typeof weatherSnapshot>;
 type WeatherKind=WeatherView['weather'];
-const WEATHER_OPTIONS:readonly {id:WeatherKind;name:string;icon:string}[]=[
-  {id:'sunny',name:'晴天',icon:'☀'},
-  {id:'cloudy',name:'阴天',icon:'☁'},
-  {id:'rain',name:'下雨',icon:'☂'},
-  {id:'snow',name:'下雪',icon:'❄'},
+const WEATHER_OPTIONS:readonly {id:WeatherKind;name:string;icon:ArtIconName}[]=[
+  {id:'sunny',name:'晴天',icon:'weather-sun'},
+  {id:'cloudy',name:'阴天',icon:'weather-cloud'},
+  {id:'rain',name:'下雨',icon:'weather-rain'},
+  {id:'snow',name:'下雪',icon:'weather-snow'},
 ];
 
 function WoodMoisture({exposure,woods}:{exposure:'open'|'sheltered';woods:WeatherView['woods']}){
@@ -45,13 +47,13 @@ export function WeatherControls({view,disabled,onWeather,onIntensity,onAutomatic
       }
     }}>
       <summary aria-label="天气与木料湿度" title="查看天气、切换雨雪及木料湿度">
-        <span className="weather-icon" aria-hidden="true">{selected.icon}</span><span>{selected.name}</span><span aria-hidden="true">▾</span>
+        <GameIcon name={selected.icon} size={25}/><span>{selected.name}</span><span aria-hidden="true">▾</span>
       </summary>
       <section className="weather-panel" aria-label="天气设置">
         <div className="weather-options" role="group" aria-label="切换天气">
           {WEATHER_OPTIONS.map(option=><button type="button" key={option.id} disabled={disabled}
             aria-label={`切换到${option.name}`} aria-pressed={option.id===view.weather}
-            onClick={()=>onWeather(option.id)}><span aria-hidden="true">{option.icon}</span>{option.name}</button>)}
+            onClick={()=>onWeather(option.id)}><GameIcon name={option.icon} size={24}/>{option.name}</button>)}
         </div>
         <label className="weather-intensity"><span>雨雪强度 <output>{Math.round(view.intensity*100)}%</output></span>
           <input aria-label="雨雪强度" type="range" min={0} max={100} step={1} value={Math.round(view.intensity*100)} disabled={disabled||!['rain','snow'].includes(view.weather)} onChange={event=>onIntensity(Number(event.target.value)/100)}/>

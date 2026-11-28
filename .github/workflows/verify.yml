@@ -5,6 +5,9 @@ on:
     branches: [main]
 permissions:
   contents: read
+concurrency:
+  group: prototype-check-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   prototype:
     runs-on: ubuntu-latest
@@ -12,56 +15,35 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          fetch-depth: 2
           persist-credentials: false
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '22.14.0'
-          package-manager-cache: false
-      - run: npm ci
-      - run: npm run verify:assets
-      - run: npm run build
-      - name: Independent woodworking package and host inventory adapter
+      - name: Detect documentation-only changes
+        id: changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
-          npm --prefix sandbox/woodworking ci
-          npm --prefix sandbox/woodworking test
-          npm --prefix sandbox/woodworking run build
-      # Current gameplay and ownership checks are required. Archived evidence
-      # audits run separately on request.
-      - name: Core gameplay
-        run: >-
-          node --experimental-strip-types --test
-          tests/wardrobe.test.ts tests/character-wardrobe.test.ts
-          tests/merchant.test.ts tests/food-foundation.test.ts
-          tests/visitor-ai.test.ts
-          tests/material-storage-drying.test.ts
-          tests/day-cycle.test.ts tests/affix-vfx-library.test.ts
-          tests/release-integration.test.ts
-      - name: Clock, meals and camp life
-        run: >-
-          node --experimental-strip-types --test
-          tests/local-clock-resume.test.ts tests/clock-time-label.test.ts
-          tests/evening-p2.test.ts
-          tests/camp-exit.test.ts tests/food-p3.test.ts
-          tests/food-sunrise.test.ts tests/pot-foundation.test.ts
-          tests/food-supply-audit.test.ts tests/meal-curtain.test.ts
-          tests/meal-curtain-scene.test.ts tests/whimsy-preferences.test.ts
-      - name: Housing, seating and assembly
-        run: >-
-          node --experimental-strip-types --test
-          tests/housing.test.ts tests/housing-contact.test.ts
-          tests/bench-seating-access.test.ts tests/seated-skin-contact.test.ts
-          tests/guided-workshop.test.ts tests/supported-furniture-scene.test.ts
-          tests/workshop-assembly-scene.test.ts tests/save-checkpoints.test.ts
-      - name: Ordinary and whimsical broom use
-        run: >-
-          node --experimental-strip-types --test
-          tests/broom-oracle.test.ts tests/broom-presentation.test.ts
-      - name: Weather, movement, materials and valley landscape
-        run: >-
-          node --experimental-strip-types --test --test-concurrency=4
-          tests/weather.test.ts tests/weather-particle-density.test.ts
-          tests/movement.test.ts tests/item-transfers.test.ts
-          tests/branch-attachment.test.ts tests/tree-surface.test.ts tests/wood-grain.test.ts
-          tests/valley-horizon.test.ts tests/gathering-presentation.test.ts
-      - name: Verify regional forestry and bridge transport
-        run: node --experimental-strip-types --test tests/east-bank.test.ts
+          docs_only=false
+          if git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+            git diff --no-renames --name-only -z "$BASE_SHA" HEAD > "$RUNNER_TEMP/prototype-paths"
+            while IFS= read -r -d '' changed; do
+              case "$changed" in
+                docs/*.md|.github/pull_request_template.md) docs_only=true ;;
+                */*) docs_only=false; break ;;
+                *.md) docs_only=true ;;
+                *) docs_only=false; break ;;
+              esac
+            done < "$RUNNER_TEMP/prototype-paths"
+          fi
+          echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
+          if [[ "$docs_only" == true ]]; then git diff --check "$BASE_SHA" HEAD; fi
+      - uses: actions/setup-node@v7
+        if: steps.changes.outputs.docs_only != 'true'
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - if: steps.changes.outputs.docs_only != 'true'
+        run: |
+          npm ci
+          npm run verify:assets
+          npm run build
+          npm run test:prototype

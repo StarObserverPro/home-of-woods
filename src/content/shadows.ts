@@ -39,4 +39,14 @@ export const SHADOW_PROFILES = {
     spread: .45,
     receiverThickness: .10,
   },
+  interior: {
+    mapSize: 1024,
+    span: 20,
+    lightDistance: 24,
+    near: .2,
+    far: 48,
+    normalBiasTexels: .55,
+    depthBiasTexels: -.35,
+    solidSoftness: .06,
+  },
 } as const;

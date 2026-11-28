@@ -21,7 +21,6 @@
   touch-action: manipulation;
 }
 .weather-menu > summary::-webkit-details-marker { display: none; }
-.weather-icon { font-size: 23px; line-height: 1; color: #f4d99b; }
 .game-shell .topbar:has(.weather-menu[open]) { z-index: 22; }
 .weather-panel {
   position: absolute;
@@ -53,7 +52,6 @@
   background: #344b32;
   font-size: 12px;
 }
-.weather-options button > span { font-size: 20px; line-height: 1; }
 .weather-options button[aria-pressed="true"] {
   background: #926339;
   box-shadow: inset 0 2px #c69a59, inset 0 -3px #4d331f;

@@ -5,6 +5,8 @@ import {Models} from '../src/scene/models.ts';
 import {Resources} from '../src/scene/resources.ts';
 import {createStreamedForest} from '../src/scene/streamed-forest.ts';
 import {createForestryPresentation} from '../src/scene/forestry-presentation.ts';
+import {buildBridgeDeck} from '../src/scene/creek-bridge.ts';
+import {createTerrainSampler} from '../src/world/terrain-sampler.js';
 import {CREEK_BRIDGE,WORLD_STREAMING} from '../src/content/regions.ts';
 import {FORESTRY} from '../src/content/forestry.ts';
 import {START,HOME,WORLD} from '../src/content/world.ts';
@@ -17,7 +19,8 @@ import {inventoryTransaction,stackKey,inventoryCount} from '../src/domain/invent
 import {changeCarrying,groundId,carriedStacks} from '../src/domain/carrying.ts';
 import {pendingHarvest,validateHarvest} from '../src/domain/harvest.ts';
 import {isAvailableMaterial,transportLocation} from '../src/domain/transport-location.ts';
-import {chopReason,startChop,chopRange,advanceForestry,volumePoints} from '../src/domain/forestry.ts';
+import {canFellTree,chopReason,startChop,advanceForestry,volumePoints} from '../src/domain/forestry.ts';
+import {fellingSpaceIsClear,fellingStandCandidates} from '../src/world/tree-felling-space.ts';
 import {createSaveContext} from '../src/domain/save-context.ts';
 import {serializeWorldSave,prepareWorldSave} from '../src/domain/world-save.ts';
 import {saveDigest} from '../src/domain/save-digest.ts';
@@ -43,9 +46,9 @@ function buildBridge(){
   assert.match(advanceWorkshop(s)??'',/木桥修好/);return s;
 }
 function standAt(s:GameState,tree:typeof east){
-  for(let i=0;i<48;i++){
-    const r=chopRange(tree)-.08,p={x:tree.x+Math.cos(i*Math.PI/24)*r,z:tree.z+Math.sin(i*Math.PI/24)*r};
-    if(canStand(p,colliders,undefined,travelAccess(s))){s.player={...p,facing:0,moving:false};s.selected=tree.id;return;}
+  const access=travelAccess(s);
+  for(const p of fellingStandCandidates(tree,0)){
+    if(canStand(p,colliders,undefined,access)&&fellingSpaceIsClear(tree,p,colliders,access)){s.player={...p,facing:0,moving:false};s.selected=tree.id;return;}
   }
   throw new Error('No stand for '+tree.id);
 }
@@ -77,6 +80,22 @@ test('construction consumes the blueprint materials once and opens one real bidi
   const side=move(waterPoint,0,6,colliders,access);assert.ok(Math.abs(side.z-38)<CREEK_BRIDGE.width/2,'railings block sideways movement');
 });
 
+test('rendered planks follow the walking surface all the way to both banks and railings',()=>{
+  const deck=buildBridgeDeck();
+  try{
+    const surface=createTerrainSampler([deck],4);
+    const access={openLinks:[CREEK_BRIDGE.id]};
+    const {west,east}=CREEK_BRIDGE;
+    for(let i=0;i<48;i++){
+      const x=west.x+(i+.5)*(east.x-west.x)/48;
+      for(const z of [36.34,37.65,38,38.56,39.66]){
+        const actual=surface(x,z),walkable=travelHeightAt(x,z,access);
+        assert.ok(Math.abs(actual-walkable)<.035,JSON.stringify({x,z,actual,walkable}));
+      }
+    }
+  }finally{deck.dispose();}
+});
+
 test('uncollected timber blocks only its source forest, including after crossing, partial delivery and ordinary warehouse withdrawals',()=>{
   const s=buildBridge();fell(s,east);const quantity=volumePoints(east);
   assert.equal(pendingHarvest(s.inventory,'east-woodland'),quantity);
@@ -103,7 +122,7 @@ test('uncollected timber blocks only its source forest, including after crossing
   }
   assert.ok(s.inventory.stacks.every(item=>!item.harvest));
   // Both forests can independently owe a batch; settling either must leave the other untouched.
-  const otherEast=byId.get('tree-slot-18-20')!;fell(s,west);standAt(s,otherEast);assert.equal(chopReason(s,otherEast),'');
+  const otherEast=trees.find(tree=>canFellTree(tree)&&tree.regionId==='east-woodland'&&tree!==east)!;fell(s,west);standAt(s,otherEast);assert.equal(chopReason(s,otherEast),'');
   fell(s,otherEast);assert.ok(pendingHarvest(s.inventory,'home-woodland')>0&&pendingHarvest(s.inventory,'east-woodland')>0);
 });
 

@@ -33,7 +33,7 @@ export function createTree(source,kind){
   source.traverse(o=>{if(o.isMesh&&/trunk/.test(o.name))trunk=o;});
   bark.color.copy(trunk.material.color);bark.roughness=trunk.material.roughness;bark.map=trunk.material.map;bark.normalMap=trunk.material.normalMap;
   const original=trunk.geometry.clone().applyMatrix4(trunk.matrixWorld);original.computeBoundingBox();
-  const radius=(kind==='pine'?.25:.28);
+  const radius=source.userData.cutRadius??(kind==='pine'?.25:.28);
   // Cross-section ray samples retain the source trunk outline at the join (no floating sleeve).
   const section=[];const p=original.attributes.position,idx=original.index;
   for(let i=0;i<(idx?idx.count:p.count);i+=3){const vv=[0,1,2].map(k=>new T.Vector3().fromBufferAttribute(p,idx?idx.getX(i+k):i+k));for(let k=0;k<3;k++){const a=vv[k],b=vv[(k+1)%3];if((a.y<=CUT.join&&b.y>CUT.join)||(b.y<=CUT.join&&a.y>CUT.join))section.push(a.clone().lerp(b,(CUT.join-a.y)/(b.y-a.y)));}}

@@ -19,7 +19,7 @@ export function gatheringHostTrees(trees:readonly Tree[]){
   const extra:Tree[]=[];
   for(const region of REGIONS.filter(r=>!r.initiallyOpen)){
     const hosts:Tree[]=[],bounds=region.resourceArea??region.bounds;
-    for(const tree of trees.filter(t=>t.role==='managed'&&t.regionId===region.id&&t.x>bounds.minX&&t.x<bounds.maxX&&t.z>bounds.minZ&&t.z<bounds.maxZ).sort((a,b)=>a.id<b.id?-1:1)){
+    for(const tree of trees.filter(t=>t.role==='managed'&&!t.id.startsWith('camp-regeneration:')&&t.regionId===region.id&&t.x>bounds.minX&&t.x<bounds.maxX&&t.z>bounds.minZ&&t.z<bounds.maxZ).sort((a,b)=>a.id<b.id?-1:1)){
       if(hosts.every(t=>Math.hypot(t.x-tree.x,t.z-tree.z)>8))hosts.push(tree);
       if(hosts.length===3)break;
     }

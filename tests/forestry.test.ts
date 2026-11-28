@@ -4,8 +4,8 @@ import assert from 'node:assert/strict';
 import {FORESTRY} from '../src/content/forestry.ts';
 import {createState} from '../src/domain/state.ts';
 import {makeTrees,makeColliders} from '../src/world/layout.ts';
-import {startChop,cancelChop,advanceForestry,forestrySnapshot,volumePoints,forestryColliders,chopRange} from '../src/domain/forestry.ts';
-const trees=makeTrees(),byId=new Map(trees.map(t=>[t.id,t])),tree=trees.find(t=>t.role==='managed')!;
+import {canFellTree,startChop,cancelChop,advanceForestry,forestrySnapshot,volumePoints,forestryColliders,chopRange} from '../src/domain/forestry.ts';
+const trees=makeTrees(),byId=new Map(trees.map(t=>[t.id,t])),tree=trees.find(t=>canFellTree(t)&&t.regionId==='home-woodland')!;
 function nearState(){const state=createState(trees);state.player.x=tree.x+chopRange(tree)-.1;state.player.z=tree.z;state.selected=tree.id;return state;}
 test('protected landmarks, remote trees and exhausted annual points cannot be felled',()=>{
   const s=nearState(),giant=trees.find(t=>t.role==='landmark')!;

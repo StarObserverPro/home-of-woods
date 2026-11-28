@@ -50,21 +50,29 @@ import {CAMP_VISITOR} from '../content/characters.ts';
 import type {WardrobeLook} from '../content/wardrobe-preview.ts';
 import {beginRitual,advanceRitual,ritualBusy} from '../domain/ritual.ts';
 import { MOVEMENT, WAYPOINTS } from "../content/world.ts";
+import {OVERLOOK} from '../content/camera.ts';
 import { CABIN_PORTAL, CABIN_ROOM } from '../content/cabin.ts';
-import {FORESTRY} from '../content/forestry.ts';
+import { TENT_ENTRY, TENT_PORTAL, TENT_ROOM } from '../content/tent-room.ts';
 import type { Point } from "../content/world.ts";
 import { createStarterState } from "../domain/state.ts";
 import type {GameState} from '../domain/state.ts';
-import {startChop,cancelChop,advanceForestry,forestrySnapshot,forestryColliders} from '../domain/forestry.ts';
+import {canFellTree,startChop,cancelChop,advanceForestry,forestrySnapshot,forestryColliders} from '../domain/forestry.ts';
+import {fellingSpaceIsClear,fellingStandCandidates} from '../world/tree-felling-space.ts';
 import type {ForestrySnapshot} from '../domain/forestry.ts';
 import { findPath, move,canStand } from "../domain/navigation.ts";
 import {movementOffset} from '../domain/movement.ts';
 import { atCabinEntrance, cabinActionPoint, cabinApproachRoute, makeCabinVisit, nearCabinAction, stepCabinVisit } from '../domain/cabin.ts';
 import type { CabinAction, CabinVisit } from '../domain/cabin.ts';
+import { atTentEntrance, makeTentVisit, nearTentExit, setTentDestination, stepTentVisit, tentApproachRoute } from '../domain/tent.ts';
+import type { TentVisit } from '../domain/tent.ts';
 import { makeColliders, makeTrees } from "../world/layout.ts";
 import { heightAt, zoneName } from "../world/surface.ts";
 import { createScene } from "../scene/create-scene.ts";
-import { createLoop } from "./runtime-loop.ts";
+import type {AtmosphereDebug} from '../scene/atmosphere-lite.ts';
+import type {FoxReviewPose} from '../scene/fox-expression.ts';
+import type {OverlookOpticsMode} from '../content/overlook-optics.ts';
+import { createLoop, requiredFrameMode } from "./runtime-loop.ts";
+import type { FrameMode } from "./runtime-loop.ts";
 import { RUNTIME_MODELS } from '../content/assets.ts';
 import { START,TENT } from '../content/world.ts';
 import { createGatheringRegistry } from '../domain/gathering-registry.ts';
@@ -85,6 +93,7 @@ import {ALTAR_LAYOUT} from '../content/altar.ts';
 import {advanceWeather,weatherSnapshot,setWeather as chooseWeather,setWeatherIntensity as changeWeatherIntensity,setWeatherAutomatic as changeWeatherAutomatic} from '../domain/weather.ts';
 export type Snapshot = {
   cabin: { inside: boolean; atDoor: boolean; crossing: boolean; lampOn: boolean };
+  tent: { inside: boolean; atDoor: boolean; crossing: boolean; doorOpen: boolean };
   neighbour:NeighbourView;
   weather:ReturnType<typeof weatherSnapshot>|null;
   carrying:CarryingSnapshot;
@@ -154,7 +163,11 @@ export async function createRuntime(
     reportTime = 0;
   let placement:PlacementDraft|null=null;
   let cabin:CabinVisit|null=null;
-  let crossing:{entering:boolean;elapsed:number;switched:boolean}|null=null;
+  let tent:TentVisit|null=null;
+  let tentApproach=false;
+  // Like the cabin lamp, the curtain is a session presentation choice.
+  let tentDoorOpen=true;
+  let crossing:{space:'cabin'|'tent';entering:boolean;elapsed:number;switched:boolean}|null=null;
   let reducedMotion=false;
   let reading=false;
   let captureAt:number|null=null;
@@ -164,13 +177,15 @@ export async function createRuntime(
     stick = { x: 0, z: 0 };
   let runToggle=false;
   const running=()=>runToggle||keys.has('ShiftLeft')||keys.has('ShiftRight');
+  const indoors=()=>!!cabin||!!tent;
   const inForest=()=>forestTransition||state.expedition?.active===true;
   const resetMovementInput=()=>{keys.clear();stick.x=stick.z=0;runToggle=false;};
   const woodcraft=createWoodcraftSession(state,m=>{message=m;});
   if(state.selected===WOODCRAFT.id||state.woodcraft.pieces.some(p=>p.id===state.selected))woodcraft.activate();
   const activeColliders=()=>[...((state.workshop.upgrades[CAMP_PROPS.dryer.id]?.level??0)>0?[{id:CAMP_PROPS.dryer.id,x:CAMP_PROPS.dryer.x,z:CAMP_PROPS.dryer.z,radius:.95}]:[]),{id:WOODCRAFT.id,x:WOODCRAFT.x,z:WOODCRAFT.z,halfX:WOODCRAFT.halfX+.2,halfZ:WOODCRAFT.halfZ+.2},...forestryColliders(colliders,treeById,state.forestry,state.time),...workstationColliders(),...furnitureColliders(state),...seatingColliders()];
   const neighbour=createNpcSession(state,activeColliders,value=>{message=value;});
-  const cabinSnapshot=()=>({inside:!!cabin,atDoor:!cabin&&atCabinEntrance(state.player),crossing:!!crossing,lampOn:view.cabinLampOn()});
+  const cabinSnapshot=()=>({inside:!!cabin,atDoor:!indoors()&&atCabinEntrance(state.player),crossing:crossing?.space==='cabin',lampOn:view.cabinLampOn()});
+  const tentSnapshot=()=>({inside:!!tent,atDoor:!indoors()&&atTentEntrance(state.player),crossing:crossing?.space==='tent',doorOpen:tentDoorOpen});
   const inputBlocked=()=>destroyed||inForest()||manualPause||interfaceOpen||inspectionOpen||contextLost||document.hidden||!!crossing;
   // Recover this prototype's previous waking point if it left the player inside
   // the tent collision. Preserve the earned world, clock and all inventories.
@@ -179,6 +194,7 @@ export async function createRuntime(
     if(exit){state.player={...state.player,...exit,moving:false};state.route=[];message='已经走到帐篷出口，可以继续探索。';}
   }
   const navigate = (p: Point) => {
+    tentApproach=false;
     woodcraft.cancelDrop();view.setWoodcraftDrop(false);view.inspectScene(null);
     const cancelled=cancelPlayerAction(state);if(cancelled)message=cancelled;
     const route = findPath(state.player, p, activeColliders(),travelAccess(state));
@@ -198,10 +214,20 @@ export async function createRuntime(
       }
       return;
     }
+    if(tent){
+      if(event.kind==='tent-door')requestTentExit();
+      else if(event.kind==='move'){
+        resetMovementInput();
+        setTentDestination(tent,{x:event.x,z:event.z});
+      }
+      return;
+    }
+    if(event.kind==='tent-door'){requestTentEntry();return;}
     if(event.kind==='cabin-door'||event.kind==='cabin-lamp')return;
     if(event.kind==='wood-drop'){woodcraft.drop(event);view.setWoodcraftDrop(woodcraft.isDropping());publishSnapshot();return;}
     if(placement){if(event.kind==='move'){const point={x:event.x,z:event.z};placement={...placement,point,reason:placementReason(state,placement.instanceId,point,activeColliders())};view.setPlacement(placement);publishSnapshot();}return;}
     if (event.kind === "select") {
+      tentApproach=false;
       if(event.id!==RIDGE_NEIGHBOUR.id)neighbour.closeConversation();
       const cancelled=cancelPlayerAction(state);if(cancelled)message=cancelled;
       state.selected = event.id;
@@ -213,7 +239,7 @@ export async function createRuntime(
       state.selected = null;
       navigate(event);
     }
-  }, registry);
+  }, registry,activeColliders);
   view.setRarityVfxMode(initialRarityVfxMode);
   view.setWhimsyMode(initialWhimsyMode);
 
@@ -235,6 +261,7 @@ export async function createRuntime(
   }
 
   function beginCabinCrossing(entering:boolean){
+    tentApproach=false;
     resetMovementInput();
     state.route=[];
     state.player.moving=false;
@@ -248,12 +275,12 @@ export async function createRuntime(
       switchCabinSpace(entering);
       view.render(state,0);
       view.canvas.focus({preventScroll:true});
-    }else crossing={entering,elapsed:0,switched:false};
+    }else crossing={space:'cabin',entering,elapsed:0,switched:false};
     publishSnapshot();
   }
 
   function requestCabinEntry(){
-    if(inputBlocked()||cabin||placement||reading||woodcraft.isDropping())return;
+    if(inputBlocked()||indoors()||placement||reading||woodcraft.isDropping())return;
     if(workshopBusy(state)||state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state)||view.isMealPlaying()||view.isBroomPlaying()){
       message='先做完手头的活，再进屋。';
       publishSnapshot();
@@ -314,7 +341,88 @@ export async function createRuntime(
     }
   }
 
-  function advanceCabinCrossing(dt:number){
+  function setTentCurtain(open:boolean){
+    tentDoorOpen=open;
+    view.setTentDoorOpen(open);
+  }
+
+  function switchTentSpace(entering:boolean){
+    // The durable player remains outside. Local movement never leaks into a save.
+    state.player={...TENT_PORTAL.landing,facing:TENT_PORTAL.outwardFacing,moving:false};
+    state.route=[];state.selected=null;tentApproach=false;
+    setTentCurtain(true);
+    if(entering){
+      tent=makeTentVisit();
+      view.enterTent(tent.player,state);
+      message='走进了帐篷。睡袋旁放着小鼓和颂钵。';
+    }else{
+      tent=null;
+      view.leaveTent(true);
+      message='回到了帐篷门前。';
+    }
+  }
+
+  function beginTentCrossing(entering:boolean){
+    resetMovementInput();state.route=[];state.player.moving=false;tentApproach=false;
+    if(tent){tent.destination=null;tent.route=[];tent.action=null;tent.player.moving=false;}
+    if(reducedMotion||window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      switchTentSpace(entering);view.render(state,0);view.canvas.focus({preventScroll:true});
+    }else crossing={space:'tent',entering,elapsed:0,switched:false};
+    publishSnapshot();
+  }
+
+  function requestTentEntry(){
+    if(inputBlocked()||indoors()||placement||reading||woodcraft.isDropping())return;
+    if(workshopBusy(state)||state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state)||view.isMealPlaying()||view.isBroomPlaying()){
+      tentApproach=false;message='先做完手头的活，再进帐篷。';publishSnapshot();return;
+    }
+    const blockers=activeColliders(),access=travelAccess(state);
+    if(!atTentEntrance(state.player)){
+      resetMovementInput();state.selected='tent';
+      state.route=tentApproachRoute(state.player,blockers,access);
+      tentApproach=state.route.length>0;
+      message=tentApproach?'走到帐篷门前，掀帘进去。':'暂时走不到帐篷门前。';
+      publishSnapshot();return;
+    }
+    if(!canStand(TENT_PORTAL.landing,blockers,undefined,access)){
+      tentApproach=false;message='门前堵住了，先把通道腾出来。';publishSnapshot();return;
+    }
+    try{view.prepareTent();}
+    catch(error){
+      console.error('Tent interior could not be prepared',error);
+      tentApproach=false;message='帐内暂时打不开。';publishSnapshot();return;
+    }
+    woodcraft.cancelRequest();neighbour.closeConversation();
+    view.setWoodcraftDrop(false);view.inspectScene(null);
+    beginTentCrossing(true);
+  }
+
+  function finishTentExit(){
+    if(!tent)return;
+    tent.destination=null;tent.route=[];tent.action=null;tent.player.moving=false;
+    if(!canStand(TENT_PORTAL.landing,activeColliders(),undefined,travelAccess(state))){
+      message='帐篷外的落脚处被挡住了。';publishSnapshot();return;
+    }
+    beginTentCrossing(false);
+  }
+
+  function requestTentExit(){
+    if(inputBlocked()||!tent)return;
+    resetMovementInput();
+    if(nearTentExit(tent.player))finishTentExit();
+    else if(!setTentDestination(tent,TENT_ENTRY,'exit')){
+      message='先走回帐篷中间的通道，再到门口。';publishSnapshot();
+    }
+  }
+
+  function toggleTentDoor(){
+    if(inputBlocked()||cabin||!tent&&!atTentEntrance(state.player))return;
+    setTentCurtain(!tentDoorOpen);
+    message=tentDoorOpen?'掀起了帐篷门帘。':'放下了帐篷门帘。';
+    view.render(state,0);publishSnapshot();
+  }
+
+  function advanceSpaceCrossing(dt:number){
     if(!crossing)return false;
     const half=.16;
     crossing.elapsed+=dt;
@@ -322,7 +430,8 @@ export async function createRuntime(
       crossing.elapsed=half;
       crossing.switched=true;
       view.cabinFade(1);
-      switchCabinSpace(crossing.entering);
+      if(crossing.space==='tent')switchTentSpace(crossing.entering);
+      else switchCabinSpace(crossing.entering);
       return true;
     }
     if(crossing.elapsed>=2*half){
@@ -336,12 +445,15 @@ export async function createRuntime(
     return false;
   }
 
-  function resetCabinVisit(){
+  function resetRoomVisits(){
     crossing=null;
     cabin=null;
+    tent=null;tentApproach=false;
     view.cabinFade(0);
     view.setCabinLamp(false);
     view.leaveCabin();
+    view.leaveTent();
+    setTentCurtain(true);
   }
   const synchronizeWildlife = () => {
     state.wildlife ??= createWildlife(state.time);
@@ -350,11 +462,22 @@ export async function createRuntime(
   synchronizeWildlife();
   const frameTimes: number[] = [];
   let lastSampleAt:number|null=null;
-  const tick = (dt: number, now:number) => {
+  const tick = (dt: number, now:number, mode: Exclude<FrameMode, 'stopped'> = 'simulation', grantPreparation = false) => {
+    if (mode === 'presentation') {
+      // Continue bounded visual preparation/camera motion without advancing the
+      // world, actions, weather, cabin transitions or fixed-step remainder.
+      view.render(state, 0, dt, grantPreparation);
+      reportTime += dt;
+      if (reportTime > .15 || !view.hasPendingPresentation()) {
+        reportTime = 0;
+        publishSnapshot();
+      }
+      return;
+    }
     accumulator += dt;
     while (accumulator >= MOVEMENT.fixedStep) {
       // An open inventory freezes walking and the world clock, while nearby wood can settle.
-      if(interfaceOpen){if(!cabin)woodcraft.step(MOVEMENT.fixedStep);accumulator-=MOVEMENT.fixedStep;continue;}
+      if(interfaceOpen){if(!indoors())woodcraft.step(MOVEMENT.fixedStep);accumulator-=MOVEMENT.fixedStep;continue;}
       if(crossing){accumulator-=MOVEMENT.fixedStep;continue;}
       neighbour.guardClock();
       const stoppedAtDinner=advanceToEveningStop(state,MOVEMENT.fixedStep);
@@ -372,8 +495,10 @@ export async function createRuntime(
         dz = 0;
       let routeDistance=Infinity;
       if(placement||woodcraft.isDropping()){sx=sz=0;state.route=[];}
-      if (sx || sz) {
-        if(!cabin){
+      const movementReady=indoors()||!(sx||sz||state.route.length)||view.prepareForMovement();
+      if (movementReady && (sx || sz)) {
+        if(!indoors()){
+          tentApproach=false;
           view.inspectScene(null);
           const cancelled=cancelPlayerAction(state);if(cancelled)message=cancelled;
         }
@@ -384,7 +509,7 @@ export async function createRuntime(
         const yaw = view.getYaw();
         dx = sx * Math.cos(yaw) + sz * Math.sin(yaw);
         dz = -sx * Math.sin(yaw) + sz * Math.cos(yaw);
-      } else if (!cabin && state.route.length) {
+      } else if (movementReady && !indoors() && state.route.length) {
         const p = state.route[0],
           distance = Math.hypot(p.x - state.player.x, p.z - state.player.z);
         if (distance < 0.18) state.route.shift();
@@ -396,10 +521,13 @@ export async function createRuntime(
       }
       const loadSpeed=currentLoad(state.inventory).speed;
       if(cabin){
-        stepCabinVisit(cabin,{x:dx,z:dz},MOVEMENT.fixedStep,loadSpeed,running());
+        stepCabinVisit(cabin,{x:dx,z:dz},MOVEMENT.fixedStep,loadSpeed,running(),view.playerWalkSpeed,view.playerRunSpeed);
         if(cabin.action&&nearCabinAction(cabin.player,cabin.action))finishCabinAction(cabin.action);
+      }else if(tent){
+        stepTentVisit(tent,{x:dx,z:dz},MOVEMENT.fixedStep,loadSpeed,running(),view.playerWalkSpeed,view.playerRunSpeed);
+        if(tent.action==='exit'&&nearTentExit(tent.player))finishTentExit();
       }else{
-        const step=movementOffset({x:dx,z:dz},loadSpeed,running(),MOVEMENT.fixedStep,routeDistance);
+        const step=movementOffset({x:dx,z:dz},loadSpeed,running(),MOVEMENT.fixedStep,routeDistance,view.playerWalkSpeed,view.playerRunSpeed);
         const old = state.player,
           p = move(old,step.x,step.z,activeColliders(),travelAccess(state));
         const travelled = Math.hypot(p.x - old.x, p.z - old.z);
@@ -410,13 +538,15 @@ export async function createRuntime(
           moving: travelled > 0.001,
         };
       }
-      neighbour.tick(MOVEMENT.fixedStep);
+      if(!indoors())neighbour.tick(MOVEMENT.fixedStep);
       const workshopMessage=advanceWorkshop(state);if(workshopMessage)message=workshopMessage;
       const foodMessage=advanceFood(state);if(foodMessage)message=foodMessage;
       const ritualMessage=advanceRitual(state);if(ritualMessage)message=ritualMessage;
       const forestryMessage=advanceForestry(state,treeById);if(forestryMessage)message=forestryMessage;
       synchronizeGatheringHosts(state, registry);
-      if(!cabin){
+      if(!indoors()){
+        if(tentApproach&&state.selected!=='tent')tentApproach=false;
+        if(tentApproach&&atTentEntrance(state.player))requestTentEntry();
         const gatheringMessage=advancePlayerGather(state,registry,activeColliders());if(gatheringMessage)message=gatheringMessage;
         for (const wp of WAYPOINTS)
           if (Math.hypot(state.player.x - wp.x, state.player.z - wp.z) < 5 && !state.visited.includes(wp.id)) {
@@ -432,8 +562,8 @@ export async function createRuntime(
         if(started!==null && started!==undefined && state.time-started>=captureAt){captureAt=null;inspectionOpen=true;loop.setPaused(true);accumulator=0;message='动作已停帧；结束动作检视后继续。';publishSnapshot();break;}
       }
     }
-    const crossed=advanceCabinCrossing(dt);
-    view.render(state, dt);
+    const crossed=advanceSpaceCrossing(dt);
+    view.render(state, dt, dt, grantPreparation);
     if (lastSampleAt!==null && dt > 0) {
       frameTimes.push(now-lastSampleAt);
       if (frameTimes.length > 360) frameTimes.shift();
@@ -446,7 +576,7 @@ export async function createRuntime(
     }
   };
   const loop = createLoop(
-    tick,
+    (dt,now,mode)=>tick(dt,now,mode,true),
     {
       request: (cb) => requestAnimationFrame(cb),
       cancel: (id) => cancelAnimationFrame(id),
@@ -465,6 +595,8 @@ export async function createRuntime(
     const sceneStats=view.stats();
     return {
       ...sceneStats,
+      tent:tentSnapshot(),
+      tentVisit:tent?{player:{...tent.player,y:TENT_ROOM.floorY},action:tent.action,destination:tent.destination}:null,
       cabinVisit:cabin?{player:{...cabin.player,y:CABIN_ROOM.floorY},action:cabin.action,destination:cabin.destination}:null,
       presentations:{broom:sceneStats.broom,life:sceneStats.life,neighbour:sceneStats.neighbour},
       rarityVfx:sceneStats.workshop.surfaces,
@@ -508,18 +640,19 @@ export async function createRuntime(
   };
   function publishSnapshot() {
     if(!inForest())persistence.observe(state);
-    const pose=cabin?.player??state.player;
+    const pose=cabin?.player??tent?.player??state.player;
     publish({
       cabin:cabinSnapshot(),
+      tent:tentSnapshot(),
       neighbour:neighbour.snapshot(),
       weather:weatherSnapshot(state),
       carrying:carryingSnapshot(state),
       interaction:interactionAccess(state,state.selected),
       woodcraft:woodcraft.snapshot(),
-      zone: cabin?'木屋内':zoneName(state.player.x, state.player.z),
+      zone: cabin?'木屋内':tent?'帐篷内':zoneName(state.player.x, state.player.z),
       x: pose.x,
       z: pose.z,
-      height: cabin?CABIN_ROOM.floorY:travelHeightAt(pose.x,pose.z,travelAccess(state)),
+      height: cabin?CABIN_ROOM.floorY:tent?TENT_ROOM.floorY:travelHeightAt(pose.x,pose.z,travelAccess(state)),
       selected: state.selected,
       moving: pose.moving,
       running: running(),
@@ -547,12 +680,18 @@ export async function createRuntime(
       appearance:view.getAppearance(),
     });
   }
-  const loopPauseRequired=()=>captureHoldToken!==null||manualPause||inspectionOpen||contextLost||document.hidden||destroyed||inForest();
+  const desiredFrameMode=()=>requiredFrameMode(
+    captureHoldToken!==null||contextLost||document.hidden||destroyed||inForest(),
+    manualPause||inspectionOpen,
+    view.hasPendingPresentation(),
+  );
+  view.setPresentationScheduler(()=>loop.setMode(desiredFrameMode()));
   const syncPause = () => {
-    loop.setPaused(loopPauseRequired());
+    loop.setMode(desiredFrameMode());
     resetMovementInput();
     state.player.moving = false;
     if(cabin)cabin.player.moving=false;
+    if(tent)tent.player.moving=false;
     publishSnapshot();
   };
   const editable = (target: EventTarget | null) =>
@@ -560,7 +699,7 @@ export async function createRuntime(
     !!target.closest("input,select,textarea,[contenteditable]");
   const keyDown = (e: KeyboardEvent) => {
     if (inForest() || e.defaultPrevented || interfaceOpen || editable(e.target) ||
-      (menuOpen && e.code!=="Escape" && !(e.code==='KeyE'&&state.selected==='cabin'))) return;
+      (menuOpen && e.code!=="Escape" && !(e.code==='KeyE'&&['cabin','tent'].includes(state.selected??'')))) return;
     if(inspectionOpen){
       if(e.code==='Escape'){e.preventDefault();inspectionOpen=false;view.inspectCharacter(null);view.inspectScene(null);syncPause();view.render(state,0);}
       return;
@@ -599,7 +738,9 @@ export async function createRuntime(
         else if(nearCabinAction(cabin.player,'lamp'))requestCabinAction('lamp');
         return;
       }
+      if(tent){if(nearTentExit(tent.player))requestTentExit();return;}
       if(state.selected==='cabin'||!state.selected&&atCabinEntrance(state.player)){requestCabinEntry();return;}
+      if(state.selected==='tent'||!state.selected&&atTentEntrance(state.player)){requestTentEntry();return;}
       if (state.selected && registry.sources.has(state.selected)) { const result=startPlayerGather(state,state.selected,registry,activeColliders());message=result.message;publishSnapshot(); }
     }
   };
@@ -610,6 +751,7 @@ export async function createRuntime(
     resetMovementInput();
     state.player.moving=false;
     if(cabin)cabin.player.moving=false;
+    if(tent)tent.player.moving=false;
     publishSnapshot();
   };
   const lost = (e: Event) => {
@@ -627,7 +769,7 @@ export async function createRuntime(
   const unsubscribeSave = persistence.subscribe(() => {
     if (destroyed) return;
     if (persistence.status().state === 'protected' || persistence.status().state === 'conflict') {
-      manualPause = true; loop.setPaused(true);
+      manualPause = true; loop.setMode(desiredFrameMode());
     }
     publishSnapshot();
   });
@@ -639,7 +781,7 @@ export async function createRuntime(
   view.canvas.addEventListener("webglcontextlost", lost);
   view.canvas.addEventListener("webglcontextrestored", restored);
   view.render(state, 0);
-  const blocked=()=>inputBlocked()||!!cabin;
+  const blocked=()=>inputBlocked()||indoors();
   const prepareDiningSeat=()=>{
     const access=safeDiningReadingSpot(state,activeColliders());
     if(access.code==='ready')return true;
@@ -652,10 +794,10 @@ export async function createRuntime(
     if(result.ok&&result.committed){state.route=[];state.player.moving=false;view.presentMeal(result.committed.kind,result.committed);}
     view.render(state,0);publishSnapshot();
   };
-  const transferBlocked=()=>destroyed||manualPause||inspectionOpen||contextLost||document.hidden||!!cabin||!!crossing||!!placement||workshopBusy(state)||!!state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state);
+  const transferBlocked=()=>destroyed||manualPause||inspectionOpen||contextLost||document.hidden||indoors()||!!crossing||!!placement||workshopBusy(state)||!!state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state);
   const itemTransfers=createItemTransfers(state,woodcraft,view,activeColliders,transferBlocked);
   const clearPlacement=()=>{placement=null;view.setPlacement(null);};
-  loop.setPaused(loopPauseRequired());
+  loop.setMode(desiredFrameMode());
   publishSnapshot();
   // DEV inspection advances the existing fixed-step owner between captured frames.
   // It neither changes movement speed nor creates a second clock/RAF in the shipped game.
@@ -678,7 +820,7 @@ export async function createRuntime(
         // Capture release keeps the fixed-step remainder and input intent. Only
         // the existing loop's wall-time/sampling baselines restart after the hold.
         restoringCaptureHold=true;
-        try{loop.setPaused(loopPauseRequired());}
+        try{loop.setMode(desiredFrameMode());}
         finally{restoringCaptureHold=false;}
         return {released:true,held,after:snapshot()};
       },
@@ -687,22 +829,58 @@ export async function createRuntime(
   type InspectionWindow=Window&{
     __HOW_ADVANCE_SIMULATION__?:(seconds:number)=>void;
     __HOW_CAPTURE_HOLD__?:ReturnType<typeof createCaptureHoldInspection>;
+    __HOW_RENDER_REVIEW__?:{set:(modes:{atmosphere?:AtmosphereDebug;optics?:OverlookOpticsMode})=>void};
+    __HOW_FOX_REVIEW__?:{sample:(pose:FoxReviewPose)=>void};
+    __HOW_CHARACTER_REVIEW__?:{sample:(pose:{seconds:number})=>void};
   };
   const inspectionWindow=window as InspectionWindow;
   let advanceInspection:((seconds:number)=>void)|undefined;
   let captureInspection:ReturnType<typeof createCaptureHoldInspection>|undefined;
+  let renderInspection:InspectionWindow['__HOW_RENDER_REVIEW__'];
+  let foxInspection:InspectionWindow['__HOW_FOX_REVIEW__'];
+  let characterInspection:InspectionWindow['__HOW_CHARACTER_REVIEW__'];
   if(import.meta.env.DEV&&new URLSearchParams(window.location.search).has('inspect')){
+    characterInspection={sample(pose){
+      const seconds=pose?.seconds;
+      if(destroyed||contextLost||!inspectionOpen||captureHoldToken===null||!Number.isFinite(seconds)||seconds<0||seconds>60)
+        throw Error('Character sample requires a capture hold, wardrobe inspection and 0..60 seconds');
+      view.sampleCharacter(seconds);view.render(state,0);publishSnapshot();
+    }};
+    inspectionWindow.__HOW_CHARACTER_REVIEW__=characterInspection;
+    foxInspection={sample(pose){
+      const values=[pose.seconds,pose.blink??0,pose.eyeWetness??1,...(pose.gaze??[0,0]),...(pose.head??[0,0])];
+      if(destroyed||contextLost||!inspectionOpen||!values.every(Number.isFinite)||pose.seconds<0||pose.seconds>600||
+        pose.motion!==undefined&&!['idle','walk','run'].includes(pose.motion))throw Error('Invalid fox inspection sample');
+      view.sampleFox(pose);view.render(state,0);publishSnapshot();
+    }};
+    inspectionWindow.__HOW_FOX_REVIEW__=foxInspection;
     captureInspection=createCaptureHoldInspection();
     inspectionWindow.__HOW_CAPTURE_HOLD__=captureInspection;
     advanceInspection=seconds=>{
       if(captureHoldToken!==null||inputBlocked()||!Number.isFinite(seconds)||seconds<=0||seconds>5)throw new Error('Inspection step unavailable');
       loop.setPaused(true);
       try{tick(seconds,performance.now());}
-      finally{loop.setPaused(loopPauseRequired());publishSnapshot();}
+      finally{loop.setMode(desiredFrameMode());publishSnapshot();}
     };
     inspectionWindow.__HOW_ADVANCE_SIMULATION__=advanceInspection;
+    renderInspection={set(modes){
+      if(destroyed||contextLost||captureHoldToken===null)throw new Error('Render review requires a capture hold');
+      if(modes.atmosphere){
+        if(!['final','off','transmittance','inscatter'].includes(modes.atmosphere))throw new Error('Unknown atmosphere mode');
+        view.setAtmosphereMode(modes.atmosphere);
+      }
+      if(modes.optics){
+        if(!['final','off','depth','coc'].includes(modes.optics))throw new Error('Unknown optics mode');
+        view.setOpticsMode(modes.optics);
+      }
+      view.render(state,0,0,false);publishSnapshot();
+    }};
+    inspectionWindow.__HOW_RENDER_REVIEW__=renderInspection;
   }
   return {
+    requestTentEntry,
+    requestTentExit,
+    toggleTentDoor,
     requestCabinEntry,
     requestCabinExit:()=>requestCabinAction('exit'),
     toggleCabinLamp:()=>requestCabinAction('lamp'),
@@ -777,12 +955,14 @@ export async function createRuntime(
       publishSnapshot();
     },
     sleepToDawn(){
-      if(blocked()||placement||woodcraft.isDropping())return;
+      if(inputBlocked()||cabin||placement||woodcraft.isDropping())return;
       const guestReason=neighbour.sleepReason();if(guestReason){message=guestReason;publishSnapshot();return;}
       if(view.isMealPlaying()){message='先慢慢吃完这一口，再结束一天。';publishSnapshot();return;}
       const count=state.dayCycle.nightsSlept;
       message=sleepUntilSunrise(state,activeColliders());
       if(state.dayCycle.nightsSlept!==count){
+        if(tent){tent=null;view.leaveTent();setTentCurtain(true);}
+        tentApproach=false;
         neighbour.afterSleep();
         advanceWeather(state);
         view.cancelBroom();
@@ -869,8 +1049,9 @@ export async function createRuntime(
       }
     },
     select(id: string | null) {
-      if(destroyed||cabin||crossing)return;
+      if(destroyed||indoors()||crossing)return;
       if(id!==RIDGE_NEIGHBOUR.id)neighbour.closeConversation();
+      tentApproach=false;
       clearPlacement();
       const cancelled=cancelPlayerAction(state);if(cancelled)message=cancelled;
       woodcraft.cancelRequest();view.setWoodcraftDrop(false);if(id===null)view.inspectScene(null);
@@ -883,13 +1064,13 @@ export async function createRuntime(
       if(blocked())return;
       const tree=state.selected?treeById.get(state.selected):undefined;
       const life=tree?state.forestry.slots[tree.id]:undefined;
-      if(!tree||tree.role!=='managed'||life?.status!=='standing'||state.forestry.active||gatheringBusy(state.gathering)){message='当前目标不能走近采伐。';publishSnapshot();return;}
+      if(!canFellTree(tree)||life?.status!=='standing'||state.forestry.active||gatheringBusy(state.gathering)){message='当前目标不能走近采伐。';publishSnapshot();return;}
       // A visible front quarter gives both the ranger and the falling silhouette room.
-      const direction=Math.atan2(Math.cos(view.getYaw()),Math.sin(view.getYaw()))+Math.PI/4,radius=FORESTRY.preferredStandOffset+(tree.kind==='pine'?.43:.66)*tree.scale;
-      const blockers=activeColliders();let route:ReturnType<typeof findPath>=[];
-      for(const offset of [0,.55,-.55,1.1,-1.1,Math.PI/2,-Math.PI/2,Math.PI]){
-        const p={x:tree.x+Math.cos(direction+offset)*radius,z:tree.z+Math.sin(direction+offset)*radius};
-        if(!canStand(p,blockers,undefined,travelAccess(state)))continue;route=findPath(state.player,p,blockers,travelAccess(state));if(route.length)break;
+      const direction=Math.atan2(Math.cos(view.getYaw()),Math.sin(view.getYaw()))+Math.PI/4;
+      const blockers=activeColliders(),access=travelAccess(state);let route:ReturnType<typeof findPath>=[];
+      for(const p of fellingStandCandidates(tree,direction)){
+        if(!canStand(p,blockers,undefined,access)||!fellingSpaceIsClear(tree,p,blockers,access))continue;
+        route=findPath(state.player,p,blockers,access);if(route.length)break;
       }
       state.route=route;message=route.length?'走近树干后，按“砍树”开始挥斧。':'这棵树附近暂时没有可到达的立足点。';publishSnapshot();
     },
@@ -911,7 +1092,7 @@ export async function createRuntime(
     },
     cancelAction(){const result=cancelPlayerAction(state);if(result)message=result;publishSnapshot();},
     selectTreeBranches(){
-      if(!state.selected||cabin||crossing)return;
+      if(!state.selected||indoors()||crossing)return;
       const source=registry.sources.get(`gather.${state.selected}.branches`);
       if(source){cancelPlayerAction(state);state.selected=source.sourceId;message=startPlayerGather(state,source.sourceId,registry,activeColliders()).message;publishSnapshot();}
     },
@@ -923,7 +1104,7 @@ export async function createRuntime(
       publishSnapshot();
     },
     selectGathering(kind: 'branch' | 'mushroom' | 'scrap') {
-      if(cabin||crossing)return;
+      if(indoors()||crossing)return;
       const source=[...registry.sources.values()].find(s=>registry.items.get(registry.definitions.get(s.definitionId)!.itemId)?.typeId===({branch:'wood.branch',mushroom:'fungus.fresh',scrap:'wood.scrap'} as const)[kind] && state.gathering.sources[s.sourceId].remaining>0);
       if(source){cancelPlayerAction(state);state.selected=source.sourceId;state.route=[];publishSnapshot();}
     },
@@ -968,6 +1149,7 @@ export async function createRuntime(
         const candidate=campWithExpedition(state,forest,false);
         if(!await persistence.saveNow(candidate))return false;
         Object.assign(state,candidate);
+        view.resetPlayerMotion();
         advanceWeather(state);
         message='已回到营地。带回的林产还在手上，可以到原木架存放。';
         manualPause=false;menuOpen=false;accumulator=0;
@@ -985,7 +1167,7 @@ export async function createRuntime(
     async reloadWorld() {
       const loaded = await persistence.reload();
       if (!loaded || destroyed) return false;
-      resetCabinVisit();
+      resetRoomVisits();
       reading=false;view.setReading(false);view.resetPresentationHistory();
       woodcraft.reset();view.setWoodcraftDrop(false);clearPlacement();delete state.wildlife;delete state.expedition;Object.assign(state, loaded);neighbour.reset();advanceWeather(state);synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
       manualPause = !loaded.expedition?.active; keys.clear(); stick.x = stick.z = 0; syncPause(); view.render(state, 0); return true;
@@ -993,18 +1175,18 @@ export async function createRuntime(
     async restoreWorldCopy() {
       const loaded = await persistence.restoreValidCopy();
       if (!loaded || destroyed) return false;
-      resetCabinVisit();
+      resetRoomVisits();
       reading=false;view.setReading(false);view.resetPresentationHistory();
       woodcraft.reset();view.setWoodcraftDrop(false);clearPlacement();delete state.wildlife;delete state.expedition;Object.assign(state, loaded);neighbour.reset();advanceWeather(state);synchronizeWildlife(); accumulator = 0; lastSampleAt = null;
       manualPause = !loaded.expedition?.active; keys.clear(); stick.x = stick.z = 0; syncPause(); view.render(state,0); return true;
     },
     inspectCharacter(kind:'horizontal'|'vertical'|'wardrobe'|null){
-      if(destroyed||contextLost||interfaceOpen||cabin||crossing)return;
+      if(destroyed||contextLost||interfaceOpen||indoors()||crossing)return;
       if(kind&&(state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))){message='先完成或取消当前动作，再检视角色。';publishSnapshot();return;}
       view.inspectScene(null);inspectionOpen=kind!==null;view.inspectCharacter(kind);syncPause();view.render(state,0);publishSnapshot();
     },
     inspectScene(preset:SceneViewPreset|null,overrides:Partial<SceneAppearance>={}){
-      if(destroyed||contextLost||interfaceOpen||cabin||crossing)return;
+      if(destroyed||contextLost||interfaceOpen||indoors()||crossing)return;
       if(preset&&(state.forestry.active||gatheringBusy(state.gathering)||ritualBusy(state))){message='先完成或取消当前动作，再检视场景。';publishSnapshot();return;}
       view.inspectCharacter(null);inspectionOpen=preset!==null;view.inspectScene(preset,overrides);syncPause();view.render(state,0);publishSnapshot();
     },
@@ -1020,7 +1202,7 @@ export async function createRuntime(
       if(value){resetMovementInput();publishSnapshot();}
     },
     setInterfaceOpen(value: boolean) {
-      if(destroyed||inForest()||value&&(cabin||crossing))return;
+      if(destroyed||inForest()||value&&(indoors()||crossing))return;
       if(value&&inspectionOpen){inspectionOpen=false;view.inspectCharacter(null);view.inspectScene(null);}
       if(value){woodcraft.cancelRequest();view.setWoodcraftDrop(false);clearPlacement();}
       interfaceOpen=value;syncPause();
@@ -1034,11 +1216,12 @@ export async function createRuntime(
       syncPause();
       if (value) void persistence.saveNow(state);
     },
-    camera(action: "reset" | "left" | "right" | "in" | "out") {
+    camera(action: "reset" | "left" | "right" | "in" | "out" | "raise" | "lower") {
       if(destroyed||crossing)return;
       if (action === "reset") {view.inspectScene(null);if(inspectionOpen){inspectionOpen=false;view.inspectCharacter(null);view.inspectScene(null);syncPause();}view.resetCamera();}
       else if (action === "left" || action === "right")
         view.rotate(action === "left" ? -0.35 : 0.35);
+      else if(action === 'raise' || action === 'lower')view.elevate(action === 'raise'?OVERLOOK.elevationStep:-OVERLOOK.elevationStep);
       else view.zoomBy(action === "in" ? 1.18 : 1 / 1.18);
       if (manualPause || inspectionOpen) view.render(state, 0);
       publishSnapshot();
@@ -1074,6 +1257,9 @@ export async function createRuntime(
       destroyed = true;
       if(import.meta.env.DEV&&inspectionWindow.__HOW_ADVANCE_SIMULATION__===advanceInspection)delete inspectionWindow.__HOW_ADVANCE_SIMULATION__;
       if(import.meta.env.DEV&&inspectionWindow.__HOW_CAPTURE_HOLD__===captureInspection)delete inspectionWindow.__HOW_CAPTURE_HOLD__;
+      if(import.meta.env.DEV&&inspectionWindow.__HOW_FOX_REVIEW__===foxInspection)delete inspectionWindow.__HOW_FOX_REVIEW__;
+      if(import.meta.env.DEV&&inspectionWindow.__HOW_CHARACTER_REVIEW__===characterInspection)delete inspectionWindow.__HOW_CHARACTER_REVIEW__;
+      if(import.meta.env.DEV&&inspectionWindow.__HOW_RENDER_REVIEW__===renderInspection)delete inspectionWindow.__HOW_RENDER_REVIEW__;
       captureHoldToken=null;
       unsubscribeSave();
       if(!inForest())void persistence.saveNow(state);

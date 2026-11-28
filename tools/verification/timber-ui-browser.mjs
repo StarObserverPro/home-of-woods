@@ -1,6 +1,7 @@
 /** Targeted UI evidence: production App/runtime and actual sandbox entry points. */
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
@@ -9,7 +10,7 @@ import {createServer,createLogger} from 'vite';
 import {chromium} from 'playwright';
 
 const root=fileURLToPath(new URL('../../',import.meta.url));
-const out=path.resolve(process.env.TIMBER_EVIDENCE_DIR??'/tmp/how-timber-evidence');
+const out=path.resolve(process.env.TIMBER_EVIDENCE_DIR??path.join(tmpdir(),'how-timber-evidence'));
 const scope=process.env.TIMBER_REVIEW_SCOPE??'all';
 const origin='http://127.0.0.1:5193';
 const fixturePath='/__timber-review';
@@ -517,7 +518,11 @@ async function restoreGameUi(page,{viewport,releasePointer=false}={}){
     ]){
       const panel=page.locator(selector);
       if(await panel.isVisible()){
-        await panel.getByRole('button',{name:label,exact:true}).click({timeout:10000});
+        const close=panel.getByRole('button',{name:label,exact:true});
+        if(selector==='.target-card'){
+          // Teardown uses the same close action without waiting for a software-rendered pointer click.
+          await close.press('Enter',{timeout:10000});
+        }else await close.click({timeout:10000});
         await panel.waitFor({state:'hidden',timeout:10000});
       }
     }

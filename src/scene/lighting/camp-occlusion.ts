@@ -6,6 +6,7 @@ import {treeScaleFactor} from '../../domain/forestry.ts';
 import type {GameState} from '../../domain/state.ts';
 import type {Tree} from '../../world/layout.ts';
 import {heightAt} from '../../world/surface.ts';
+import {campTreeDimensions} from '../../world/tree-dimensions.ts';
 import {bakeCanopyField,floorOccluder} from '../../world/occlusion.ts';
 import type {CanopyField,CanopySeed,OcclusionVolume} from '../../world/occlusion.ts';
 import type {Resources} from '../resources.ts';
@@ -37,7 +38,9 @@ export function createCampOcclusion(options:Options){
       // Smooth growth is quantized only for this broad field, not the visual tree itself.
       const factor=(status==='stump'||status==='falling')?0:Math.round(treeScaleFactor(life,state.time)*20)/20;
       key.push(`${t.id}:${factor}`);if(factor<=0)continue;
-      const s=t.scale*factor;seeds.push({x:t.x,z:t.z,radius:(t.role==='landmark'?8:t.kind==='pine'?3.2:3.8)*s,height:(t.role==='landmark'?19:8)*s,coverage:Math.min(1,factor)});
+      const s=t.scale*factor,form=t.woodland&&campTreeDimensions(t.woodland);
+      seeds.push({x:t.x,z:t.z,radius:(form?form.crown*.91:t.role==='landmark'?8:t.kind==='pine'?3.2:3.8)*s,
+        height:(form?form.height*(.54+.46*form.crownBase):t.role==='landmark'?19:8)*s,coverage:Math.min(1,factor)});
     }
     const next=key.join('|');if(next===forestKey)return;forestKey=next;
     const start=performance.now();
