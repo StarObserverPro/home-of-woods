@@ -16,7 +16,11 @@ const origin='http://127.0.0.1:5193';
 const fixturePath='/__timber-review';
 const desktop={width:1280,height:800};
 const smallViews=[{width:390,height:844},{width:320,height:720},{width:844,height:390}];
-const guidedFrames=new Set(['01-desktop-hud','02-desktop-items','06-desktop-pause','game-390x844-items','game-844x390-items','game-390x844-items-notice','gallery-desktop','cabin-844x390-initial','woodworking-offline-390x844']);
+const guidedFrames=new Set([
+  '01-desktop-hud','02-desktop-items','06-desktop-pause','desktop-clock','desktop-save',
+  'game-390x844-items','game-844x390-items','game-390x844-items-notice',
+  'gallery-desktop','cabin-844x390-initial','woodworking-offline-390x844','forest-390x844-bag',
+]);
 const report={
   result:'running',startedAt:new Date().toISOString(),sourceRevision:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),
   scope,origin,browser:null,buildEntrySha256:null,woodworkingEntrySha256:null,frames:[],flows:[],focusChecks:[],journeys:[],gridChecks:[],noticeChecks:[],guideDialogChecks:[],cabinSceneChecks:[],captureHolds:[],layoutIssues:[],errors:[],failedRequests:[],warnings:[],failures:[],
@@ -291,6 +295,16 @@ async function gridGeometry(page){
       const check={kind,element:label(element),reference,actual,expected,delta:actual-expected};checks.push(check);
       if(!Number.isFinite(actual)||!Number.isFinite(expected)||Math.abs(actual-expected)>tolerance)issues.push({...check,rect:box(element)});
     };
+    const span=(panel,selector)=>{
+      const style=getComputedStyle(panel),start=box(panel).left+panel.clientLeft;
+      const left=start+parseFloat(style.paddingLeft);
+      const right=start+panel.clientWidth-parseFloat(style.paddingRight);
+      for(const element of [...panel.querySelectorAll(selector)].filter(visible)){
+        const child=box(element);
+        compare('content-left',element,child.left,left,label(panel));
+        compare('content-right',element,child.right,right,label(panel));
+      }
+    };
     const roots=query('[data-how-ui="timber"]'),regions=query('[data-ui-grid]').filter(visible);
     const rootInfo=roots.map(root=>{
       const style=getComputedStyle(root),unit=parseFloat(style.getPropertyValue('--how-grid-unit'));
@@ -328,12 +342,50 @@ async function gridGeometry(page){
     }
     for(const panel of standard){
       const root=panel.closest('[data-how-ui="timber"]'),rootIndex=roots.indexOf(root),safe=rootInfo[rootIndex]?.safe;
-      const r=box(panel),style=getComputedStyle(panel);
+      const r=box(panel);
       if(panel.dataset.uiGrid!=='window')issues.push({kind:'missing-window-grid-role',element:label(panel)});
       if(safe){compare('window-safe-top',panel,r.top,safe.top,'viewport top rail');compare('window-safe-right',panel,r.right,innerWidth-safe.right,'viewport right rail');}
-      const left=r.left+parseFloat(style.borderLeftWidth)+parseFloat(style.paddingLeft),right=r.right-parseFloat(style.borderRightWidth)-parseFloat(style.paddingRight);
-      const spans=[...panel.querySelectorAll(':scope > .wood-heading,:scope > .target-top,:scope > .panel-heading,:scope > .wood-tabs,:scope > .warehouse-tools,:scope > footer.wood-status,:scope > .action-message,:scope > .item-browser,:scope > .item-browser > .browser-toolbar,:scope > .item-browser > .browser-toolbar > .wood-tabs,:scope > .item-browser > .browser-body')].filter(visible);
-      for(const element of spans){const child=box(element);compare('window-content-left',element,child.left,left,label(panel));compare('window-content-right',element,child.right,right,label(panel));}
+      span(panel,':scope > :is(.wood-heading,.target-top,.panel-heading,.wood-tabs,.warehouse-tools,.wood-status,.action-message,.item-browser,.wood-shop,.warehouse-carry-summary,.carrying-panel,.wood-pile-toolbar)');
+    }
+    const sections=[
+      ['.item-browser',':scope > :is(.browser-toolbar,.browser-body)'],
+      ['.browser-toolbar',':scope > .wood-tabs'],
+      ['.carrying-panel,.wood-shop,.save-controls',':scope > :is(.item-browser,.wood-actions,.wood-shop-tools,.wood-checkout,.wood-text-pages)'],
+      ['.pause-dialog[open]',':scope > :is(.wood-tabs,.save-controls,button)'],
+      ['.forest-reader',':scope > :is(.forest-reader-heading,.forest-reader-paper,.forest-reader-actions,.forest-reader-close)'],
+      ['.weather-panel',':scope > :is(.weather-options,.weather-intensity,.weather-automatic,.weather-wood,.weather-work-time)'],
+      ['.hourglass',':scope > p'],
+      ['.wood-detail',':scope > :is(.wood-actions,.wood-text-pages,.wood-action)'],
+      ['.expedition-window',':scope > :is(.expedition-window-heading,.expedition-window-body)'],
+      ['.expedition-window-body',':scope > :is(.expedition-load,.expedition-tabs,.expedition-list,.expedition-landmark-list,.expedition-window-message)'],
+      ['.collection',':scope > :is(.collection-title,.collection-intro,.item-list,.inspector,.audit-panel)'],
+      ['.controls[data-ui-grid="window"]',':scope > .card-content'],
+      ['.card-content :is(#setup,#working)',':scope > :is(.dimensions,.tasks,.steps,.operation-inputs,.materials,.primary,.quiet)'],
+    ];
+    for(const [container,selector] of sections){
+      for(const panel of query(container).filter(visible))span(panel,selector);
+    }
+    for(const heading of query('.game-shell :is(.target-top,.wood-heading,.panel-heading,.forest-reader-heading),.expedition-window-heading,.collection-title').filter(visible)){
+      const edges=box(heading);
+      const children=[...heading.children].filter(visible);
+      const first=children[0],last=children.at(-1);
+      if(first)compare('title-start',first,box(first).left+parseFloat(getComputedStyle(first).paddingLeft),edges.left,label(heading));
+      if(last&&last!==first)compare('title-end',last,box(last).right,edges.right,label(heading));
+    }
+    for(const detail of query('.game-shell .wood-detail').filter(visible)){
+      const heading=detail.querySelector(':scope > .wood-item-heading');
+      const info=detail.querySelector(':scope > .wood-info');
+      if(heading)compare('detail-title-start',heading,box(heading).left,box(detail).left,label(detail));
+      if(info)compare('detail-info-end',info,box(info).right,box(detail).right,label(detail));
+    }
+    if(!matchMedia('(forced-colors:active)').matches){
+      for(const element of query('.wood-detail,.empty-slot,.camera-tools,.rarity-vfx-options,.inspector,[data-timber-variant="dock"]').filter(visible)){
+        const style=getComputedStyle(element);
+        const alpha=style.backgroundColor.startsWith('rgba(')?Number(style.backgroundColor.split(',').at(-1).slice(0,-1)):1;
+        if(alpha>.16||style.backgroundImage!=='none'||Number(style.opacity)!==1){
+          issues.push({kind:'decorative-fill-too-opaque',element:label(element),background:style.backgroundColor,image:style.backgroundImage,opacity:style.opacity});
+        }
+      }
     }
     for(const body of query('.game-shell .browser-body').filter(visible)){
       const catalog=body.querySelector(':scope > .browser-catalog'),detail=body.querySelector(':scope > .wood-detail');
@@ -357,6 +409,10 @@ async function gridGeometry(page){
     }
     for(const row of regions.filter(element=>element.dataset.uiGrid==='row')){
       const children=[...row.children].filter(visible),controls=children.flatMap(child=>{
+        if(child.matches('.wood-tabs'))return [...child.querySelectorAll('button')].filter(visible).map(element=>{
+          const rect=box(element);
+          return {element,rect,groupRect:rect};
+        });
         const fields=child.matches('label')?[...child.querySelectorAll('select,input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"])')].filter(visible):[];
         const targets=fields.length?fields:child.matches('button,summary,select,input:not([type="hidden"]),[role="button"]')||child.matches('label:has(input[type="checkbox"],input[type="radio"])')?[child]:[];
         return targets.map(element=>({element,rect:box(element),groupRect:box(child)}));
@@ -496,6 +552,15 @@ async function openItems(page,touch=false){
   await page.getByRole('navigation',{name:'物品位置',exact:true}).getByRole('button',{name:'营地',exact:true}).click();
   await page.getByRole('group',{name:'营地材料图标',exact:true}).getByRole('button').first().waitFor();
 }
+async function openCampTarget(page,name){
+  await page.locator('.bottom-toolbar').getByRole('button',{name:'路线',exact:true}).click();
+  const route=page.locator('.route-sheet');
+  await route.getByRole('group',{name:'路线图标',exact:true}).getByRole('button',{name,exact:true}).click();
+  await route.getByRole('button',{name:'查看',exact:true}).click();
+  const target=page.locator('.target-card');
+  await target.waitFor();
+  return target;
+}
 function hasSelectionLeaf(control) {
   return control.evaluate(element=>{
     const marker=getComputedStyle(element,'::before');
@@ -613,6 +678,17 @@ async function desktopGame(){
       await page.keyboard.press('b');await page.locator('.warehouse-dialog').waitFor();
       await page.keyboard.press('Escape');await page.locator('.warehouse-dialog').waitFor({state:'hidden'});
     },()=>restoreGameUi(page));
+    await scenario('warehouse-cross-layer-layout',page,async()=>{
+      await openItems(page);
+      const warehouse=page.locator('.warehouse-dock');
+      await warehouse.getByRole('button',{name:'物品说明',exact:true}).click();
+      await capture(page,'desktop-item-notes');
+      const locations=warehouse.getByRole('navigation',{name:'物品位置',exact:true});
+      for(const [tab,frame] of [['随身','carrying'],['家具','furniture'],['图纸','blueprints'],['穿戴','wardrobe'],['木料堆','timber-stock']]){
+        await locations.getByRole('button',{name:tab,exact:true}).click();
+        await capture(page,`desktop-${frame}`);
+      }
+    },()=>restoreGameUi(page));
     await scenario('desktop-route-and-outside-dismiss',page,async()=>{
       await page.locator('.bottom-toolbar').getByRole('button',{name:'路线',exact:true}).click();
       await page.locator('.route-sheet').waitFor();
@@ -657,6 +733,19 @@ async function desktopGame(){
       assert.equal(await page.locator('.weather-menu').evaluate(element=>element.open),false);
       assert.equal(await summary.evaluate(element=>element===document.activeElement),true);
     },()=>restoreGameUi(page));
+    await scenario('desktop-clock-menu',page,async()=>{
+      const opener=page.getByLabel('沙漏速度',{exact:true});
+      await opener.focus();
+      await page.keyboard.press('Enter');
+      await page.locator('.clock-menu[open] .hourglass').waitFor();
+      try{
+        await capture(page,'desktop-clock');
+      }finally{
+        await page.keyboard.press('Escape');
+        await page.locator('.clock-menu[open]').waitFor({state:'hidden'});
+      }
+      assert.equal(await opener.evaluate(element=>element===document.activeElement),true);
+    });
     await scenario('desktop-pause-focus',page,async()=>{
       const opener=page.getByRole('button',{name:'暂停',exact:true});
       await opener.focus();await page.keyboard.press('Enter');await page.locator('.pause-dialog[open]').waitFor();
@@ -664,7 +753,9 @@ async function desktopGame(){
       await page.getByRole('navigation',{name:'暂停选项',exact:true}).getByRole('button',{name:'显示',exact:true}).click();
       assert.equal(await hasSelectionLeaf(page.locator('.pause-dialog [data-timber-tab][aria-pressed="true"]')),true);
       await capture(page,'07-desktop-pause-display');
-      await page.keyboard.press('Escape');await page.locator('.pause-dialog[open]').waitFor({state:'hidden'});
+      await page.getByRole('navigation',{name:'暂停选项',exact:true}).getByRole('button',{name:'存档',exact:true}).click();
+      await capture(page,'desktop-save');
+      await page.keyboard.press('Escape');await page.locator('.pause-dialog').waitFor({state:'hidden'});
       assert.equal(await opener.evaluate(element=>element===document.activeElement),true);
     },()=>restoreGameUi(page));
     await scenario('desktop-settings',page,async()=>{
@@ -711,18 +802,28 @@ async function desktopGame(){
       assert.equal(await page.locator('.warehouse-dock').isVisible(),true,'Escape must cancel the drag before closing the warehouse');
       assert.deepEqual((await gameState(page)).inventory,before.inventory,'Cancelled drag and keyboard traversal must preserve inventory');
     },()=>restoreGameUi(page,{releasePointer:true}));
+    await scenario('facility-cross-layer-layout',page,async()=>{
+      for(const [name,frame] of [['帐篷','tent'],['旧木屋','cabin-target'],['工作台','workbench']]){
+        const target=await openCampTarget(page,name);
+        await capture(page,`desktop-${frame}`);
+        if(name==='工作台'){
+          const upgrade=target.getByRole('button',{name:'改造',exact:true});
+          await upgrade.click();
+          await capture(page,'desktop-workbench-upgrade');
+        }
+        await target.getByRole('button',{name:'关闭目标详情',exact:true}).press('Enter');
+        await target.waitFor({state:'hidden'});
+      }
+    },()=>restoreGameUi(page));
     await scenario('story-reader-focus-pages-and-return',page,async()=>{
       // Use the real route list and approach command; no injected target or test-only button.
-      await page.locator('.bottom-toolbar').getByRole('button',{name:'路线',exact:true}).click();
-      const route=page.locator('.route-sheet');await route.waitFor();
-      await page.getByRole('group',{name:'路线图标',exact:true}).getByRole('button',{name:'火塘',exact:true}).click();
-      await route.getByRole('button',{name:'查看',exact:true}).click();
-      const target=page.locator('.target-card');await target.waitFor();
+      const target=await openCampTarget(page,'火塘');
       const fireItems=page.getByRole('group',{name:'火塘图标',exact:true});
       if(!await fireItems.isVisible()){
         await target.getByRole('button',{name:'走近',exact:true}).first().click();
         await advanceJourney(page,'approach-fire-through-route',()=>fireItems.isVisible());
       }
+      await capture(page,'desktop-fire-pit');
       await fireItems.getByRole('button',{name:'森林故事',exact:true}).click();
       const read=target.getByRole('button',{name:'坐下阅读',exact:true});
       await read.click();await frames(page,2);
@@ -752,6 +853,18 @@ async function desktopGame(){
       await page.keyboard.press('Escape');await reader.waitFor({state:'hidden'});
       await frames(page,2);await assertFocusIn(page,'.target-card','after closing the story');
     },()=>restoreGameUi(page));
+    await scenario('merchant-cross-layer-layout',page,async()=>{
+      await loadGame(page,{parkedMerchant:'1'});
+      const target=await openCampTarget(page,'行商'),shop=target.locator('.wood-shop');
+      if(!await shop.isVisible()){
+        await target.getByRole('button',{name:'走近货车',exact:true}).click();
+        await advanceJourney(page,'approach-merchant-through-route',()=>shop.isVisible());
+      }
+      await capture(page,'desktop-merchant');
+      await page.setViewportSize(smallViews[0]);
+      await shop.getByRole('button',{name:'材料',exact:true}).click();
+      await capture(page,'game-390x844-merchant');
+    },()=>restoreGameUi(page,{viewport:desktop}));
   }finally{await session.close();}
 }
 
@@ -788,6 +901,16 @@ async function mobileGame(){
         await page.getByRole('button',{name:'关闭操作说明',exact:true}).tap();
         await page.locator('.help-sheet').waitFor({state:'hidden'});
       },()=>restoreGameUi(page));
+      if(viewport.height<=520){
+        await scenario('landscape-pause-display-restores-hud',page,async()=>{
+          await page.getByRole('button',{name:'暂停',exact:true}).tap();
+          const pause=page.locator('.pause-dialog');
+          await pause.getByRole('button',{name:'显示',exact:true}).tap();
+          await capture(page,'game-844x390-pause-display');
+          await page.keyboard.press('Escape');
+          await pause.waitFor({state:'hidden'});
+        },()=>restoreGameUi(page));
+      }
     }
     await scenario('game-390x844-persistent-notice',page,async()=>{
       await page.setViewportSize(smallViews[0]);
@@ -872,6 +995,37 @@ async function cabin(viewport,touch=false){
       const after=await page.evaluate(()=>window.__CABIN_AUDIT__.getSnapshot());
       assert.equal(after.items.filter(item=>item.location.kind!=='stored').length,before.items.filter(item=>item.location.kind!=='stored').length+1);
       await capture(page,`${label}-restored`,{fitViewport:false});
+    });
+  }finally{await session.close();}
+}
+
+async function forestWindows(){
+  const session=await newPage(smallViews[0],true),page=session.page;
+  try{
+    await scenario('forest-window-cross-layer-layout',page,async()=>{
+      await page.goto(`${origin}/sandbox/forest-expedition/`);
+      const hud=page.locator('.expedition-bottom');
+      const panel=page.locator('.expedition-window');
+      for(const [button,frame] of [['行囊','bag'],['物产','sources'],['暂停','pause']]){
+        await hud.getByRole('button',{name:button,exact:true}).tap();
+        await panel.waitFor();
+        const scrolls=frame==='sources';
+        await capture(page,`forest-390x844-${frame}`,{fitViewport:!scrolls});
+        if(scrolls){
+          const landmark=panel.locator('.expedition-landmark-list button').last();
+          await landmark.focus();
+          assert.equal(await landmark.evaluate(element=>{
+            const body=element.closest('.expedition-window-body');
+            const area=body.getBoundingClientRect(),target=element.getBoundingClientRect();
+            return body.scrollTop>0&&target.top>=area.top-1&&target.bottom<=area.bottom+1;
+          }),true,'Focusing the last landmark must scroll it fully inside the window');
+          await landmark.tap();
+          await page.locator('.expedition-target').waitFor();
+        }else{
+          await panel.locator('.expedition-window-heading button').tap();
+        }
+        await panel.waitFor({state:'hidden'});
+      }
     });
   }finally{await session.close();}
 }
@@ -1036,6 +1190,7 @@ try{
   if(scope==='all'||scope==='modules'){
     await gallery();
     for(const viewport of [desktop,...smallViews])await cabin(viewport,viewport!==desktop);
+    await forestWindows();
     await woodworking();
   }
   assert.deepEqual(report.errors,[],'Unexpected browser console/page errors');

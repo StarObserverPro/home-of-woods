@@ -22,10 +22,10 @@
   .tool-dock button{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:0;min-height:70px}.tool-dock svg{width:40px;height:32px;pointer-events:none}
   .controls{align-self:start;max-height:100%;min-height:0;overflow-y:auto;overscroll-behavior:contain;scroll-padding:24px;z-index:2}
   .card-content{min-width:0}.controls label{display:flex;flex-direction:column;gap:8px;font-size:12px}.controls select{width:100%;min-width:0}
-  .dimensions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}.dimensions input{width:100%}
+  .dimensions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--how-gap)}.dimensions input{width:100%}
   .tasks{display:grid;grid-template-columns:repeat(5,minmax(44px,1fr));gap:8px}.tasks button{white-space:nowrap}
-  .task-hint{font-size:14px;margin:12px 0}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
-  .control-step{display:grid;gap:12px}.control-step h2{margin-bottom:0}
+  .task-hint{font-size:14px}.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--how-gap)}
+  .control-step{display:grid;gap:var(--how-gap)}.control-step h2{margin-bottom:0}
   .control-step .primary,.execute button,#setup>.primary,#done>.primary{width:100%}
   .measure{display:grid;grid-template-columns:44px minmax(0,1fr) auto 44px;gap:8px;align-items:center}
   .measure input{width:100%;text-align:center;font-variant-numeric:tabular-nums}.measure span{font-size:12px}
@@ -33,13 +33,13 @@
   .row{display:flex;gap:8px;align-items:center;justify-content:space-between}.row .hint{flex:1}.row button{flex-shrink:0}
   .execute{display:grid;gap:8px}.execute .hint:empty{display:none}
   .inspection{display:grid;gap:12px}.inspection h2{display:flex;align-items:center;justify-content:space-between;margin:0}.inspection strong{font-size:16px}.inspection p{font-size:13px;margin:8px 0}.finish-row{display:grid;gap:12px}
-  .materials{margin-top:16px}.materials summary{display:flex;justify-content:space-between;gap:8px;font-size:12px}.materials p{margin:8px 0;font-size:12px}.quiet{width:100%;margin-top:12px}
+  .materials summary{display:flex;justify-content:space-between;gap:var(--how-gap);font-size:12px}.materials p{margin:var(--how-gap) 0 0;font-size:12px}.quiet{width:100%}
   .drawing{max-width:min(760px,calc(100vw - 32px));width:760px}.paper-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}.paper-heading h2{margin:0}
-  .drawings{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:12px;margin:16px 0}.drawings figure{margin:0;min-width:0}.drawings figcaption{font-size:12px;text-align:center}.drawings svg{width:100%;height:auto;display:block}.drawings text{font:8px system-ui;fill:#eee3bd}
+  .drawings{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:var(--how-section-gap);margin:var(--how-gap) 0}.drawings figure{margin:0;min-width:0}.drawings figcaption{font-size:12px;text-align:center}.drawings svg{width:100%;height:auto;display:block}.drawings text{font:8px system-ui;fill:#eee3bd}
   .outline{fill:#aa885b;stroke:#e1c790;stroke-width:1}.tongue{fill:#c7a673}.seam{stroke:#d4ba83;stroke-width:1;fill:none}.focus{stroke:#fff1b7;stroke-width:2;fill:none}.hit{stroke:transparent;stroke-width:8;fill:none}
   dialog{color:inherit;border:0;max-height:85dvh;max-width:min(420px,calc(100vw - 32px))}dialog p{margin:12px 0}dialog::backdrop{background:#12231bc9}
   .sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%)}
-  #setup,#done{display:grid;gap:12px}#setup h2,#done h2{margin-bottom:4px}#setup>.primary{margin-top:12px}
+  #setup,#working,#done{display:grid;gap:var(--how-gap)}#setup h2,#done h2,#setup .eyebrow,#done .eyebrow{margin:0}
   @media(max-width:1000px) and (min-width:701px){
     .layout{grid-template-columns:minmax(0,1fr) 304px;gap:12px}
     .tool-dock{grid-template-columns:repeat(4,48px);left:auto;right:8px;transform:none;bottom:12px}.tool-dock svg{width:32px}.view-tools{left:4px}
@@ -53,7 +53,7 @@
     .orbit-pad,.view-presets{display:flex;gap:4px;height:44px}.orbit-pad button,.view-presets button{flex:0 0 44px;width:44px;padding:0}
     .tool-dock{bottom:4px;left:50%;right:auto;transform:translateX(-50%);grid-template-columns:repeat(4,minmax(44px,1fr));width:calc(100% - 16px);gap:8px}.tool-dock button{min-height:60px}.tool-dock svg{height:24px}
     .controls{width:100%;height:100%;max-height:100%;overflow-y:auto;min-height:0;overscroll-behavior:contain}
-    .steps{margin-bottom:12px}.control-step h2{font-size:16px}.drawings{grid-template-columns:1fr 1fr}.drawings figure:first-child{grid-column:1/-1}
+    .control-step h2{font-size:16px}.drawings{grid-template-columns:1fr 1fr}.drawings figure:first-child{grid-column:1/-1}
   }
   @media(max-height:520px) and (min-width:701px){
     .shell{height:100dvh;min-height:360px}.layout{grid-template-columns:minmax(0,1fr) 304px;gap:12px}

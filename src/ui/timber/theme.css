@@ -4,6 +4,9 @@
   [data-how-ui="timber"] {
     --how-ink:#f5ead1; --how-muted:#d1c7ae; --how-surface:#263c30;
     --how-recess:#203329; --how-key:#394a3d; --how-selected:#465d47;
+    --how-panel-fill:linear-gradient(135deg,rgb(29 46 36 / 80%),rgb(22 39 30 / 84%));
+    --how-quiet-fill:rgb(62 82 66 / 14%);
+    --how-scrim:rgb(10 23 18 / 32%);
     --how-wood:#665f51; --how-wood-light:#877e6a; --how-rim:#595749;
     --how-grain-horizontal:url("./materials/grain-horizontal.jpg");
     --how-grain-vertical:url("./materials/grain-vertical.jpg");
@@ -12,7 +15,7 @@
     --how-space-1:4px; --how-space-2:8px; --how-space-3:12px;
     --how-space-4:16px; --how-space-6:24px;
     --how-grid-unit:4px; --how-gap:8px; --how-section-gap:12px;
-    --how-frame-inset:24px; --how-panel-inset:24px; --how-panel-bottom:32px;
+    --how-frame-inset:24px; --how-panel-inset:24px; --how-panel-bottom:var(--how-panel-inset);
     --how-safe-left:max(var(--how-frame-inset),env(safe-area-inset-left,0px));
     --how-safe-right:max(var(--how-frame-inset),env(safe-area-inset-right,0px));
     --how-safe-top:max(var(--how-frame-inset),env(safe-area-inset-top,0px));
@@ -33,7 +36,7 @@
     text-shadow:none;
   }
   :is([data-how-ui][data-timber-surface="panel"],[data-how-ui] [data-timber-surface="panel"]) {
-    background:linear-gradient(135deg,#2d4236,var(--how-surface));
+    background:var(--how-panel-fill);
     border-radius:10px;
     box-shadow:inset 0 1px #c1b69b33,inset 0 0 0 3px var(--how-rim),var(--how-shadow);
     padding:var(--how-panel-padding);
@@ -43,7 +46,11 @@
     box-shadow:inset 0 1px 2px #101c153d;
   }
   [data-how-ui] [data-timber-surface="heading"] {
-    background-color:#b8c49b09;
+    background-color:rgb(184 196 155 / 3%);
+  }
+  [data-how-ui] :is(.empty-slot,.camera-tools,[data-timber-variant="dock"])[data-timber-surface] {
+    background:var(--how-quiet-fill);
+    box-shadow:none;
   }
   [data-how-ui] :is([data-timber-surface="button"],[data-timber-surface="heading"]:where([data-timber-material="plank"])) {
     --how-grain:var(--how-grain-horizontal);
@@ -125,9 +132,6 @@
   [data-how-ui] [data-ui-grid="hud"] :is(button,summary) .game-icon {
     filter:saturate(.78);
   }
-  [data-how-ui] .rarity-vfx-options {
-    background-color:var(--how-recess); border-radius:7px;
-  }
   [data-how-ui] .rarity-vfx-options label[data-timber-surface="slot"] {
     background-color:var(--how-recess); box-shadow:none;
   }
@@ -184,6 +188,6 @@
   }
   [data-how-ui] [data-how-camera]:hover {background:#263f32e8;}
   [data-how-ui] [data-timber-density="compact"][data-timber-surface="button"] {padding:8px 4px 12px;white-space:nowrap;}
-  [data-how-ui] [data-timber-variant="dock"][data-timber-surface="panel"] {padding:12px 16px 16px;}
+  [data-how-ui] [data-timber-variant="dock"][data-timber-surface="panel"] {padding:var(--how-gap);}
   @media(forced-colors:active){[data-how-ui] [data-how-camera]{background:Canvas;border:2px solid ButtonText;color:ButtonText;}}
 }
