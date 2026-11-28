@@ -110,13 +110,19 @@ export function createBroomPresentation(r:Resources,player:THREE.Group){
         // hands, rather than shifting the whole tool away from its work surface.
         const baseX=event.patch.center.x,baseZ=event.patch.center.z;
         held.group.position.set(baseX,heightAt(baseX,baseZ),baseZ);held.group.rotation.y=facing;
-        const stroke=reducedMotion?0:Math.sin(sweepProgress*Math.PI*6);
-        held.tool.position.set(.11*stroke,0,0);held.tool.rotation.set(0,0,0);held.joint.rotation.set(-.17,0,.14*stroke);held.mark.visible=marked(item);
-        held.group.updateWorldMatrix(true,true);grip('l',held.upperGrip);grip('r',held.lowerGrip);
+        const angle=sweepProgress*Math.PI*6,stroke=reducedMotion?0:Math.sin(angle);
+        const lift=reducedMotion?0:.045*Math.max(0,-Math.cos(angle));
+        held.tool.position.set(.32*stroke,lift,0);held.tool.rotation.set(0,0,0);held.joint.rotation.set(-.17,0,.17*stroke);held.mark.visible=marked(item);
+        const chest=bones.get('chest');
+        if(chest){
+          if(!overlay.has(chest))overlay.set(chest,chest.quaternion.clone());
+          chest.rotation.y+=.13*stroke;chest.rotation.z+=.035*stroke;
+        }
         if(playful){
           const wave=Math.sin(Math.PI*playfulProgress);held.tool.rotation.y=(whimsy==='simple'?.35:1.05)*wave;
           if(whimsy==='full')held.tool.position.x+=.40*wave;
         }
+        held.group.updateWorldMatrix(true,true);grip('l',held.upperGrip);grip('r',held.lowerGrip);
         surfaces.apply(held.tool,item);
       }
       for(const patch of CAMP_LEAF_PATCHES){

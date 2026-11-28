@@ -18,7 +18,9 @@ export function createActor(model,motions){
   const root=new T.Group(),body=clone(model);root.add(body);root.scale.setScalar(1.5);
   const bones={};body.traverse(o=>{if(o.isBone)bones[o.name.replaceAll('.','')]=o;if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
   const mixer=new T.AnimationMixer(body),idle=mixer.clipAction(motions.find(c=>c.name==='Idle_A'));idle.play();mixer.setTime(.01);
-  const saved=[];body.traverse(o=>{if(o.isBone)saved.push([o,o.position.clone(),o.quaternion.clone(),o.scale.clone()]);});mixer.stopAllAction();
+  const saved=[];body.traverse(o=>{if(o.isBone)saved.push([o,o.position.clone(),o.quaternion.clone(),o.scale.clone()]);});
+  const restingHands={l:root.worldToLocal(bones.handslotl.getWorldPosition(v(0,0,0))),r:root.worldToLocal(bones.handslotr.getWorldPosition(v(0,0,0)))};
+  mixer.stopAllAction();
   const feet={l:root.worldToLocal(bones.footl.getWorldPosition(v(0,0,0))),r:root.worldToLocal(bones.footr.getWorldPosition(v(0,0,0)))};
   const footRotations=Object.fromEntries(['l','r'].map(s=>[s,root.getWorldQuaternion(new T.Quaternion()).invert().multiply(bones['foot'+s].getWorldQuaternion(new T.Quaternion()))]));
   const mat=(c)=>new T.MeshStandardMaterial({color:c,roughness:.65});const wood=mat('#805633'),metal=mat('#7d9297');
@@ -27,7 +29,7 @@ export function createActor(model,motions){
   const hand=(side,target)=>solveChain(root,bones['handslot'+side],[bones['lowerarm'+side],bones['upperarm'+side]],target);
   const leg=(side,target)=>solveChain(root,bones['foot'+side],[bones['lowerleg'+side],bones['upperleg'+side]],target);
   function rest(){for(const [b,p,q,s]of saved){b.position.copy(p);b.quaternion.copy(q);b.scale.copy(s);}body.position.set(0,0,0);body.rotation.set(0,0,0);axe.visible=false;body.visible=true;root.updateMatrixWorld(true);}
-  function update(action,t,{radius=.5,slope=0,crossSlope=0}={}){
+  function update(action,t,{radius=.5,slope=0,crossSlope=0,duration=3,surface}={}){
     rest();root.position.set(0,0,0);root.rotation.set(0,0,0);
     if(action==='fell'){
       const retreat=ramp(t,1.75,2.6);root.position.set(radius+1.05,0,.75+retreat*.8);root.rotation.y=-Math.PI/2-.25;
@@ -54,21 +56,60 @@ export function createActor(model,motions){
       for(const s of ['l','r']){const foot=bones['foot'+s],desired=root.getWorldQuaternion(new T.Quaternion()).multiply(footRotations[s]);foot.quaternion.copy(foot.parent.getWorldQuaternion(new T.Quaternion()).invert().multiply(desired));}
       const reach=(a,b)=>ramp(t,a,a+.3)*(1-ramp(t,b,b+.32));const left=reach(1.05,1.75),right=reach(2.15,2.85);
       hand('l',v(.25,.73-.35*crouch-.18*left,.12+.30*crouch+.14*left));hand('r',v(-.25,.73-.35*crouch-.18*right,.12+.30*crouch+.14*right));
+    }else if(action==='retreat'){
+      bones.chest.rotation.x-=.12*t;bones.chest.rotation.y+=.14*t;
+      bones.head.rotation.x-=.10*t;
+      for(const side of ['l','r']){
+        const sign=side==='l'?1:-1;
+        hand(side,restingHands[side].clone().add(v(sign*.06,.14,.12).multiplyScalar(t)));
+      }
+    }else if(action==='craft'||action==='upgrade'){
+      const edge=Math.min(.56,duration*.25);
+      const release=1-ramp(t,duration-edge,duration);
+      const lean=ramp(t,0,edge)*release,brace=ramp(t,.06,edge)*release;
+      const work=ramp(t,edge*.65,edge+.12)*release;
+      const phase=(Math.max(0,t-edge)/1.06)%1;
+      const press=ramp(phase,.08,.58)*(1-ramp(phase,.62,.94));
+      bones.hips.position.z+=.08*lean;
+      bones.hips.position.x+=.035*lean;
+      bones.hips.position.y-=(.043+.026*press)*lean;
+      bones.chest.rotation.x+=(.20+.09*press)*lean;
+      bones.chest.rotation.y+=(.06-.12*press)*work;
+      bones.head.rotation.x+=.22*lean;
+      leg('l',feet.l);leg('r',feet.r);
+      const center=surface??v(0,.71,.44);
+      const support=center.clone().add(v(.15,.018,.018));
+      const working=center.clone().add(action==='craft'
+        ?v(-.13,.095-.067*press,.015+.12*press)
+        :v(-.12-.03*press,.15-.124*press,.025+.056*press));
+      hand('l',restingHands.l.clone().lerp(support,brace));
+      hand('r',restingHands.r.clone().lerp(working,work));
     }else if(action==='pray'){
       root.position.set(0,0,1.3);root.rotation.y=Math.PI;
       const fold=ramp(t,.15,1.1)*(1-ramp(t,3.75,4.65));bones.head.rotation.x+=.27*fold;bones.chest.rotation.x+=.06*fold;
       hand('l',v(.29*(1-fold)+.035*fold,.63+.28*fold,.07+.26*fold));hand('r',v(-.29*(1-fold)-.035*fold,.63+.28*fold,.07+.26*fold));
-    }else{
-      const hold=ramp(t,.15,1.05)*(1-ramp(t,6.6,7.5)),step=ramp(t,1.15,2.5),down=ramp(t,5.6,6.65);
-      const intoLeaves=ramp(t,2.5,3.3)*1.5;
-      root.position.set(0,(step*.66+intoLeaves)*(1-down),radius+.48);root.rotation.y=Math.PI;
-      bones.hips.position.y-=.08*hold;bones.chest.rotation.x+=.18*hold;bones.head.rotation.x-=.13*hold;
-      const gripY=.93+step*.13,gripZ=(radius+.48)/1.5-radius*.33;
-      hand('l',v(.27+radius*.12*hold,.65*(1-hold)+gripY*hold,.10*(1-hold)+gripZ*hold));
-      hand('r',v(-.27-radius*.12*hold,.65*(1-hold)+(gripY+.08)*hold,.10*(1-hold)+gripZ*hold));
-      const plant=ramp(t,.55,1.25),push=ramp(t,1.35,2.15),follow=ramp(t,1.85,2.55);
-      leg('l',feet.l.clone().add(v(-.055*hold,(.38*plant-.25*push)*hold,.15*hold)));leg('r',feet.r.clone().add(v(.055*hold,(.06+.32*follow)*hold,.12*hold)));
-      bones['footl'].rotation.x-=.35*hold;bones['footr'].rotation.x-=.3*hold;
+    }else if(action==='climb'){
+      const hold=ramp(t,.08,.88)*(1-ramp(t,7.06,7.87));
+      const step=5*ramp(t,.86,3.88)*(1-ramp(t,4.80,7.18)),rise=.42;
+      root.position.set(0,step*rise,radius+.48);root.rotation.y=Math.PI;
+      bones.hips.position.x+=.033*Math.sin(Math.PI*step)*hold;
+      bones.hips.position.y-=.06*hold;bones.chest.rotation.x+=.18*hold;bones.head.rotation.x-=.13*hold;
+      const grasp=ramp(t,3.75,4.22)*(1-ramp(t,4.52,4.94));
+      // Each side keeps its purchase while the opposite hand and foot change level.
+      const level=(offset)=>{
+        const cycle=step*.5+offset,base=Math.floor(cycle);
+        return 2*(base+ramp(cycle-base,.04,.45)-offset);
+      };
+      for(const side of ['l','r']){
+        const left=side==='l',sign=left?1:-1;
+        const handHeight=.91+(level(left?0:.5)-step)*rise/1.5;
+        const grip=v(sign*(.24+radius*.12),handHeight,(radius+.48)/1.5-radius*.33);
+        if(!left)grip.add(v(-.09,.14,.045).multiplyScalar(grasp));
+        hand(side,restingHands[side].clone().lerp(grip,hold));
+        const footHeight=.13+(level(left?.46:.96)-step)*rise/1.5;
+        leg(side,feet[side].clone().addScaledVector(v(-sign*.05,footHeight,.17),hold));
+        bones['foot'+side].rotation.x-=.31*hold;
+      }
       // Keep the actual actor visible: the canopy supplies occlusion during the camera pullback.
     }
     root.position.y+=slope*root.position.x+crossSlope*root.position.z;

@@ -521,13 +521,13 @@ export async function createRuntime(
       }
       const loadSpeed=currentLoad(state.inventory).speed;
       if(cabin){
-        stepCabinVisit(cabin,{x:dx,z:dz},MOVEMENT.fixedStep,loadSpeed,running());
+        stepCabinVisit(cabin,{x:dx,z:dz},MOVEMENT.fixedStep,loadSpeed,running(),view.playerWalkSpeed,view.playerRunSpeed);
         if(cabin.action&&nearCabinAction(cabin.player,cabin.action))finishCabinAction(cabin.action);
       }else if(tent){
-        stepTentVisit(tent,{x:dx,z:dz},MOVEMENT.fixedStep,loadSpeed,running());
+        stepTentVisit(tent,{x:dx,z:dz},MOVEMENT.fixedStep,loadSpeed,running(),view.playerWalkSpeed,view.playerRunSpeed);
         if(tent.action==='exit'&&nearTentExit(tent.player))finishTentExit();
       }else{
-        const step=movementOffset({x:dx,z:dz},loadSpeed,running(),MOVEMENT.fixedStep,routeDistance);
+        const step=movementOffset({x:dx,z:dz},loadSpeed,running(),MOVEMENT.fixedStep,routeDistance,view.playerWalkSpeed,view.playerRunSpeed);
         const old = state.player,
           p = move(old,step.x,step.z,activeColliders(),travelAccess(state));
         const travelled = Math.hypot(p.x - old.x, p.z - old.z);
@@ -1149,6 +1149,7 @@ export async function createRuntime(
         const candidate=campWithExpedition(state,forest,false);
         if(!await persistence.saveNow(candidate))return false;
         Object.assign(state,candidate);
+        view.resetPlayerMotion();
         advanceWeather(state);
         message='已回到营地。带回的林产还在手上，可以到原木架存放。';
         manualPause=false;menuOpen=false;accumulator=0;

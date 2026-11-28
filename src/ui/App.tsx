@@ -133,6 +133,7 @@ export function App({review}:{review?:{state:GameState;store:WorldSaveStore}}={}
   const [forestTrip,setForestTrip]=useState<CampExpeditionSession|null>(null);
   const showForest = (owner:Runtime) => setForestTrip({
     initial:owner.readForestTrip(),context:owner.forestContext(),
+    appearance:{instances:owner.getState().inventory.instances,reducedMotion:reduced},
     checkpoint:owner.checkpointForest,finish:owner.leaveForest,
   });
   const [snapshot, setSnapshot] = useState(empty),
