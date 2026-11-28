@@ -97,8 +97,10 @@ async function mainCrownFade(name){
  await page.getByRole('button',{name:'结束场景检视',exact:true}).click();
  await page.waitForFunction(()=>{const s=JSON.parse(document.querySelector('#runtime-stats').textContent).current;return s.scenePreset===null&&s.loop.running;});
  await diag.locator('summary').click();
- await page.getByRole('button',{name:'镜头',exact:true}).click();
- await page.getByRole('button',{name:'复位镜头',exact:true}).click();
+ // Keyboard activation exercises the visible controls without waiting for pointer
+ // stability across expensive software-rendered animation frames.
+ await page.getByRole('button',{name:'镜头',exact:true}).press('Enter');
+ await page.getByRole('button',{name:'复位镜头',exact:true}).press('Enter');
  await waitForMainCamera();
  const before=await mainStats();report.mainCheckpoints.push({name:`${name}-before`,stats:before});
  assert.equal(before.scenePreset,null);assert.equal(before.shaderErrors,0);assert.equal(before.routeNodes,0);
@@ -110,7 +112,7 @@ async function mainCrownFade(name){
  for(let index=0;index<rotations;){
    const group=Math.min(3,rotations-index);
    expectedYaw=wrapYaw(expectedYaw+group*.35);
-   for(let turn=0;turn<group;turn++)await page.getByRole('button',{name:'镜头右转',exact:true}).click();
+   for(let turn=0;turn<group;turn++)await page.getByRole('button',{name:'镜头右转',exact:true}).press('Enter');
    await waitForMainCamera(expectedYaw);
    index+=group;
  }
