@@ -1,9 +1,9 @@
-export { mountWoodworking } from './workbench.js'
-export type {
-  WoodworkingOptions,
-  WoodworkingMount,
-  WoodworkingDraft,
-  WoodworkingReceipt,
-} from './workbench.js'
-export { DEFAULT_DESIGN, DEFAULT_STOCK, trialFit } from './domain.js'
-export type { Job, Design, Stock, FinishedWork } from './domain.js'
+export { mountWoodworking, restoreDraft } from './workbench.js'
+export type { WoodworkingOptions, WoodworkingMount, WoodworkingDraft, FiniteSawDraft, WoodworkingReceipt } from './workbench.js'
+export { DEFAULT_DESIGN, DEFAULT_STOCK } from './domain.js'
+export type { Design, Stock, FinishedWork } from './domain.js'
+export { createPiece, executeSaw, sawProvider, materialBalance, KERF_MM } from './machining.js'
+export type { Workpiece, SawOperation, OperationProvider, OperationPreview, MaterialLedger } from './machining.js'
+export { inspectTenon, inspectPiece, repairTenon, finishTenon, restorePiece, TASKS } from './tenon.js'
+export type { Layout, TaskId } from './tenon.js'
+export type { Surface, Box, Axis, Sign } from './solid.js'

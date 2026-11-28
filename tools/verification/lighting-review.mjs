@@ -21,6 +21,20 @@ async function newPage(viewport,mobile=false){
  page.on('pageerror',e=>report.errors.push({phase,message:String(e)}));
  page.on('console',m=>{if(m.type()==='error')report.errors.push({phase,message:m.text()});else if(m.type()==='warning')report.warnings.push({phase,message:m.text()});});
  page.on('response',r=>{if(r.url().startsWith(origin)&&r.status()>=400)report.errors.push({phase,url:r.url(),status:r.status()});});
+ await page.route('**/favicon.ico',route=>route.fulfill({status:204}));
+ return context;
+}
+async function mainPage(viewport,mobile=false){
+ const context=await newPage(viewport,mobile);
+ // Keep the last actual WebGL frame readable when inspection stops its render loop.
+ await page.addInitScript(()=>{
+   const getContext=HTMLCanvasElement.prototype.getContext;
+   HTMLCanvasElement.prototype.getContext=function(type,options){
+     return getContext.call(this,type,type==='webgl2'?{...options,preserveDrawingBuffer:true}:options);
+   };
+ });
+ await page.goto(`${origin}/?inspect=1&hour=14`);
+ await page.waitForFunction(()=>{try{return JSON.parse(document.querySelector('#runtime-stats')?.textContent??'{}').current?.occlusion?.forestBakes>0;}catch{return false;}},null,{polling:100,timeout:180000});
  return context;
 }
 async function difference(off,on){
@@ -61,12 +75,12 @@ async function waitForMainCamera(expectedYaw=null){
    const delta=s.yaw-(expectedYaw??rig.desired.yaw);
    return Math.abs(Math.atan2(Math.sin(delta),Math.cos(delta)))<1e-8&&
      Math.abs(s.elevation-rig.desired.elevation)<1e-8&&Math.abs(s.zoom-rig.desired.zoom)<1e-8;
- },expectedYaw,{timeout:180000});
+ },expectedYaw,{polling:100,timeout:180000});
 }
 async function renderedViewport(){
- const session=await page.context().newCDPSession(page);
- try{const frame=await session.send('Page.captureScreenshot',{format:'png',fromSurface:true});return Buffer.from(frame.data,'base64');}
- finally{await session.detach();}
+ const image=await page.locator('.scene-host canvas').evaluate(canvas=>canvas.toDataURL('image/png'));
+ assert.match(image,/^data:image\/png;base64,/);
+ return Buffer.from(image.slice('data:image/png;base64,'.length),'base64');
 }
 async function mainPair(name,view,time='白昼'){
  phase=name;const diag=page.locator('details.diagnostics');if(!await diag.evaluate(e=>e.open))await diag.locator('summary').click();
@@ -76,19 +90,15 @@ async function mainPair(name,view,time='白昼'){
  for(const enabled of [false,true]){
    if((await mainStats()).occlusion.enabled!==enabled)await page.locator('#toggle-ambient-occlusion').click();
    await page.waitForFunction(enabled=>JSON.parse(document.querySelector('#runtime-stats').textContent).current.occlusion.enabled===enabled,enabled);
-   await page.evaluate(()=>document.querySelector('.game-shell').classList.add('lighting-capture'));
    const checkpoint=await mainStats();
    report.mainCheckpoints.push({name,enabled,stats:checkpoint});await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));
-   // The game canvas fills a fixed viewport. A viewport capture avoids Playwright's RAF-based element scroll/stability wait in a paused scene.
-   const viewport=page.viewportSize();
-   const buffer=await page.screenshot({clip:{x:0,y:0,...viewport},animations:'disabled',timeout:90000});
-   await page.evaluate(()=>document.querySelector('.game-shell').classList.remove('lighting-capture'));
+   const buffer=await renderedViewport();
    const stats=await mainStats();assert.equal(stats.shaderErrors,0);assert.ok(stats.occlusion.forestBakes>0);assert.deepEqual(stats.occlusion.canopyFields,[192,128]);
    const label=`${name}-${enabled?'on':'off'}`;await fs.writeFile(path.join(out,`${label}.png`),buffer);report.frames.push({name:label,stats});captures.push(`data:image/png;base64,${buffer.toString('base64')}`);
  }
  const diff=await difference(...captures);assert.ok(diff.changedPixels>100,`${name}: no visible AO difference`);report.pairs.push({name,...diff});
 }
-async function mainCrownFade(name){
+async function mainCrownFade(name,rotations){
  phase=name;
  const diag=page.locator('details.diagnostics');if(!await diag.evaluate(e=>e.open))await diag.locator('summary').click();
  // Exercise restoration through the same inspection and camera controls a player uses.
@@ -97,37 +107,35 @@ async function mainCrownFade(name){
  await page.getByRole('button',{name:'结束场景检视',exact:true}).click();
  await page.waitForFunction(()=>{const s=JSON.parse(document.querySelector('#runtime-stats').textContent).current;return s.scenePreset===null&&s.loop.running;});
  await diag.locator('summary').click();
- await page.getByRole('button',{name:'镜头',exact:true}).click();
- await page.getByRole('button',{name:'复位镜头',exact:true}).click();
+ // Keyboard activation exercises the visible controls without waiting for pointer
+ // stability across expensive software-rendered animation frames.
+ await page.getByRole('button',{name:'镜头',exact:true}).press('Enter');
+ await page.getByRole('button',{name:'复位镜头',exact:true}).press('Enter');
  await waitForMainCamera();
  const before=await mainStats();report.mainCheckpoints.push({name:`${name}-before`,stats:before});
  assert.equal(before.scenePreset,null);assert.equal(before.shaderErrors,0);assert.equal(before.routeNodes,0);
  assert.ok(Array.isArray(before.fadedTreeIds),`${name}: missing read-only material fade diagnostics`);
- const rotations=10;
  let expectedYaw=before.yaw;
  // The navigation rig bounds queued yaw to pi/2. Settle each <=1.05-radian
  // group so the same ten-click path is traversed without dropping input.
  for(let index=0;index<rotations;){
    const group=Math.min(3,rotations-index);
    expectedYaw=wrapYaw(expectedYaw+group*.35);
-   for(let turn=0;turn<group;turn++)await page.getByRole('button',{name:'镜头右转',exact:true}).click();
+   for(let turn=0;turn<group;turn++)await page.getByRole('button',{name:'镜头右转',exact:true}).press('Enter');
    await waitForMainCamera(expectedYaw);
    index+=group;
  }
  const rotated=await mainStats();
  // Observe the real material transition across normal rendered frames. A wall-clock wait for
  // arbitrary simulation time is unreliable when a software GPU renders only a few frames a minute.
- await page.waitForFunction(frames=>{const s=JSON.parse(document.querySelector('#runtime-stats').textContent).current;return s.scenePreset===null&&s.loop.running&&s.loop.frames>=frames+2&&s.fadedTreeIds?.length>0;},rotated.loop.frames,{timeout:180000});
+ await page.waitForFunction(frames=>{const s=JSON.parse(document.querySelector('#runtime-stats').textContent).current;return s.scenePreset===null&&s.loop.running&&s.loop.frames>=frames+2&&s.fadedTreeIds?.length>0;},rotated.loop.frames,{polling:100,timeout:180000});
  const settled=await mainStats();report.mainCheckpoints.push({name:`${name}-settled`,stats:settled});
  assert.equal(settled.shaderErrors,0);assert.equal(settled.occlusion.enabled,true);
  assert.ok(settled.fadedTreeIds.length>0,`${name}: the real camera path did not fade any tree crown`);
  assert.deepEqual({x:settled.player.x,z:settled.player.z},{x:before.player.x,z:before.player.z},`${name}: camera controls moved the player`);
  assert.equal(settled.routeNodes,0);assert.ok(Math.abs(wrapYaw(settled.yaw-expectedYaw))<1e-8);
  await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));
- await page.evaluate(()=>document.querySelector('.game-shell').classList.add('lighting-capture'));
- let buffer;
- try{buffer=await renderedViewport();}
- finally{await page.evaluate(()=>document.querySelector('.game-shell').classList.remove('lighting-capture'));}
+ const buffer=await renderedViewport();
  const captured=await mainStats();
  assert.equal(captured.scenePreset,null);assert.equal(captured.shaderErrors,0);assert.ok(captured.fadedTreeIds.length>0,`${name}: fade disappeared before capture`);
  await fs.writeFile(path.join(out,`${name}.png`),buffer);report.frames.push({name,stats:captured});
@@ -161,15 +169,13 @@ try{
  context=await newPage({width:390,height:844},true);phase='mobile cabin';await page.goto(`${origin}/sandbox/cabin-interior/`);await page.waitForFunction(()=>window.__VISUAL_READY__===true,null,{timeout:120000});await page.locator('[data-preset="full"]').tap();
  await cabinPair('mobile-cabin');await cabinPair('mobile-evening','room','evening');
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);await context.close();
- context=await newPage({width:960,height:640});phase='main load';await page.goto(`${origin}/?inspect=1&hour=14`);await page.waitForFunction(()=>{try{return JSON.parse(document.querySelector('#runtime-stats')?.textContent??'{}').current?.occlusion?.forestBakes>0;}catch{return false;}},null,{timeout:180000});
- await page.addStyleTag({content:'.game-shell.lighting-capture > :not(.scene-host){visibility:hidden!important}'});
+ phase='main load';context=await mainPage({width:960,height:640});
  for(const [name,view,time] of [['home-exterior','homeLighting','白昼'],['tent','tentLighting','白昼'],['camp','camp','白昼'],['work-area','woodcraft','白昼'],['branches-bark','branches','白昼'],['forest','understory','白昼'],['distant','overview','白昼'],['camp-night','camp','夜晚']])await mainPair(name,view,time);
  report.flows.push({name:'main production scene, canopy textures and fixed-view AO toggle',passed:true});await context.close();
- for(const [name,viewport,mobile] of [['desktop-crown-fade',{width:1440,height:960},false],['mobile-crown-fade',{width:390,height:844},true]]){
-   context=await newPage(viewport,mobile);phase=`${name} load`;await page.goto(`${origin}/?inspect=1&hour=14`);
-   await page.waitForFunction(()=>{try{return JSON.parse(document.querySelector('#runtime-stats')?.textContent??'{}').current?.occlusion?.forestBakes>0;}catch{return false;}},null,{timeout:180000});
-   await page.addStyleTag({content:'.game-shell.lighting-capture > :not(.scene-host){visibility:hidden!important}'});
-   await mainCrownFade(name);await context.close();
+ // The mobile follow camera intersects the elder crown at the two-turn yaw.
+ for(const [name,viewport,mobile,rotations] of [['desktop-crown-fade',{width:1440,height:960},false,10],['mobile-crown-fade',{width:390,height:844},true,2]]){
+   phase=`${name} load`;context=await mainPage(viewport,mobile);
+   await mainCrownFade(name,rotations);await context.close();
  }
  assert.deepEqual(report.errors,[]);report.status='passed-automated';console.log('LIGHTING_BROWSER_PASS');
 }catch(error){report.status='failed';report.failure={phase,message:String(error.stack??error)};if(page&&!page.isClosed()){report.failureState=await page.locator('#runtime-stats').textContent({timeout:2000}).then(value=>JSON.parse(value).current).catch(()=>null);report.body=await page.locator('body').innerText().catch(()=>null);await page.screenshot({path:path.join(out,'failure.png'),fullPage:true,timeout:90000}).catch(()=>{});}console.error(error);process.exitCode=1;

@@ -1,0 +1,71 @@
+name: Woodworking Stage Review
+on:
+  push:
+    branches: [feat/woodworking-game-stage]
+    paths:
+      - 'sandbox/woodworking/**'
+      - 'src/ui/timber/**'
+      - '.github/workflows/woodworking-stage-review.yml'
+  pull_request:
+    paths:
+      - 'sandbox/woodworking/**'
+      - 'src/ui/timber/**'
+      - 'src/domain/inventory.ts'
+      - 'src/domain/transport-location.ts'
+      - 'src/domain/owned-items.ts'
+      - 'src/domain/blueprint-rarity.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/woodworking-stage-review.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: woodworking-stage-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  workbench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22.16.0'
+          package-manager-cache: false
+      - run: npm ci && npm ci --prefix sandbox/woodworking
+      - name: Tests, shared UI contract and bundles
+        run: |
+          set -o pipefail
+          mkdir -p /tmp/woodworking-stage
+          npm --prefix sandbox/woodworking test | tee /tmp/woodworking-stage/unit.log
+          npm run verify:ui | tee /tmp/woodworking-stage/ui.log
+          npm --prefix sandbox/woodworking run build | tee /tmp/woodworking-stage/build.log
+          git diff --check
+          git rev-parse HEAD > /tmp/woodworking-stage/checked-head.txt
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get install -y fonts-noto-cjk
+      - name: Real player flow and save reload
+        env:
+          QA_EVIDENCE_DIR: /tmp/woodworking-stage
+        run: node sandbox/woodworking/test/browser.mjs
+      - name: Independent ESM consumer, pause and resource lifecycle
+        env:
+          QA_EVIDENCE_DIR: /tmp/woodworking-stage
+        run: node sandbox/woodworking/test/mount-browser.mjs
+      - name: Prepare the checked deliverables
+        if: always()
+        run: |
+          cp sandbox/woodworking/dist/woodworking.html /tmp/woodworking-stage/
+          cp sandbox/woodworking/dist/THIRD_PARTY_NOTICES.txt /tmp/woodworking-stage/
+          (cd sandbox/woodworking && npm pack --ignore-scripts --pack-destination /tmp/woodworking-stage)
+          sha256sum sandbox/woodworking/dist/woodworking.html sandbox/woodworking/dist/woodworking.js > /tmp/woodworking-stage/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: woodworking-stage
+          path: /tmp/woodworking-stage
+          retention-days: 7
+          if-no-files-found: warn

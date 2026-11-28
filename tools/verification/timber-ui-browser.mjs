@@ -876,14 +876,22 @@ async function woodworking(){
     }))return;
     await scenario('woodworking-offline-shadow-controls',page,async()=>{
       await capture(page,'woodworking-offline-desktop',{fitViewport:false});
-      await page.locator('[data-a="start"]').click();
-      await page.locator('#operations').waitFor();
-      await page.locator('[data-a="mark"]').click();
-      assert.equal(await page.locator('[data-a="mark"]').getAttribute('aria-pressed'),'true');
-      assert.equal(await page.locator('[data-a="rotate"]').getAttribute('aria-pressed'),'false');
-      await page.locator('[data-a="rotate"]').click();
-      assert.equal(await page.locator('[data-a="rotate"]').getAttribute('aria-pressed'),'true');
-      assert.equal(await page.locator('[data-a="mark"]').getAttribute('aria-pressed'),'false');
+      await page.getByRole('button',{name:'放上工作台',exact:true}).click();
+      await page.locator('#working').waitFor();
+      await page.getByRole('button',{name:'选择建议面',exact:true}).click();
+      const lineStep=page.getByRole('button',{name:'定线',exact:true});
+      await lineStep.click();
+      await page.locator('#offset-number').waitFor();
+      const canvas=page.locator('#workshop canvas');
+      const view=()=>canvas.evaluate(({dataset})=>({angle:dataset.viewQuaternion,scale:dataset.viewScale}));
+      const before=await view();
+      assert.ok(before.angle&&before.scale,'The workbench has drawn the starting view');
+      await page.getByRole('button',{name:'向左转动',exact:true}).click();
+      await frames(page,2);
+      const after=await view();
+      assert.notEqual(after.angle,before.angle,'The camera control rotates the workpiece view');
+      assert.equal(after.scale,before.scale,'Rotating retains the workpiece scale');
+      assert.equal(await lineStep.getAttribute('aria-pressed'),'true','Rotating retains the active operation');
       await capture(page,'woodworking-offline-started',{fitViewport:false});
     });
     for(const viewport of smallViews){
@@ -932,7 +940,7 @@ async function woodworking(){
       Object.assign(inspection,await readInspection());
       await page.evaluate(key=>{const state=window[key];state?.overlay?.removeEventListener('beforetoggle',state.listener);},guideKey);
       if(await page.locator('#discard-dialog').isVisible()){
-        await page.locator('[data-a="keep"]').click();
+        await page.locator('#discard-dialog').getByRole('button',{name:'继续加工',exact:true}).click();
         await page.locator('#discard-dialog').waitFor({state:'hidden'});
       }
       await page.evaluate(key=>{

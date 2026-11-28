@@ -308,3 +308,7 @@ Three、React、ReactDOM、Scheduler的完整MIT版权与许可文字随[公开�
 加工只保留原始 LOD0 并移除 LOD1 及不再引用的数据，保留原始蒙皮、粗糙度、两张嵌入纹理和三段所需动作；仅显式设置材质 `metallicFactor=0`，与源 ORM 贴图蓝通道全零时的原非金属外观等效。在共同根节点归一尺度与落地位置。`Lids` 负责原作眼皮覆盖片，三段动画中的位置通道已移除以交由项目表情控制器驱动，其余骨骼通道保留。眼部本身是头部贴图，没有独立眼球或眼球骨骼；视线变化属于项目表现层加工，不作为原作者模型自带功能登记。
 
 内容身份为 `wildlife.fox`／小狐狸，沿用原普通动物的数量上限、草地边缘栖息点、行走和逃离速度，不新增狩猎、喂食或物品产出。加载、表现与回收仍经 `src/scene/models.ts`、`src/scene/wildlife-presentation.ts` 和 `src/scene/resources.ts`。`verify:assets` 独立验证本批文件哈希、来源、嵌入资源、19 关节、单一 mesh、7,300 三角形、三段动画及眼皮位置通道所有权；实际眼部表现、游戏内画面与性能范围见[本轮 scope](scopes/expressive-camp-fox.md)。
+
+## 木作台近景
+
+独立木作台采用 Poly Haven 的 CC0 Handsaw Wood（Konrad Szałankiewicz，2,548 三角面）和 Wood Table（Dimitrios Savva）1k 素材。原始输入、CC0 全文、作者及修改说明见[木作素材来源](../sources/polyhaven/woodworking/README.md)。[规范化脚本](../sandbox/woodworking/tools/prepare-stage-assets.py)生成单文件试玩和 ESM 使用的模型与贴图。木料沿用实际切削几何和项目的木纹着色器，素材处理仅应用到呈现层。

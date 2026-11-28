@@ -1,0 +1,27 @@
+{
+  "model": "hand-saw.glb",
+  "triangles": 2548,
+  "canonicalAxes": {
+    "X": "handle to tip",
+    "Y": "away from tooth edge",
+    "Z": "thickness"
+  },
+  "lengthMm": 240,
+  "toothEdgeY": 0,
+  "source": "https://polyhaven.com/a/handsaw_wood",
+  "license": "CC0-1.0",
+  "files": {
+    "hand-saw.glb": {
+      "bytes": 250232,
+      "sha256": "15ad33934124e1821624fafc4211de13012628481de59832d5ac4cd7e8fa8263"
+    },
+    "table-color.jpg": {
+      "bytes": 142100,
+      "sha256": "6822843ce1ac9360fbb8622aec80da443a415ad0dce664f3ac9ca92e7834dcb4"
+    },
+    "table-normal.jpg": {
+      "bytes": 41747,
+      "sha256": "0d6f1c8a641cbc7a2d1cb234ed0b3b6814ee6b980689ebe4346b550469620ef3"
+    }
+  }
+}

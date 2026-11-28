@@ -11,6 +11,7 @@ import { canonicalInstances } from '../../../src/domain/owned-items.ts'
 import { rollBlueprintRarity } from '../../../src/domain/blueprint-rarity.ts'
 import { rarityDefinition } from '../../../src/content/rarities.ts'
 import { endAt, finish, restoreJob } from '../src/domain.ts'
+import { finishTenon, restorePiece } from '../src/tenon.ts'
 import type { Stock } from '../src/domain.ts'
 import type { WoodworkingDraft, WoodworkingOptions, WoodworkingReceipt } from '../src/workbench.ts'
 
@@ -71,7 +72,7 @@ export function campWoodworking(
       lot = lots.get(stockId)
     if (live.workshop.nextInstance !== serial || !lot) throw new Error('工作台批次已变化，请重新打开工作台')
     const row = live.inventory.stacks.find((s) => stackKey(s) === lot.key && blankOf(s))
-    const job = restoreJob(held.job)
+    const job = held.version === 2 ? restorePiece(held.job) : restoreJob(held.job)
     if (
       !row ||
       job.stock.id !== stockId ||
@@ -86,19 +87,22 @@ export function campWoodworking(
     const sourceMaterial =
       typeof row.sourceMaterial === 'string' ? row.sourceMaterial : (row.blankName ?? '方木坯')
     const deltas: InventoryDelta[] = [{ ...stackIdentity(row), delta: -1 }]
-    // Allow only a square offcut across the whole cross-section, less a 1 mm kerf.
-    const offcut = Math.floor(job.stock.length - Math.max(endAt(job, 0), endAt(job, job.stock.width)) - 1)
-    if (offcut >= 12 && row.itemId !== 'small-wood') {
+    // V2 pays out only actually detached rectangular stock. A shallow kerf has no offcut.
+    // Fine fuel/sawdust remains an abstract volume ledger, never a Woodcraft body.
+    const offcuts = 'version' in job
+      ? job.ledger.offcuts.filter(o => o.kind === 'reusable' && o.box).map(o => ({
+          length: o.box!.max[0] - o.box!.min[0], section: o.box!.max[1] - o.box!.min[1],
+        }))
+      : [{ length: Math.floor(job.stock.length - Math.max(endAt(job, 0), endAt(job, job.stock.width)) - 1), section: job.stock.width }].filter(o => o.length >= 12)
+    if (row.itemId !== 'small-wood') offcuts.forEach((offcut, index) => {
       deltas.push({
         ...stackIdentity(row),
-        blankLot: `offcut-${live.seed}-${serial}`,
-        blankName: '截余方料',
-        sourceMaterial,
-        wood: { ...row.wood!, spec: { ...row.wood!.spec!, lengthMm: offcut } },
-        ...(row.woodCondition ? { woodCondition: row.woodCondition } : {}),
-        delta: 1,
+        blankLot: `offcut-${live.seed}-${serial}${index ? '-' + index : ''}`,
+        blankName: '截余方料', sourceMaterial,
+        wood: { ...row.wood!, spec: { ...row.wood!.spec!, lengthMm: offcut.length, thicknessMm: offcut.section } },
+        ...(row.woodCondition ? { woodCondition: row.woodCondition } : {}), delta: 1,
       })
-    }
+    })
     return { inventory: inventoryTransaction(live.inventory, deltas), sourceMaterial }
   }
   return {
@@ -108,14 +112,14 @@ export function campWoodworking(
     onDraftChange: (data) => port.checkpoint(data),
     onDiscard(held) {
       const checked = checkBlank(held.job.stock.id, held)
-      if (!Object.keys(checked.job.cuts).length) return
+      if (!('version' in checked.job ? checked.job.operations.length : Object.keys(checked.job.cuts).length)) return
       const { inventory } = consumeBlank(checked)
       port.commit(inventory, serial + 1)
     },
     onComplete(_result, stockId, held): WoodworkingReceipt {
       const checked = checkBlank(stockId, held),
         { live, job } = checked
-      const result = finish(job, held.paint)
+      const result = 'version' in job ? finishTenon(job, held.paint) : finish(job, held.paint)
       const rarityId = rollBlueprintRarity(live.seed, serial, SAMPLE_PLAN, 'common', result.score)
       const instanceId = `crafted-${live.seed}-${serial}`
       if (live.inventory.instances?.some((item) => item.instanceId === instanceId))
