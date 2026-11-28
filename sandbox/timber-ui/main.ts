@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 import {mountTimberTheme} from '../../src/ui/timber/mount.ts';
-import {timberSurface} from '../../src/ui/timber/surface.ts';
-import type {TimberMaterial, TimberRole} from '../../src/ui/timber/surface.ts';
+import {timberShape} from '../../src/ui/timber/surface.ts';
+import type {TimberRole} from '../../src/ui/timber/surface.ts';
 import '../../src/ui/timber/theme.css';
 import themeCss from '../../src/ui/timber/theme.css?inline';
 import './style.css';
@@ -43,15 +43,15 @@ root.innerHTML = `
           <span class="lab-window-sign" aria-hidden="true">◆</span>
         </header>
         <nav class="lab-camp-tabs" data-ui-grid="row" aria-label="示例配方类别">
-          <button data-timber-surface="button" data-timber-tone="moss" data-camp-tab="furniture" aria-pressed="true">家具</button>
-          <button data-timber-surface="button" data-timber-tone="dark" data-camp-tab="daily" aria-pressed="false">日用</button>
-          <button data-timber-surface="button" data-timber-tone="dark" data-camp-tab="kitchen" aria-pressed="false">餐厨</button>
+          <button data-timber-surface="button" data-timber-tab data-camp-tab="furniture" aria-pressed="true">家具</button>
+          <button data-timber-surface="button" data-timber-tab data-camp-tab="daily" aria-pressed="false">日用</button>
+          <button data-timber-surface="button" data-timber-tab data-camp-tab="kitchen" aria-pressed="false">餐厨</button>
         </nav>
         <div class="lab-craft-body" data-ui-grid="content">
           <div class="lab-inventory" data-ui-grid="row" role="group" aria-label="示例图纸">
-            <button class="lab-item" data-timber-surface="slot" data-item="木凳" data-icon="guest-bench" aria-label="木凳图纸" aria-pressed="true">${icon('guest-bench', 72)}<span>木凳</span><span class="lab-selected" aria-hidden="true">◆</span></button>
-            <button class="lab-item" data-timber-surface="slot" data-item="小几" data-icon="prep-table" aria-label="小几图纸" aria-pressed="false">${icon('prep-table', 72)}<span>小几</span></button>
-            <button class="lab-item" data-timber-surface="slot" data-item="木碗" data-icon="wooden-bowl" aria-label="木碗图纸" aria-pressed="false">${icon('wooden-bowl', 72)}<span>木碗</span></button>
+            <button class="lab-item" data-timber-surface="slot" data-timber-selection="leaf" data-item="木凳" data-icon="guest-bench" aria-label="木凳图纸" aria-pressed="true">${icon('guest-bench', 72)}<span>木凳</span></button>
+            <button class="lab-item" data-timber-surface="slot" data-timber-selection="leaf" data-item="小几" data-icon="prep-table" aria-label="小几图纸" aria-pressed="false">${icon('prep-table', 72)}<span>小几</span></button>
+            <button class="lab-item" data-timber-surface="slot" data-timber-selection="leaf" data-item="木碗" data-icon="wooden-bowl" aria-label="木碗图纸" aria-pressed="false">${icon('wooden-bowl', 72)}<span>木碗</span></button>
             <div class="lab-item lab-empty-slot" data-timber-surface="slot" aria-label="空图纸格"><span aria-hidden="true">·</span></div>
           </div>
           <section class="lab-recipe" data-ui-grid="content" aria-label="选中图纸">
@@ -100,7 +100,7 @@ root.innerHTML = `
       <div class="lab-section-heading" data-ui-grid="row"><span class="lab-section-number">03</span><div><h2 id="states-title">手感与状态</h2><p>用鼠标或触控按下；用 Tab 巡检键盘焦点。</p></div></div>
       <div class="lab-states" data-ui-grid="row">
         <div><button id="state-normal" data-timber-surface="button">按一下木块</button><span>悬停 · 按下</span></div>
-        <div><button id="state-selected" data-timber-surface="button" data-timber-tone="moss" aria-pressed="true">◆ 已选中</button><span>可切换选择</span></div>
+        <div><button id="state-selected" data-timber-surface="button" data-timber-selection="leaf" aria-pressed="true">已选中</button><span>可切换选择</span></div>
         <div><button id="state-focus" data-timber-surface="button">键盘也能找到</button><span>Tab · Enter · 空格</span></div>
         <div><button data-timber-surface="button" disabled>材料不足</button><span>禁用 · 保留原因</span></div>
         <div><button id="state-busy" data-timber-surface="button" aria-busy="false">试做木钉</button><span>忙碌 · 完成</span></div>
@@ -193,15 +193,16 @@ on(find('.lab-shape-tabs'), 'click', event => {
   const kind = button.dataset.shape!;
   root.querySelectorAll('[data-shape]').forEach(node => node.setAttribute('aria-pressed', String(node === button)));
   sample.className = `lab-shape-sample is-${kind}`;
-  sample.dataset.timberSurface = kind === 'panel' ? 'panel' : kind === 'plank' ? 'heading' : 'badge';
-  sample.dataset.timberMaterial = kind === 'block' ? 'endgrain' : kind === 'post' ? 'bark' : 'plank';
+  sample.dataset.timberSurface = kind === 'panel' ? 'panel' : 'heading';
+  sample.dataset.timberMaterial = 'plank';
   find('#shape-label').textContent = sampleLabels[kind];
 });
 function updateMetrics() {
   const rect = sample.getBoundingClientRect();
   if (!rect.width || !rect.height) return;
-  const paint = timberSurface({width: rect.width, height: rect.height, role: sample.dataset.timberSurface as TimberRole, material: sample.dataset.timberMaterial as TimberMaterial, seed: sample.dataset.timberSeed});
-  find('#shape-metrics').textContent = `${paint.width} × ${paint.height} px · 切角 ${paint.corner} px · 厚度 ${paint.depth} px · ${paint.facetCount} 个色面`;
+  const shape = timberShape(rect.width,rect.height,sample.dataset.timberSurface as TimberRole);
+  const material = shape === 'panel' ? '浅木边' : shape === 'post' ? '竖向木纹' : '横向木纹';
+  find('#shape-metrics').textContent = `${Math.round(rect.width)} × ${Math.round(rect.height)} px · ${material}`;
 }
 const sampleObserver = new ResizeObserver(updateMetrics);
 sampleObserver.observe(sample);
@@ -239,12 +240,7 @@ on(find('#reset-craft'), 'click', () => {craftGeneration++; materials = 3; made 
 on(find('.lab-inventory'), 'click', event => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-item]');
   if (!button || crafting) return;
-  root.querySelectorAll<HTMLButtonElement>('[data-item]').forEach(node => {
-    const active = node === button;
-    node.setAttribute('aria-pressed', String(active));
-    node.querySelector('.lab-selected')?.remove();
-    if (active) node.insertAdjacentHTML('beforeend', '<span class="lab-selected" aria-hidden="true">◆</span>');
-  });
+  root.querySelectorAll<HTMLButtonElement>('[data-item]').forEach(node => node.setAttribute('aria-pressed', String(node === button)));
   find('#recipe-name').textContent = button.dataset.item!;
   find<HTMLImageElement>('.lab-recipe-title img').src = `/assets/ui-r1/icons/${button.dataset.icon}-128.png`;
   find('#recipe-note').textContent = button.dataset.item === '小几' ? '放一杯热茶，也放刚读到一半的书。' : button.dataset.item === '木碗' ? '木纹很轻，盛一碗热汤。' : '两个人坐，也放得下一篮松果。';

@@ -259,13 +259,21 @@ async function layout(page,{fitViewport=true}={}){
     if(document.documentElement.scrollWidth>innerWidth+2)issues.push({kind:'page-horizontal-overflow',width:innerWidth,scrollWidth:document.documentElement.scrollWidth});
     const brokenImages=query(domScopes,'img').filter(image=>image.complete&&image.naturalWidth===0).map(image=>({src:image.currentSrc||image.src,...description(image)}));
     issues.push(...brokenImages.map(image=>({kind:'unloaded-image',...image})));
-    const surfaces=query(roots,'[data-timber-surface]').filter(visible).map(element=>({role:element.dataset.timberSurface,paint:element.dataset.timberPaint,hasGeneratedImage:getComputedStyle(element).getPropertyValue('--how-surface-image').includes('data:image/svg+xml'),...description(element)}));
+    const surfaces=query(roots,'[data-timber-surface]').filter(visible).map(element=>{
+      const style=getComputedStyle(element);
+      return {
+        role:element.dataset.timberSurface,
+        paint:element.dataset.timberPaint,
+        hasPaint:style.backgroundImage!=='none'||style.backgroundColor!=='rgba(0, 0, 0, 0)',
+        ...description(element),
+      };
+    });
     if(!surfaces.length)issues.push({kind:'no-shared-timber-surfaces'});
     for(const themeRoot of roots){
       const ownSurfaces=query([themeRoot],'[data-timber-surface]').filter(visible);
       if(ownSurfaces.length&&!ownSurfaces.some(element=>element.dataset.timberPaint==='ready'))issues.push({kind:'shared-surface-painter-not-ready',...description(themeRoot)});
     }
-    for(const surface of surfaces)if(surface.paint==='ready'&&!surface.hasGeneratedImage)issues.push({kind:'shared-surface-image-missing',...surface});
+    for(const surface of surfaces)if(surface.paint==='ready'&&!surface.hasPaint)issues.push({kind:'shared-surface-missing',...surface});
     return {viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio},themeRoots:roots.length,shadowRoots:domScopes.length-1,controls,panels:panels.map(description),surfaces:surfaces.length,paintedSurfaces:surfaces.filter(surface=>surface.paint==='ready').length,issues};
   },{fitViewport});
 }
@@ -488,6 +496,13 @@ async function openItems(page,touch=false){
   await page.getByRole('navigation',{name:'物品位置',exact:true}).getByRole('button',{name:'营地',exact:true}).click();
   await page.getByRole('group',{name:'营地材料图标',exact:true}).getByRole('button').first().waitFor();
 }
+function hasSelectionLeaf(control) {
+  return control.evaluate(element=>{
+    const marker=getComputedStyle(element,'::before');
+    return marker.content==='""'&&marker.backgroundImage.startsWith('url(')
+      &&marker.display!=='none'&&marker.pointerEvents==='none';
+  });
+}
 async function openSettings(page,touch=false){
   const button=page.locator('.bottom-toolbar').getByRole('button',{name:'操作',exact:true});
   if(touch)await button.tap();else await button.click();
@@ -568,11 +583,24 @@ async function desktopGame(){
   const session=await newPage(desktop),page=session.page;
   try{
     if(!await scenario('desktop-load',page,()=>loadGame(page)))return;
-    await scenario('desktop-hud',page,()=>capture(page,'01-desktop-hud'),()=>restoreGameUi(page));
+    await scenario('desktop-hud',page,async()=>{
+      await capture(page,'01-desktop-hud');
+      const camera=page.locator('.bottom-toolbar').getByRole('button',{name:'镜头',exact:true});
+      assert.equal(await hasSelectionLeaf(camera),false);
+      await camera.click();
+      await page.locator('.camera-tools').waitFor();
+      assert.equal(await hasSelectionLeaf(camera),true);
+      await capture(page,'01-desktop-camera');
+      await camera.click();
+      assert.equal(await hasSelectionLeaf(camera),false);
+    },()=>restoreGameUi(page));
     await scenario('desktop-items-keyboard-focus',page,async()=>{
       await openItems(page);
       const slots=page.getByRole('group',{name:'营地材料图标',exact:true}).getByRole('button');
       await slots.nth(1).click();assert.equal(await slots.nth(1).getAttribute('aria-pressed'),'true');
+      assert.equal(await hasSelectionLeaf(slots.nth(1)),true);
+      assert.equal(await hasSelectionLeaf(slots.first()),false);
+      assert.equal(await hasSelectionLeaf(page.locator('.warehouse-dialog [data-timber-tab][aria-pressed="true"]')),false);
       await capture(page,'02-desktop-items');
       const pager=page.getByRole('navigation',{name:'物品分页',exact:true});
       if(await pager.count()){
@@ -634,6 +662,7 @@ async function desktopGame(){
       await opener.focus();await page.keyboard.press('Enter');await page.locator('.pause-dialog[open]').waitFor();
       await capture(page,'06-desktop-pause');
       await page.getByRole('navigation',{name:'暂停选项',exact:true}).getByRole('button',{name:'显示',exact:true}).click();
+      assert.equal(await hasSelectionLeaf(page.locator('.pause-dialog [data-timber-tab][aria-pressed="true"]')),true);
       await capture(page,'07-desktop-pause-display');
       await page.keyboard.press('Escape');await page.locator('.pause-dialog[open]').waitFor({state:'hidden'});
       assert.equal(await opener.evaluate(element=>element===document.activeElement),true);
@@ -733,6 +762,22 @@ async function mobileGame(){
     for(const viewport of smallViews){
       await page.setViewportSize(viewport);await frames(page,4);
       const label=`${viewport.width}x${viewport.height}`;
+      if(viewport.width===320){
+        await scenario('game-320x720-camera',page,async()=>{
+          const camera=page.locator('.bottom-toolbar').getByRole('button',{name:'镜头',exact:true});
+          await camera.tap();
+          try{
+            const tools=page.locator('.camera-tools > button');
+            await tools.first().waitFor();
+            assert.equal(await tools.count(),7);
+            for(const control of await tools.all()){
+              const rect=await control.boundingBox();
+              assert.ok(rect&&rect.x>=0&&rect.x+rect.width<=viewport.width&&rect.width>=44&&rect.height>=44);
+            }
+            await capture(page,'game-320x720-camera');
+          }finally{await camera.tap();}
+        });
+      }
       await scenario(`game-${label}-touch-items`,page,async()=>{
         await openItems(page,true);await capture(page,`game-${label}-items`);
         await page.getByRole('button',{name:'关闭仓库',exact:true}).tap();
@@ -840,6 +885,16 @@ async function gallery(){
     }))return;
     await scenario('gallery-real-controls',page,async()=>{
       assert.equal(await page.locator('.game-shell').count(),0,'The gallery URL must resolve its own entry, not the game fallback');
+      const sample=page.locator('#shape-sample');
+      const grainSize=()=>sample.evaluate(element=>getComputedStyle(element).backgroundSize.split(',').at(-1).trim());
+      assert.equal(await grainSize(),'768px 128px','A long board samples the horizontal texture at a fixed scale');
+      await page.getByRole('button',{name:'短块',exact:true}).click();
+      assert.equal(await grainSize(),'768px 128px','A short block crops the same texture');
+      await page.getByRole('button',{name:'竖条',exact:true}).click();
+      await page.locator('#shape-sample[data-timber-shape="post"]').waitFor();
+      assert.equal(await grainSize(),'128px 768px','An upright uses the rotated crop at the same scale');
+      await page.getByRole('button',{name:'长板',exact:true}).click();
+      await page.locator('#shape-sample[data-timber-shape="plank"]').waitFor();
       await capture(page,'gallery-desktop',{fitViewport:false});
       assert.equal(await page.locator('#material-count').innerText(),'3');
       await page.getByRole('button',{name:'取出一根',exact:true}).click();
@@ -854,7 +909,10 @@ async function gallery(){
       await page.setViewportSize(smallViews[0]);await capture(page,'gallery-390x844-long-text',{fitViewport:false});
       await page.setViewportSize(smallViews[1]);await capture(page,'gallery-320x720-long-text',{fitViewport:false});
       await page.setViewportSize(smallViews[0]);
+      const normal=page.getByRole('button',{name:'按一下木块',exact:true});
+      assert.match(await normal.evaluate(element=>getComputedStyle(element).backgroundImage),/url\(/);
       await page.getByRole('button',{name:'纯色回退',exact:true}).click();
+      assert.equal(await normal.evaluate(element=>getComputedStyle(element).backgroundImage),'none');
       await capture(page,'gallery-390x844-fallback',{fitViewport:false});
     });
   }finally{await session.close();}
@@ -963,7 +1021,7 @@ try{
   logger.warn=(message,options)=>{serverLog+=`${message}\n`;baseWarn(message,options);};
   logger.error=(message,options)=>{serverLog+=`${message}\n`;baseError(message,options);};
   const fixtureHtml='<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="icon" href="/assets/ui-r1/icons/cabin-64.png"><title>森林之家 · 木质界面检视</title></head><body><div id="root"></div><script type="module" src="/tools/verification/timber-ui-fixture.ts"></script></body></html>';
-  server=await createServer({root,customLogger:logger,server:{host:'127.0.0.1',port:5193,strictPort:true},plugins:[{
+  server=await createServer({root,customLogger:logger,server:{host:'127.0.0.1',port:5193,strictPort:true,hmr:false,watch:null},plugins:[{
     name:'timber-review-entry',configureServer(vite){vite.middlewares.use(async(req,res,next)=>{
       if(req.url?.split('?')[0]!==fixturePath)return next();
       try{const html=await vite.transformIndexHtml(fixturePath,fixtureHtml,req.originalUrl);res.statusCode=200;res.setHeader('Content-Type','text/html');res.end(html);}

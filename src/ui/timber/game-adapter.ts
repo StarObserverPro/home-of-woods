@@ -1,14 +1,17 @@
 import {mountTimberTheme} from './mount.ts';
 import type {TimberMaterial,TimberRole,TimberTone} from './surface.ts';
 
-type Rule = {selector:string;role:TimberRole;material?:TimberMaterial;tone?:TimberTone};
+type Rule = {selector:string;role:TimberRole;material?:TimberMaterial;tone?:TimberTone;leaf?:true};
 /** One bounded migration map. Feature modules must use the shared attributes/components. */
 const RULES:readonly Rule[] = [
   {selector:'.target-card,.warehouse-dock,.route-sheet,.help-sheet,.pause-dialog,.forest-reader,.weather-panel,.evening-arrival,.placement-panel,.wood-drop-panel,.clock-menu .hourglass,.item-drag-ghost',role:'panel'},
   {selector:'.target-top,.wood-heading,.panel-heading,.forest-reader-heading',role:'heading'},
   {selector:'.camera-tools,.wood-slot,.wood-detail,.wood-stock-item,.housing-recipe,.owned-card,.upgrade-module,.nearby-wood-card,.rarity-vfx-options label',role:'slot'},
-  {selector:'.message,.whimsy-notice,.save-warning,.active-work',role:'badge',material:'shaving',tone:'dark'},
-  {selector:'.wood-info,.wood-close,.menu-close,.target-top>button,.panel-heading>button,.forest-reader-heading>button',role:'button',material:'endgrain'},
+  {selector:'.message,.whimsy-notice,.save-warning,.active-work',role:'badge',material:'recess'},
+  {selector:'.wood-info,.wood-close,.menu-close,.target-top>button,.panel-heading>button,.forest-reader-heading>button',role:'button',material:'endgrain',tone:'dark'},
+  {selector:'.weather-options button,.clock-menu .hourglass button',role:'button',tone:'moss',leaf:true},
+  {selector:'.camera-tools button,.wood-pager button,.wood-quantity button,.pause-dialog>.text-button',role:'button',tone:'moss'},
+  {selector:'.bottom-toolbar button',role:'button',leaf:true},
   {selector:'button,summary',role:'button'},
 ];
 const GRID_RULES = [
@@ -24,6 +27,7 @@ function label(node: HTMLElement, rule: Rule) {
   node.dataset.timberSurface = rule.role;
   if (rule.material) node.dataset.timberMaterial = rule.material;
   if (rule.tone) node.dataset.timberTone = rule.tone;
+  if (rule.leaf) node.dataset.timberSelection = 'leaf';
   // Class/semantic ID is stable across quantity and eligibility updates.
   node.dataset.timberSeed ??= node.id || node.className || node.getAttribute('aria-label') || `how:${rule.role}`;
 }

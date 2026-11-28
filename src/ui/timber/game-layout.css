@@ -156,8 +156,11 @@
   }
   @media(max-width:359px) {
     .game-shell[data-how-ui] .bottom-toolbar button {width:44px;padding:4px;}
-    .game-shell[data-how-ui] .camera-tools {display:flex;}
-    .game-shell[data-how-ui] .camera-tools button:last-child {height:44px;}
+    .game-shell[data-how-ui] .camera-tools {
+      display:grid;grid-template-columns:repeat(4,var(--how-target));
+      gap:var(--how-space-1);padding:var(--how-gap);
+    }
+    .game-shell[data-how-ui] .camera-tools button:last-child {grid-area:auto;}
   }
 }
 

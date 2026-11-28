@@ -16,7 +16,7 @@ OpenAI 接入草稿：本地开发与构建预览支持行商“讲个路上见�
 
 2026-11-19 三类林地代表样区：`npm run dev:forest` 打开 `/sandbox/forest-expedition/`，可分别进入雾杉高林、斑荫横岭与白桦溪甸，进行寻路、采集、搬运、寄存和基础加工。三图共用库存及有限长材额度，来源区欠料分别判断。当前为独立可玩样区，主营地跨图转场和主存档接线留待后续；构建与 36 项定向测试通过，真实 3D 画面及最终 UI 合同尚未验收。范围、接口和验证边界见 [林地说明](docs/FOREST_EXPEDITIONS.md)，操作见 [入口说明](sandbox/forest-expedition/README.md)。
 
-2026-11-13 粗木 UI 共用语言：主游戏、木屋展台与木作组件统一消费程序化木质表面；开发入口 `/sandbox/timber-ui/` 可检视比例、状态、长文字和纯色回退。当前契约见 [DESIGN](DESIGN.md)，实现与实际验证见 [本轮范围](docs/scopes/timber-ui-system.md)。
+旧化薄木 UI 用同一组灰褐木纹、苔绿工作面和叶片选择标记。木纹保持固定比例，按控件尺寸取样。开发入口 `/sandbox/timber-ui/` 可查长短板、竖纹和纯色回退。规范与验收见 [DESIGN](DESIGN.md) 和 [旧化薄木记录](docs/scopes/weathered-timber-ui.md)。
 
 2026-11-12 木屋内部新增独立审计入口：开发时打开 `/sandbox/cabin-interior/`，或 `npm run dev:cabin`。默认摆出床、桌、凳、灯，可主动切换完整陈设、逐件查看与重新摆放。规划、PR31 改正及实际验证状态见 [规划胶囊](docs/scopes/cabin-interior-audit.md)，运行、操作和后续接线见 [展台说明](sandbox/cabin-interior/README.md)。正式游戏的家具取得与存档尚未接入。
 

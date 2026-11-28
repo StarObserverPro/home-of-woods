@@ -10,10 +10,16 @@ const inlineCss = {
       path: resolve(args.resolveDir, args.path.slice(0, -7)),
       namespace: 'wood-css',
     }))
-    plugin.onLoad({ filter: /.*/, namespace: 'wood-css' }, async (args) => ({
-      contents: await readFile(args.path, 'utf8'),
-      loader: 'text',
-    }))
+    plugin.onLoad({ filter: /.*/, namespace: 'wood-css' }, async (args) => {
+      const css = await build({
+        entryPoints: [args.path],
+        bundle: true,
+        write: false,
+        loader: { '.jpg': 'dataurl', '.png': 'dataurl' },
+        legalComments: 'none',
+      })
+      return { contents: css.outputFiles[0].text, loader: 'text' }
+    })
   },
 }
 const notices = 'Three.js — MIT license\n\n'
