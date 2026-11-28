@@ -6,6 +6,10 @@ import type { Models } from './models.ts';
 import type { Resources } from './resources.ts';
 import { poseHandAt,poseLimbAt } from './seated-pose.ts';
 import {createCharacterLiveliness} from './character-liveliness.ts';
+import {createJ01Stride} from './j01-stride.ts';
+import type {StrideSample} from './j01-stride.ts';
+import {createJ01ActionFeet} from './j01-action-feet.ts';
+import type {ActionFooting} from './j01-action-feet.ts';
 
 const BONE_MAP = [
   ['Pelvis','hips'], ['spine_01','spine'], ['spine_02','chest'], ['head','head'],
@@ -97,8 +101,9 @@ function faceBlink(resources:Resources,face:THREE.Object3D,atlas:THREE.Object3D)
 }
 
 /** Native J01 walk and shared, scene-only retargeting for existing game actions. */
-export function createJ01Player(resources:Resources,models:Models,player:THREE.Group,drivers:THREE.Object3D[]){
-  const walk=models.animations.get(LOCAL_PLAYER.model)?.[0];
+export function createJ01Player(resources:Resources,models:Pick<Models,'templates'|'animations'|'clone'>,player:THREE.Group,drivers:THREE.Object3D[]){
+  const clips=models.animations.get(LOCAL_PLAYER.model)??[];
+  const walk=clips[0];
   if(!walk||!models.templates.has(LOCAL_PLAYER.model))return null;
   const actor=models.clone(LOCAL_PLAYER.model);
   const root=new THREE.Group();
@@ -128,7 +133,7 @@ export function createJ01Player(resources:Resources,models:Models,player:THREE.G
   const walkDuration=Number(actor.userData.j01WalkDuration)||walk.duration;
   const idleTime=Number(actor.userData.j01IdleTime);
   const blink=faceBlink(resources,face,atlas);
-  const liveliness=createCharacterLiveliness(actor,{id:'player',frame:player,blink});
+  const liveliness=createCharacterLiveliness(actor,{id:'player',frame:player,blink,assistClavicle:!!actor.userData.j01Gait});
   const calibrations=new Map(drivers.map(driver=>{
     const source=bonesOf(driver),hips=source.get('hips')!;
     const hipOrigin=player.worldToLocal(hips.getWorldPosition(new THREE.Vector3()));
@@ -153,6 +158,7 @@ export function createJ01Player(resources:Resources,models:Models,player:THREE.G
     for(const id of ['upperarm','lowerarm','hand'])contactBones.set(id+side,bones.get(`${id}_${side}`)!);
     const hand=bones.get(`hand_${side}`)!,middle=bones.get(`middle_01_${side}`)!;
     const slot=new THREE.Bone();
+    slot.name='J01-hand-contact-'+side;
     slot.position.copy(hand.worldToLocal(middle.getWorldPosition(new THREE.Vector3()))).multiplyScalar(.85);
     hand.add(slot);
     contactBones.set('handslot'+side,slot);
@@ -173,15 +179,19 @@ export function createJ01Player(resources:Resources,models:Models,player:THREE.G
   };
   const travelPackMount=chestMount(new THREE.Vector3(0,.13,-.024),new THREE.Vector3(.64,.69,.67),facing.clone().multiply(turnBack));
   const pose=[...bones.values()].map(bone=>({bone,position:bone.position.clone(),quaternion:bone.quaternion.clone(),scale:bone.scale.clone()}));
+  type TransitionPose={bone:THREE.Bone;position:THREE.Vector3;rotation:THREE.Quaternion;samplePosition:THREE.Vector3;sampleRotation:THREE.Quaternion};
+  let previousKind='',transition:{start:number;seconds:number;root:THREE.Quaternion;sampleRoot:THREE.Quaternion;applied:boolean;joints:TransitionPose[]}|null=null;
   const hipNeutral=player.worldToLocal(pelvis.getWorldPosition(new THREE.Vector3()));
   const mixer=new THREE.AnimationMixer(actor);
   const walking=mixer.clipAction(walk);
+  const stride=createJ01Stride(actor,root,player,mixer,clips,bones);
+  const actionFeet=createJ01ActionFeet(player,actor,pelvis,bones,actor.userData.j01Gait?.support);
   const p=new THREE.Vector3(),q=new THREE.Quaternion(),inverse=new THREE.Quaternion();
-  let nativePose:'idle'|'walk'|null=null,shirt='shirt-indigo',wearingTop=false,wearingLegs=false,wearingHat=false;
+  let nativePose:'idle'|'walk'|'run'|null=null,shirt='shirt-indigo',wearingTop=false,wearingLegs=false,wearingHat=false;
   let gripGap:number|null=null;
   const show=(part:string,visible:boolean)=>parts.get(part)?.forEach(object=>{object.visible=visible;});
 
-  function clothes(inventory:InventoryState,look:WardrobeLook,inspection:boolean){
+  function clothes(inventory:Pick<InventoryState,'instances'>,look:WardrobeLook,inspection:boolean){
     const worn=inventory.instances??[];
     const equipped=(id:string)=>worn.some(item=>item.location.kind==='mounted'&&item.location.hostId==='player'&&item.location.slotId===id);
     const showTop=inspection||equipped('player:top');
@@ -198,7 +208,7 @@ export function createJ01Player(resources:Resources,models:Models,player:THREE.G
     show('beret',hat);show('hair-tucked',hat);show('hair',!hat);
   }
 
-  function hold(source:Map<string,THREE.Bone>,seated:boolean){
+  function hold(source:Map<string,THREE.Bone>,seated:boolean,footing?:ActionFooting){
     const targets=(['l','r'] as const).map(side=>{
       const shoulder=contactBones.get('upperarm'+side)!.getWorldPosition(new THREE.Vector3());
       const elbow=contactBones.get('lowerarm'+side)!.getWorldPosition(new THREE.Vector3());
@@ -219,7 +229,7 @@ export function createJ01Player(resources:Resources,models:Models,player:THREE.G
       }
       shift.clampLength(0,.48);
       if(shift.lengthSq()>1e-8){
-        const feet=(['l','r'] as const).map(side=>{
+        const feet=footing&&actionFeet?[]: (['l','r'] as const).map(side=>{
           const foot=bones.get('foot_'+side)!;
           return {side,foot,at:foot.getWorldPosition(new THREE.Vector3()),rotation:foot.getWorldQuaternion(new THREE.Quaternion())};
         });
@@ -232,6 +242,22 @@ export function createJ01Player(resources:Resources,models:Models,player:THREE.G
         }
       }
     }
+    if(footing)actionFeet?.place(footing,source);
+    if(footing&&(footing.kind==='crouch'||footing.kind==='ground'||footing.kind==='sweep')){
+      const spine=bones.get('spine_01')!;
+      const lateral=new THREE.Vector3(1,0,0).applyQuaternion(player.getWorldQuaternion(q));
+      const distanceError=()=>Math.max(...targets.map(({side,wrist,reach})=>
+        contactBones.get('upperarm'+side)!.getWorldPosition(p).distanceTo(wrist)-reach));
+      for(let pass=0;pass<6;pass++){
+        const error=distanceError();
+        if(error<=.003)break;
+        const saved=spine.quaternion.clone();
+        const tilt=new THREE.Quaternion().setFromAxisAngle(lateral,Math.min(.10,error*.76));
+        spine.getWorldQuaternion(q).premultiply(tilt);
+        spine.quaternion.copy(spine.parent!.getWorldQuaternion(inverse).invert().multiply(q));
+        if(distanceError()>=error){spine.quaternion.copy(saved);break;}
+      }
+    }
     for(const {side,slot,grip,wrist} of targets){
       poseHandAt(player,contactBones,side,player.worldToLocal(wrist),player.worldToLocal(grip.clone()));
       gripGap=Math.max(gripGap??0,slot.getWorldPosition(p).distanceTo(grip));
@@ -239,35 +265,88 @@ export function createJ01Player(resources:Resources,models:Models,player:THREE.G
   }
 
   function present(driver:THREE.Object3D,walkTime:number|null,idle:boolean,time:number,reducedMotion:boolean,
-      seated:boolean,pinHands:boolean,handsFree=true){
+      seated:boolean,pinHands:boolean,handsFree=true,sample?:StrideSample,footing?:ActionFooting,seatAmount=1){
     liveliness.beforeAnimation();
+    const native=!!(stride&&sample)||walkTime!==null||idle&&Number.isFinite(idleTime);
+    const kind=native?'locomotion':footing?.seat?.rising?'rising':footing?.kind??'action';
+    const previousBlend=transition;
+    if(kind!==previousKind){
+      const immediate=footing?.inspection||sample?.reset;
+      transition=previousKind&&!immediate&&!reducedMotion?{
+        start:time,seconds:kind==='locomotion'?.32:kind==='cut'?.16:.25,root:root.quaternion.clone(),sampleRoot:new THREE.Quaternion(),applied:false,
+        joints:pose.map(({bone})=>({bone,position:bone.position.clone(),rotation:bone.quaternion.clone(),samplePosition:new THREE.Vector3(),sampleRotation:new THREE.Quaternion()})),
+      }:null;
+      previousKind=kind;
+    }
+    actionFeet?.restoreFloor();
+    if(previousBlend?.applied){
+      root.quaternion.copy(previousBlend.sampleRoot);
+      for(const {bone,samplePosition,sampleRotation} of previousBlend.joints){
+        bone.position.copy(samplePosition);bone.quaternion.copy(sampleRotation);
+      }
+      previousBlend.applied=false;
+    }
     gripGap=null;
-    if(walkTime!==null||(idle&&Number.isFinite(idleTime))){
+    if(stride&&sample){
+      stride.present(sample,reducedMotion);
+      nativePose=sample.mode;
+    }else if(walkTime!==null||(idle&&Number.isFinite(idleTime))){
+      stride?.reset();
       if(!nativePose)walking.reset().play();
       nativePose=idle?'idle':'walk';
       walking.time=idle?idleTime:(walkTime??0)%walkDuration;
       mixer.update(0);
     }else{
+      stride?.reset();
       if(nativePose){walking.stop();nativePose=null;}
       for(const saved of pose){
         saved.bone.position.copy(saved.position);saved.bone.quaternion.copy(saved.quaternion);saved.bone.scale.copy(saved.scale);
       }
       const {source,hips,hipOrigin,links}=calibrations.get(driver)!;
       const hip=player.worldToLocal(hips.getWorldPosition(p));
-      if(seated)hip.y+=.07;
-      else hip.sub(hipOrigin).add(hipNeutral);
+      const sit=seated?seatAmount:0;
+      hip.addScaledVector(hipNeutral,1-sit).addScaledVector(hipOrigin,sit-1);
+      hip.y+=.07*sit;
       hipBone.parent!.worldToLocal(player.localToWorld(hip));
       hipBone.position.copy(hip);
       for(const {target,origin,offset} of links){
         origin.getWorldQuaternion(q).multiply(offset);
         target.quaternion.copy(target.parent!.getWorldQuaternion(inverse).invert().multiply(q));
       }
-      if(pinHands)hold(source,seated);
+      if(pinHands)hold(source,seated,footing);
+      else if(footing)actionFeet?.place(footing,source);
     }
+    if(transition){
+      const weight=THREE.MathUtils.smoothstep(time-transition.start,0,transition.seconds);
+      if(reducedMotion||weight===1||time<transition.start)transition=null;
+      else{
+        transition.applied=true;transition.sampleRoot.copy(root.quaternion);
+        root.quaternion.slerp(transition.root,1-weight);
+        for(const {bone,position,rotation,samplePosition,sampleRotation} of transition.joints){
+          samplePosition.copy(bone.position);sampleRotation.copy(bone.quaternion);
+          bone.quaternion.slerp(rotation,1-weight);bone.position.lerp(position,1-weight);
+        }
+        // During acquisition the palms are still travelling to their contacts.
+        if(gripGap!==null){
+          const source=calibrations.get(driver)!.source;
+          gripGap=Math.max(...(['l','r'] as const).map(side=>contactBones.get('handslot'+side)!.getWorldPosition(p)
+            .distanceTo(source.get('handslot'+side)!.getWorldPosition(new THREE.Vector3()))));
+        }
+      }
+    }
+    const floor=footing?.groundAt??sample?.groundAt;
+    if(floor&&(!sample||sample.mode!=='idle'||stride?.inMotion||transition))actionFeet?.clearFloor(floor);
     liveliness.update(time,reducedMotion,idle&&!seated&&!pinHands,handsFree&&!pinHands);
     root.updateWorldMatrix(true,true);
   }
-  return {root,clothes,present,accessoryMounts,travelPackMount,stats:()=>({nativeWalk:nativePose==='walk',nativePose,shirt,wearingTop,wearingLegs,wearingHat,gripGap,liveliness:liveliness.stats()}),dispose(){
+  function resetMotion(){
+    liveliness.beforeAnimation();
+    actionFeet?.restoreFloor();
+    stride?.reset();walking.stop();
+    previousKind='';transition=null;nativePose=null;
+    root.rotation.set(0,-Math.PI/2,0);
+  }
+  return {root,clothes,present,resetMotion,accessoryMounts,travelPackMount,handContact:(side:'l'|'r',at:THREE.Vector3)=>contactBones.get('handslot'+side)!.getWorldPosition(at),walkSpeed:stride?.walkSpeed,runSpeed:stride?.runSpeed,stats:()=>({nativeWalk:nativePose==='walk',nativePose,stride:stride?.stats()??null,shirt,wearingTop,wearingLegs,wearingHat,gripGap,liveliness:liveliness.stats()}),dispose(){
     liveliness.dispose();
     mixer.stopAllAction();mixer.uncacheRoot(actor);root.removeFromParent();
   }};

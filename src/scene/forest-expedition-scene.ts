@@ -5,6 +5,7 @@ import {expeditionHabitatAt, expeditionHeightAt, expeditionPathDistance} from '.
 import type {ExpeditionLayout} from '../world/forest-expedition.ts';
 import {Resources} from './resources.ts';
 import {createExpeditionActor} from './expedition-actor.ts';
+import type {ExpeditionAppearance} from './expedition-actor.ts';
 import {createExpeditionVegetation} from './expedition-vegetation.ts';
 import type {ExpeditionCrownVolume} from './expedition-vegetation.ts';
 import {populateExpeditionProduce} from './expedition-produce.ts';
@@ -12,7 +13,7 @@ import {createForestExpeditionLighting} from './lighting/forest-expedition-light
 
 export type ExpeditionPick = {kind: 'source' | 'landmark'; id: string} | {kind: 'drop'; key: string} | {kind: 'supply'} | {kind: 'ground'; point: ExpeditionPoint};
 export type ExpeditionSceneView = {
-  player: ExpeditionPoint & {facing: number; speed: number}; gathering: boolean; carryingWood: boolean;
+  player: ExpeditionPoint & {facing: number; speed: number}; gathering: number|null; carryingWood: boolean;
   sources: Record<string, {remaining: number}>;
   drops: {key: string; x: number; z: number; itemId: string; quantity: number}[];
   selected: ExpeditionPick | null;
@@ -22,7 +23,7 @@ function seeded(seed: number) {let value = seed >>> 0; return () => {value = Mat
 function setPick(root: THREE.Object3D, pick: ExpeditionPick) {root.traverse(object => {object.userData.expeditionPick = pick;});}
 
 /** A mountable renderer. No RAF, input listeners, inventory mutation or save writer. */
-export async function createForestExpeditionScene(canvas: HTMLCanvasElement) {
+export async function createForestExpeditionScene(canvas:HTMLCanvasElement,appearance?:ExpeditionAppearance) {
   const owner = new Resources(), renderer = new THREE.WebGLRenderer({canvas, antialias: true, alpha: false});
   let shaderErrors = 0;
   renderer.debug.onShaderError = (gl, program) => {shaderErrors++; console.error('Forest expedition shader compilation', gl.getProgramInfoLog(program));};
@@ -33,7 +34,7 @@ export async function createForestExpeditionScene(canvas: HTMLCanvasElement) {
   const sun = new THREE.DirectionalLight('#fff0d0', 3.0); sun.castShadow = true; scene.add(sun, sun.target);
   const sunDirection = new THREE.Vector3(-32,68,28).normalize().toArray();
   let actor: Awaited<ReturnType<typeof createExpeditionActor>>;
-  try {actor = await createExpeditionActor(owner);}
+  try {actor = await createExpeditionActor(owner,appearance);}
   catch (error) {owner.dispose(); renderer.dispose(); renderer.forceContextLoss(); throw error;}
   scene.add(actor.root);
   const ray = new THREE.Raycaster(), cursor = new THREE.Vector2(), target = new THREE.Vector3(), cameraTarget = new THREE.Vector3();
@@ -200,6 +201,7 @@ export async function createForestExpeditionScene(canvas: HTMLCanvasElement) {
   }
 
   function setMap(current: ExpeditionLayout) {
+    actor.reset();
     lighting?.dispose(); lighting=null;
     mapRoot.removeFromParent(); vegetation?.dispose(); mapOwner?.dispose(); mapOwner = new Resources();
     dropHitMaterial = mapOwner.own(new THREE.MeshBasicMaterial({visible: false}));
@@ -250,8 +252,9 @@ export async function createForestExpeditionScene(canvas: HTMLCanvasElement) {
   }
   function render(view: ExpeditionSceneView, dt: number) {
     if (disposed || !layout) return; resize();
-    const y = expeditionHeightAt(layout.id, view.player.x, view.player.z);
-    actor.update({...view.player, y, gathering: view.gathering, carryingWood: view.carryingWood}, dt);
+    const groundAt=(x:number,z:number)=>expeditionHeightAt(layout.id,x,z);
+    const y=groundAt(view.player.x,view.player.z);
+    actor.update({...view.player,y,groundAt,gathering:view.gathering,carryingWood:view.carryingWood},dt);
     target.set(view.player.x, y + 1.6, view.player.z);
     if (snapCamera) {cameraTarget.copy(target); distance = targetDistance; snapCamera = false;}
     else {cameraTarget.lerp(target, 1 - Math.exp(-7 * dt)); distance += (targetDistance - distance) * (1 - Math.exp(-8 * dt));}
@@ -283,7 +286,7 @@ export async function createForestExpeditionScene(canvas: HTMLCanvasElement) {
     renderer.render(scene, camera);
   }
   return {
-    canvas, setMap, render, resize,
+    canvas, setMap, render, resize, walkSpeed:actor.walkSpeed, runSpeed:actor.runSpeed,
     yaw: () => yaw,
     orbit(dx: number, dy = 0) {yaw -= dx * .005; pitch = THREE.MathUtils.clamp(pitch + dy * .004, .16, 1.12);},
     zoom(delta: number) {targetDistance = THREE.MathUtils.clamp(targetDistance * Math.exp(delta * .001), 15, 96);},
@@ -299,7 +302,7 @@ export async function createForestExpeditionScene(canvas: HTMLCanvasElement) {
     },
     stats: () => ({...stats, shaderErrors, drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures,
       viewport: {width, height, dpr: renderer.getPixelRatio()}, camera: {position: camera.position.toArray(), target: cameraTarget.toArray(), distance, yaw, pitch}, renderer: renderer.capabilities.isWebGL2 ? 'WebGL2' : 'WebGL', postProcessing: false,
-      lighting:lighting?.stats(),footAnchors:actor.footStats(),
+      lighting:lighting?.stats(),footAnchors:actor.footStats(),character:actor.stats(),
       sourceVisuals:Object.fromEntries([...sources].map(([id,root])=>[id,root.userData.visualPoint]))}),
     dispose() {if (disposed) return; disposed = true; lighting?.dispose(); actor.dispose(); vegetation?.dispose(); mapOwner?.dispose(); owner.dispose(); sun.shadow.dispose(); renderer.dispose(); renderer.forceContextLoss(); scene.clear();},
   };

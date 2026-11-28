@@ -9,6 +9,7 @@ import type {ExpeditionContext, ExpeditionResult, ForestExpeditionSnapshot, Fore
 import type {CarryIntent} from '../domain/carrying.ts';
 import {createForestExpeditionScene} from '../scene/forest-expedition-scene.ts';
 import type {ExpeditionPick, ExpeditionSceneView} from '../scene/forest-expedition-scene.ts';
+import type {ExpeditionAppearance} from '../scene/expedition-actor.ts';
 import {createLoop} from './runtime-loop.ts';
 
 export type ExpeditionAppView = {
@@ -20,6 +21,7 @@ export type ExpeditionAppView = {
 export type CampExpeditionSession = {
   initial: ForestExpeditionState;
   context: ExpeditionContext;
+  appearance?:ExpeditionAppearance;
   checkpoint(state: ForestExpeditionState): Promise<boolean>;
   finish(state: ForestExpeditionState): Promise<boolean>;
 };
@@ -45,7 +47,7 @@ export async function createForestExpeditionRuntime(canvas: HTMLCanvasElement, o
   let message = '点地面走动，点林间物产查看；走近后再采集。', error: string | null = null;
   try {if (!camp) {const saved = localStorage.getItem(storageKey); if (saved) state = restoreForestExpedition(saved, context);}}
   catch {saveAvailable = false; saveStatus = 'unavailable'; message = '已有样区记录暂时无法读取，先保留原记录；本次可临时游玩。';}
-  const scene = await (options.createScene ?? createForestExpeditionScene)(canvas);
+  const scene=await (options.createScene??createForestExpeditionScene)(canvas,camp?.appearance);
   try {scene.setMap(layouts[state.activeMapId]);} catch (error) {scene.dispose(); throw error;}
   let selected: ExpeditionPick | null = null, paused = false, panelOpen = false, running = false, destroyed = false, contextLost = false, returning = false, finished = false;
   let vector = {x: 0, y: 0}, route: ExpeditionPoint[] = [], facing = Math.PI, speed = 0;
@@ -141,7 +143,8 @@ export async function createForestExpeditionRuntime(canvas: HTMLCanvasElement, o
       if (available < .08) {route.shift(); if (!route.length) {scene.destination(null); message = '到了。可以查看或收取身边的物产。';} speed = 0; return;}
       dx /= available; dz /= available;
     }
-    const amount = Math.min(available, 3.8 * ((running || keys.has('shift')) ? 1.6 : 1) * expeditionLoad(state).speed * dt);
+    const pace=running||keys.has('shift')?scene.runSpeed:scene.walkSpeed;
+    const amount=Math.min(available,pace*expeditionLoad(state).speed*dt);
     const from = state.player, next = {x: from.x + dx * amount, z: from.z + dz * amount}, layout = layouts[state.activeMapId];
     let destination: ExpeditionPoint | null = expeditionSegmentWalkable(layout, from, next) ? next : null;
     // A manual nudge can slide along a trunk; click paths are already checked as full segments.
@@ -158,7 +161,9 @@ export async function createForestExpeditionRuntime(canvas: HTMLCanvasElement, o
     } else {speed = 0; if (!manual) {stopRoute(); message = '前面过不去，换一个落脚点。';}}
   }
   function render(dt: number) {
-    const view: ExpeditionSceneView = {player: {...state.player, facing, speed}, gathering: !!state.action, carryingWood: snapshot.carried.some(stack => stack.itemId === 'wood' || stack.itemId === 'branch'), sources: state.sources, drops: snapshot.ground, selected};
+    const action=state.action;
+    const gathering=action?Math.max(0,Math.min(1,(state.time-action.startedAt)/(action.finishAt-action.startedAt))):null;
+    const view: ExpeditionSceneView = {player: {...state.player, facing, speed}, gathering, carryingWood: snapshot.carried.some(stack => stack.itemId === 'wood' || stack.itemId === 'branch'), sources: state.sources, drops: snapshot.ground, selected};
     scene.render(view, dt);
   }
   function tick(dt: number, draw = true) {

@@ -13,7 +13,8 @@ export function bridgeHeightAt(x:number,z:number){
   const center=heightAt(west.x,west.z)*(1-t)+heightAt(east.x,east.z)*t+.12*Math.sin(Math.PI*t);
   const blend=Math.max(0,Math.min(1,(x-west.x)/3,(east.x-x)/3));
   const smooth=blend*blend*(3-2*blend);
-  return heightAt(x,z)*(1-smooth)+center*smooth;
+  const bank=heightAt(x,z);
+  return bank+Math.max(0,center-bank)*smooth;
 }
 export function travelHeightAt(x:number,z:number,access:TravelAccess=CLOSED_ACCESS){
   return bridgeOpen(access)&&onBridge(x,z)?bridgeHeightAt(x,z):heightAt(x,z);

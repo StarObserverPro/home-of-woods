@@ -32,7 +32,7 @@ export function nearCabinAction(point: Point, action: CabinAction) {
   return Math.hypot(point.x - target.x, point.z - target.z) <= CABIN_USE_REACH;
 }
 
-export function stepCabinVisit(visit: CabinVisit, input: Point, dt: number, loadSpeed: number, run: boolean) {
+export function stepCabinVisit(visit: CabinVisit, input: Point, dt: number, loadSpeed: number, run: boolean, walkSpeed?:number,runSpeed?:number) {
   const { player } = visit;
   if (input.x || input.z) {
     visit.destination = null;
@@ -45,7 +45,7 @@ export function stepCabinVisit(visit: CabinVisit, input: Point, dt: number, load
     input = distance > .02 ? { x: x / distance, z: z / distance } : { x: 0, z: 0 };
     if (distance <= .02) visit.destination = null;
   }
-  const step = movementOffset(input, loadSpeed, run, dt, distance);
+  const step = movementOffset(input, loadSpeed, run, dt, distance, walkSpeed, runSpeed);
   const next = cabinFloorPoint({ x: player.x + step.x, z: player.z + step.z });
   const x = next.x - player.x, z = next.z - player.z;
   player.moving = Math.hypot(x, z) > .001;

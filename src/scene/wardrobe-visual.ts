@@ -28,8 +28,9 @@ export function createWardrobeVisual(resources:Resources,body:THREE.Object3D,mou
   hat.add(crown,visor);head.add(hat);appearance.set('player:head',hat);
 
   const backpack=new THREE.Group();backpack.name='starter-small-pack';
-  const pack=mesh('pack-body',()=>new THREE.BoxGeometry(.34,.40,.18),'#8e7653');pack.position.set(0,-.10,-.28);
-  const flap=mesh('pack-flap',()=>new THREE.BoxGeometry(.35,.14,.20),'#aa9166');flap.position.set(0,.035,-.28);
+  const packDepth=mounts ? -.215 : -.28;
+  const pack=mesh('pack-body',()=>new THREE.BoxGeometry(.34,.40,.18),'#8e7653');pack.position.set(0,-.10,packDepth);
+  const flap=mesh('pack-flap',()=>new THREE.BoxGeometry(.35,.14,.20),'#aa9166');flap.position.set(0,.035,packDepth);
   backpack.add(pack,flap);
   for(const side of [-1,1]){
     const strap=mesh('pack-strap',()=>new THREE.BoxGeometry(.047,.36,.042),'#5a5946');strap.position.set(side*.135,-.13,.14);
@@ -49,7 +50,7 @@ export function createWardrobeVisual(resources:Resources,body:THREE.Object3D,mou
 
   // Starter visuals are keyed by the equipped item definition, not by the occupied slot alone.
   let previous:string|null=null;
-  function update(inventory:InventoryState,replaceStarterPack=false){
+  function update(inventory:Pick<InventoryState,'instances'>,replaceStarterPack=false){
     const worn=new Map<string,string>();
     for(const item of inventory.instances??[]){
       if(item.location.kind==='mounted'&&item.location.hostId==='player')worn.set(item.location.slotId,item.definitionId);

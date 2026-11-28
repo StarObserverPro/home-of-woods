@@ -562,6 +562,9 @@ export async function createScene(
   let airScannedRevision=-1;
   const dynamicSurfaceRoots=[housing.group,housing.mountedGroup,workshop.group,woodcraft.group,hauling.group,gathering.group,broom.group,wildlife.group];
   const view = {
+    playerWalkSpeed:characters.walkSpeed,
+    playerRunSpeed:characters.runSpeed,
+    resetPlayerMotion:characters.resetLocomotion,
     hasPendingPresentation:()=>!inside()&&(frameWork.stats().pending>0||overlook.pending()||followTargetPending)||presentationDirty,
     setPresentationScheduler(callback:()=>void){schedulePresentation=callback;},
     setCameraAdvanceScale(value:number){overlook.setAdvanceScale(value);},
@@ -840,9 +843,12 @@ export async function createScene(
       characters.update(state,reducedMotion,ambientTime);
       neighbour.update(state,reducedMotion,ambientTime);
       villagers.update(state,reducedMotion,ambientTime);
-      life.update(state,dt,reducedMotion);
+      life.update(state,dt,reducedMotion,false,characters.seatAmount());
       broom.update(state,dt,reducedMotion,sky.night);
-      if(mealFraming&&!life.isMealPlaying())view.cancelMeal();
+      if(mealFraming&&!life.isMealPlaying()){
+        view.cancelMeal();
+        characters.update(state,reducedMotion,ambientTime);
+      }
       housing.update(state,dt,reducedMotion,sky.night);
       merchantWagon.update(state.time,reducedMotion);
       forestry.alignContact(characters.getImpact());

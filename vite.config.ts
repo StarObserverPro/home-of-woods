@@ -6,6 +6,8 @@ import {sceneEvidencePlugin} from './tools/scene-evidence-plugin.ts';
 import {visitorAiPlugin} from './server/vite-visitor-ai.mjs';
 import {LOCAL_CHARACTER_MODELS,LOCAL_CHARACTER_PREFIX} from './src/content/characters.ts';
 export default defineConfig({
+  // A preview can share node_modules with the game while serving different modules.
+  cacheDir:resolve(import.meta.dirname,'.cache/vite'),
   plugins: [react(),sceneEvidencePlugin(),visitorAiPlugin(),{
     name:'local-development-evidence',
     configureServer(server){
