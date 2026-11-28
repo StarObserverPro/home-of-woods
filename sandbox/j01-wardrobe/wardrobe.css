@@ -1,0 +1,94 @@
+@layer how-layout {
+  :root { color-scheme: dark; background: #192620; }
+  body { margin: 0; }
+  button[hidden], [hidden] { display: none; }
+
+  #wardrobe {
+    min-height: 100dvh;
+    padding: var(--how-safe-top) var(--how-safe-right) var(--how-safe-bottom) var(--how-safe-left);
+    background: radial-gradient(ellipse at 22% 15%, #33493b, #192620 67%);
+  }
+  .wardrobe-title, .wardrobe-layout { max-width: 1440px; margin-inline: auto; }
+  .wardrobe-title {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--how-gap);
+    padding-bottom: var(--how-section-gap);
+  }
+  .wardrobe-title h1 {
+    margin: 0;
+    font-family: 'Songti SC', 'Noto Serif SC', SimSun, serif;
+    font-size: clamp(25px, 4vw, 38px);
+    font-weight: 700;
+    letter-spacing: .06em;
+  }
+  .wardrobe-title > span { color: var(--how-muted); letter-spacing: .10em; }
+  .wardrobe-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(370px, 440px); gap: var(--how-section-gap); align-items: stretch; }
+  .wardrobe-stage { position: relative; min-width: 0; display: flex; flex-direction: column; gap: var(--how-gap); }
+  .wardrobe-canvas {
+    position: relative;
+    background: #62756f;
+    flex: 1 1 auto;
+    min-height: min(620px, max(510px, 72dvh));
+    overflow: hidden;
+    border-radius: 7px;
+    box-shadow: var(--how-shadow);
+    outline-offset: -4px;
+    cursor: grab;
+    touch-action: pan-y pinch-zoom;
+  }
+  .wardrobe-canvas:active { cursor: grabbing; }
+  .wardrobe-canvas canvas { position: absolute; inset: 0; display: block; }
+  #load-state { position: absolute; inset: 42% 12px auto; margin: 0 auto; width: fit-content; padding: 8px 12px; background: #1a2a22; border-radius: 5px; }
+  .stage-controls { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--how-gap); }
+  .stage-controls:has([data-command="detail"][hidden]) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .wardrobe-panel { min-width: 0; }
+  .controls-inner { display: flex; flex-direction: column; gap: 16px; }
+  .controls-inner[hidden] { display: none; }
+  fieldset { min-width: 0; padding: 0; margin: 0; border: 0; }
+  legend { padding: 0; margin-bottom: var(--how-gap); color: var(--how-muted); font-size: 13px; font-weight: 700; }
+  .wardrobe-four, .wardrobe-five, .wardrobe-three, .wardrobe-pieces, .wardrobe-dyes, .wardrobe-trims { display: grid; gap: var(--how-gap); }
+  .wardrobe-four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .wardrobe-five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .wardrobe-three, .wardrobe-pieces { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .wardrobe-dyes { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .wardrobe-trims { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wardrobe-dyes button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 56px; padding-inline: 4px; }
+  .dye-mark { display: block; width: 18px; height: 13px; border-radius: 4px; box-shadow: inset 0 2px 0 #ffffff33, 0 2px 0 #141e16; }
+  [data-dye="original"] { background: linear-gradient(122deg, #b38f5d 0 32%, #876257 32% 65%, #60705b 65%); }
+  [data-dye="flax"] { background: #b7a080; }
+  [data-dye="pine"] { background: #56684e; }
+  [data-dye="ink"] { background: #455978; }
+  [data-dye="rust"] { background: #98624f; }
+  [data-dye="ash"] { background: #6e7475; }
+  .wardrobe-pieces button { min-height: 52px; }
+  .wardrobe-trims button { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 58px; }
+  .wardrobe-trims small { color: var(--how-muted); font-size: 11px; line-height: 16px; }
+  .wardrobe-layout button { width: 100%; white-space: normal; overflow-wrap: anywhere; }
+  .wardrobe-pages { margin-bottom: 16px; }
+  .affix-panel, .affix-panel #affix-lab { display: grid; gap: 12px; }
+  .affix-panel[hidden], .affix-panel #affix-lab[hidden], .affix-field[hidden], .affix-replay-row[hidden] { display: none; }
+  .affix-field-row, .affix-replay-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--how-gap); align-items: end; }
+  .affix-field { display: grid; gap: 4px; min-width: 0; color: var(--how-muted); font-size: 13px; }
+  .affix-field select { width: 100%; min-width: 0; }
+  .affix-replay-row { grid-template-columns: minmax(0, 1fr) minmax(136px, .70fr); }
+  .affix-color-row { display: flex; gap: var(--how-gap); flex-wrap: wrap; }
+  .affix-chip { display: inline-flex; align-items: center; gap: var(--how-gap); min-height: 28px; font-size: 13px; }
+  .affix-chip i { display: block; width: 20px; height: 14px; border-radius: 3px; box-shadow: inset 0 1px #ffffff50; }
+  .affix-copy { margin: 8px 0 0; color: var(--how-muted); font-size: 13px; line-height: 1.6; }
+
+  @media (min-width: 900px) {
+    .wardrobe-panel { align-self: stretch; }
+  }
+  @media (max-width: 790px) {
+    #wardrobe { --how-frame-inset: 12px; --how-panel-inset: 12px; --how-panel-bottom: 20px; }
+    .wardrobe-layout { grid-template-columns: minmax(0, 1fr); }
+    .wardrobe-canvas { flex: none; height: clamp(266px, 43dvh, 460px); min-height: 0; }
+    .wardrobe-title > span { font-size: 12px; }
+    .stage-controls button { padding-inline: 4px; }
+  }
+  @media (max-width: 430px) {
+    .wardrobe-dyes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+}
